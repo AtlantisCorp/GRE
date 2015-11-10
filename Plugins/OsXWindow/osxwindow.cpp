@@ -51,6 +51,7 @@ public:
     
     void associate (Renderer renderer)
     {
+        WindowResource::associate(renderer);
         GInitRendererContext();
     }
     

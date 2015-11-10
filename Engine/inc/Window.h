@@ -33,11 +33,14 @@ public:
     
     virtual const std::string recommendedRenderer() const { return ""; }
     
-    virtual void associate(Renderer renderer) { }
+    virtual void associate(Renderer renderer) { _associatedRenderer = renderer; }
+    
+    Renderer getAssociatedRenderer() { return _associatedRenderer; }
     
 protected:
     
     WindowPrivate _data;
+    Renderer      _associatedRenderer;
 };
 
 class DLL_PUBLIC Window : public ResourceUser
@@ -56,6 +59,8 @@ public:
     const std::string recommendedRenderer() const;
     
     void associate(Renderer renderer);
+    
+    Renderer getAssociatedRenderer();
 };
 
 class DLL_PUBLIC WindowLoader : public ResourceLoader

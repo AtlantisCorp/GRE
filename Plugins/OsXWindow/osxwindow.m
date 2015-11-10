@@ -218,6 +218,27 @@ void GCreateWindow (int x0,int y0,int wid,int hei)
      backing:NSBackingStoreBuffered 
      defer:NO];
     
+    NSOpenGLPixelFormat *format;
+    NSOpenGLPixelFormatAttribute formatAttrib[]=
+    {
+        NSOpenGLPFAWindow,
+        NSOpenGLPFADepthSize,(NSOpenGLPixelFormatAttribute)32,
+        NSOpenGLPFADoubleBuffer,
+        0
+    };
+    
+    format=[NSOpenGLPixelFormat alloc];
+    [format initWithAttributes: formatAttrib];
+    
+    ysView=[YsOpenGLView alloc];
+    contRect=NSMakeRect(0,0,800,600);
+    [ysView
+     initWithFrame:contRect
+     pixelFormat:format];
+    
+    [ysWnd setContentView:ysView];
+    [ysWnd makeFirstResponder:ysView];
+    
     [ysWnd makeKeyAndOrderFront:nil];
     [ysWnd makeMainWindow];
     
@@ -261,26 +282,7 @@ bool GIsWindowClosed (void)
 
 void GInitRendererContext (void)
 {
-    NSOpenGLPixelFormat *format;
-    NSOpenGLPixelFormatAttribute formatAttrib[]=
-    {
-        NSOpenGLPFAWindow,
-        NSOpenGLPFADepthSize,(NSOpenGLPixelFormatAttribute)32,
-        NSOpenGLPFADoubleBuffer,
-        0
-    };
     
-    format=[NSOpenGLPixelFormat alloc];
-    [format initWithAttributes: formatAttrib];
-    
-    ysView=[YsOpenGLView alloc];
-    contRect=NSMakeRect(0,0,800,600);
-    [ysView
-     initWithFrame:contRect
-     pixelFormat:format];
-    
-    [ysWnd setContentView:ysView];
-    [ysWnd makeFirstResponder:ysView];
 }
 
 

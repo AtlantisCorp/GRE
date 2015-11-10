@@ -56,8 +56,8 @@
 		41877BF11BEFB6150024B643 /* ResourceManager.h in Headers */ = {isa = PBXBuildFile; fileRef = 41877B7C1BEFAED10024B643 /* ResourceManager.h */; };
 		41877BF21BEFB6150024B643 /* TextResource.h in Headers */ = {isa = PBXBuildFile; fileRef = 41877B7D1BEFAED10024B643 /* TextResource.h */; };
 		41877BF31BEFB6150024B643 /* Window.h in Headers */ = {isa = PBXBuildFile; fileRef = 41877B7E1BEFAED10024B643 /* Window.h */; };
-		41877C011BEFB6730024B643 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41877C001BEFB6730024B643 /* main.cpp */; };
 		41877C021BEFB67A0024B643 /* libgreengine.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 41877B591BEFADDE0024B643 /* libgreengine.dylib */; };
+		41D4C7FD1BF2885500357EC2 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41D4C7FC1BF2885500357EC2 /* main.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -100,7 +100,7 @@
 		41877BE71BEFB5FC0024B643 /* openglrenderer.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = openglrenderer.cpp; path = ../../../Plugins/OpenGlRenderer/openglrenderer.cpp; sourceTree = "<group>"; };
 		41877BEA1BEFB60D0024B643 /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
 		41877BF91BEFB64C0024B643 /* example */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = example; sourceTree = BUILT_PRODUCTS_DIR; };
-		41877C001BEFB6730024B643 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = main.cpp; path = ../../../../Example/main.cpp; sourceTree = "<group>"; };
+		41D4C7FC1BF2885500357EC2 /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = main.cpp; path = ../../../../Example/main.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -225,7 +225,7 @@
 		41877BFA1BEFB64C0024B643 /* example */ = {
 			isa = PBXGroup;
 			children = (
-				41877C001BEFB6730024B643 /* main.cpp */,
+				41D4C7FC1BF2885500357EC2 /* main.cpp */,
 			);
 			path = example;
 			sourceTree = "<group>";
@@ -472,7 +472,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				41877C011BEFB6730024B643 /* main.cpp in Sources */,
+				41D4C7FD1BF2885500357EC2 /* main.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -940,6 +940,7 @@
 				41877B641BEFADDE0024B643 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		41877B941BEFAF690024B643 /* Build configuration list for PBXNativeTarget "exampleplugin" */ = {
 			isa = XCConfigurationList;
@@ -948,6 +949,7 @@
 				41877B961BEFAF690024B643 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		41877BB81BEFB02D0024B643 /* Build configuration list for PBXNativeTarget "osxwindow" */ = {
 			isa = XCConfigurationList;
@@ -956,6 +958,7 @@
 				41877BBA1BEFB02D0024B643 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		41877BE11BEFB5CC0024B643 /* Build configuration list for PBXNativeTarget "openglrenderer" */ = {
 			isa = XCConfigurationList;
@@ -964,6 +967,7 @@
 				41877BE31BEFB5CC0024B643 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		41877BFD1BEFB64C0024B643 /* Build configuration list for PBXNativeTarget "example" */ = {
 			isa = XCConfigurationList;
@@ -972,6 +976,7 @@
 				41877BFF1BEFB64C0024B643 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

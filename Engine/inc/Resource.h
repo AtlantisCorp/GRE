@@ -67,6 +67,7 @@ public:
     std::shared_ptr<Resource> lock();
     const std::shared_ptr<Resource> lock() const;
 
+    static ResourceUser Null;
 };
 
 class DLL_PUBLIC ResourceLoader : public Clonable<ResourceLoader>

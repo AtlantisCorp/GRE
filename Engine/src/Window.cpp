@@ -9,7 +9,7 @@
 #include "Window.h"
 
 WindowResource::WindowResource (const std::string& name, const WindowPrivate& winData)
-: Resource(name)
+: Resource(name), _associatedRenderer(ResourceUser::Null)
 {
     
 }
@@ -86,6 +86,18 @@ void Window::associate(Renderer renderer)
         WindowResource* usable = dynamic_cast<WindowResource*>(ptr.get());
         usable->associate(renderer);
     }
+}
+
+Renderer Window::getAssociatedRenderer()
+{
+    auto ptr = lock();
+    if(ptr)
+    {
+        WindowResource* usable = dynamic_cast<WindowResource*>(ptr.get());
+        return usable->getAssociatedRenderer();
+    }
+    
+    return Renderer(ResourceUser::Null);
 }
 
 WindowLoader::WindowLoader()

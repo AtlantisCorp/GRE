@@ -33,6 +33,7 @@ const void* Resource::_getData() const
     return nullptr;
 }
 
+ResourceUser ResourceUser::Null = ResourceUser(std::weak_ptr<Resource>());
 
 ResourceUser::ResourceUser (std::weak_ptr<Resource> r) :
 _resource ( std::move(r) )
