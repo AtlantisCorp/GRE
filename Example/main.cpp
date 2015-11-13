@@ -32,6 +32,7 @@ int main(int argc, const char * argv[]) {
                                                 Resource::Type::Renderer, "MyRenderer"));
         
         myWindow.associate(myRenderer);
+        myWindow.setTitle("My Cool Application");
         
         std::cout << "Pool current size = " << ResourceManager::Get().getResourceUsage() << std::endl;
         

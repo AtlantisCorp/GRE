@@ -100,6 +100,16 @@ Renderer Window::getAssociatedRenderer()
     return Renderer(ResourceUser::Null);
 }
 
+void Window::setTitle(const std::string &title)
+{
+    auto ptr = lock();
+    if(ptr)
+    {
+        WindowResource* usable = dynamic_cast<WindowResource*>(ptr.get());
+        usable->setTitle(title);
+    }
+}
+
 WindowLoader::WindowLoader()
 {
     

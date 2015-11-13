@@ -37,6 +37,8 @@ public:
     
     Renderer getAssociatedRenderer() { return _associatedRenderer; }
     
+    virtual void setTitle(const std::string& title) { }
+    
 protected:
     
     WindowPrivate _data;
@@ -61,6 +63,8 @@ public:
     void associate(Renderer renderer);
     
     Renderer getAssociatedRenderer();
+    
+    void setTitle(const std::string& title);
 };
 
 class DLL_PUBLIC WindowLoader : public ResourceLoader

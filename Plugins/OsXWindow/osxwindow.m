@@ -246,6 +246,7 @@ void GCreateWindow (int x0,int y0,int wid,int hei)
     
     GAddMenu();
     
+    [ysWnd setTitle:@"Default Title"];
     [ysWnd display];
     [NSApp updateWindows];
     
@@ -283,6 +284,11 @@ bool GIsWindowClosed (void)
 void GInitRendererContext (void)
 {
     
+}
+
+void GWSetTitle(const char* title)
+{
+    [ysWnd setTitle:[NSString stringWithUTF8String:title] ];
 }
 
 

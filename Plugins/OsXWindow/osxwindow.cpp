@@ -18,6 +18,7 @@ extern "C" DLL_PUBLIC void GCreateWindow (int x0,int y0,int wid,int hei);
 extern "C" DLL_PUBLIC bool GPollEvent (void);
 extern "C" DLL_PUBLIC bool GIsWindowClosed (void);
 extern "C" DLL_PUBLIC void GInitRendererContext (void);
+extern "C" DLL_PUBLIC void GWSetTitle (const char*);
 
 class DLL_PUBLIC OsXWindow : public WindowResource
 {
@@ -53,6 +54,11 @@ public:
     {
         WindowResource::associate(renderer);
         GInitRendererContext();
+    }
+    
+    void setTitle(const std::string& title)
+    {
+        GWSetTitle(title.c_str());
     }
     
 private:
