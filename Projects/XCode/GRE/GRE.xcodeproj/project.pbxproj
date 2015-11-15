@@ -57,6 +57,10 @@
 		41877BF21BEFB6150024B643 /* TextResource.h in Headers */ = {isa = PBXBuildFile; fileRef = 41877B7D1BEFAED10024B643 /* TextResource.h */; };
 		41877BF31BEFB6150024B643 /* Window.h in Headers */ = {isa = PBXBuildFile; fileRef = 41877B7E1BEFAED10024B643 /* Window.h */; };
 		41877C021BEFB67A0024B643 /* libgreengine.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 41877B591BEFADDE0024B643 /* libgreengine.dylib */; };
+		41B59B5D1BF9148B008655A1 /* WindowResource.h in Headers */ = {isa = PBXBuildFile; fileRef = 41B59B5C1BF9148B008655A1 /* WindowResource.h */; };
+		41B59B5E1BF9148B008655A1 /* WindowResource.h in Headers */ = {isa = PBXBuildFile; fileRef = 41B59B5C1BF9148B008655A1 /* WindowResource.h */; };
+		41B59B5F1BF9148B008655A1 /* WindowResource.h in Headers */ = {isa = PBXBuildFile; fileRef = 41B59B5C1BF9148B008655A1 /* WindowResource.h */; };
+		41B59B601BF9148B008655A1 /* WindowResource.h in Headers */ = {isa = PBXBuildFile; fileRef = 41B59B5C1BF9148B008655A1 /* WindowResource.h */; };
 		41D4C7FD1BF2885500357EC2 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41D4C7FC1BF2885500357EC2 /* main.cpp */; };
 /* End PBXBuildFile section */
 
@@ -100,6 +104,7 @@
 		41877BE71BEFB5FC0024B643 /* openglrenderer.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = openglrenderer.cpp; path = ../../../Plugins/OpenGlRenderer/openglrenderer.cpp; sourceTree = "<group>"; };
 		41877BEA1BEFB60D0024B643 /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
 		41877BF91BEFB64C0024B643 /* example */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = example; sourceTree = BUILT_PRODUCTS_DIR; };
+		41B59B5C1BF9148B008655A1 /* WindowResource.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = WindowResource.h; path = ../../../Engine/inc/WindowResource.h; sourceTree = "<group>"; };
 		41D4C7FC1BF2885500357EC2 /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = main.cpp; path = ../../../../Example/main.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -184,6 +189,7 @@
 				41877B7C1BEFAED10024B643 /* ResourceManager.h */,
 				41877B7D1BEFAED10024B643 /* TextResource.h */,
 				41877B7E1BEFAED10024B643 /* Window.h */,
+				41B59B5C1BF9148B008655A1 /* WindowResource.h */,
 				41877B651BEFAE8D0024B643 /* FileLoader.cpp */,
 				41877B661BEFAE8D0024B643 /* Plugin.cpp */,
 				41877B671BEFAE8D0024B643 /* Pools.cpp */,
@@ -245,6 +251,7 @@
 				41877B841BEFAED20024B643 /* ResourceManager.h in Headers */,
 				41877B851BEFAED20024B643 /* TextResource.h in Headers */,
 				41877B861BEFAED20024B643 /* Window.h in Headers */,
+				41B59B5D1BF9148B008655A1 /* WindowResource.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -260,6 +267,7 @@
 				41877BA01BEFAFA00024B643 /* ResourceManager.h in Headers */,
 				41877BA11BEFAFA00024B643 /* TextResource.h in Headers */,
 				41877BA21BEFAFA00024B643 /* Window.h in Headers */,
+				41B59B5E1BF9148B008655A1 /* WindowResource.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -275,6 +283,7 @@
 				41877BC71BEFB58C0024B643 /* ResourceManager.h in Headers */,
 				41877BC81BEFB58C0024B643 /* TextResource.h in Headers */,
 				41877BC91BEFB58C0024B643 /* Window.h in Headers */,
+				41B59B5F1BF9148B008655A1 /* WindowResource.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -290,6 +299,7 @@
 				41877BF11BEFB6150024B643 /* ResourceManager.h in Headers */,
 				41877BF21BEFB6150024B643 /* TextResource.h in Headers */,
 				41877BF31BEFB6150024B643 /* Window.h in Headers */,
+				41B59B601BF9148B008655A1 /* WindowResource.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

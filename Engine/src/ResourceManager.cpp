@@ -10,11 +10,13 @@
 
 ResourceManager* _manager = nullptr;
 
-void ResourceManager::Create()
-{ _manager = new ResourceManager; }
+void ResourceManager::Create() {
+    _manager = new ResourceManager;
+}
 
-void ResourceManager::Destroy()
-{ delete _manager; }
+void ResourceManager::Destroy() {
+    delete _manager;
+}
     
 ResourceManager& ResourceManager::Get() {
     return *_manager;

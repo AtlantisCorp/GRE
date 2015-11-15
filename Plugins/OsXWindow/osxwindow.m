@@ -291,7 +291,18 @@ void GWSetTitle(const char* title)
     [ysWnd setTitle:[NSString stringWithUTF8String:title] ];
 }
 
+void GSwapBuffers(void)
+{
+    [[ysView openGLContext] flushBuffer];
+}
 
+void GGetWindowSize(int* w, int* h)
+{
+    NSRect rect;
+    rect = [ysView frame];
+    *w = rect.size.width;
+    *h = rect.size.height;
+}
 
 
 

@@ -13,12 +13,15 @@
 
 #define BUILDING_DLL
 #include "ResourceManager.h"
+#include "WindowResource.h"
 
 extern "C" DLL_PUBLIC void GCreateWindow (int x0,int y0,int wid,int hei);
 extern "C" DLL_PUBLIC bool GPollEvent (void);
 extern "C" DLL_PUBLIC bool GIsWindowClosed (void);
 extern "C" DLL_PUBLIC void GInitRendererContext (void);
 extern "C" DLL_PUBLIC void GWSetTitle (const char*);
+extern "C" DLL_PUBLIC void GSwapBuffers(void);
+extern "C" DLL_PUBLIC void GGetWindowSize (int*, int*);
 
 class DLL_PUBLIC OsXWindow : public WindowResource
 {
@@ -50,7 +53,7 @@ public:
         return "OpenGl";
     }
     
-    void associate (Renderer renderer)
+    void associate (Renderer& renderer)
     {
         WindowResource::associate(renderer);
         GInitRendererContext();
@@ -59,6 +62,18 @@ public:
     void setTitle(const std::string& title)
     {
         GWSetTitle(title.c_str());
+    }
+    
+    void swapBuffers ()
+    {
+        GSwapBuffers();
+    }
+    
+    WindowSize getWindowSize() const
+    {
+        int wid, height;
+        GGetWindowSize(&wid, &height);
+        return std::make_pair(wid, height);
     }
     
 private:

@@ -10,61 +10,37 @@
 #define __GResource__Window__
 
 #include "Resource.h"
-#include "Renderer.h"
 
-struct WindowPrivate
-{
-    
-};
+class Renderer;
 
-class DLL_PUBLIC WindowResource : public Resource
-{
-public:
-    
-    POOLED(Pools::Resource)
-    
-    WindowResource (const std::string& name, const WindowPrivate& winData);
-    
-    virtual ~WindowResource();
-    
-    virtual bool pollEvent() { return false; }
-    
-    virtual bool isClosed() const { return true; }
-    
-    virtual const std::string recommendedRenderer() const { return ""; }
-    
-    virtual void associate(Renderer renderer) { _associatedRenderer = renderer; }
-    
-    Renderer getAssociatedRenderer() { return _associatedRenderer; }
-    
-    virtual void setTitle(const std::string& title) { }
-    
-protected:
-    
-    WindowPrivate _data;
-    Renderer      _associatedRenderer;
-};
+typedef std::pair<int, int> WindowSize;
 
 class DLL_PUBLIC Window : public ResourceUser
 {
 public:
     
+    Window ();
+    Window (Window&& rmove);
     Window (const Window& window);
     explicit Window (const ResourceUser& ruser);
     
     virtual ~Window();
     
     Window& operator = (const ResourceUser& ruser);
+    Window& operator = (const Window& wuser);
     
     bool pollEvent();
     bool isClosed() const;
     const std::string recommendedRenderer() const;
     
-    void associate(Renderer renderer);
+    void associate(Renderer& renderer);
     
     Renderer getAssociatedRenderer();
     
     void setTitle(const std::string& title);
+    void swapBuffers();
+    
+    WindowSize getWindowSize() const;
 };
 
 class DLL_PUBLIC WindowLoader : public ResourceLoader

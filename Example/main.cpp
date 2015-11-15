@@ -24,7 +24,8 @@ int main(int argc, const char * argv[]) {
         if(myWindow.lock())
             std::cout << "BOM" << std::endl;
         
-        Plugin rendererPlugin = Plugin(ResourceManager::Get().loadResourceWith(PluginLoader(), Resource::Type::Plugin, "RendererPlugin", "libopenglrenderer.dylib"));
+        Plugin rendererPlugin = Plugin(ResourceManager::Get().loadResourceWith(PluginLoader(), Resource::Type::Plugin,
+                                                                               "RendererPlugin", "libopenglrenderer.dylib"));
         
         
         Renderer myRenderer = Renderer (ResourceManager::Get().loadResourceWith(ResourceManager::Get().
@@ -38,8 +39,9 @@ int main(int argc, const char * argv[]) {
         
         while(!myWindow.isClosed()) {
             myWindow.pollEvent();
-            myRenderer.render();
-            usleep(10000);
+            myRenderer.renderExample();
+            myWindow.swapBuffers();
+            usleep(1000000);
         }
         
         ResourceManager::Destroy();

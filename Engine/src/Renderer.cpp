@@ -14,6 +14,11 @@ RendererResource::RendererResource (const std::string& name)
     
 }
 
+Renderer::Renderer(Renderer&& movref)
+: ResourceUser(movref)
+{
+    
+}
 
 Renderer::Renderer (const Renderer& renderer)
 : ResourceUser(renderer.lock())
@@ -38,6 +43,12 @@ Renderer& Renderer::operator=(const ResourceUser &ruser)
     return *this;
 }
 
+Renderer& Renderer::operator=(const Renderer &ruser)
+{
+    ResourceUser::_resource = ruser.lock();
+    return *this;
+}
+
 void Renderer::render()
 {
     auto ptr = lock();
@@ -45,6 +56,26 @@ void Renderer::render()
     {
         RendererResource* usable = dynamic_cast<RendererResource*>(ptr.get());
         usable->render();
+    }
+}
+
+void Renderer::renderExample()
+{
+    auto ptr = lock();
+    if(ptr)
+    {
+        RendererResource* usable = dynamic_cast<RendererResource*>(ptr.get());
+        usable->renderExample();
+    }
+}
+
+void Renderer::associateWindow(Window &window)
+{
+    auto ptr = lock();
+    if(ptr)
+    {
+        RendererResource* usable = dynamic_cast<RendererResource*>(ptr.get());
+        usable->associateWindow(window);
     }
 }
 

@@ -10,6 +10,7 @@
 #define GResource_Renderer_h
 
 #include "Resource.h"
+#include "Window.h"
 
 class DLL_PUBLIC RendererResource : public Resource
 {
@@ -21,21 +22,34 @@ public:
     
     virtual ~RendererResource () { }
     
+    virtual void associateWindow (Window& window) { _window = window; }
+    
     virtual void render () { }
+    
+    virtual void renderExample () { }
+    
+protected:
+    
+    Window _window;
 };
 
 class DLL_PUBLIC Renderer : public ResourceUser
 {
 public:
     
+    Renderer (Renderer&& movref);
     Renderer (const Renderer& renderer);
     explicit Renderer (const ResourceUser& ruser);
     
     virtual ~Renderer();
     
     Renderer& operator = (const ResourceUser& ruser);
+    Renderer& operator = (const Renderer& ruser);
     
     void render();
+    void renderExample();
+    
+    void associateWindow (Window& window);
 };
 
 class DLL_PUBLIC DLL_PUBLIC RendererLoader : public ResourceLoader

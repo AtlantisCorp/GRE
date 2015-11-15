@@ -78,6 +78,7 @@ public:
         DYNLIB_HANDLE       handle;
     };
     
+    Plugin (Plugin&& movref);
     Plugin (const Plugin& plugin);
     explicit Plugin (const ResourceUser& ruser);
     

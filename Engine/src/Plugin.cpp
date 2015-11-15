@@ -8,6 +8,12 @@
 
 #include "Plugin.h"
 
+Plugin::Plugin(Plugin&& movref)
+: ResourceUser(movref)
+{
+    
+}
+
 Plugin::Plugin (const Plugin& plugin)
 : ResourceUser(plugin.lock())
 {

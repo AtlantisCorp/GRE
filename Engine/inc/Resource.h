@@ -52,8 +52,10 @@ protected:
     
 public:
     
+    ResourceUser (ResourceUser&& movref) : _resource(std::move(movref._resource)) { std::cout << "RU moved" << std::endl; }
     ResourceUser (const ResourceUser& rhs) : _resource(rhs._resource) { }
     ResourceUser (std::weak_ptr<Resource> r);
+    ResourceUser () : _resource() { }
     
     virtual ~ResourceUser ();
     

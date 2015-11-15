@@ -7,6 +7,7 @@
 //
 
 #include "Window.h"
+#include "WindowResource.h"
 
 WindowResource::WindowResource (const std::string& name, const WindowPrivate& winData)
 : Resource(name), _associatedRenderer(ResourceUser::Null)
@@ -15,6 +16,18 @@ WindowResource::WindowResource (const std::string& name, const WindowPrivate& wi
 }
 
 WindowResource::~WindowResource()
+{
+    
+}
+
+Window::Window()
+: ResourceUser()
+{
+    
+}
+
+Window::Window (Window&& rmove)
+: ResourceUser(rmove)
 {
     
 }
@@ -39,6 +52,12 @@ Window::~Window()
 Window& Window::operator=(const ResourceUser& ruser)
 {
     ResourceUser::_resource = ruser.lock();
+    return *this;
+}
+
+Window& Window::operator=(const Window &wuser)
+{
+    ResourceUser::_resource = wuser.lock();
     return *this;
 }
 
@@ -78,13 +97,14 @@ const std::string Window::recommendedRenderer() const
     return "";
 }
 
-void Window::associate(Renderer renderer)
+void Window::associate(Renderer& renderer)
 {
     auto ptr = lock();
     if(ptr)
     {
         WindowResource* usable = dynamic_cast<WindowResource*>(ptr.get());
         usable->associate(renderer);
+        renderer.associateWindow(*this);
     }
 }
 
@@ -108,6 +128,28 @@ void Window::setTitle(const std::string &title)
         WindowResource* usable = dynamic_cast<WindowResource*>(ptr.get());
         usable->setTitle(title);
     }
+}
+
+void Window::swapBuffers()
+{
+    auto ptr = lock();
+    if(ptr)
+    {
+        WindowResource* usable = dynamic_cast<WindowResource*>(ptr.get());
+        usable->swapBuffers();
+    }
+}
+
+WindowSize Window::getWindowSize() const
+{
+    auto ptr = lock();
+    if(ptr)
+    {
+        WindowResource* usable = dynamic_cast<WindowResource*>(ptr.get());
+        return usable->getWindowSize();
+    }
+    
+    return std::make_pair(0, 0);
 }
 
 WindowLoader::WindowLoader()
