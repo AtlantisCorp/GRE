@@ -22,6 +22,19 @@ extern "C" DLL_PUBLIC void GInitRendererContext (void);
 extern "C" DLL_PUBLIC void GWSetTitle (const char*);
 extern "C" DLL_PUBLIC void GSwapBuffers(void);
 extern "C" DLL_PUBLIC void GGetWindowSize (int*, int*);
+extern "C" DLL_PUBLIC void GSetVSync (int vsync);
+extern "C" DLL_PUBLIC int GHasVSync ();
+
+#define KEYBUF_MAX 256
+
+struct keybuf_t
+{
+    int key;
+    int pressed;
+};
+
+keybuf_t keybuf [KEYBUF_MAX];
+int      keybuf_sz = 0;
 
 class DLL_PUBLIC OsXWindow : public WindowResource
 {
@@ -30,19 +43,28 @@ public:
     OsXWindow (const std::string & name, const WindowPrivate& data)
     : WindowResource(name, data)
     {
-        std::cout << "[OsX Window] Created !" << std::endl;
         _isclosed = false;
     }
     
     ~OsXWindow ()
     {
-        std::cout << "[OsX Window] Destroyed !" << std::endl;
+        
     }
     
     bool pollEvent()
     {
         _isclosed = GIsWindowClosed();
-        return GPollEvent();
+        bool ret = GPollEvent();
+        
+        // Send key events
+        while(keybuf_sz)
+        {
+            KeyDownEvent e(Key(keybuf[0].key));
+            sendEvent(e);
+            keybuf_sz--;
+        }
+        
+        return ret;
     }
     
     bool isClosed() const
@@ -74,6 +96,16 @@ public:
         int wid, height;
         GGetWindowSize(&wid, &height);
         return std::make_pair(wid, height);
+    }
+    
+    void setVerticalSync (bool vsync)
+    {
+        GSetVSync(vsync?1:0);
+    }
+    
+    bool hasVerticalSync () const
+    {
+        return (bool) GHasVSync();
     }
     
 private:

@@ -9,6 +9,16 @@
 			<key>orderHint</key>
 			<integer>4</integer>
 		</dict>
+		<key>example2.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>5</integer>
+		</dict>
+		<key>example2Tests.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>6</integer>
+		</dict>
 		<key>exampleplugin.xcscheme</key>
 		<dict>
 			<key>orderHint</key>
@@ -32,6 +42,16 @@
 	</dict>
 	<key>SuppressBuildableAutocreation</key>
 	<dict>
+		<key>414BC02E1BFD63B300EA4A76</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>414BC0401BFD63B400EA4A76</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
 		<key>41877B581BEFADDE0024B643</key>
 		<dict>
 			<key>primary</key>

@@ -11,23 +11,58 @@
 RendererResource::RendererResource (const std::string& name)
 : Resource(name)
 {
+    _begin_time = 0;
+    _end_time   = 0;
+    _sum_time   = 0;
+    _sum_frames = 0;
+    _wantedFps  = 0.0f;
+    _currentFps = 0.0f;
+    _previous.tv_sec = 0;
+    _previous.tv_usec = 0;
+}
+
+void RendererResource::beginRender()
+{
     
 }
 
+float timedifference_msec(struct timeval t1, struct timeval t0)
+{
+    return (t1.tv_sec - t0.tv_sec) * 1000.0f + (t1.tv_usec - t0.tv_usec) / 1000.0f;
+}
+
+void RendererResource::endRender()
+{
+    // Calculate the Framerate
+    _sum_frames++;
+    struct timeval now;
+    gettimeofday(&now, 0);
+    
+    double diff_time = timedifference_msec(now, _previous);
+    //std::cout << diff_time << std::endl;
+    if(diff_time >= 1000)
+    {
+        _currentFps = _sum_frames / (diff_time / 1000);
+        _begin_time = _end_time;
+        _previous = now;
+        _sum_frames = 0;
+    }
+}
+
 Renderer::Renderer(Renderer&& movref)
-: ResourceUser(movref)
+: ResourceUser(movref), _mRenderer(std::move(movref._mRenderer))
 {
     
 }
 
 Renderer::Renderer (const Renderer& renderer)
-: ResourceUser(renderer.lock())
+: ResourceUser(renderer.lock()), _mRenderer(renderer._mRenderer)
 {
     
 }
 
 Renderer::Renderer (const ResourceUser& renderer)
-: ResourceUser(renderer.lock())
+: ResourceUser(renderer.lock()), _mRenderer(std::dynamic_pointer_cast<RendererResource>(renderer.lock()))
 {
     
 }
@@ -51,32 +86,67 @@ Renderer& Renderer::operator=(const Renderer &ruser)
 
 void Renderer::render()
 {
-    auto ptr = lock();
+    auto ptr = _mRenderer.lock();
     if(ptr)
-    {
-        RendererResource* usable = dynamic_cast<RendererResource*>(ptr.get());
-        usable->render();
-    }
+        ptr->render();
 }
 
 void Renderer::renderExample()
 {
-    auto ptr = lock();
+    auto ptr = _mRenderer.lock();
     if(ptr)
-    {
-        RendererResource* usable = dynamic_cast<RendererResource*>(ptr.get());
-        usable->renderExample();
-    }
+        ptr->renderExample();
 }
 
 void Renderer::associateWindow(Window &window)
 {
-    auto ptr = lock();
+    auto ptr = _mRenderer.lock();
     if(ptr)
-    {
-        RendererResource* usable = dynamic_cast<RendererResource*>(ptr.get());
-        usable->associateWindow(window);
-    }
+        ptr->associateWindow(window);
+}
+
+void Renderer::setFramerate(float fps)
+{
+    auto ptr = _mRenderer.lock();
+    if(ptr)
+        ptr->setFramerate(fps);
+}
+
+float Renderer::getCurrentFramerate() const
+{
+    auto ptr = _mRenderer.lock();
+    if(ptr)
+        return ptr->getCurrentFramerate();
+    
+    return 0.0f;
+}
+
+void Renderer::beginRender()
+{
+    auto ptr = _mRenderer.lock();
+    if(ptr)
+        ptr->beginRender();
+}
+
+void Renderer::endRender()
+{
+    auto ptr = _mRenderer.lock();
+    if(ptr)
+        ptr->endRender();
+}
+
+void Renderer::setClearColor(const Color& color)
+{
+    auto ptr = _mRenderer.lock();
+    if(ptr)
+        ptr->setClearColor(color);
+}
+
+void Renderer::setClearDepth(float depth)
+{
+    auto ptr = _mRenderer.lock();
+    if(ptr)
+        ptr->setClearDepth(depth);
 }
 
 RendererLoader::RendererLoader()

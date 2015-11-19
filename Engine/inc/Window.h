@@ -10,6 +10,7 @@
 #define __GResource__Window__
 
 #include "Resource.h"
+#include "Listener.h"
 
 class Renderer;
 
@@ -41,6 +42,13 @@ public:
     void swapBuffers();
     
     WindowSize getWindowSize() const;
+    
+    void setVerticalSync (bool vsync);
+    bool hasVerticalSync () const;
+    
+    Listener& addListener(const std::string& name);
+    Listener getListener(const std::string& name);
+    void removeListener(const std::string& name);
 };
 
 class DLL_PUBLIC WindowLoader : public ResourceLoader

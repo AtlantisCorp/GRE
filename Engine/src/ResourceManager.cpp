@@ -97,7 +97,11 @@ int ResourceManager::loadPluginsIn(const std::string &dirname)
     if ((dir = opendir (dirname.c_str())) != NULL) {
         /* print all the files and directories within directory */
         while ((ent = readdir (dir)) != NULL) {
-            Plugin newPlugin = Plugin(loadResourceWith(PluginLoader(), Resource::Type::Plugin, std::string(ent->d_name) + "-plugin", dirname + "/" + ent->d_name));
+            std::string d_name(ent->d_name);
+            if (d_name == "." || d_name == "..")
+                continue;
+            
+            Plugin newPlugin = std::move(Plugin(loadResourceWith(PluginLoader(), Resource::Type::Plugin, std::string(ent->d_name) + "-plugin", dirname + "/" + ent->d_name)));
             if(newPlugin.lock())
                 res++;
         }

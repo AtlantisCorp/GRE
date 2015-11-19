@@ -47,9 +47,7 @@ _file (file)
 bool PluginResource::start ()
 {
     std::size_t found = _file.find(std::string(".") + DYNLIB_EXTENSION);
-    if(found != std::string::npos)
-    {
-        std::cout << "Found at pos " << found << ", " << DYNLIB_EXTENSION << std::endl;
+    if(found != std::string::npos) {
     }
     else {
         return false;

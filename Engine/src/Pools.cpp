@@ -8,4 +8,7 @@
 
 #include "Pools.h"
 
-
+Version GetGreVersion ()
+{
+    return { GRE_VERSION_MAJOR, GRE_VERSION_MINOR, GRE_VERSION_BUILD };
+}

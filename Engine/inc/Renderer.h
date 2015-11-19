@@ -28,9 +28,29 @@ public:
     
     virtual void renderExample () { }
     
+    void setFramerate(float fps) { _wantedFps = fps; }
+    
+    float getCurrentFramerate() const { return _currentFps; }
+    
+    virtual void beginRender();
+    virtual void endRender();
+    
+    virtual void setClearColor(const Color& color) { }
+    virtual void setClearDepth(float depth) { }
+    
 protected:
     
     Window _window;
+    float  _wantedFps; ///< @brief Hold the desired framerate.
+    float  _currentFps; ///< @brief Hold the current fps.
+    
+private:
+    
+    double _begin_time;
+    double _end_time;
+    double _sum_time;
+    int     _sum_frames;
+    struct timeval _previous;
 };
 
 class DLL_PUBLIC Renderer : public ResourceUser
@@ -50,6 +70,18 @@ public:
     void renderExample();
     
     void associateWindow (Window& window);
+    
+    void setFramerate (float fps);
+    float getCurrentFramerate () const;
+    void beginRender();
+    void endRender();
+    
+    void setClearColor(const Color& color);
+    void setClearDepth(float depth);
+    
+private:
+    
+    std::weak_ptr<RendererResource> _mRenderer;
 };
 
 class DLL_PUBLIC DLL_PUBLIC RendererLoader : public ResourceLoader

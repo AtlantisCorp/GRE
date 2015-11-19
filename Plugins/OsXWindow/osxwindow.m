@@ -9,6 +9,17 @@
 #import <Foundation/Foundation.h>
 #import <Cocoa/Cocoa.h>
 
+#define KEYBUF_MAX 256
+
+struct keybuf_t
+{
+    int key;
+    int pressed;
+};
+
+extern struct keybuf_t keybuf [KEYBUF_MAX];
+extern int      keybuf_sz;
+
 bool windowclosed = true;
 
 @interface gappdelegate : NSObject
@@ -50,6 +61,7 @@ bool windowclosed = true;
      object:self];
     
     [self setAcceptsMouseMovedEvents:YES];
+    //[self isReleasedWhenClosed] = YES;
     
     printf("%s\n",__FUNCTION__);
     return self;
@@ -98,7 +110,14 @@ bool windowclosed = true;
 
 - (void) keyDown:(NSEvent *)theEvent
 {
-    
+    if(keybuf_sz < KEYBUF_MAX)
+    {
+        struct keybuf_t newevent;
+        newevent.key = theEvent.keyCode;
+        newevent.pressed = 1;
+        keybuf[keybuf_sz] = newevent;
+        keybuf_sz++;
+    }
 }
 
 - (void) keyUp:(NSEvent *)theEvent
@@ -192,15 +211,18 @@ void GAddMenu (void)
 
 void GCreateWindow (int x0,int y0,int wid,int hei)
 {
-    [NSApplication sharedApplication];
+    NSApplication* app = [NSApplication sharedApplication];
+    if(app == nil)
+        return;
+    
     [NSBundle loadNibNamed:@"MainMenu" owner:NSApp];
     
     gappdelegate *delegate;
     delegate=[gappdelegate alloc];
     delegate = [delegate init];
-    [NSApp setDelegate: delegate];
+    [app setDelegate: delegate];
     
-    [NSApp finishLaunching];
+    [app finishLaunching];
     
     NSRect contRect;
     contRect=NSMakeRect(x0,y0,wid,hei);
@@ -236,39 +258,47 @@ void GCreateWindow (int x0,int y0,int wid,int hei)
      initWithFrame:contRect
      pixelFormat:format];
     
+    int param = 0;
+    CGLSetParameter([[ysView openGLContext] CGLContextObj], kCGLCPSwapInterval, &param);
+    
     [ysWnd setContentView:ysView];
     [ysWnd makeFirstResponder:ysView];
     
-    [ysWnd makeKeyAndOrderFront:nil];
+    [ysWnd makeKeyAndOrderFront:ysWnd];
     [ysWnd makeMainWindow];
     
-    [NSApp activateIgnoringOtherApps:YES];
+    [app activateIgnoringOtherApps:YES];
     
     GAddMenu();
     
     [ysWnd setTitle:@"Default Title"];
     [ysWnd display];
-    [NSApp updateWindows];
+    [ysWnd makeKeyWindow];
+    [app updateWindows];
     
     windowclosed = false;
 }
 
 bool GPollEvent (void)
 {
-    NSEvent *event;
-    event=[NSApp
-           nextEventMatchingMask:NSAnyEventMask
-           untilDate: [NSDate distantPast]
-           inMode: NSDefaultRunLoopMode
-           dequeue:YES];
+    NSApplication* app = [NSApplication sharedApplication];
+    if(app == nil) {
+        return false;
+    }
+    
+    NSEvent *event = [app nextEventMatchingMask:NSAnyEventMask untilDate: [NSDate distantPast] inMode: NSDefaultRunLoopMode dequeue:YES];
+    
+    if(event == nil)
+        return false;
+    
     if([event type]==NSRightMouseDown)
     {
         printf("R mouse down event\n");
     }
     if(event!=nil)
     {
-        [NSApp sendEvent:event];
-        [NSApp updateWindows];
+        [app sendEvent:event];
+        [app updateWindows];
     }
     else
     {
@@ -304,6 +334,17 @@ void GGetWindowSize(int* w, int* h)
     *h = rect.size.height;
 }
 
+void GSetVSync(int vsync)
+{
+    CGLSetParameter([[ysView openGLContext] CGLContextObj], kCGLCPSwapInterval, &vsync);
+}
+
+int GHasVSync ()
+{
+    int has;
+    return CGLGetParameter([[ysView openGLContext] CGLContextObj], kCGLCPSwapInterval, &has);
+    return has;
+}
 
 
 

@@ -11,12 +11,21 @@
 
 class OpenGlRenderer : public RendererResource
 {
+private:
+    
+    GLfloat _mClearColor [4];
+    GLfloat _mClearDepth;
+    
 public:
     
     OpenGlRenderer (const std::string& name)
     : RendererResource(name)
     {
-        
+        _mClearColor[0] = 1.0f;
+        _mClearColor[1] = 1.0f;
+        _mClearColor[2] = 1.0f;
+        _mClearColor[3] = 0.0f;
+        _mClearDepth    = 1.0f;
     }
     
     ~OpenGlRenderer ()
@@ -24,10 +33,24 @@ public:
         
     }
     
+    void setClearColor (const Color& color)
+    {
+        _mClearColor[0] = color.red;
+        _mClearColor[1] = color.green;
+        _mClearColor[2] = color.blue;
+        _mClearColor[3] = color.alpha;
+    }
+    
+    void setClearDepth (float depth)
+    {
+        _mClearDepth = depth;
+    }
+    
     void render ()
     {
-        glClearColor(1.0F,1.0F,1.0F,0.0F);
-        glClearDepth(1.0F);
+        glClearColor(_mClearColor[0], _mClearColor[1], _mClearColor[2], _mClearColor[3]);
+        glClearDepth(_mClearDepth);
+        
         glDisable(GL_DEPTH_TEST);
         
         glViewport(0,0,1024,768);
@@ -51,6 +74,8 @@ public:
         glDisable(GL_LIGHTING);
         glDepthFunc(GL_ALWAYS);
         
+        glClearColor(_mClearColor[0], _mClearColor[1], _mClearColor[2], _mClearColor[3]);
+        glClearDepth(_mClearDepth);
         glClear(GL_COLOR_BUFFER_BIT);
         
         WindowSize sz = _window.getWindowSize();

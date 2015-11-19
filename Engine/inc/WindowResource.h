@@ -18,7 +18,8 @@ struct WindowPrivate
     
 };
 
-class DLL_PUBLIC WindowResource : public Resource
+class DLL_PUBLIC WindowResource : public Resource,
+                                  public Emitter
 {
 public:
     
@@ -43,6 +44,10 @@ public:
     virtual void swapBuffers() { }
     
     virtual WindowSize getWindowSize() const { return std::make_pair(0, 0); }
+    
+    virtual void setVerticalSync (bool vsync) { }
+    
+    virtual bool hasVerticalSync () const { return false; }
     
 protected:
     

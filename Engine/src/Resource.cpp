@@ -39,14 +39,14 @@ ResourceUser::ResourceUser (std::weak_ptr<Resource> r) :
 _resource ( std::move(r) )
 {
 #ifdef DEBUG
-    std::cout << "[ResourceUser:" << ( _resource.lock() ? _resource.lock()->getName() : "null" ) << "] Constructed." << std::endl;
+//    std::cout << "[ResourceUser:" << ( _resource.lock() ? _resource.lock()->getName() : "null" ) << "] Constructed." << std::endl;
 #endif
 }
 
 ResourceUser::~ResourceUser ()
 {
 #ifdef DEBUG
-    std::cout << "[ResourceUser:" << ( _resource.lock() ? _resource.lock()->getName() : "null" ) << "] Destroyed." << std::endl;
+//    std::cout << "[ResourceUser:" << ( _resource.lock() ? _resource.lock()->getName() : "null" ) << "] Destroyed." << std::endl;
 #endif
 }
 

@@ -16,6 +16,13 @@
 #include <fstream>
 #include <dirent.h>
 #include <utility>
+#include <unistd.h>
+#include <sys/time.h>
+#include <vector>
+
+#define GRE_VERSION_MAJOR 0
+#define GRE_VERSION_MINOR 0
+#define GRE_VERSION_BUILD 2
 
 #if defined _WIN32 || defined __CYGWIN__
 #ifdef BUILDING_DLL
@@ -42,6 +49,15 @@
 #endif
 #endif
 
+struct Version
+{
+    unsigned major;
+    unsigned minor;
+    unsigned build;
+};
+
+DLL_PUBLIC Version GetGreVersion ();
+
 template<class T>
 class Clonable
 {
@@ -57,7 +73,8 @@ enum class DLL_PUBLIC Pools
     Resource,
     Manager,
     Loader,
-    Factory
+    Factory,
+    Event
 };
 
 #define POOLED(pooltype) \
@@ -118,5 +135,13 @@ private:
     unsigned                _totalsz;
     unsigned                _maxsz;
 };
+
+typedef struct
+{
+    float red;
+    float green;
+    float blue;
+    float alpha;
+} Color;
 
 #endif

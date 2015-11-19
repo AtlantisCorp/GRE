@@ -152,6 +152,62 @@ WindowSize Window::getWindowSize() const
     return std::make_pair(0, 0);
 }
 
+void Window::setVerticalSync(bool vsync)
+{
+    auto ptr = lock();
+    if(ptr)
+    {
+        WindowResource* usable = dynamic_cast<WindowResource*>(ptr.get());
+        usable->setVerticalSync(vsync);
+    }
+}
+
+bool Window::hasVerticalSync() const
+{
+    auto ptr = lock();
+    if(ptr)
+    {
+        WindowResource* usable = dynamic_cast<WindowResource*>(ptr.get());
+        return usable->hasVerticalSync();
+    }
+    
+    return false;
+}
+
+Listener& Window::addListener(const std::string& name)
+{
+    auto ptr = lock();
+    if(ptr)
+    {
+        WindowResource* usable = dynamic_cast<WindowResource*>(ptr.get());
+        return usable->addListener(name);
+    }
+    
+    return Listener::Null;
+}
+
+Listener Window::getListener(const std::string& name)
+{
+    auto ptr = lock();
+    if(ptr)
+    {
+        WindowResource* usable = dynamic_cast<WindowResource*>(ptr.get());
+        return usable->getListener(name);
+    }
+    
+    return Listener::Null;
+}
+
+void Window::removeListener(const std::string& name)
+{
+    auto ptr = lock();
+    if(ptr)
+    {
+        WindowResource* usable = dynamic_cast<WindowResource*>(ptr.get());
+        return usable->removeListener(name);
+    }
+}
+
 WindowLoader::WindowLoader()
 {
     
