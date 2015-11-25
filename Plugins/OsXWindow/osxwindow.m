@@ -23,20 +23,6 @@ extern int      keybuf_sz;
 bool windowclosed = true;
 bool windowExposed = false;
 
-@interface gappdelegate : NSObject
-{
-}
-@end
-
-@implementation gappdelegate
-
-- (BOOL) applicationShouldTerminateAfterLastWindowClosed:(NSApplication *)theApplication
-{
-    return YES;
-}
-
-@end
-
 @interface gopenglwindow : NSWindow
 {
 
@@ -208,8 +194,6 @@ void GCloseWindow ()
 
 void GAddMenu (void)
 {
-//    NSAutoreleasePool *pool=[[NSAutoreleasePool alloc] init];
-    
     NSMenu *mainMenu;
     
     mainMenu=[NSMenu alloc];
@@ -224,8 +208,6 @@ void GAddMenu (void)
     [fileMenu setSubmenu:fileSubMenu];
     
     [NSApp setMainMenu:mainMenu];
-    
- //   [pool release];
 }
 
 void GCreateWindow (int x0,int y0,int wid,int hei)
@@ -252,12 +234,7 @@ void GCreateWindow (int x0,int y0,int wid,int hei)
         [NSBundle loadNibNamed:@"MainMenu"
                          owner:NSApp];
     }
-    
-    gappdelegate *delegate;
-    delegate=[gappdelegate alloc];
-    delegate = [delegate init];
-    [app setDelegate: delegate];
-    
+   
     NSRect contRect;
     contRect=NSMakeRect(x0,y0,wid,hei);
     

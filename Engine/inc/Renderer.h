@@ -62,6 +62,14 @@ protected:
     
     virtual void _renderImmediate();
     
+public:
+    
+    virtual void translate(float x, float y, float z) { }
+    virtual void rotate(float angle, float x, float y, float z) { }
+    
+    virtual void drawTriangle(float sz, const Color& color1, const Color& color2, const Color& color3) { }
+    virtual void drawQuad(float sz, const Color& color1, const Color& color2, const Color& color3, const Color& color4) { }
+    
 protected:
     
     Window _window;
@@ -114,6 +122,12 @@ public:
     
     void addImmediateAction(std::function<void(void)> action);
     void resetImmediateActions();
+    
+    void translate(float x, float y, float z);
+    void rotate(float angle, float x, float y, float z);
+    
+    void drawTriangle(float sz, const Color& color1 = Color::White, const Color& color2 = Color::White, const Color& color3 = Color::White);
+    void drawQuad(float sz, const Color& color1 = Color::White, const Color& color2 = Color::White, const Color& color3 = Color::White, const Color& color4 = Color::White);
     
 private:
     

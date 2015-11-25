@@ -54,10 +54,22 @@ int main(int argc, const char * argv[]) {
             std::cout << "[Main] Key Up : " << (int) kue.key << std::endl;
         });
         
-        myRenderer.setClearColor({0.0f, 0.0f, 0.0f, 0.0f});
-        myRenderer.setImmediateMode(false);
+        float rtri  = 0.0f;
+        float rquad = 0.0f;
         
-        sleep(1);
+        myRenderer.setClearColor({0.0f, 0.0f, 0.0f, 0.0f});
+        myRenderer.setImmediateMode(true);
+        myRenderer.addImmediateAction([&] () {
+            
+            myRenderer.translate(-1.5f, 0.0f, -6.0f);
+            myRenderer.rotate(rtri, 1.0f, 0.0f, 0.0f);
+            myRenderer.drawTriangle(1.0f, Color::Red, Color::Blue, Color::Green);
+            myRenderer.rotate(-rtri, 1.0f, 0.0f, 0.0f);
+            
+            myRenderer.translate(3.0f,0.0f,0.0f);
+            myRenderer.rotate(rquad, 0.0f, 1.0f, 0.0f);
+            myRenderer.drawQuad(1.0f, Color::Blue, Color::Blue, Color::Blue, Color::Blue);
+        });
         
         while(!myWindow.isClosed()) {
             
@@ -69,6 +81,8 @@ int main(int argc, const char * argv[]) {
             
             // Update the Window title to write the fps.
             myWindow.setTitle(std::string("My Cool Application - @") + std::to_string((int)myRenderer.getCurrentFramerate()) + "fps" );
+            rtri  += (360.0f/60.0f)*0.5f;
+            rquad += (360.0f/60.0f)*0.2f;
         }
         
         ResourceManager::Destroy();

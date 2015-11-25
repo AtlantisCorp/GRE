@@ -268,6 +268,34 @@ void Renderer::resetImmediateActions()
         ptr->resetImmediateActions();
 }
 
+void Renderer::translate(float x, float y, float z)
+{
+    auto ptr = _mRenderer.lock();
+    if(ptr)
+        ptr->translate(x, y, z);
+}
+
+void Renderer::rotate(float angle, float x, float y, float z)
+{
+    auto ptr = _mRenderer.lock();
+    if(ptr)
+        ptr->rotate(angle, x, y, z);
+}
+
+void Renderer::drawTriangle(float sz, const Color& color1, const Color& color2, const Color& color3)
+{
+    auto ptr = _mRenderer.lock();
+    if(ptr)
+        ptr->drawTriangle(sz, color1, color2, color3);
+}
+
+void Renderer::drawQuad(float sz, const Color& color1, const Color& color2, const Color& color3, const Color& color4)
+{
+    auto ptr = _mRenderer.lock();
+    if(ptr)
+        ptr->drawQuad(sz, color1, color2, color3, color4);
+}
+
 RendererLoader::RendererLoader()
 {
     

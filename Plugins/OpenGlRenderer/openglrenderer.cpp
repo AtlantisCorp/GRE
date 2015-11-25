@@ -102,6 +102,42 @@ protected:
     
 public:
     
+    void translate(float x, float y, float z)
+    {
+        glTranslatef((GLfloat)x, (GLfloat)y, (GLfloat)z);
+    }
+    
+    void rotate(float angle, float x, float y, float z)
+    {
+        glRotatef(angle, x, y, z);
+    }
+    
+    void drawTriangle(float sz, const Color& color1, const Color& color2, const Color& color3)
+    {
+        glBegin(GL_TRIANGLES);								// Drawing Using Triangles
+            glColor4fv(&color1.red);
+            glVertex3f( 0.0f, sz, 0.0f);					// Top
+            glColor4fv(&color2.red);
+            glVertex3f(-sz,  -sz, 0.0f);					// Bottom Left
+            glColor4fv(&color3.red);
+            glVertex3f( sz,  -sz, 0.0f);					// Bottom Right
+        glEnd();											// Finished Drawing The Triangle
+    }
+    
+    void drawQuad(float sz, const Color& color1, const Color& color2, const Color& color3, const Color& color4)
+    {
+        glBegin(GL_QUADS);                                  // Draw A Quad
+            glColor4fv(&color1.red);
+            glVertex3f(-sz,  sz, 0.0f);                     // Top Left
+            glColor4fv(&color2.red);
+            glVertex3f( sz,  sz, 0.0f);                     // Top Right
+            glColor4fv(&color3.red);
+            glVertex3f( sz, -sz, 0.0f);                     // Bottom Right
+            glColor4fv(&color4.red);
+            glVertex3f(-sz, -sz, 0.0f);                     // Bottom Left
+        glEnd();
+    }
+    
     void renderExample ()
     {
         glDisable(GL_DEPTH_TEST);

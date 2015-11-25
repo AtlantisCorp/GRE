@@ -69,6 +69,7 @@
 		41877BF21BEFB6150024B643 /* TextResource.h in Headers */ = {isa = PBXBuildFile; fileRef = 41877B7D1BEFAED10024B643 /* TextResource.h */; };
 		41877BF31BEFB6150024B643 /* Window.h in Headers */ = {isa = PBXBuildFile; fileRef = 41877B7E1BEFAED10024B643 /* Window.h */; };
 		41877C021BEFB67A0024B643 /* libgreengine.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 41877B591BEFADDE0024B643 /* libgreengine.dylib */; settings = {ATTRIBUTES = (Required, ); }; };
+		418D411D1C0647B100D623AF /* Color.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 418D411C1C0647B100D623AF /* Color.cpp */; };
 		41B59B5D1BF9148B008655A1 /* WindowResource.h in Headers */ = {isa = PBXBuildFile; fileRef = 41B59B5C1BF9148B008655A1 /* WindowResource.h */; };
 		41B59B5E1BF9148B008655A1 /* WindowResource.h in Headers */ = {isa = PBXBuildFile; fileRef = 41B59B5C1BF9148B008655A1 /* WindowResource.h */; };
 		41B59B5F1BF9148B008655A1 /* WindowResource.h in Headers */ = {isa = PBXBuildFile; fileRef = 41B59B5C1BF9148B008655A1 /* WindowResource.h */; };
@@ -129,6 +130,7 @@
 		41877BE71BEFB5FC0024B643 /* openglrenderer.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = openglrenderer.cpp; path = ../../../Plugins/OpenGlRenderer/openglrenderer.cpp; sourceTree = "<group>"; };
 		41877BEA1BEFB60D0024B643 /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
 		41877BF91BEFB64C0024B643 /* example */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = example; sourceTree = BUILT_PRODUCTS_DIR; };
+		418D411C1C0647B100D623AF /* Color.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Color.cpp; path = ../../../Engine/src/Color.cpp; sourceTree = "<group>"; };
 		41B59B5C1BF9148B008655A1 /* WindowResource.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = WindowResource.h; path = ../../../Engine/inc/WindowResource.h; sourceTree = "<group>"; };
 		41D4C7FC1BF2885500357EC2 /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = main.cpp; path = ../../../../Example/main.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -241,6 +243,7 @@
 				41877B781BEFAED10024B643 /* Plugin.h */,
 				41877B791BEFAED10024B643 /* Pools.h */,
 				410C1C291C03591800937366 /* Color.h */,
+				418D411C1C0647B100D623AF /* Color.cpp */,
 				410C1C281C034DF800937366 /* Clonable.h */,
 				410C1C271C03483200937366 /* Version.h */,
 				41877B7A1BEFAED10024B643 /* Renderer.h */,
@@ -552,6 +555,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				41877B6D1BEFAE8D0024B643 /* FileLoader.cpp in Sources */,
+				418D411D1C0647B100D623AF /* Color.cpp in Sources */,
 				414BC02A1BFD4C6F00EA4A76 /* Listener.cpp in Sources */,
 				410C1C2F1C035C8100937366 /* Event.cpp in Sources */,
 				41877B6E1BEFAE8D0024B643 /* Plugin.cpp in Sources */,

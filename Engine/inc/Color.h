@@ -14,13 +14,21 @@
 GRE_BEGIN_NAMESPACE
 
 /// @brief Defines a color in the Engine.
-typedef struct
+struct DLL_PUBLIC Color
 {
     float red;
     float green;
     float blue;
     float alpha;
-} Color;
+    
+    static Color White;
+    static Color Black;
+    static Color Red;
+    static Color Green;
+    static Color Blue;
+};
+
+typedef struct Color Color;
 
 GRE_END_NAMESPACE
 #endif
