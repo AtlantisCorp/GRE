@@ -7,8 +7,11 @@
 //
 
 #include "Pools.h"
+GRE_BEGIN_NAMESPACE
 
-Version GetGreVersion ()
+Version GetLibVersion ()
 {
     return { GRE_VERSION_MAJOR, GRE_VERSION_MINOR, GRE_VERSION_BUILD };
 }
+
+GRE_END_NAMESPACE

@@ -11,6 +11,8 @@
 
 #include "Pools.h"
 
+GRE_BEGIN_NAMESPACE
+
 ////////////////////////////////////////////////////////////////////////
 /// @class Resource
 /// @brief An Object that can be loaded and unloaded.
@@ -247,5 +249,7 @@ private:
     
     std::map<std::string, std::shared_ptr<T> > _loaders;
 };
+
+GRE_END_NAMESPACE
 
 #endif

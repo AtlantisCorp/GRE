@@ -12,7 +12,10 @@
 #include "Resource.h"
 #include "Listener.h"
 
+GRE_BEGIN_NAMESPACE
+
 class Renderer;
+class WindowResource;
 
 typedef std::pair<int, int> WindowSize;
 
@@ -49,6 +52,15 @@ public:
     Listener& addListener(const std::string& name);
     Listener getListener(const std::string& name);
     void removeListener(const std::string& name);
+    
+    void beginUpdate();
+    void endUpdate();
+    
+    bool isExposed() const;
+    
+private:
+    
+    std::weak_ptr<WindowResource> _mWindow;
 };
 
 class DLL_PUBLIC WindowLoader : public ResourceLoader
@@ -71,4 +83,5 @@ protected:
 
 typedef ResourceLoaderFactory<WindowLoader> WindowLoaderFactory;
 
+GRE_END_NAMESPACE
 #endif /* defined(__GResource__Window__) */

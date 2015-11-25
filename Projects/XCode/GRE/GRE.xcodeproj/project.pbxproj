@@ -7,6 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		410C1C2B1C03598A00937366 /* Key.h in Headers */ = {isa = PBXBuildFile; fileRef = 410C1C2A1C03598A00937366 /* Key.h */; };
+		410C1C2D1C0359EF00937366 /* Event.h in Headers */ = {isa = PBXBuildFile; fileRef = 410C1C2C1C0359EF00937366 /* Event.h */; };
+		410C1C2F1C035C8100937366 /* Event.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 410C1C2E1C035C8100937366 /* Event.cpp */; };
+		410C1C311C03607900937366 /* Emitter.h in Headers */ = {isa = PBXBuildFile; fileRef = 410C1C301C03607900937366 /* Emitter.h */; };
+		410C1C331C03616800937366 /* Emitter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 410C1C321C03616800937366 /* Emitter.cpp */; };
 		414BC0251BFD485100EA4A76 /* Listener.h in Headers */ = {isa = PBXBuildFile; fileRef = 414BC0241BFD485100EA4A76 /* Listener.h */; };
 		414BC0261BFD485100EA4A76 /* Listener.h in Headers */ = {isa = PBXBuildFile; fileRef = 414BC0241BFD485100EA4A76 /* Listener.h */; };
 		414BC0271BFD485100EA4A76 /* Listener.h in Headers */ = {isa = PBXBuildFile; fileRef = 414BC0241BFD485100EA4A76 /* Listener.h */; };
@@ -84,6 +89,14 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		410C1C271C03483200937366 /* Version.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Version.h; path = ../../../Engine/inc/Version.h; sourceTree = "<group>"; };
+		410C1C281C034DF800937366 /* Clonable.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Clonable.h; path = ../../../Engine/inc/Clonable.h; sourceTree = "<group>"; };
+		410C1C291C03591800937366 /* Color.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Color.h; path = ../../../Engine/inc/Color.h; sourceTree = "<group>"; };
+		410C1C2A1C03598A00937366 /* Key.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Key.h; path = ../../../Engine/inc/Key.h; sourceTree = "<group>"; };
+		410C1C2C1C0359EF00937366 /* Event.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Event.h; path = ../../../Engine/inc/Event.h; sourceTree = "<group>"; };
+		410C1C2E1C035C8100937366 /* Event.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Event.cpp; path = ../../../Engine/src/Event.cpp; sourceTree = "<group>"; };
+		410C1C301C03607900937366 /* Emitter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Emitter.h; path = ../../../Engine/inc/Emitter.h; sourceTree = "<group>"; };
+		410C1C321C03616800937366 /* Emitter.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Emitter.cpp; path = ../../../Engine/src/Emitter.cpp; sourceTree = "<group>"; };
 		414BC0241BFD485100EA4A76 /* Listener.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Listener.h; path = ../../../Engine/inc/Listener.h; sourceTree = "<group>"; };
 		414BC0291BFD4C6F00EA4A76 /* Listener.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Listener.cpp; path = ../../../Engine/src/Listener.cpp; sourceTree = "<group>"; };
 		414BC02F1BFD63B400EA4A76 /* example2.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = example2.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -221,16 +234,24 @@
 			children = (
 				41877B751BEFAE9B0024B643 /* libdl.dylib */,
 				414BC0241BFD485100EA4A76 /* Listener.h */,
+				410C1C301C03607900937366 /* Emitter.h */,
+				410C1C2C1C0359EF00937366 /* Event.h */,
+				410C1C2A1C03598A00937366 /* Key.h */,
 				41877B771BEFAED10024B643 /* FileLoader.h */,
 				41877B781BEFAED10024B643 /* Plugin.h */,
 				41877B791BEFAED10024B643 /* Pools.h */,
+				410C1C291C03591800937366 /* Color.h */,
+				410C1C281C034DF800937366 /* Clonable.h */,
+				410C1C271C03483200937366 /* Version.h */,
 				41877B7A1BEFAED10024B643 /* Renderer.h */,
 				41877B7B1BEFAED10024B643 /* Resource.h */,
 				41877B7C1BEFAED10024B643 /* ResourceManager.h */,
 				41877B7D1BEFAED10024B643 /* TextResource.h */,
 				41877B7E1BEFAED10024B643 /* Window.h */,
 				41B59B5C1BF9148B008655A1 /* WindowResource.h */,
+				410C1C321C03616800937366 /* Emitter.cpp */,
 				414BC0291BFD4C6F00EA4A76 /* Listener.cpp */,
+				410C1C2E1C035C8100937366 /* Event.cpp */,
 				41877B651BEFAE8D0024B643 /* FileLoader.cpp */,
 				41877B661BEFAE8D0024B643 /* Plugin.cpp */,
 				41877B671BEFAE8D0024B643 /* Pools.cpp */,
@@ -284,8 +305,10 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				410C1C2B1C03598A00937366 /* Key.h in Headers */,
 				41877B7F1BEFAED20024B643 /* FileLoader.h in Headers */,
 				41877B801BEFAED20024B643 /* Plugin.h in Headers */,
+				410C1C2D1C0359EF00937366 /* Event.h in Headers */,
 				41877B811BEFAED20024B643 /* Pools.h in Headers */,
 				41877B821BEFAED20024B643 /* Renderer.h in Headers */,
 				41877B831BEFAED20024B643 /* Resource.h in Headers */,
@@ -294,6 +317,7 @@
 				41877B861BEFAED20024B643 /* Window.h in Headers */,
 				414BC0251BFD485100EA4A76 /* Listener.h in Headers */,
 				41B59B5D1BF9148B008655A1 /* WindowResource.h in Headers */,
+				410C1C311C03607900937366 /* Emitter.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -529,10 +553,12 @@
 			files = (
 				41877B6D1BEFAE8D0024B643 /* FileLoader.cpp in Sources */,
 				414BC02A1BFD4C6F00EA4A76 /* Listener.cpp in Sources */,
+				410C1C2F1C035C8100937366 /* Event.cpp in Sources */,
 				41877B6E1BEFAE8D0024B643 /* Plugin.cpp in Sources */,
 				41877B6F1BEFAE8D0024B643 /* Pools.cpp in Sources */,
 				41877B701BEFAE8D0024B643 /* Renderer.cpp in Sources */,
 				41877B711BEFAE8D0024B643 /* Resource.cpp in Sources */,
+				410C1C331C03616800937366 /* Emitter.cpp in Sources */,
 				41877B721BEFAE8D0024B643 /* ResourceManager.cpp in Sources */,
 				41877B731BEFAE8D0024B643 /* TextResource.cpp in Sources */,
 				41877B741BEFAE8D0024B643 /* Window.cpp in Sources */,

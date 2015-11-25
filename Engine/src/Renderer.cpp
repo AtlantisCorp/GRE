@@ -8,6 +8,8 @@
 
 #include "Renderer.h"
 
+GRE_BEGIN_NAMESPACE
+
 RendererResource::RendererResource (const std::string& name)
 : Resource(name)
 {
@@ -19,6 +21,8 @@ RendererResource::RendererResource (const std::string& name)
     _currentFps = 0.0f;
     _previous.tv_sec = 0;
     _previous.tv_usec = 0;
+    _mIsActive = false;
+    _mIsImmediateMode = false;
 }
 
 void RendererResource::beginRender()
@@ -49,6 +53,75 @@ void RendererResource::endRender()
     }
 }
 
+void RendererResource::setActive(bool active)
+{
+    _mIsActive = active;
+}
+
+bool RendererResource::isActive() const
+{
+    return _mIsActive;
+}
+
+void RendererResource::render()
+{
+    if(isActive())
+    {
+        _preRender();
+        
+        if(!isImmediate()) {
+            _render();
+        } else {
+            _renderImmediate();
+        }
+
+        _postRender();
+    }
+}
+
+void RendererResource::_preRender()
+{
+    
+}
+
+void RendererResource::_render()
+{
+    
+}
+
+void RendererResource::_postRender()
+{
+    
+}
+
+bool RendererResource::isImmediate() const
+{
+    return _mIsImmediateMode;
+}
+
+void RendererResource::setImmediateMode(bool mode)
+{
+    _mIsImmediateMode = mode;
+}
+
+void RendererResource::_renderImmediate()
+{
+    for(auto it = _mImmediateFunctions.begin(); it != _mImmediateFunctions.end(); it++)
+    {
+        (*it) ();
+    }
+}
+
+void RendererResource::addImmediateAction(std::function<void ()> action)
+{
+    _mImmediateFunctions.push_back(action);
+}
+
+void RendererResource::resetImmediateActions()
+{
+    _mImmediateFunctions.clear();
+}
+
 Renderer::Renderer(Renderer&& movref)
 : ResourceUser(movref), _mRenderer(std::move(movref._mRenderer))
 {
@@ -75,12 +148,14 @@ Renderer::~Renderer()
 Renderer& Renderer::operator=(const ResourceUser &ruser)
 {
     ResourceUser::_resource = ruser.lock();
+    _mRenderer = std::dynamic_pointer_cast<RendererResource>(ruser.lock());
     return *this;
 }
 
 Renderer& Renderer::operator=(const Renderer &ruser)
 {
     ResourceUser::_resource = ruser.lock();
+    _mRenderer = ruser._mRenderer;
     return *this;
 }
 
@@ -149,6 +224,50 @@ void Renderer::setClearDepth(float depth)
         ptr->setClearDepth(depth);
 }
 
+void Renderer::setActive(bool active)
+{
+    auto ptr = _mRenderer.lock();
+    if(ptr)
+        ptr->setActive(active);
+}
+
+bool Renderer::isActive() const
+{
+    auto ptr = _mRenderer.lock();
+    if(ptr)
+        return ptr->isActive();
+    return false;
+}
+
+bool Renderer::isImmediate() const
+{
+    auto ptr = _mRenderer.lock();
+    if(ptr)
+        return ptr->isImmediate();
+    return false;
+}
+
+void Renderer::setImmediateMode(bool mode)
+{
+    auto ptr = _mRenderer.lock();
+    if(ptr)
+        ptr->setImmediateMode(mode);
+}
+
+void Renderer::addImmediateAction(std::function<void ()> action)
+{
+    auto ptr = _mRenderer.lock();
+    if(ptr)
+        ptr->addImmediateAction(action);
+}
+
+void Renderer::resetImmediateActions()
+{
+    auto ptr = _mRenderer.lock();
+    if(ptr)
+        ptr->resetImmediateActions();
+}
+
 RendererLoader::RendererLoader()
 {
     
@@ -173,3 +292,5 @@ ResourceLoader* RendererLoader::clone() const
 {
     return new RendererLoader();
 }
+
+GRE_END_NAMESPACE

@@ -11,6 +11,9 @@
 
 #include "Resource.h"
 #include "Window.h"
+#include "Color.h"
+
+GRE_BEGIN_NAMESPACE
 
 class DLL_PUBLIC RendererResource : public Resource
 {
@@ -24,7 +27,15 @@ public:
     
     virtual void associateWindow (Window& window) { _window = window; }
     
-    virtual void render () { }
+    virtual void render();
+    
+protected:
+    
+    virtual void _preRender();
+    virtual void _render();
+    virtual void _postRender();
+    
+public:
     
     virtual void renderExample () { }
     
@@ -38,11 +49,27 @@ public:
     virtual void setClearColor(const Color& color) { }
     virtual void setClearDepth(float depth) { }
     
+    bool isActive() const;
+    void setActive(bool active);
+    
+    bool isImmediate() const;
+    void setImmediateMode(bool mode);
+    
+    void addImmediateAction(std::function<void(void)> action);
+    void resetImmediateActions();
+    
+protected:
+    
+    virtual void _renderImmediate();
+    
 protected:
     
     Window _window;
     float  _wantedFps; ///< @brief Hold the desired framerate.
     float  _currentFps; ///< @brief Hold the current fps.
+    bool   _mIsActive;
+    bool   _mIsImmediateMode; ///< @brief True if renderer is in immediate mode.
+    std::vector<std::function<void(void)> > _mImmediateFunctions; ///< @brief Vector of functions to be called in immediate mode.
     
 private:
     
@@ -79,6 +106,15 @@ public:
     void setClearColor(const Color& color);
     void setClearDepth(float depth);
     
+    void setActive(bool active);
+    bool isActive() const;
+    
+    bool isImmediate() const;
+    void setImmediateMode(bool mode);
+    
+    void addImmediateAction(std::function<void(void)> action);
+    void resetImmediateActions();
+    
 private:
     
     std::weak_ptr<RendererResource> _mRenderer;
@@ -104,4 +140,5 @@ protected:
 
 typedef ResourceLoaderFactory<RendererLoader> RendererLoaderFactory;
 
+GRE_END_NAMESPACE
 #endif

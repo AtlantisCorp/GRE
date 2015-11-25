@@ -8,6 +8,9 @@
 
 #include "ResourceManager.h"
 #include <OpenGL/gl.h>
+#include <OpenGL/glu.h>
+
+using namespace Gre;
 
 class OpenGlRenderer : public RendererResource
 {
@@ -39,34 +42,65 @@ public:
         _mClearColor[1] = color.green;
         _mClearColor[2] = color.blue;
         _mClearColor[3] = color.alpha;
+        glClearColor(_mClearColor[0], _mClearColor[1], _mClearColor[2], _mClearColor[3]);
     }
     
     void setClearDepth (float depth)
     {
         _mClearDepth = depth;
+        glClearDepth(_mClearDepth);
     }
     
-    void render ()
+protected:
+    void _preRender()
     {
-        glClearColor(_mClearColor[0], _mClearColor[1], _mClearColor[2], _mClearColor[3]);
-        glClearDepth(_mClearDepth);
+        // [TODO] Handle resizing in a separate method.
+        WindowSize sz = _window.getWindowSize();
+        GLsizei width = sz.first;
+        GLsizei height = sz.second;
         
-        glDisable(GL_DEPTH_TEST);
+        // Set the viewport.
+        glViewport(0, 0, width, height);
         
-        glViewport(0,0,1024,768);
-        
+        // Set the Projection Matrix
         glMatrixMode(GL_PROJECTION);
         glLoadIdentity();
-        glOrtho(0,(float)1024-1,(float)768-1,0,-1,1);
         
+        // Calculate aspect ratio of the window
+        gluPerspective(45.0f, (GLfloat)width/(GLfloat)height, 0.1f, 100.0f);
+        
+        // Reset ModelView Matrix.
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
+        // --------------------------------------------
         
-        glShadeModel(GL_FLAT);
-        glPointSize(1);
-        glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-        glColor3ub(0,0,0);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	// Clear Screen And Depth Buffer
+        glLoadIdentity();									// Reset The Current Modelview Matrix
     }
+    
+    void _render ()
+    {
+        glTranslatef(-1.5f,0.0f,-6.0f);						// Move Left 1.5 Units And Into The Screen 6.0
+        glBegin(GL_TRIANGLES);								// Drawing Using Triangles
+            glVertex3f( 0.0f, 1.0f, 0.0f);					// Top
+            glVertex3f(-1.0f,-1.0f, 0.0f);					// Bottom Left
+            glVertex3f( 1.0f,-1.0f, 0.0f);					// Bottom Right
+        glEnd();											// Finished Drawing The Triangle
+        glTranslatef(3.0f,0.0f,0.0f);						// Move Right 3 Units
+        glBegin(GL_QUADS);									// Draw A Quad
+            glVertex3f(-1.0f, 1.0f, 0.0f);					// Top Left
+            glVertex3f( 1.0f, 1.0f, 0.0f);					// Top Right
+            glVertex3f( 1.0f,-1.0f, 0.0f);					// Bottom Right
+            glVertex3f(-1.0f,-1.0f, 0.0f);					// Bottom Left
+        glEnd();
+    }
+    
+    void _postRender()
+    {
+        glFlush();
+    }
+    
+public:
     
     void renderExample ()
     {

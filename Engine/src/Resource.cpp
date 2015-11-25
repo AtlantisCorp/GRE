@@ -8,6 +8,8 @@
 
 #include "Resource.h"
 
+GRE_BEGIN_NAMESPACE
+
 Resource::Resource (const std::string& name) :
 _name (name)
 {
@@ -92,3 +94,5 @@ ResourceLoader* ResourceLoader::clone() const
 {
     return nullptr;
 }
+
+GRE_END_NAMESPACE

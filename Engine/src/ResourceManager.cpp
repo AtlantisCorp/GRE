@@ -8,6 +8,8 @@
 
 #include "ResourceManager.h"
 
+GRE_BEGIN_NAMESPACE
+
 ResourceManager* _manager = nullptr;
 
 void ResourceManager::Create() {
@@ -115,5 +117,5 @@ int ResourceManager::loadPluginsIn(const std::string &dirname)
     return res;
 }
 
-
+GRE_END_NAMESPACE
 

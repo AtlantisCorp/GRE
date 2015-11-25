@@ -60,53 +60,50 @@ static const char *dlerror(void)
 
 #endif
 
+GRE_BEGIN_NAMESPACE
+
 typedef void  (*PluginStartFunction)   (void);
 typedef void  (*PluginStopFunction)    (void);
 typedef void* (*PluginGetNameFunction) (void);
 
-class DLL_PUBLIC Plugin : public ResourceUser
-{
-public:
-    
-    POOLED(Pools::Resource)
-    
-    struct Data
-    {
-        std::string         name;
-        PluginStartFunction start;
-        PluginStopFunction  stop;
-        DYNLIB_HANDLE       handle;
-    };
-    
-    Plugin (Plugin&& movref);
-    Plugin (const Plugin& plugin);
-    explicit Plugin (const ResourceUser& ruser);
-    
-    virtual ~Plugin ();
-    
-    const std::string getName() const;
-};
-
+/// @brief A Resource object holding the Plugin data.
 class DLL_PUBLIC PluginResource : public Resource
 {
 public:
     
     POOLED(Pools::Resource)
     
-    PluginResource (const std::string& name, const std::string& file);
+    /// @brief Creates the Resource, but do not load it.
+    /// It loads the file, but do not launch the plugin using the StartPlugin()
+    /// function.
+    PluginResource(const std::string& name, const std::string& file);
     
+    /// @brief Destroys the Resource. If the plugin was loaded, it will unload
+    /// it.
+    ~PluginResource();
+    
+    /// @brief Start the plugin (call StartPlugin() function).
     bool start ();
     
+    /// @brief Stop the plugin (call StopPlugin() function).
     void stop ();
+    
+    /// @brief Returns the name of this plugin.
+    const std::string& getName() const;
     
 protected:
     
+    /// @deprecated
     const void* _getData() const;
     
 private:
     
-    std::string  _file;
-    Plugin::Data _data;
+    std::string         _file;
+    std::string         _mName;
+    PluginStartFunction _mStart;
+    PluginStopFunction  _mStop;
+    DYNLIB_HANDLE       _mHandle;
+    bool                _mIsStarted;
     
 public:
     
@@ -116,6 +113,53 @@ public:
         const char* what() const throw() { return _file.c_str(); }
         std::string _file;
     };
+    
+    class BadPluginExtension : public std::exception {
+    public:
+        BadPluginExtension(const std::string& file) : _file(file) { }
+        const char* what() const throw() { return _file.c_str(); }
+        std::string _file;
+    };
+    
+    class BadPluginFile : public std::exception {
+    public:
+        BadPluginFile(const std::string& file) : _file(file) { }
+        const char* what() const throw() { return _file.c_str(); }
+        std::string _file;
+    };
+};
+
+/// @brief A loadable add-on to the Engine.
+/// A plugin can do everything to the Engine. Its mainly purpose, is to add
+/// more ResourceLoader object to factories present in the Engine, for the final user
+/// to be able to load and to do more things.
+class DLL_PUBLIC Plugin : public ResourceUser
+{
+public:
+    
+    POOLED(Pools::Resource)
+    
+    Plugin (Plugin&& movref);
+    Plugin (const Plugin& plugin);
+    explicit Plugin (const ResourceUser& ruser);
+    
+    virtual ~Plugin ();
+    
+    Plugin& operator = (const ResourceUser& ruser);
+    Plugin& operator = (const Plugin& rhs);
+    
+    /// @brief Start the plugin.
+    bool start();
+    
+    /// @brief Stop the plugin.
+    void stop();
+    
+    /// @brief Returns the name of the plugin, not the name of the resource.
+    const std::string& getName() const;
+    
+protected:
+    
+    std::weak_ptr<PluginResource> _mPlugin;
 };
 
 class DLL_PUBLIC PluginLoader : public FileLoader
@@ -126,11 +170,16 @@ public:
     
     PluginLoader ();
     
+    /// @brief Returns true if the Resource desired is Resource::Plugin.
     bool isTypeSupported(Resource::Type type) const;
     
+    /// @brief Loads the desired plugin file.
     Resource* load(Resource::Type type, const std::string& name, const std::string& file) const;
     
+    /// @brief Clones the Loader.
     ResourceLoader* clone() const;
 };
+
+GRE_END_NAMESPACE
 
 #endif

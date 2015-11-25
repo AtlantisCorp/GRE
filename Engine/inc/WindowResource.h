@@ -12,6 +12,9 @@
 #include "Resource.h"
 #include "Renderer.h"
 #include "Window.h"
+#include "Emitter.h"
+
+GRE_BEGIN_NAMESPACE
 
 struct WindowPrivate
 {
@@ -49,10 +52,16 @@ public:
     
     virtual bool hasVerticalSync () const { return false; }
     
+    virtual void beginUpdate ();
+    virtual void endUpdate ();
+    
+    virtual bool isExposed() const { return false; }
+    
 protected:
     
     WindowPrivate _data;
     Renderer      _associatedRenderer;
 };
 
+GRE_END_NAMESPACE
 #endif

@@ -15,6 +15,8 @@
 #include "Window.h"
 #include "Renderer.h"
 
+GRE_BEGIN_NAMESPACE
+
 ////////////////////////////////////////////////////////////////////////
 /// @class ResourceManager
 /// @brief Manages every Resource, ResourceFactory.
@@ -162,4 +164,5 @@ public:
     int loadPluginsIn(const std::string& dirname);
 };
 
+GRE_END_NAMESPACE
 #endif

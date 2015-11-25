@@ -8,20 +8,118 @@
 
 #include "Plugin.h"
 
+GRE_BEGIN_NAMESPACE
+
+PluginResource::PluginResource (const std::string& name, const std::string& file)
+: Resource(name), _file (file)
+{
+    // We check the extension of the file.
+    std::size_t found = _file.find(std::string(".") + DYNLIB_EXTENSION);
+    if(found != std::string::npos) {
+    }
+    else {
+        std::cout << "[Plugin:" << name << "] Bad extension." << std::endl;
+        throw BadPluginExtension(_file + " [Contructor]");
+    }
+    
+    DYNLIB_HANDLE hdl = DYNLIB_LOAD(_file.c_str());
+    if(!hdl) {
+        std::cout << "[Plugin:" << name << "] Could not load file." << std::endl;
+        throw BadPluginFile(_file + " [Constructor]");
+    }
+    
+    PluginGetNameFunction mFunc   = nullptr;
+    PluginStartFunction   mFunc2  = nullptr;
+    PluginStopFunction    mFunc3  = nullptr;
+    
+    * (void**) &mFunc = DYNLIB_GETSYM(hdl, "GetPluginName");
+    if(!mFunc) {
+        std::cout << "[Plugin:" << name << "] " << dlerror() << std::endl;
+        DYNLIB_UNLOAD(hdl);
+        throw BadPluginConception(_file + " [GetPluginName]");
+    }
+    
+    _mName = (const char*) mFunc ();
+    
+    * (void**) &mFunc2 = DYNLIB_GETSYM(hdl, "StartPlugin");
+    * (void**) &mFunc3 = DYNLIB_GETSYM(hdl, "StopPlugin");
+    
+    if(!mFunc2 || !mFunc3) {
+        std::cout << "[Plugin:" << name << "] " << dlerror() << std::endl;
+        DYNLIB_UNLOAD(hdl);
+        throw BadPluginConception(_file + " [StartOrStopPlugin]");
+    }
+    
+    _mStart  = mFunc2;
+    _mStop   = mFunc3;
+    _mHandle = hdl;
+    _mIsStarted = false;
+}
+
+PluginResource::~PluginResource()
+{
+    if(_mStop && _mStart && _mHandle)
+    {
+        stop();
+        DYNLIB_UNLOAD(_mHandle);
+        _mName.clear();
+        _mStart  = nullptr;
+        _mStop   = nullptr;
+        _mHandle = 0;
+    }
+}
+
+bool PluginResource::start ()
+{
+    
+    if(_mStart && !_mIsStarted) {
+        _mStart ();
+#ifdef DEBUG
+        std::cout << "[Plugin:" << _mName << "] Started." << std::endl;
+#endif
+        _mIsStarted = true;
+        return true;
+    }
+    
+    return false;
+}
+
+void PluginResource::stop ()
+{
+    if(_mStop && _mHandle && _mIsStarted) {
+        _mStop();
+        _mIsStarted = false;
+#ifdef DEBUG
+        std::cout << "[Plugin:" << _mName << "] Stopped." << std::endl;
+#endif
+    }
+}
+
+const void* PluginResource::_getData() const
+{
+    return &_mHandle;
+}
+
+const std::string& PluginResource::getName() const
+{
+    return _mName;
+}
+
+
 Plugin::Plugin(Plugin&& movref)
-: ResourceUser(movref)
+: ResourceUser(movref), _mPlugin(std::move(movref._mPlugin))
 {
     
 }
 
 Plugin::Plugin (const Plugin& plugin)
-: ResourceUser(plugin.lock())
+: ResourceUser(plugin.lock()), _mPlugin(plugin._mPlugin)
 {
     
 }
 
 Plugin::Plugin (const ResourceUser& ruser)
-: ResourceUser(ruser.lock())
+: ResourceUser(ruser.lock()), _mPlugin(std::dynamic_pointer_cast<PluginResource>(ruser.lock()))
 {
     
 }
@@ -31,88 +129,28 @@ Plugin::~Plugin ()
     
 }
 
-const std::string Plugin::getName() const
+const std::string& Plugin::getName() const
 {
-    return getData<Plugin::Data>().name;
+    auto ptr = _mPlugin.lock();
+    if(ptr)
+        return ptr->getName();
+    return "";
 }
 
-
-PluginResource::PluginResource (const std::string& name, const std::string& file) :
-Resource(name),
-_file (file)
+bool Plugin::start()
 {
-    
+    auto ptr = _mPlugin.lock();
+    if(ptr)
+        return ptr->start();
+    return false;
 }
 
-bool PluginResource::start ()
+void Plugin::stop()
 {
-    std::size_t found = _file.find(std::string(".") + DYNLIB_EXTENSION);
-    if(found != std::string::npos) {
-    }
-    else {
-        return false;
-    }
-    
-    DYNLIB_HANDLE hdl = DYNLIB_LOAD(_file.c_str());
-    if(!hdl) return false;
-    
-    PluginGetNameFunction mFunc = nullptr;
-    PluginStartFunction mFunc2  = nullptr;
-    PluginStopFunction  mFunc3  = nullptr;
-    
-    * (void**) &mFunc = DYNLIB_GETSYM(hdl, "GetPluginName");
-    if(!mFunc) {
-        std::cout << dlerror() << std::endl;
-        DYNLIB_UNLOAD(hdl);
-        throw BadPluginConception(_file + " [GetPluginName]");
-    }
-    
-    _data.name = (const char*) mFunc ();
-    
-    * (void**) &mFunc2 = DYNLIB_GETSYM(hdl, "StartPlugin");
-    * (void**) &mFunc3 = DYNLIB_GETSYM(hdl, "StopPlugin");
-    
-    if(!mFunc2 || !mFunc3) {
-        DYNLIB_UNLOAD(hdl);
-        throw BadPluginConception(_file);
-    }
-    
-    _data.start  = mFunc2;
-    _data.stop   = mFunc3;
-    _data.handle = hdl;
-    
-    _data.start ();
-    
-#ifdef DEBUG
-    std::cout << "[Plugin:" << _data.name << "] Started." << std::endl;
-#endif
-    
-    return true;
+    auto ptr = _mPlugin.lock();
+    if(ptr)
+        ptr->stop();
 }
-
-void PluginResource::stop ()
-{
-    if(_data.stop && _data.handle) {
-        _data.stop();
-        DYNLIB_UNLOAD(_data.handle);
-    }
-    
-#ifdef DEBUG
-    std::cout << "[Plugin:" << _data.name << "] Stopped." << std::endl;
-#endif
-    
-    _data.name.clear();
-    _data.start = nullptr;
-    _data.stop  = nullptr;
-    _data.handle = 0;
-}
-
-const void* PluginResource::_getData() const
-{
-    return &_data;
-}
-
-
 
 PluginLoader::PluginLoader ()
 {
@@ -144,3 +182,5 @@ ResourceLoader* PluginLoader::clone() const
 {
     return new PluginLoader();
 }
+
+GRE_END_NAMESPACE

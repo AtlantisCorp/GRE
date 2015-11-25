@@ -12,6 +12,8 @@
 #include "Resource.h"
 #include "FileLoader.h"
 
+GRE_BEGIN_NAMESPACE
+
 class DLL_PUBLIC TextResource : public Resource
 {
 public:
@@ -46,4 +48,5 @@ public:
 };
 
 
+GRE_END_NAMESPACE
 #endif

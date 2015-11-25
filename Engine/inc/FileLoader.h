@@ -11,6 +11,10 @@
 
 #include "Resource.h"
 
+GRE_BEGIN_NAMESPACE
+
+/// @brief A Generic Loader for files.
+/// It determines the function to load files.
 class DLL_PUBLIC FileLoader : public ResourceLoader
 {
 public:
@@ -20,10 +24,15 @@ public:
     
     virtual ~FileLoader();
     
+    /// @brief Load a file.
     virtual Resource* load (Resource::Type type, const std::string& name, const std::string& file) const;
+    
+    /// @brief Clone the ResourceLoader object.
     virtual ResourceLoader* clone() const;
 };
 
 typedef ResourceLoaderFactory<FileLoader> FileLoaderFactory;
+
+GRE_END_NAMESPACE
 
 #endif

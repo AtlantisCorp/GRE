@@ -9,12 +9,13 @@
 #include "ResourceManager.h"
 #include "Listener.h"
 
+using namespace Gre;
+
 int main(int argc, const char * argv[]) {
     
     try
     {
-        Version version = GetGreVersion();
-        std::cout << "[Main] Initialized Gre v." << version.major << "." << version.minor << "." << version.build << std::endl;
+        std::cout << "[Main] Initialized Gre v." << localVersion.major << "." << localVersion.minor << "." << localVersion.build << std::endl;
         
         ResourceManager::Create();
         ResourceManager::Get().loadPluginsIn("./plugins");
@@ -33,6 +34,7 @@ int main(int argc, const char * argv[]) {
         
         myWindow.setVerticalSync(false);
         myRenderer.setFramerate(60.0f);
+        myRenderer.setActive(true);
         
         Listener myGenericListener = myWindow.addListener("GenericListener");
         myGenericListener.addAction(EventType::KeyDown, [&] (const Event& e) {
@@ -41,28 +43,32 @@ int main(int argc, const char * argv[]) {
                 myWindow.setVerticalSync(!myWindow.hasVerticalSync());
                 std::cout << "[Main] Changed Vertical Sync." << std::endl;
             }
+            if(kde.key == Key::A) {
+                myRenderer.setActive(!myRenderer.isActive());
+            }
             std::cout << "[Main] Key Down : " << (int) kde.key << std::endl;
         });
         
+        myGenericListener.addAction(EventType::KeyUp, [&] (const Event& e) {
+            const KeyUpEvent& kue = e.to<KeyUpEvent>();
+            std::cout << "[Main] Key Up : " << (int) kue.key << std::endl;
+        });
+        
+        myRenderer.setClearColor({0.0f, 0.0f, 0.0f, 0.0f});
+        myRenderer.setImmediateMode(false);
+        
+        sleep(1);
+        
         while(!myWindow.isClosed()) {
             
-            // Begin the render loop
-            myRenderer.beginRender();
-            
-            // Treat every events.
-            myWindow.pollEvent();
-            
-            // Renders the example scene.
-            myRenderer.renderExample();
-            
-            // Swap buffers of the Window.
-            myWindow.swapBuffers();
+            myWindow.beginUpdate();
+            {
+                myRenderer.render();
+            }
+            myWindow.endUpdate();
             
             // Update the Window title to write the fps.
             myWindow.setTitle(std::string("My Cool Application - @") + std::to_string((int)myRenderer.getCurrentFramerate()) + "fps" );
-            
-            // Tell the Renderer to sleep the current thread according to the FPS.
-            myRenderer.endRender();
         }
         
         ResourceManager::Destroy();

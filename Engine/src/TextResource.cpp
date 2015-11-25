@@ -8,6 +8,8 @@
 
 #include "TextResource.h"
 
+GRE_BEGIN_NAMESPACE
+
 TextResource::TextResource (const std::string& name, const std::string& file, const std::string& data) :
 Resource(name),
 _file (file),
@@ -56,3 +58,5 @@ ResourceLoader* TextLoader::clone() const
 {
     return new TextLoader();
 }
+
+GRE_END_NAMESPACE

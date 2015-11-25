@@ -15,6 +15,8 @@
 #include "ResourceManager.h"
 #include "WindowResource.h"
 
+using namespace Gre;
+
 extern "C" DLL_PUBLIC void GCreateWindow (int x0,int y0,int wid,int hei);
 extern "C" DLL_PUBLIC bool GPollEvent (void);
 extern "C" DLL_PUBLIC bool GIsWindowClosed (void);
@@ -24,6 +26,10 @@ extern "C" DLL_PUBLIC void GSwapBuffers(void);
 extern "C" DLL_PUBLIC void GGetWindowSize (int*, int*);
 extern "C" DLL_PUBLIC void GSetVSync (int vsync);
 extern "C" DLL_PUBLIC int GHasVSync ();
+extern "C" DLL_PUBLIC void GLoad();
+extern "C" DLL_PUBLIC void GUnload();
+
+extern bool windowExposed;
 
 #define KEYBUF_MAX 256
 
@@ -59,9 +65,15 @@ public:
         // Send key events
         while(keybuf_sz)
         {
-            KeyDownEvent e(Key(keybuf[0].key));
-            sendEvent(e);
-            keybuf_sz--;
+            if(keybuf[0].pressed > 0) {
+                KeyDownEvent e(Key(keybuf[0].key));
+                sendEvent(e);
+                keybuf_sz--;
+            } else {
+                KeyUpEvent e(Key(keybuf[0].key));
+                sendEvent(e);
+                keybuf_sz--;
+            }
         }
         
         return ret;
@@ -105,7 +117,12 @@ public:
     
     bool hasVerticalSync () const
     {
-        return (bool) GHasVSync();
+        return GHasVSync()>0?true:false;
+    }
+    
+    bool isExposed () const
+    {
+        return windowExposed;
     }
     
 private:
@@ -139,10 +156,11 @@ extern "C" DLL_PUBLIC void* GetPluginName (void)
 
 extern "C" DLL_PUBLIC void StartPlugin (void)
 {
+    GLoad();
     ResourceManager::Get().getWindowLoaderFactory().registers("OsXWindow", new OsXWindowLoader);
 }
 
 extern "C" DLL_PUBLIC void StopPlugin (void)
 {
-    
+    //GUnload();
 }

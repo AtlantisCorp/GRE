@@ -21,6 +21,7 @@ extern struct keybuf_t keybuf [KEYBUF_MAX];
 extern int      keybuf_sz;
 
 bool windowclosed = true;
+bool windowExposed = false;
 
 @interface gappdelegate : NSObject
 {
@@ -60,6 +61,12 @@ bool windowclosed = true;
      name:NSWindowWillCloseNotification
      object:self];
     
+    [[NSNotificationCenter defaultCenter]
+     addObserver:self
+     selector:@selector(windowExposed:)
+     name:NSWindowDidExposeNotification
+     object:self];
+    
     [self setAcceptsMouseMovedEvents:YES];
     //[self isReleasedWhenClosed] = YES;
     
@@ -74,6 +81,11 @@ bool windowclosed = true;
 - (void) windowWillClose: (NSNotification *)notification
 {
     windowclosed = true;
+}
+
+- (void) windowExposed: (NSNotification *) notification
+{
+    windowExposed = true;
 }
 
 @end
@@ -122,7 +134,14 @@ bool windowclosed = true;
 
 - (void) keyUp:(NSEvent *)theEvent
 {
-    
+    if(keybuf_sz < KEYBUF_MAX)
+    {
+        struct keybuf_t newevent;
+        newevent.key = theEvent.keyCode;
+        newevent.pressed = 0;
+        keybuf[keybuf_sz] = newevent;
+        keybuf_sz++;
+    }
 }
 
 - (void) mouseMoved:(NSEvent *)theEvent
@@ -182,6 +201,11 @@ gopenglwindow* ysWnd = nil;
 YsOpenGLView* ysView = nil;
 NSRect contRect;
 
+void GCloseWindow ()
+{
+    windowclosed = true;
+}
+
 void GAddMenu (void)
 {
 //    NSAutoreleasePool *pool=[[NSAutoreleasePool alloc] init];
@@ -199,11 +223,6 @@ void GAddMenu (void)
     fileSubMenu=[[NSMenu alloc] initWithTitle:@"File"];
     [fileMenu setSubmenu:fileSubMenu];
     
-    NSMenuItem *fileMenu_Quit;
-    fileMenu_Quit=[[NSMenuItem alloc] initWithTitle:@"Quit"  action:@selector(terminate:) keyEquivalent:@"q"];
-    [fileMenu_Quit setTarget:NSApp];
-    [fileSubMenu addItem:fileMenu_Quit];
-    
     [NSApp setMainMenu:mainMenu];
     
  //   [pool release];
@@ -215,48 +234,57 @@ void GCreateWindow (int x0,int y0,int wid,int hei)
     if(app == nil)
         return;
     
-    [NSBundle loadNibNamed:@"MainMenu" owner:NSApp];
+    // loadNibNamed:owner:topLevelObjects was introduced in 10.8 (Mountain Lion).
+    // In order to support Lion and Mountain Lion +, we need to see which OS we're
+    // on. We do this by testing to see if [NSBundle mainBundle] responds to
+    // loadNibNamed:owner:topLevelObjects: ... If so, the app is running on at least
+    // Mountain Lion... If not, then the app is running on Lion so we fall back to the
+    // the older loadNibNamed:owner: method. If your app does not support Lion, then
+    // you can go with strictly the newer one and not deal with the if/else conditional.
+    
+    if ([[NSBundle mainBundle] respondsToSelector:@selector(loadNibNamed:owner:topLevelObjects:)]) {
+        // We're running on Mountain Lion or higher
+        [[NSBundle mainBundle] loadNibNamed:@"MainMenu"
+                                      owner:NSApp
+                            topLevelObjects:nil];
+    } else {
+        // We're running on Lion
+        [NSBundle loadNibNamed:@"MainMenu"
+                         owner:NSApp];
+    }
     
     gappdelegate *delegate;
     delegate=[gappdelegate alloc];
     delegate = [delegate init];
     [app setDelegate: delegate];
     
-    [app finishLaunching];
-    
     NSRect contRect;
     contRect=NSMakeRect(x0,y0,wid,hei);
     
-    unsigned int winStyle=
-    NSTitledWindowMask|
-    NSClosableWindowMask|
-    NSMiniaturizableWindowMask|
-    NSResizableWindowMask;
+    unsigned int winStyle = NSTitledWindowMask | NSClosableWindowMask |
+                            NSMiniaturizableWindowMask | NSResizableWindowMask;
     
-    ysWnd=[gopenglwindow alloc];
-    ysWnd = [ysWnd
-     initWithContentRect:contRect
-     styleMask:winStyle
-     backing:NSBackingStoreBuffered 
-     defer:NO];
+    ysWnd = [gopenglwindow alloc];
+    ysWnd = [ysWnd initWithContentRect:contRect
+                             styleMask:winStyle
+                               backing:NSBackingStoreBuffered
+                                 defer:NO];
     
     NSOpenGLPixelFormat *format;
     NSOpenGLPixelFormatAttribute formatAttrib[]=
     {
-        NSOpenGLPFAWindow,
         NSOpenGLPFADepthSize,(NSOpenGLPixelFormatAttribute)32,
         NSOpenGLPFADoubleBuffer,
         0
     };
     
-    format=[NSOpenGLPixelFormat alloc];
-    [format initWithAttributes: formatAttrib];
+    format   = [NSOpenGLPixelFormat alloc];
+    format   = [format initWithAttributes: formatAttrib];
+    contRect = NSMakeRect(0,0,800,600);
     
-    ysView=[YsOpenGLView alloc];
-    contRect=NSMakeRect(0,0,800,600);
-    [ysView
-     initWithFrame:contRect
-     pixelFormat:format];
+    ysView   = [YsOpenGLView alloc];
+    ysView   = [ysView initWithFrame:contRect
+                         pixelFormat:format];
     
     int param = 0;
     CGLSetParameter([[ysView openGLContext] CGLContextObj], kCGLCPSwapInterval, &param);
@@ -277,6 +305,8 @@ void GCreateWindow (int x0,int y0,int wid,int hei)
     [app updateWindows];
     
     windowclosed = false;
+    
+    [app finishLaunching];
 }
 
 bool GPollEvent (void)
@@ -344,6 +374,17 @@ int GHasVSync ()
     int has;
     return CGLGetParameter([[ysView openGLContext] CGLContextObj], kCGLCPSwapInterval, &has);
     return has;
+}
+
+void GLoad()
+{
+}
+
+void GUnload ()
+{
+    NSApplication* app = [NSApplication sharedApplication];
+    if(app)
+        [app terminate:app];
 }
 
 
