@@ -56,6 +56,7 @@
 #   include <fstream>
 #   include <utility>
 #   include <vector>
+#   include <chrono>
 #
 #   include <Windows.h>
 #
@@ -71,6 +72,7 @@
 #   include <fstream>
 #   include <utility>
 #   include <vector>
+#   include <chrono>
 #
 #   include <Windows.h>
 #
@@ -90,6 +92,7 @@
 #   include <fstream>
 #   include <utility>
 #   include <vector>
+#   include <chrono>
 #
 #   include <unistd.h>
 #   include <dirent.h>
@@ -111,6 +114,7 @@
 #   include <fstream>
 #   include <utility>
 #   include <vector>
+#   include <chrono>
 #
 #   include <unistd.h>
 #   include <dirent.h>
@@ -123,7 +127,7 @@ GRE_BEGIN_NAMESPACE
 
 #define GRE_VERSION_MAJOR 0             ///< @brief GRE Major version.
 #define GRE_VERSION_MINOR 0             ///< @brief GRE Minor version.
-#define GRE_VERSION_BUILD 6             ///< @brief GRE Build number.
+#define GRE_VERSION_BUILD 7             ///< @brief GRE Build number.
 
 /// @brief Defines the Version structure.
 typedef struct Version

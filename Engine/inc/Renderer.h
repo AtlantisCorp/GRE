@@ -15,6 +15,8 @@
 
 GRE_BEGIN_NAMESPACE
 
+typedef std::chrono::milliseconds ElapsedTime;
+
 class DLL_PUBLIC RendererResource : public Resource
 {
 public:
@@ -42,6 +44,9 @@ public:
     void setFramerate(float fps) { _wantedFps = fps; }
     
     float getCurrentFramerate() const { return _currentFps; }
+    
+    ElapsedTime getElapsedTime() const;
+    void resetElapsedTime();
     
     virtual void beginRender();
     virtual void endRender();
@@ -81,11 +86,12 @@ protected:
     
 private:
     
-    double _begin_time;
-    double _end_time;
-    double _sum_time;
-    int     _sum_frames;
-    struct timeval _previous;
+    int _sum_frames;
+    float _mMaxFps;
+    float _mMinFps;
+    std::chrono::high_resolution_clock::time_point _mClockReset;
+    std::chrono::high_resolution_clock::time_point _mClockAtPreviousFrameEnd;
+    std::chrono::high_resolution_clock::duration   _mClockElapsedSinceReset;
 };
 
 class DLL_PUBLIC Renderer : public ResourceUser
@@ -107,7 +113,11 @@ public:
     void associateWindow (Window& window);
     
     void setFramerate (float fps);
+    
     float getCurrentFramerate () const;
+    ElapsedTime getElapsedTime() const;
+    void resetElapsedTime();
+    
     void beginRender();
     void endRender();
     

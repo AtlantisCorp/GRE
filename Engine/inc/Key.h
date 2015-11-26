@@ -20,8 +20,10 @@ GRE_BEGIN_NAMESPACE
 enum class Key
 {
 #ifdef GRE_OSX
-    A = 0x0,
-    V = 0x9
+    A         = 0,
+    V         = 9,
+    ArrowUp   = 126,
+    ArrowDown = 125
 #endif
 };
 

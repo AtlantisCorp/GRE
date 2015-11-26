@@ -36,6 +36,11 @@ int main(int argc, const char * argv[]) {
         myRenderer.setFramerate(60.0f);
         myRenderer.setActive(true);
         
+        float rtri      = 0.0f;
+        float rquad     = 0.0f;
+        float trispeed  = 0.5f;
+        float quadspeed = 0.25f;
+        
         Listener myGenericListener = myWindow.addListener("GenericListener");
         myGenericListener.addAction(EventType::KeyDown, [&] (const Event& e) {
             const KeyDownEvent& kde = e.to<KeyDownEvent>();
@@ -46,16 +51,17 @@ int main(int argc, const char * argv[]) {
             if(kde.key == Key::A) {
                 myRenderer.setActive(!myRenderer.isActive());
             }
+            
+            if(kde.key == Key::ArrowUp) {
+                trispeed += 0.05f;
+            }
+            
+            if(kde.key == Key::ArrowDown) {
+                trispeed -= 0.05f;
+            }
+            
             std::cout << "[Main] Key Down : " << (int) kde.key << std::endl;
         });
-        
-        myGenericListener.addAction(EventType::KeyUp, [&] (const Event& e) {
-            const KeyUpEvent& kue = e.to<KeyUpEvent>();
-            std::cout << "[Main] Key Up : " << (int) kue.key << std::endl;
-        });
-        
-        float rtri  = 0.0f;
-        float rquad = 0.0f;
         
         myRenderer.setClearColor({0.0f, 0.0f, 0.0f, 0.0f});
         myRenderer.setImmediateMode(true);
@@ -71,6 +77,8 @@ int main(int argc, const char * argv[]) {
             myRenderer.drawQuad(1.0f, Color::Blue, Color::Blue, Color::Blue, Color::Blue);
         });
         
+        myRenderer.resetElapsedTime();
+        
         while(!myWindow.isClosed()) {
             
             myWindow.beginUpdate();
@@ -80,9 +88,15 @@ int main(int argc, const char * argv[]) {
             myWindow.endUpdate();
             
             // Update the Window title to write the fps.
-            myWindow.setTitle(std::string("My Cool Application - @") + std::to_string((int)myRenderer.getCurrentFramerate()) + "fps" );
-            rtri  += (360.0f/60.0f)*0.5f;
-            rquad += (360.0f/60.0f)*0.2f;
+            float fps = myRenderer.getCurrentFramerate();
+            myWindow.setTitle(std::string("My Cool Application - @") + std::to_string((int)fps) + "fps" );
+            
+            ElapsedTime etime = myRenderer.getElapsedTime();
+            if(etime != ElapsedTime::zero())
+            {
+                rtri  = trispeed  * (360.0f/1000.0f) * (float) etime.count();
+                rquad = quadspeed * (360.0f/1000.0f) * (float) etime.count();
+            }
         }
         
         ResourceManager::Destroy();

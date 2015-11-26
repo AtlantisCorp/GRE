@@ -10,19 +10,22 @@
 
 GRE_BEGIN_NAMESPACE
 
+typedef std::chrono::high_resolution_clock Clock;
+
 RendererResource::RendererResource (const std::string& name)
 : Resource(name)
 {
-    _begin_time = 0;
-    _end_time   = 0;
-    _sum_time   = 0;
     _sum_frames = 0;
     _wantedFps  = 0.0f;
     _currentFps = 0.0f;
-    _previous.tv_sec = 0;
-    _previous.tv_usec = 0;
     _mIsActive = false;
     _mIsImmediateMode = false;
+    _mMaxFps = 0.0f;
+    _mMinFps = 0.0f;
+    
+    _mClockReset              = Clock::now();
+    _mClockAtPreviousFrameEnd = Clock::now();
+    _mClockElapsedSinceReset  = Clock::duration::zero();
 }
 
 void RendererResource::beginRender()
@@ -30,27 +33,39 @@ void RendererResource::beginRender()
     
 }
 
-float timedifference_msec(struct timeval t1, struct timeval t0)
-{
-    return (t1.tv_sec - t0.tv_sec) * 1000.0f + (t1.tv_usec - t0.tv_usec) / 1000.0f;
-}
-
 void RendererResource::endRender()
 {
-    // Calculate the Framerate
+    // Calculate std::chrono
     _sum_frames++;
-    struct timeval now;
-    gettimeofday(&now, 0);
+    _mClockElapsedSinceReset = std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - _mClockReset);
+    auto timeElapsedSinceLastRefresh = std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - _mClockAtPreviousFrameEnd);
     
-    double diff_time = timedifference_msec(now, _previous);
-    //std::cout << diff_time << std::endl;
-    if(diff_time >= 1000)
+    if(timeElapsedSinceLastRefresh >= std::chrono::milliseconds(1000))
     {
-        _currentFps = _sum_frames / (diff_time / 1000);
-        _begin_time = _end_time;
-        _previous = now;
+        _currentFps = (float)_sum_frames / (((float)timeElapsedSinceLastRefresh.count()) / 1000.0f);
+        _mClockAtPreviousFrameEnd = Clock::now();
         _sum_frames = 0;
+        
+        if(_currentFps > _mMaxFps || _mMaxFps <= 0.2f)
+            _mMaxFps = _currentFps;
+        if(_currentFps < _mMinFps || _mMinFps <= 0.2f)
+            _mMinFps = _currentFps;
     }
+}
+
+ElapsedTime RendererResource::getElapsedTime() const
+{
+    return std::chrono::duration_cast<ElapsedTime>(_mClockElapsedSinceReset);
+}
+
+void RendererResource::resetElapsedTime()
+{
+    _mClockReset             = Clock::now();
+    _mClockElapsedSinceReset = Clock::duration::zero();
+    _mMaxFps                 = 0.0f;
+    _mMinFps                 = 0.0f;
+    _currentFps              = 0.0f;
+    _sum_frames              = 0;
 }
 
 void RendererResource::setActive(bool active)
@@ -194,6 +209,21 @@ float Renderer::getCurrentFramerate() const
         return ptr->getCurrentFramerate();
     
     return 0.0f;
+}
+
+ElapsedTime Renderer::getElapsedTime() const
+{
+    auto ptr = _mRenderer.lock();
+    if(ptr)
+        return ptr->getElapsedTime();
+    return ElapsedTime::zero();
+}
+
+void Renderer::resetElapsedTime()
+{
+    auto ptr = _mRenderer.lock();
+    if(ptr)
+        ptr->resetElapsedTime();
 }
 
 void Renderer::beginRender()
