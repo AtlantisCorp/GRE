@@ -17,12 +17,13 @@ GRE_BEGIN_NAMESPACE
 /// @brief Enumerate every Pools available in the Engine.
 enum class DLL_PUBLIC Pools
 {
-    Default  = 0x1,    ///< @brief The default one.
-    Resource = 0x2,    ///< @brief Reserved to Resource objects.
-    Manager  = 0x3,    ///< @brief Reserved to Manager objects.
-    Loader   = 0x4,    ///< @brief Reserved to Loader objects.
-    Factory  = 0x5,    ///< @brief Reserved to Factory objects.
-    Event    = 0x6     ///< @brief Reserved to Event-related objects.
+    Default   = 0x1,    ///< @brief The default one.
+    Resource  = 0x2,    ///< @brief Reserved to Resource objects.
+    Manager   = 0x3,    ///< @brief Reserved to Manager objects.
+    Loader    = 0x4,    ///< @brief Reserved to Loader objects.
+    Factory   = 0x5,    ///< @brief Reserved to Factory objects.
+    Event     = 0x6,    ///< @brief Reserved to Event-related objects.
+    HwdBuffer = 0x7     ///< @brief Reserved to HardwareBuffer objects.
 };
 
 /// @brief Declares an object as part of the pool system.

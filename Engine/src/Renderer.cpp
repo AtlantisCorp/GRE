@@ -7,6 +7,7 @@
 //
 
 #include "Renderer.h"
+#include "ResourceManager.h"
 
 GRE_BEGIN_NAMESPACE
 
@@ -135,6 +136,33 @@ void RendererResource::addImmediateAction(std::function<void ()> action)
 void RendererResource::resetImmediateActions()
 {
     _mImmediateFunctions.clear();
+}
+
+HardwareVertexBuffer RendererResource::createVertexBuffer()
+{
+    return HardwareVertexBuffer::Null;
+}
+
+HardwareIndexBuffer RendererResource::createIndexBuffer(PrimitiveType ptype, StorageType stype)
+{
+    return HardwareIndexBuffer::Null;
+}
+
+Mesh RendererResource::createMeshFromBuffers(const std::string& name, const HardwareVertexBuffer &vbuf, const HardwareIndexBufferBatch &ibufs)
+{
+    if(vbuf.isInvalid())
+        return Mesh::Null;
+    
+    // In this function, we create a mesh using the default MeshLoader.
+    Mesh ret = Mesh(ResourceManager::Get().loadResourceWith(ResourceManager::Get().getMeshLoaderFactory().get("DefaultLoader"),
+                                                       Resource::Type::Mesh, name,
+                                                       vbuf, ibufs));
+    return std::move(ret);
+}
+
+void RendererResource::draw(const Mesh &mesh)
+{
+    
 }
 
 Renderer::Renderer(Renderer&& movref)
@@ -324,6 +352,37 @@ void Renderer::drawQuad(float sz, const Color& color1, const Color& color2, cons
     auto ptr = _mRenderer.lock();
     if(ptr)
         ptr->drawQuad(sz, color1, color2, color3, color4);
+}
+
+HardwareVertexBuffer Renderer::createVertexBuffer()
+{
+    auto ptr = _mRenderer.lock();
+    if(ptr)
+        return ptr->createVertexBuffer();
+    return HardwareVertexBuffer::Null;
+}
+
+HardwareIndexBuffer Renderer::createIndexBuffer(PrimitiveType ptype, StorageType stype)
+{
+    auto ptr = _mRenderer.lock();
+    if(ptr)
+        return ptr->createIndexBuffer(ptype, stype);
+    return HardwareIndexBuffer::Null;
+}
+
+Mesh Renderer::createMeshFromBuffers(const std::string &name, const HardwareVertexBuffer &vbuf, const HardwareIndexBufferBatch &ibufs)
+{
+    auto ptr = _mRenderer.lock();
+    if(ptr)
+        return ptr->createMeshFromBuffers(name, vbuf, ibufs);
+    return Mesh::Null;
+}
+
+void Renderer::draw(const Mesh &mesh)
+{
+    auto ptr = _mRenderer.lock();
+    if(ptr)
+        ptr->draw(mesh);
 }
 
 RendererLoader::RendererLoader()

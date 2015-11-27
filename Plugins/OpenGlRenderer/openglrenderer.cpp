@@ -12,6 +12,126 @@
 
 using namespace Gre;
 
+class OpenGlUtils
+{
+public:
+    
+    static GLenum PrimitiveTypeToGl (PrimitiveType ptype)
+    {
+        switch (ptype)
+        {
+            case PrimitiveType::Points:
+                return GL_POINTS;
+            case PrimitiveType::Lines:
+                return GL_LINES;
+            case PrimitiveType::LinesAdjacency:
+                return GL_LINES_ADJACENCY_EXT;
+            case PrimitiveType::LinesLoop:
+                return GL_LINE_LOOP;
+            case PrimitiveType::LinesStrip:
+                return GL_LINE_STRIP;
+            case PrimitiveType::LinesStripAdjacency:
+                return GL_LINE_STRIP_ADJACENCY_EXT;
+            case PrimitiveType::Patches:
+                return GL_POINTS;
+            case PrimitiveType::Triangles:
+                return GL_TRIANGLES;
+            case PrimitiveType::TrianglesAdjacency:
+                return GL_TRIANGLES_ADJACENCY_EXT;
+            case PrimitiveType::TrianglesFan:
+                return GL_TRIANGLE_FAN;
+            case PrimitiveType::TrianglesStrip:
+                return GL_TRIANGLE_STRIP;
+            case PrimitiveType::TrianglesStripAdjacency:
+                return GL_TRIANGLE_STRIP_ADJACENCY_EXT;
+            default:
+                return GL_POINTS;
+        }
+    }
+    
+    static GLenum StorageTypeToGl (StorageType stype)
+    {
+        switch (stype)
+        {
+            case StorageType::UnsignedByte:
+                return GL_UNSIGNED_BYTE;
+            case StorageType::UnsignedShort:
+                return GL_UNSIGNED_SHORT;
+            case StorageType::UnsignedInt:
+                return GL_UNSIGNED_INT;
+            default:
+                return GL_UNSIGNED_INT;
+        }
+    }
+};
+
+class OpenGlVertexBuffer : public HardwareVertexBufferPrivate
+{
+public:
+    
+    POOLED(Pools::HwdBuffer)
+    
+    OpenGlVertexBuffer()
+    : _mVertexBufferId(0)
+    {
+        glGenBuffers(1, &_mVertexBufferId);
+    }
+    
+    ~OpenGlVertexBuffer()
+    {
+        if(_mVertexBufferId)
+        {
+            glDeleteBuffers(1, &_mVertexBufferId);
+        }
+    }
+    
+    void bind() const
+    {
+        if(_mVertexBufferId)
+            glBindBuffer(GL_ARRAY_BUFFER, _mVertexBufferId);
+    }
+    
+private:
+    
+    GLuint _mVertexBufferId;
+    
+};
+
+class OpenGlIndexBuffer : public HardwareIndexBufferPrivate
+{
+public:
+    
+    OpenGlIndexBuffer()
+    : _mIndexBufferId(0)
+    {
+        glGenBuffers(1, &_mIndexBufferId);
+    }
+    
+    OpenGlIndexBuffer(PrimitiveType ptype, StorageType stype)
+    : HardwareIndexBufferPrivate(ptype, stype), _mIndexBufferId(0)
+    {
+        
+    }
+    
+    ~OpenGlIndexBuffer()
+    {
+        if(_mIndexBufferId)
+        {
+            glDeleteBuffers(1, &_mIndexBufferId);
+        }
+    }
+    
+    void bind() const
+    {
+        if(_mIndexBufferId)
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _mIndexBufferId);
+    }
+    
+private:
+    
+    GLuint _mIndexBufferId;
+};
+
 class OpenGlRenderer : public RendererResource
 {
 private:
@@ -138,6 +258,28 @@ public:
         glEnd();
     }
     
+    void draw(const Mesh& mesh)
+    {
+        if(mesh.getType() == MeshPrivate::Type::Buffered)
+        {
+            mesh.getVertexBuffer().bind();
+            for(auto indexbuf : mesh.getIndexBufferBatch().batchs)
+            {
+                indexbuf.bind();
+                prepareMaterial(indexbuf.getMaterial());
+                GLenum mode = OpenGlUtils::PrimitiveTypeToGl(indexbuf.getPrimitiveType());
+                GLenum stype = OpenGlUtils::StorageTypeToGl(indexbuf.getStorageType());
+                GLsizei sz = (GLsizei) indexbuf.getElementCount();
+                glDrawElements(mode, sz, stype, 0);
+            }
+        }
+    }
+    
+    void prepareMaterial(const Material& mat)
+    {
+        
+    }
+    
     void renderExample ()
     {
         glDisable(GL_DEPTH_TEST);
@@ -173,6 +315,22 @@ public:
         glEnd();
         glFlush();
     }
+    
+    HardwareVertexBuffer createVertexBuffer()
+    {
+        HardwareVertexBuffer oglbuffer = HardwareVertexBuffer(ResourceManager::Get().addResource(Resource::Type::HwdBuffer, std::make_shared<OpenGlVertexBuffer>()));
+        return oglbuffer;
+    }
+    
+    HardwareIndexBuffer  createIndexBuffer(PrimitiveType ptype, StorageType stype)
+    {
+        HardwareIndexBuffer oglbuffer = HardwareIndexBuffer(ResourceManager::Get().addResource(Resource::Type::HwdBuffer, std::make_shared<OpenGlIndexBuffer>(ptype, stype)));
+        return oglbuffer;
+    }
+    
+private:
+    
+    
 };
 
 class OpenGlRendererLoader : public RendererLoader

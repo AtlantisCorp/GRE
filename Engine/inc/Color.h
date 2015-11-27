@@ -26,6 +26,9 @@ struct DLL_PUBLIC Color
     static Color Red;
     static Color Green;
     static Color Blue;
+    
+    bool operator == (const Color& rhs) const;
+    bool operator != (const Color& rhs) const;
 };
 
 typedef struct Color Color;

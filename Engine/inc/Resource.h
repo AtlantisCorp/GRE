@@ -58,7 +58,9 @@ public:
         Text,       ///< @brief Text type : to load files as text.
         Plugin,     ///< @brief Plugin Type : to load a file as a plugin.
         Window,     ///< @brief Window Type : to load a Window (specific type for Window Loaders).
-        Renderer    ///< @brief Renderer Type : to load a Renderer (specific type for Renderer Loaders).
+        Renderer,   ///< @brief Renderer Type : to load a Renderer (specific type for Renderer Loaders).
+        Mesh,       ///< @brief Mesh Type : A resource representing a 3D object.
+        HwdBuffer   ///< @brief Hardware Buffer : Resource to store Hardware Buffers and data.
     };
     
     POOLED(Pools::Resource);
@@ -244,6 +246,9 @@ public:
     
     T* getFirst ()
     { return reinterpret_cast<T*>(_loaders.begin()->second->clone()); }
+    
+    void clear()
+    { _loaders.clear(); }
     
 private:
     

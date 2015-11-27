@@ -14,6 +14,7 @@
 #include "Plugin.h"
 #include "Window.h"
 #include "Renderer.h"
+#include "MeshLoader.h"
 
 GRE_BEGIN_NAMESPACE
 
@@ -51,11 +52,13 @@ class DLL_PUBLIC ResourceManager
 {
 private:
     
-    std::map<std::string, std::shared_ptr<Resource>> _resourcesbyname; ///< @brief A Map storing every resources, by name.
-    FileLoaderFactory                                _fileloaders;     ///< @brief Factory to create FileLoaders.
-    WindowLoaderFactory                              _windowLoaders;   ///< @brief Factory to create WindowLoaders.
-    RendererLoaderFactory                            _rendererLoaders; ///< @brief Factory to create RendererLoaders.
-    bool                                             _verbose;         ///< @brief Set to true to print more informations.
+    std::map<Resource::Type, std::vector<std::shared_ptr<Resource>>> _resourcesbytype; ///< @brief Stores every resources by type.
+    std::map<std::string, std::weak_ptr<Resource>>  _resourcesbyname; ///< @brief A Map storing every resources, by name.
+    FileLoaderFactory                               _fileloaders;     ///< @brief Factory to create FileLoaders.
+    WindowLoaderFactory                             _windowLoaders;   ///< @brief Factory to create WindowLoaders.
+    RendererLoaderFactory                           _rendererLoaders; ///< @brief Factory to create RendererLoaders.
+    MeshLoaderFactory                               _meshLoaders;     ///< @brief Factory to create MeshLoaders.
+    bool                                            _verbose;         ///< @brief Set to true to print more informations.
     
 public:
     
@@ -92,6 +95,10 @@ public:
     /// @brief Destroys the ResourceManager and, using RAII, all the Resource objects.
     ~ResourceManager ();
     
+    /// @brief Adds a new Resource, created by the user.
+    /// This resource is allocated by the user, but freed by the ResourceManager.
+    ResourceUser addResource(Resource::Type type, std::shared_ptr<Resource> resource);
+    
     /// @brief Loads a Resource giving its type, and its name.
     /// @note This function is only here to give an example function. In fact, it does
     /// nothing but creating an empty Resource with a name. You shouldn't use this function,
@@ -107,6 +114,7 @@ public:
     {
         std::shared_ptr<Resource> resptr(loader.load(type, name, std::forward<Args>(args)...));
         if(resptr) {
+            _resourcesbytype[type].push_back(resptr);
             _resourcesbyname[name] = resptr;
             std::cout << "[ResourceManager] Loaded Resource " << name << "." << std::endl;
         }
@@ -126,6 +134,7 @@ public:
     {
         std::shared_ptr<Resource> resptr(loader->load(type, name, std::forward<Args>(args)...));
         if(resptr) {
+            _resourcesbytype[type].push_back(resptr);
             _resourcesbyname[name] = resptr;
             std::cout << "[ResourceManager] Loaded Resource " << name << "." << std::endl;
         }
@@ -151,6 +160,8 @@ public:
     WindowLoaderFactory& getWindowLoaderFactory();
     /// @brief Returns the RendererLoader Factory.
     RendererLoaderFactory& getRendererLoaderFactory();
+    /// @brief Returns the MeshLoader Factory
+    MeshLoaderFactory& getMeshLoaderFactory();
     
     /// @brief Set to true if you want verbose mode.
     void setVerbose(bool flag);

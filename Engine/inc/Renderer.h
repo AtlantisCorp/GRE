@@ -12,6 +12,9 @@
 #include "Resource.h"
 #include "Window.h"
 #include "Color.h"
+#include "HardwareVertexBuffer.h"
+#include "HardwareIndexBuffer.h"
+#include "Mesh.h"
 
 GRE_BEGIN_NAMESPACE
 
@@ -63,6 +66,12 @@ public:
     void addImmediateAction(std::function<void(void)> action);
     void resetImmediateActions();
     
+public:
+    
+    virtual HardwareVertexBuffer createVertexBuffer();
+    virtual HardwareIndexBuffer createIndexBuffer(PrimitiveType ptype, StorageType stype);
+    virtual Mesh createMeshFromBuffers(const std::string& name, const HardwareVertexBuffer& vbuf, const HardwareIndexBufferBatch& ibufs);
+    
 protected:
     
     virtual void _renderImmediate();
@@ -74,6 +83,7 @@ public:
     
     virtual void drawTriangle(float sz, const Color& color1, const Color& color2, const Color& color3) { }
     virtual void drawQuad(float sz, const Color& color1, const Color& color2, const Color& color3, const Color& color4) { }
+    virtual void draw(const Mesh& mesh);
     
 protected:
     
@@ -138,6 +148,11 @@ public:
     
     void drawTriangle(float sz, const Color& color1 = Color::White, const Color& color2 = Color::White, const Color& color3 = Color::White);
     void drawQuad(float sz, const Color& color1 = Color::White, const Color& color2 = Color::White, const Color& color3 = Color::White, const Color& color4 = Color::White);
+    void draw(const Mesh& mesh);
+    
+    HardwareVertexBuffer createVertexBuffer();
+    HardwareIndexBuffer createIndexBuffer(PrimitiveType ptype, StorageType stype);
+    Mesh createMeshFromBuffers(const std::string& name, const HardwareVertexBuffer& vbuf, const HardwareIndexBufferBatch& ibufs);
     
 private:
     

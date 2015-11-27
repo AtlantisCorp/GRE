@@ -32,6 +32,7 @@ ResourceManager::ResourceManager()
     
     _fileloaders.registers("TextLoader", new TextLoader());
     _fileloaders.registers("PluginLoader", new PluginLoader());
+    _meshLoaders.registers("DefaultLoader", new MeshLoader());
     _verbose = false;
 }
 
@@ -40,6 +41,28 @@ ResourceManager::~ResourceManager ()
     if(_verbose) {
         std::cout << "[ResourceManager] Destroying ResourceManager." << std::endl;
     }
+    
+    _fileloaders.clear();
+    _windowLoaders.clear();
+    _rendererLoaders.clear();
+    _meshLoaders.clear();
+    
+    _resourcesbytype[Resource::Type::Text].clear();
+    _resourcesbytype[Resource::Type::HwdBuffer].clear();
+    _resourcesbytype[Resource::Type::Mesh].clear();
+    _resourcesbytype[Resource::Type::Renderer].clear();
+    _resourcesbytype[Resource::Type::Window].clear();
+    _resourcesbytype[Resource::Type::Plugin].clear();
+    _resourcesbytype[Resource::Type::Null].clear();
+}
+
+ResourceUser ResourceManager::addResource(Resource::Type type, std::shared_ptr<Resource> resource)
+{
+    if(!resource)
+        return ResourceUser::Null;
+    
+    _resourcesbytype[type].push_back(resource);
+    return ResourceUser(resource);
 }
 
 ResourceUser ResourceManager::loadResource(Resource::Type type, const std::string& name) {
@@ -83,6 +106,11 @@ WindowLoaderFactory& ResourceManager::getWindowLoaderFactory()
 RendererLoaderFactory& ResourceManager::getRendererLoaderFactory()
 {
     return _rendererLoaders;
+}
+
+MeshLoaderFactory& ResourceManager::getMeshLoaderFactory()
+{
+    return _meshLoaders;
 }
 
 void ResourceManager::setVerbose(bool flag)

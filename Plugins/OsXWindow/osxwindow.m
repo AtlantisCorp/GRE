@@ -325,7 +325,7 @@ void GInitRendererContext (void)
 
 void GWSetTitle(const char* title)
 {
-    [ysWnd setTitle:[NSString stringWithUTF8String:title] ];
+    [ysWnd setTitle:[NSString stringWithCString:title encoding:NSASCIIStringEncoding]];
 }
 
 void GSwapBuffers(void)
@@ -335,8 +335,7 @@ void GSwapBuffers(void)
 
 void GGetWindowSize(int* w, int* h)
 {
-    NSRect rect;
-    rect = [ysView frame];
+    NSRect rect = [ysView frame];
     *w = rect.size.width;
     *h = rect.size.height;
 }
