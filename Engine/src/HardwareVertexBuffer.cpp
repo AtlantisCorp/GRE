@@ -20,6 +20,16 @@ HardwareVertexBufferPrivate::~HardwareVertexBufferPrivate()
     
 }
 
+size_t HardwareVertexBufferPrivate::getSize() const
+{
+    return sizeof(Vertex) * count();
+}
+
+size_t HardwareVertexBufferPrivate::count() const
+{
+    return _mVertexs.size();
+}
+
 void HardwareVertexBufferPrivate::add(const Vertex &vertex)
 {
     if(areDuplicatesAllowed()) {
@@ -114,6 +124,14 @@ size_t HardwareVertexBuffer::getSize() const
     auto ptr = _mBuffer.lock();
     if(ptr)
         return ptr->getSize();
+    return 0;
+}
+
+size_t HardwareVertexBuffer::count() const
+{
+    auto ptr = _mBuffer.lock();
+    if(ptr)
+        return ptr->count();
     return 0;
 }
 

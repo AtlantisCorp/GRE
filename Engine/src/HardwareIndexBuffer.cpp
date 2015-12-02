@@ -27,6 +27,21 @@ HardwareIndexBufferPrivate::~HardwareIndexBufferPrivate()
     
 }
 
+size_t HardwareIndexBufferPrivate::getSize() const
+{
+    return sizeof(unsigned) * count();
+}
+
+size_t HardwareIndexBufferPrivate::count() const
+{
+    unsigned ret = 0;
+    
+    for(auto indexedFace : _mFaces.indexedFaces)
+        ret += indexedFace.indices.size();
+    
+    return ret;
+}
+
 void HardwareIndexBufferPrivate::add(const IndexedFace &index)
 {
     _mFaces.indexedFaces.push_back(index);
@@ -130,6 +145,14 @@ size_t HardwareIndexBuffer::getSize() const
     auto ptr = _mBuffer.lock();
     if(ptr)
         return ptr->getSize();
+    return 0;
+}
+
+size_t HardwareIndexBuffer::count() const
+{
+    auto ptr = _mBuffer.lock();
+    if(ptr)
+        return ptr->count();
     return 0;
 }
 

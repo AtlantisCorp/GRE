@@ -26,6 +26,11 @@ size_t HardwareBufferPrivate::getSize() const
     return 0;
 }
 
+size_t HardwareBufferPrivate::count() const
+{
+    return 0;
+}
+
 void HardwareBufferPrivate::bind() const
 {
     

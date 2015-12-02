@@ -149,7 +149,7 @@ public:
     OpenGlIndexBuffer(PrimitiveType ptype, StorageType stype)
     : HardwareIndexBufferPrivate(ptype, stype), _mIndexBufferId(0)
     {
-        
+        glGenBuffers(1, &_mIndexBufferId);
     }
     
     ~OpenGlIndexBuffer()
@@ -177,6 +177,21 @@ public:
         return _mIndexBufferId == 0;
     }
     
+    void update() const
+    {
+        if(_mIndexBufferId)
+        {
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, getSize(), nullptr, GL_STREAM_DRAW);
+            char* ptr = 0;
+            for(auto indexedFace : _mFaces.indexedFaces)
+            {
+                glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, (GLintptr) ptr, sizeof(GLint) * indexedFace.indices.size(), (void*) indexedFace.indices.data());
+                ptr += sizeof(GLint) * indexedFace.indices.size();
+            }
+            setDirty(false);
+        }
+    }
+    
 private:
     
     GLuint _mIndexBufferId;
@@ -192,13 +207,13 @@ private:
     GLint   _gl_minor;
     std::vector<std::string> _extensions; ///< @brief Supported extensions.
     
+    bool _suportVbo;
+    
 public:
     
     OpenGlRenderer (const std::string& name)
     : RendererResource(name)
     {
-        
-        
         _mClearColor[0] = 1.0f;
         _mClearColor[1] = 1.0f;
         _mClearColor[2] = 1.0f;
@@ -244,6 +259,11 @@ public:
         std::cout << "[OpenGl] Vendor   : " << GL_vendor << std::endl;
         std::cout << "[OpenGl] Renderer : " << GL_renderer << std::endl;
         std::cout << "[OpenGl] Num Ext  : " << _extensions.size() << std::endl;
+        
+        _suportVbo = hasExtension("GL_ARB_vertex_buffer_object");
+        if(!_suportVbo) {
+            std::cout << "[OpenGl] Warning : Current Hardware does not support Vertex Buffer Objects ! This can be followed by very bad performances." << std::endl;
+        }
     }
     
     ~OpenGlRenderer ()
@@ -255,6 +275,11 @@ public:
     {
         char* exts = (char*) glGetString(GL_EXTENSIONS);
         _extensions = split(std::string(exts), ' ');
+    }
+    
+    bool hasExtension(const std::string& ext) const
+    {
+        return std::find(_extensions.begin(), _extensions.end(), ext) != _extensions.end();
     }
     
     void setClearColor (const Color& color)
@@ -371,6 +396,12 @@ public:
                 vbuf.update();
             }
             
+            glEnableClientState(GL_VERTEX_ARRAY);
+            glVertexPointer(3, GL_FLOAT, sizeof(Vertex), (char*) NULL);
+            
+            glEnableClientState(GL_COLOR_ARRAY);
+            glColorPointer(4, GL_FLOAT, sizeof(Vertex), (char*) (sizeof(Vector3) + sizeof(Vector2)));
+            
             for(auto indexbuf : mesh.getIndexBufferBatch().batchs)
             {
                 indexbuf.bind();
@@ -383,11 +414,13 @@ public:
                 prepareMaterial(indexbuf.getMaterial());
                 GLenum mode = OpenGlUtils::PrimitiveTypeToGl(indexbuf.getPrimitiveType());
                 GLenum stype = OpenGlUtils::StorageTypeToGl(indexbuf.getStorageType());
-                GLsizei sz = (GLsizei) indexbuf.getElementCount();
+                GLsizei sz = (GLsizei) indexbuf.count();
                 glDrawElements(mode, sz, stype, 0);
                 indexbuf.unbind();
             }
             
+            glDisableClientState(GL_COLOR_ARRAY);
+            glDisableClientState(GL_VERTEX_ARRAY);
             vbuf.unbind();
         }
     }

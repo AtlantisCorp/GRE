@@ -24,6 +24,12 @@ public:
     HardwareVertexBufferPrivate();
     virtual ~HardwareVertexBufferPrivate();
     
+    /// @brief Returns the size of the buffer, in bytes.
+    virtual size_t getSize() const;
+    
+    /// @brief Returns the number of elements in the buffer.
+    virtual size_t count() const;
+    
     /// @brief Add a Vertex to this buffer.
     /// If allowDuplicate is true, then no checking will be done
     /// about the unicity of the given vertex.
@@ -72,6 +78,8 @@ public:
     bool isInvalid() const;
     /// @brief Returns the size of the buffer.
     size_t getSize() const;
+    /// @brief Returns the number of elements in the buffer.
+    size_t count() const;
     /// @brief Returns true if needs update.
     bool isDirty() const;
     /// @brief Returns true if invalidated.

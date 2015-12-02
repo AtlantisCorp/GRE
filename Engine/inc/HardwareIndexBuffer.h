@@ -23,6 +23,12 @@ public:
     HardwareIndexBufferPrivate(PrimitiveType ptype, StorageType stype = StorageType::UnsignedInt);
     virtual ~HardwareIndexBufferPrivate();
     
+    /// @brief Returns the size of the buffer, in bytes.
+    virtual size_t getSize() const;
+    
+    /// @brief Returns the number of elements in the buffer.
+    virtual size_t count() const;
+    
     /// @brief Add an index (a groupe of indice, or a face) to this buffer.
     void add(const IndexedFace& index);
     
@@ -75,6 +81,8 @@ public:
     bool isInvalid() const;
     /// @brief Returns the size of the buffer.
     size_t getSize() const;
+    /// @brief Returns the number of elements in the buffer.
+    size_t count() const;
     /// @brief Returns true if needs update.
     bool isDirty() const;
     /// @brief Returns true if invalidated.

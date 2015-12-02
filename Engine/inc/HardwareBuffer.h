@@ -40,15 +40,18 @@ public:
     /// @brief Returns true if Buffer is invalid.
     virtual bool isInvalid() const;
     
-    /// @brief Returns the size of the buffer.
+    /// @brief Returns the size of the buffer, in bytes.
     virtual size_t getSize() const;
+    
+    /// @brief Returns the number of elements in the buffer.
+    virtual size_t count() const;
     
     /// @brief Returns true if this buffer needs to be updated.
     bool isDirty() const;
 protected:
     /// @brief Used by the children classes, set this property to true
     /// if the buffer needs update.
-    void setDirty(bool dirty) const;
+    virtual void setDirty(bool dirty) const;
     
 protected:
     
@@ -72,6 +75,8 @@ public:
     virtual void unbind() const = 0;
     /// @brief Returns the size of the Buffer.
     virtual size_t getSize() const = 0;
+    /// @brief Returns the number of elements in the buffer.
+    virtual size_t count() const = 0;
     /// @brief Returns true if Buffer is invalid.
     virtual bool isInvalid() const = 0;
     /// @brief Returns true if needs update.
