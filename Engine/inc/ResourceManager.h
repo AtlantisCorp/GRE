@@ -50,6 +50,26 @@ GRE_BEGIN_NAMESPACE
 ////////////////////////////////////////////////////////////////////////
 class DLL_PUBLIC ResourceManager
 {
+public:
+    
+    /// @brief An object that generate names for a resource.
+    /// Example : You want to add 10 resources with name "MyName", it will generate
+    /// automaticly "MyName", "MyName0", "MyName1", ... "MyName8"
+    class NameGenerator
+    {
+    public:
+        
+        NameGenerator();
+        ~NameGenerator();
+        
+        /// @return A Name based on current used copies.
+        std::string generateName(const std::string& base = "default");
+        
+    private:
+        
+        std::map<std::string, unsigned> _mUsedNames;
+    };
+    
 private:
     
     std::map<Resource::Type, std::vector<std::shared_ptr<Resource>>> _resourcesbytype; ///< @brief Stores every resources by type.
@@ -58,6 +78,7 @@ private:
     WindowLoaderFactory                             _windowLoaders;   ///< @brief Factory to create WindowLoaders.
     RendererLoaderFactory                           _rendererLoaders; ///< @brief Factory to create RendererLoaders.
     MeshLoaderFactory                               _meshLoaders;     ///< @brief Factory to create MeshLoaders.
+    NameGenerator                                   _nameGenerator;   ///< @brief Utility class to create Names.
     bool                                            _verbose;         ///< @brief Set to true to print more informations.
     
 public:
@@ -97,7 +118,7 @@ public:
     
     /// @brief Adds a new Resource, created by the user.
     /// This resource is allocated by the user, but freed by the ResourceManager.
-    ResourceUser addResource(Resource::Type type, std::shared_ptr<Resource> resource);
+    ResourceUser addResource(Resource::Type type, const std::string& name, std::shared_ptr<Resource> resource);
     
     /// @brief Loads a Resource giving its type, and its name.
     /// @note This function is only here to give an example function. In fact, it does
@@ -162,6 +183,8 @@ public:
     RendererLoaderFactory& getRendererLoaderFactory();
     /// @brief Returns the MeshLoader Factory
     MeshLoaderFactory& getMeshLoaderFactory();
+    /// @brief Returns the NameGenerator object.
+    NameGenerator& getNameGenerator();
     
     /// @brief Set to true if you want verbose mode.
     void setVerbose(bool flag);

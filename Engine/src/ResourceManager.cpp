@@ -12,6 +12,27 @@ GRE_BEGIN_NAMESPACE
 
 ResourceManager* _manager = nullptr;
 
+ResourceManager::NameGenerator::NameGenerator()
+{
+    
+}
+
+ResourceManager::NameGenerator::~NameGenerator()
+{
+    
+}
+
+std::string ResourceManager::NameGenerator::generateName(const std::string& base)
+{
+    if(_mUsedNames.find(base) == _mUsedNames.end()) {
+        _mUsedNames[base] = 1;
+        return base;
+    } else {
+        _mUsedNames[base]++;
+        return base + std::to_string(_mUsedNames[base] - 1);
+    }
+}
+
 void ResourceManager::Create() {
     _manager = new ResourceManager;
 }
@@ -47,6 +68,7 @@ ResourceManager::~ResourceManager ()
     _rendererLoaders.clear();
     _meshLoaders.clear();
     
+    _resourcesbyname.clear();
     _resourcesbytype[Resource::Type::Text].clear();
     _resourcesbytype[Resource::Type::HwdBuffer].clear();
     _resourcesbytype[Resource::Type::Mesh].clear();
@@ -56,12 +78,13 @@ ResourceManager::~ResourceManager ()
     _resourcesbytype[Resource::Type::Null].clear();
 }
 
-ResourceUser ResourceManager::addResource(Resource::Type type, std::shared_ptr<Resource> resource)
+ResourceUser ResourceManager::addResource(Resource::Type type, const std::string& name, std::shared_ptr<Resource> resource)
 {
     if(!resource)
         return ResourceUser::Null;
     
     _resourcesbytype[type].push_back(resource);
+    _resourcesbyname[name] = resource;
     return ResourceUser(resource);
 }
 
@@ -111,6 +134,11 @@ RendererLoaderFactory& ResourceManager::getRendererLoaderFactory()
 MeshLoaderFactory& ResourceManager::getMeshLoaderFactory()
 {
     return _meshLoaders;
+}
+
+ResourceManager::NameGenerator& ResourceManager::getNameGenerator()
+{
+    return _nameGenerator;
 }
 
 void ResourceManager::setVerbose(bool flag)

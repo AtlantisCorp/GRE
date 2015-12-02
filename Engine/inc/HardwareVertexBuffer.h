@@ -64,6 +64,8 @@ public:
     
     /// @brief Bind the Hardware Buffer in order to use it.
     void bind() const;
+    /// @brief Unbind the Hardware Buffer after it has been used.
+    void unbind() const;
     /// @brief Returns true if Buffer is invalid.
     bool isInvalid() const;
     /// @brief Returns the size of the buffer.

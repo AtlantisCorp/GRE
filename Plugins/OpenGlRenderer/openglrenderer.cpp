@@ -91,6 +91,12 @@ public:
             glBindBuffer(GL_ARRAY_BUFFER, _mVertexBufferId);
     }
     
+    void unbind() const
+    {
+        if(_mVertexBufferId)
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+    }
+    
 private:
     
     GLuint _mVertexBufferId;
@@ -100,6 +106,8 @@ private:
 class OpenGlIndexBuffer : public HardwareIndexBufferPrivate
 {
 public:
+    
+    POOLED(Pools::HwdBuffer)
     
     OpenGlIndexBuffer()
     : _mIndexBufferId(0)
@@ -125,6 +133,12 @@ public:
     {
         if(_mIndexBufferId)
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _mIndexBufferId);
+    }
+    
+    void unbind() const
+    {
+        if(_mIndexBufferId)
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     }
     
 private:
@@ -271,7 +285,9 @@ public:
                 GLenum stype = OpenGlUtils::StorageTypeToGl(indexbuf.getStorageType());
                 GLsizei sz = (GLsizei) indexbuf.getElementCount();
                 glDrawElements(mode, sz, stype, 0);
+                indexbuf.unbind();
             }
+            mesh.getVertexBuffer().unbind();
         }
     }
     
@@ -318,13 +334,15 @@ public:
     
     HardwareVertexBuffer createVertexBuffer()
     {
-        HardwareVertexBuffer oglbuffer = HardwareVertexBuffer(ResourceManager::Get().addResource(Resource::Type::HwdBuffer, std::make_shared<OpenGlVertexBuffer>()));
+        std::string hwdname = ResourceManager::Get().getNameGenerator().generateName("HardwareVertexBuffer");
+        HardwareVertexBuffer oglbuffer = HardwareVertexBuffer(ResourceManager::Get().addResource(Resource::Type::HwdBuffer, hwdname, std::make_shared<OpenGlVertexBuffer>()));
         return oglbuffer;
     }
     
     HardwareIndexBuffer  createIndexBuffer(PrimitiveType ptype, StorageType stype)
     {
-        HardwareIndexBuffer oglbuffer = HardwareIndexBuffer(ResourceManager::Get().addResource(Resource::Type::HwdBuffer, std::make_shared<OpenGlIndexBuffer>(ptype, stype)));
+        std::string hwdname = ResourceManager::Get().getNameGenerator().generateName("HardwareIndexBuffer");
+        HardwareIndexBuffer oglbuffer = HardwareIndexBuffer(ResourceManager::Get().addResource(Resource::Type::HwdBuffer, hwdname, std::make_shared<OpenGlIndexBuffer>(ptype, stype)));
         return oglbuffer;
     }
     

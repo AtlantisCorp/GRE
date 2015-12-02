@@ -31,6 +31,11 @@ void HardwareBufferPrivate::bind() const
     
 }
 
+void HardwareBufferPrivate::unbind() const
+{
+    
+}
+
 bool HardwareBufferPrivate::isDirty() const
 {
     return _mIsDirty;
