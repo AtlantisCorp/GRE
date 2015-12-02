@@ -97,6 +97,20 @@ public:
             glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
     
+    bool isInvalid() const
+    {
+        return _mVertexBufferId == 0;
+    }
+    
+    void update() const
+    {
+        if(_mVertexBufferId)
+        {
+            glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex)*_mVertexs.size(), _mVertexs.data(), GL_STREAM_DRAW);
+            setDirty(false);
+        }
+    }
+    
 private:
     
     GLuint _mVertexBufferId;
@@ -139,6 +153,11 @@ public:
     {
         if(_mIndexBufferId)
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    }
+    
+    bool isInvalid() const
+    {
+        return _mIndexBufferId == 0;
     }
     
 private:
@@ -276,10 +295,23 @@ public:
     {
         if(mesh.getType() == MeshPrivate::Type::Buffered)
         {
-            mesh.getVertexBuffer().bind();
+            auto vbuf = mesh.getVertexBuffer();
+            vbuf.bind();
+            
+            if(vbuf.isDirty())
+            {
+                vbuf.update();
+            }
+            
             for(auto indexbuf : mesh.getIndexBufferBatch().batchs)
             {
                 indexbuf.bind();
+                
+                if(indexbuf.isDirty())
+                {
+                    indexbuf.update();
+                }
+                
                 prepareMaterial(indexbuf.getMaterial());
                 GLenum mode = OpenGlUtils::PrimitiveTypeToGl(indexbuf.getPrimitiveType());
                 GLenum stype = OpenGlUtils::StorageTypeToGl(indexbuf.getStorageType());
@@ -287,7 +319,8 @@ public:
                 glDrawElements(mode, sz, stype, 0);
                 indexbuf.unbind();
             }
-            mesh.getVertexBuffer().unbind();
+            
+            vbuf.unbind();
         }
     }
     

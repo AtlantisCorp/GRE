@@ -34,6 +34,9 @@ public:
     /// @brief Unbind the Hardware Buffer after it has been used.
     virtual void unbind() const;
     
+    /// @brief Update the buffer if dirty.
+    virtual void update() const;
+    
     /// @brief Returns true if Buffer is invalid.
     virtual bool isInvalid() const;
     
@@ -45,11 +48,11 @@ public:
 protected:
     /// @brief Used by the children classes, set this property to true
     /// if the buffer needs update.
-    void setDirty(bool dirty);
+    void setDirty(bool dirty) const;
     
 protected:
     
-    bool _mIsDirty;
+    mutable bool _mIsDirty;
 };
 
 /// @brief Describes a proxy interface to use correctly the HardwareBufferPrivate
@@ -69,6 +72,8 @@ public:
     virtual void unbind() const = 0;
     /// @brief Returns the size of the Buffer.
     virtual size_t getSize() const = 0;
+    /// @brief Returns true if Buffer is invalid.
+    virtual bool isInvalid() const = 0;
     /// @brief Returns true if needs update.
     virtual bool isDirty() const = 0;
     /// @brief Returns true if object is invalid.

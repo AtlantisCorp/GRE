@@ -66,6 +66,8 @@ public:
     void bind() const;
     /// @brief Unbind the Hardware Buffer after it has been used.
     void unbind() const;
+    /// @brief Update the buffer if dirty.
+    void update() const;
     /// @brief Returns true if Buffer is invalid.
     bool isInvalid() const;
     /// @brief Returns the size of the buffer.

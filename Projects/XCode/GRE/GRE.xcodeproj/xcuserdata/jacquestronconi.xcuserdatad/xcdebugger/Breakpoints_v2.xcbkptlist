@@ -10,11 +10,11 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "../../../Plugins/OpenGlRenderer/openglrenderer.cpp"
-            timestampString = "470713962.084748"
+            timestampString = "470718814.179226"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "308"
-            endingLineNumber = "308"
+            startingLineNumber = "335"
+            endingLineNumber = "335"
             landmarkName = "renderExample ()"
             landmarkType = "5">
          </BreakpointContent>
@@ -170,11 +170,11 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "../../../Engine/src/HardwareVertexBuffer.cpp"
-            timestampString = "470713962.084748"
+            timestampString = "470718814.179226"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "126"
-            endingLineNumber = "126"
+            startingLineNumber = "133"
+            endingLineNumber = "133"
             landmarkName = "HardwareVertexBuffer::add(const Vertex&amp; vertex)"
             landmarkType = "5">
          </BreakpointContent>
@@ -235,6 +235,54 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "100"
             endingLineNumber = "100"
+            landmarkName = "main(int argc, const char * argv[])"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "../../../Plugins/OpenGlRenderer/openglrenderer.cpp"
+            timestampString = "470718814.179226"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "301"
+            endingLineNumber = "301"
+            landmarkName = "draw(const Mesh&amp; mesh)"
+            landmarkType = "5">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "../../../Plugins/OpenGlRenderer/openglrenderer.cpp"
+            timestampString = "470718814.179226"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "300"
+            endingLineNumber = "300"
+            landmarkName = "draw(const Mesh&amp; mesh)"
+            landmarkType = "5">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "../../../Example/main.cpp"
+            timestampString = "470717506.813771"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "84"
+            endingLineNumber = "84"
             landmarkName = "main(int argc, const char * argv[])"
             landmarkType = "7">
          </BreakpointContent>

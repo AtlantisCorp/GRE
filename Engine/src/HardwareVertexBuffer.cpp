@@ -102,6 +102,13 @@ void HardwareVertexBuffer::unbind() const
         return ptr->unbind();
 }
 
+void HardwareVertexBuffer::update() const
+{
+    auto ptr = _mBuffer.lock();
+    if(ptr)
+        return ptr->update();
+}
+
 size_t HardwareVertexBuffer::getSize() const
 {
     auto ptr = _mBuffer.lock();

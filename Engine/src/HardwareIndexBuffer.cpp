@@ -118,6 +118,13 @@ void HardwareIndexBuffer::unbind() const
         ptr->unbind();
 }
 
+void HardwareIndexBuffer::update() const
+{
+    auto ptr = _mBuffer.lock();
+    if(ptr)
+        ptr->update();
+}
+
 size_t HardwareIndexBuffer::getSize() const
 {
     auto ptr = _mBuffer.lock();
