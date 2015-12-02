@@ -9,8 +9,25 @@
 #include "ResourceManager.h"
 #include <OpenGL/gl.h>
 #include <OpenGL/glu.h>
+#include <sstream>
 
 using namespace Gre;
+
+std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems) {
+    std::stringstream ss(s);
+    std::string item;
+    while (std::getline(ss, item, delim)) {
+        elems.push_back(item);
+    }
+    return elems;
+}
+
+
+std::vector<std::string> split(const std::string &s, char delim) {
+    std::vector<std::string> elems;
+    split(s, delim, elems);
+    return elems;
+}
 
 class OpenGlUtils
 {
@@ -171,22 +188,73 @@ private:
     
     GLfloat _mClearColor [4];
     GLfloat _mClearDepth;
+    GLint   _gl_major;
+    GLint   _gl_minor;
+    std::vector<std::string> _extensions; ///< @brief Supported extensions.
     
 public:
     
     OpenGlRenderer (const std::string& name)
     : RendererResource(name)
     {
+        
+        
         _mClearColor[0] = 1.0f;
         _mClearColor[1] = 1.0f;
         _mClearColor[2] = 1.0f;
         _mClearColor[3] = 0.0f;
         _mClearDepth    = 1.0f;
+        
+        GLint GL_major, GL_minor;
+
+#ifdef GL_VERSION_1_1
+        GL_major = 1;
+        GL_minor = 1;
+#endif
+#ifdef GL_VERSION_1_2
+        GL_minor = 2;
+#endif
+#ifdef GL_VERSION_1_3
+        GL_minor = 3;
+#endif
+#ifdef GL_VERSION_1_4
+        GL_minor = 4;
+#endif
+#ifdef GL_VERSION_1_5
+        GL_minor = 5;
+#endif
+#ifdef GL_VERSION_2_0
+        GL_major = 2;
+        GL_minor = 0;
+#endif
+#ifdef GL_VERSION_2_1
+        GL_minor = 1;
+#endif
+        
+        _gl_major = GL_major;
+        _gl_minor = GL_minor;
+        
+        initExtensions();
+        
+        char* GL_version  = (char*) glGetString(GL_VERSION);
+        char* GL_vendor   = (char*) glGetString(GL_VENDOR);
+        char* GL_renderer = (char*) glGetString(GL_RENDERER);
+        
+        std::cout << "[OpenGl] Version  : " << GL_version << std::endl;
+        std::cout << "[OpenGl] Vendor   : " << GL_vendor << std::endl;
+        std::cout << "[OpenGl] Renderer : " << GL_renderer << std::endl;
+        std::cout << "[OpenGl] Num Ext  : " << _extensions.size() << std::endl;
     }
     
     ~OpenGlRenderer ()
     {
         
+    }
+    
+    void initExtensions()
+    {
+        char* exts = (char*) glGetString(GL_EXTENSIONS);
+        _extensions = split(std::string(exts), ' ');
     }
     
     void setClearColor (const Color& color)
