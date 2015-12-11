@@ -13,6 +13,9 @@
 
 GRE_BEGIN_NAMESPACE
 
+/// @brief Enumerate every supported Color Format.
+/// @note When adding more formats, please take in account that every
+/// formats under ColorFormat::RGB have 4 components.
 enum class ColorFormat
 {
     RGBA    = 0,
@@ -20,6 +23,9 @@ enum class ColorFormat
     RGB     = 2
 };
 
+/// @brief A Generic Helper that give informations about the given format.
+/// @note This helper should be overwritten if it does not correspond to the given
+/// default values.
 template <ColorFormat Format>
 struct ColorFormatHelper
 {
@@ -40,6 +46,7 @@ class GenColor
 {
 public:
     
+    /// @brief Size of the Type, in bytes.
     static const size_t Size = ColorFormatHelper<Format>::Components * sizeof(Type);
     
     GenColor()
@@ -90,14 +97,18 @@ public:
         
     }
     
+    /// @brief Returns the format used by this color.
     ColorFormat getFormat() const
     {
         return Format;
     }
     
+    /// @brief Returns the raw data holded by this color object.
     Type* getData() { return _data; }
+    /// @brief Returns the raw data holded by this color object.
     const Type* getData() const { return _data; }
     
+    /// @brief Returns the Red channel, if it contains one.
     Type getRed() const
     {
         switch (Format)
@@ -112,6 +123,7 @@ public:
         }
     }
     
+    /// @brief Returns the Green channel, if it contains one.
     Type getGreen() const
     {
         switch (Format)
@@ -126,6 +138,7 @@ public:
         }
     }
     
+    /// @brief Returns the Blue channel, if it contains one.
     Type getBlue() const
     {
         switch (Format)
@@ -140,6 +153,7 @@ public:
         }
     }
     
+    /// @brief Returns the Alpha channel, if it contains one.
     Type getAlpha() const
     {
         switch (Format)
@@ -153,6 +167,7 @@ public:
         }
     }
     
+    /// @brief Sets the value of the Red channel, if it contains one.
     void setRed(Type channel)
     {
         switch (Format)
@@ -167,6 +182,7 @@ public:
         }
     }
     
+    /// @brief Sets the value of the Red channel, if it contains one.
     void setGreen(Type channel)
     {
         switch (Format)
@@ -181,6 +197,7 @@ public:
         }
     }
     
+    /// @brief Sets the value of the Blue channel, if it contains one.
     void setBlue(Type channel)
     {
         switch (Format)
@@ -195,6 +212,7 @@ public:
         }
     }
     
+    /// @brief Sets the value of the Alpha channel, if it contains one.
     void setAlpha(Type channel)
     {
         switch (Format)

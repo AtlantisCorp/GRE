@@ -133,6 +133,7 @@ int main(int argc, const char * argv[]) {
                 myRenderer.draw(triangleMesh);
                 
                 myRenderer.translate(3.0f, 0.0f, 0.0f);
+                myRenderer.rotate(rquad, 0.0f, 0.0f, 1.0f);
                 myRenderer.draw(squareMesh);
             });
             

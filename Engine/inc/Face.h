@@ -35,6 +35,10 @@ struct DLL_PUBLIC IndexedFace
 typedef std::vector<IndexedFace> IndexedFaceBatch;
 IndexedFaceBatch IndexedFaceBatchFromRaw(unsigned* indices, unsigned facenum, unsigned faceelem);
 
+/// @brief A set of IndexedFace objects, grouped by Material.
+/// The IndexedFace material are not taken in account. In this object,
+/// the faces are grouped for one material. This allow to draw multiple faces
+/// with the same material without making other api-calls in the renderer.
 class DLL_PUBLIC MaterialIndexedFace
 {
 public:

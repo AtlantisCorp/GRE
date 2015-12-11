@@ -194,96 +194,99 @@ void GCloseWindow ()
 
 void GAddMenu (void)
 {
-    NSMenu *mainMenu;
-    
-    mainMenu=[NSMenu alloc];
-    mainMenu = [mainMenu initWithTitle:@"Minimum"];
-    
-    NSMenuItem *fileMenu;
-    fileMenu=[[NSMenuItem alloc] initWithTitle:@"File" action:NULL keyEquivalent:[NSString string]];
-    [mainMenu addItem:fileMenu];
-    
-    NSMenu *fileSubMenu;
-    fileSubMenu=[[NSMenu alloc] initWithTitle:@"File"];
-    [fileMenu setSubmenu:fileSubMenu];
-    
-    [NSApp setMainMenu:mainMenu];
+    NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
+    {
+        NSMenu* mainMenu = [[NSMenu alloc] initWithTitle:@"Minimum"];
+        
+        NSMenuItem* fileMenu = [[NSMenuItem alloc] initWithTitle:@"File" action:NULL keyEquivalent:[NSString string]];
+        [mainMenu addItem:fileMenu];
+        
+        NSMenu* fileSubMenu = [[NSMenu alloc] initWithTitle:@"File"];
+        [fileMenu setSubmenu:fileSubMenu];
+        
+        [NSApp setMainMenu:mainMenu];
+    }
+    [pool release];
 }
 
 void GCreateWindow (int x0,int y0,int wid,int hei)
 {
-    NSApplication* app = [NSApplication sharedApplication];
-    if(app == nil)
-        return;
-    
-    // loadNibNamed:owner:topLevelObjects was introduced in 10.8 (Mountain Lion).
-    // In order to support Lion and Mountain Lion +, we need to see which OS we're
-    // on. We do this by testing to see if [NSBundle mainBundle] responds to
-    // loadNibNamed:owner:topLevelObjects: ... If so, the app is running on at least
-    // Mountain Lion... If not, then the app is running on Lion so we fall back to the
-    // the older loadNibNamed:owner: method. If your app does not support Lion, then
-    // you can go with strictly the newer one and not deal with the if/else conditional.
-    
-    if ([[NSBundle mainBundle] respondsToSelector:@selector(loadNibNamed:owner:topLevelObjects:)]) {
-        // We're running on Mountain Lion or higher
-        [[NSBundle mainBundle] loadNibNamed:@"MainMenu"
-                                      owner:NSApp
-                            topLevelObjects:nil];
-    } else {
-        // We're running on Lion
-        [NSBundle loadNibNamed:@"MainMenu"
-                         owner:NSApp];
-    }
-   
-    NSRect contRect;
-    contRect=NSMakeRect(x0,y0,wid,hei);
-    
-    unsigned int winStyle = NSTitledWindowMask | NSClosableWindowMask |
-                            NSMiniaturizableWindowMask | NSResizableWindowMask;
-    
-    ysWnd = [gopenglwindow alloc];
-    ysWnd = [ysWnd initWithContentRect:contRect
-                             styleMask:winStyle
-                               backing:NSBackingStoreBuffered
-                                 defer:NO];
-    
-    NSOpenGLPixelFormat *format;
-    NSOpenGLPixelFormatAttribute formatAttrib[]=
+    NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
     {
-        NSOpenGLPFADepthSize,(NSOpenGLPixelFormatAttribute)32,
-        NSOpenGLPFADoubleBuffer,
-        0
-    };
-    
-    format   = [NSOpenGLPixelFormat alloc];
-    format   = [format initWithAttributes: formatAttrib];
-    contRect = NSMakeRect(0,0,800,600);
-    
-    ysView   = [YsOpenGLView alloc];
-    ysView   = [ysView initWithFrame:contRect
-                         pixelFormat:format];
-    
-    int param = 0;
-    CGLSetParameter([[ysView openGLContext] CGLContextObj], kCGLCPSwapInterval, &param);
-    
-    [ysWnd setContentView:ysView];
-    [ysWnd makeFirstResponder:ysView];
-    
-    [ysWnd makeKeyAndOrderFront:ysWnd];
-    [ysWnd makeMainWindow];
-    
-    [app activateIgnoringOtherApps:YES];
-    
-    GAddMenu();
-    
-    [ysWnd setTitle:@"Default Title"];
-    [ysWnd display];
-    [ysWnd makeKeyWindow];
-    [app updateWindows];
-    
-    windowclosed = false;
-    
-    [app finishLaunching];
+        NSApplication* app = [NSApplication sharedApplication];
+        if(app == nil)
+            return;
+        
+        // loadNibNamed:owner:topLevelObjects was introduced in 10.8 (Mountain Lion).
+        // In order to support Lion and Mountain Lion +, we need to see which OS we're
+        // on. We do this by testing to see if [NSBundle mainBundle] responds to
+        // loadNibNamed:owner:topLevelObjects: ... If so, the app is running on at least
+        // Mountain Lion... If not, then the app is running on Lion so we fall back to the
+        // the older loadNibNamed:owner: method. If your app does not support Lion, then
+        // you can go with strictly the newer one and not deal with the if/else conditional.
+        
+        if ([[NSBundle mainBundle] respondsToSelector:@selector(loadNibNamed:owner:topLevelObjects:)]) {
+            // We're running on Mountain Lion or higher
+            [[NSBundle mainBundle] loadNibNamed:@"MainMenu"
+                                          owner:NSApp
+                                topLevelObjects:nil];
+        } else {
+            // We're running on Lion
+            [NSBundle loadNibNamed:@"MainMenu"
+                             owner:NSApp];
+        }
+        
+        NSRect contRect;
+        contRect=NSMakeRect(x0,y0,wid,hei);
+        
+        unsigned int winStyle = NSTitledWindowMask | NSClosableWindowMask |
+        NSMiniaturizableWindowMask | NSResizableWindowMask;
+        
+        ysWnd = [gopenglwindow alloc];
+        ysWnd = [ysWnd initWithContentRect:contRect
+                                 styleMask:winStyle
+                                   backing:NSBackingStoreBuffered
+                                     defer:NO];
+        
+        NSOpenGLPixelFormat *format;
+        NSOpenGLPixelFormatAttribute formatAttrib[]=
+        {
+            NSOpenGLPFADepthSize,(NSOpenGLPixelFormatAttribute)32,
+            NSOpenGLPFADoubleBuffer,
+            0
+        };
+        
+        format   = [NSOpenGLPixelFormat alloc];
+        format   = [format initWithAttributes: formatAttrib];
+        contRect = NSMakeRect(0,0,800,600);
+        
+        ysView   = [YsOpenGLView alloc];
+        ysView   = [ysView initWithFrame:contRect
+                             pixelFormat:format];
+        
+        int param = 0;
+        CGLSetParameter([[ysView openGLContext] CGLContextObj], kCGLCPSwapInterval, &param);
+        
+        [ysWnd setContentView:ysView];
+        [ysWnd makeFirstResponder:ysView];
+        
+        [ysWnd makeKeyAndOrderFront:ysWnd];
+        [ysWnd makeMainWindow];
+        
+        [app activateIgnoringOtherApps:YES];
+        
+        GAddMenu();
+        
+        [ysWnd setTitle:@"Default Title"];
+        [ysWnd display];
+        [ysWnd makeKeyWindow];
+        [app updateWindows];
+        
+        windowclosed = false;
+        
+        [app finishLaunching];
+    }
+    [pool release];
 }
 
 bool GPollEvent (void)
@@ -295,15 +298,13 @@ bool GPollEvent (void)
     
     NSEvent *event = [app nextEventMatchingMask:NSAnyEventMask untilDate: [NSDate distantPast] inMode: NSDefaultRunLoopMode dequeue:YES];
     
-    if(event == nil)
-        return false;
-    
-    if([event type]==NSRightMouseDown)
-    {
-        printf("R mouse down event\n");
-    }
     if(event!=nil)
     {
+        if([event type]==NSRightMouseDown)
+        {
+            printf("R mouse down event\n");
+        }
+        
         [app sendEvent:event];
         [app updateWindows];
     }
@@ -311,7 +312,7 @@ bool GPollEvent (void)
     {
         return false;
     }
-    
+
     return true;
 }
 
@@ -325,17 +326,23 @@ void GInitRendererContext (void)
 
 void GWSetTitle(const char* title)
 {
-    [ysWnd setTitle:[NSString stringWithCString:title encoding:NSASCIIStringEncoding]];
+    if(ysWnd && !windowclosed)
+    {
+        NSString* nsTitle = [[NSString alloc] initWithUTF8String:title];
+        [ysWnd setTitle:[NSString stringWithCString:title encoding:NSASCIIStringEncoding]];
+        [nsTitle dealloc];
+    }
 }
 
 void GSwapBuffers(void)
 {
-    [[ysView openGLContext] flushBuffer];
+    if(!windowclosed)
+        [[ysView openGLContext] flushBuffer];
 }
 
 void GGetWindowSize(int* w, int* h)
 {
-    NSRect rect = [ysView frame];
+    NSRect rect = [ysWnd frame];
     *w = rect.size.width;
     *h = rect.size.height;
 }
@@ -365,13 +372,18 @@ void GUnload ()
 
 void GImageLoad(CFTypeRef* crefreturn, const char* filename)
 {
-    NSImage* retimage = [[NSImage alloc] initByReferencingFile:[NSString stringWithUTF8String:filename]];
+    NSString* nsFilename = [[NSString alloc] initWithUTF8String:filename];
+    NSImage* retimage = [[NSImage alloc] initByReferencingFile:nsFilename];
     *crefreturn = CFBridgingRetain(retimage);
+    [nsFilename dealloc];
 }
 
 void GImageUnload(CFTypeRef* crefreturn)
 {
+    NSImage* img = (__bridge const NSImage*) *crefreturn;
     CFBridgingRelease(*crefreturn);
+    
+    [img dealloc];
 }
 
 int GImageIsEmpty(const CFTypeRef* cref)
@@ -401,6 +413,7 @@ unsigned char* GImageGetData(const CFTypeRef* cref)
     
     [img lockFocus];
     [bitmap initWithFocusedViewRect: NSMakeRect(0.0, 0.0, imgSize.width, imgSize.height)];
+    [img unlockFocus];
     
     size_t sz = sizeof(unsigned char) * [bitmap bytesPerPlane];
     unsigned char* data = (unsigned char*) malloc(sz+1);
@@ -410,7 +423,7 @@ unsigned char* GImageGetData(const CFTypeRef* cref)
         memcpy(data, datasrc, sz);
     }
     
-    [img unlockFocus];
+    [bitmap dealloc];
     return data;
 }
 
@@ -426,6 +439,7 @@ int GImageGetSamples(const CFTypeRef* cref)
     [img unlockFocus];
     
     int samples = (int) [bitmap samplesPerPixel];
+    [bitmap dealloc];
     return samples;
 }
 

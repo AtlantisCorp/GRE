@@ -28,23 +28,14 @@ public:
     ~OsXWindow ();
     
     bool pollEvent();
-    
     bool isClosed() const;
-    
     const std::string recommendedRenderer() const;
-    
     void associate (Renderer& renderer);
-    
     void setTitle(const std::string& title);
-    
     void swapBuffers ();
-    
     WindowSize getWindowSize() const;
-    
     void setVerticalSync (bool vsync);
-    
     bool hasVerticalSync () const;
-    
     bool isExposed () const;
     
 private:

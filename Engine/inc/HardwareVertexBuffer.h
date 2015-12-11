@@ -54,9 +54,9 @@ public:
     
 protected:
     
-    std::vector<Vertex> _mVertexs;///< @brief The Vertexs holded by this buffer.
-    bool _mAllowDuplicates;///< @brief True if duplicates are allowed.
-    bool _mColorActivated;///< @brief True if colors are enabled.
+    std::vector<Vertex> _mVertexs;  ///< @brief The Vertexs holded by this buffer.
+    bool _mAllowDuplicates;         ///< @brief True if duplicates are allowed.
+    bool _mColorActivated;          ///< @brief True if colors are enabled.
 };
 
 /// @brief Proxy to the HardwareVertexBufferPrivate object.

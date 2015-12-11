@@ -53,9 +53,9 @@ public:
     
 protected:
     
-    MaterialIndexedFace _mFaces;///< @brief The indexes, for one material.
+    MaterialIndexedFace _mFaces;        ///< @brief The indexes, for one material.
     PrimitiveType       _mPrimitiveType;///< @brief Primitive Type to be drawn.
-    StorageType         _mStorageType;///< @brief Storage used to store the indices.
+    StorageType         _mStorageType;  ///< @brief Storage used to store the indices.
 };
 
 /// @brief Proxy to the HardwareIndexBufferPrivate object.

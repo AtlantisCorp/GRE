@@ -37,6 +37,7 @@ void RendererResource::beginRender()
 void RendererResource::endRender()
 {
     // Calculate std::chrono
+    
     _sum_frames++;
     _mClockElapsedSinceReset = std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - _mClockReset);
     auto timeElapsedSinceLastRefresh = std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - _mClockAtPreviousFrameEnd);
@@ -52,6 +53,7 @@ void RendererResource::endRender()
         if(_currentFps < _mMinFps || _mMinFps <= 0.2f)
             _mMinFps = _currentFps;
     }
+    
 }
 
 ElapsedTime RendererResource::getElapsedTime() const
