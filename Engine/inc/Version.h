@@ -52,6 +52,7 @@
 #   include <utility>
 #   include <vector>
 #   include <chrono>
+#   include <exception>
 
 #if defined _WIN32
 //  Windows 32 bits
@@ -103,7 +104,7 @@ GRE_BEGIN_NAMESPACE
 
 #define GRE_VERSION_MAJOR 0             ///< @brief GRE Major version.
 #define GRE_VERSION_MINOR 0             ///< @brief GRE Minor version.
-#define GRE_VERSION_BUILD 9             ///< @brief GRE Build number.
+#define GRE_VERSION_BUILD 10            ///< @brief GRE Build number.
 
 /// @brief Defines the Version structure.
 typedef struct Version
@@ -138,6 +139,22 @@ enum class StorageType
     UnsignedShort   = 0x02,
     UnsignedInt     = 0x03
 };
+
+class GreExceptionWithText : public std::exception
+{
+public:
+    
+    GreExceptionWithText(const std::string& reason) : _reason(reason) { }
+    ~GreExceptionWithText() { }
+    
+    const char* what() const throw() { return _reason.c_str(); }
+                             
+private:
+    
+    std::string _reason;
+};
+
+typedef GreExceptionWithText GreUnsupportedOperation;
 
 GRE_END_NAMESPACE
 #endif

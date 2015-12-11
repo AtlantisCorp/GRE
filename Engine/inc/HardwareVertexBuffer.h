@@ -47,10 +47,16 @@ public:
     /// @brief Returns true if duplicates are allowed.
     bool areDuplicatesAllowed() const;
     
+    /// @brief Activates or de-activate the color buffer.
+    void activateColor(bool activate);
+    /// @brief Returns true if color buffer is activated.
+    bool isColorActivated() const;
+    
 protected:
     
     std::vector<Vertex> _mVertexs;///< @brief The Vertexs holded by this buffer.
     bool _mAllowDuplicates;///< @brief True if duplicates are allowed.
+    bool _mColorActivated;///< @brief True if colors are enabled.
 };
 
 /// @brief Proxy to the HardwareVertexBufferPrivate object.
@@ -99,6 +105,11 @@ public:
     void setDuplicatesAllowed(bool allowed);
     /// @brief Returns true if duplicates are allowed.
     bool areDuplicatesAllowed() const;
+    
+    /// @brief Activates or de-activate the color buffer.
+    void activateColor(bool activate);
+    /// @brief Returns true if color buffer is activated.
+    bool isColorActivated() const;
     
     /// @brief A Null HardwareVertexBuffer.
     static HardwareVertexBuffer Null;

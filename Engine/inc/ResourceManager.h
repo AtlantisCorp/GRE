@@ -78,6 +78,7 @@ private:
     WindowLoaderFactory                             _windowLoaders;   ///< @brief Factory to create WindowLoaders.
     RendererLoaderFactory                           _rendererLoaders; ///< @brief Factory to create RendererLoaders.
     MeshLoaderFactory                               _meshLoaders;     ///< @brief Factory to create MeshLoaders.
+    ImageLoaderFactory                              _imageLoaders;    ///< @brief Creates ImageLoader.
     NameGenerator                                   _nameGenerator;   ///< @brief Utility class to create Names.
     bool                                            _verbose;         ///< @brief Set to true to print more informations.
     
@@ -183,6 +184,8 @@ public:
     RendererLoaderFactory& getRendererLoaderFactory();
     /// @brief Returns the MeshLoader Factory
     MeshLoaderFactory& getMeshLoaderFactory();
+    /// @brief Returns the ImageLoader Factory.
+    ImageLoaderFactory& getImageLoaderFactory();
     /// @brief Returns the NameGenerator object.
     NameGenerator& getNameGenerator();
     

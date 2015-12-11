@@ -21,8 +21,10 @@ enum class FaceType
     FrontAndBack
 };
 
-struct DLL_PUBLIC Material
+class DLL_PUBLIC Material
 {
+public:
+    
     Color    ambient;
     Color    diffuse;
     Color    specular;
@@ -32,8 +34,12 @@ struct DLL_PUBLIC Material
     FaceType faceUsed;
     
     static Material Null;
+    
+    Material();
+    ~Material() { }
+    
+    Material& operator = (const Material& rhs);
 };
-typedef struct Material Material;
 
 GRE_END_NAMESPACE
 

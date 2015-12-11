@@ -22,6 +22,7 @@ enum class Key
 #ifdef GRE_OSX
     A         = 0,
     V         = 9,
+    T         = 17,
     ArrowUp   = 126,
     ArrowDown = 125
 #endif

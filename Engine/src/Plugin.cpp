@@ -134,7 +134,7 @@ const std::string& Plugin::getName() const
     auto ptr = _mPlugin.lock();
     if(ptr)
         return ptr->getName();
-    return "";
+    return std::string();
 }
 
 bool Plugin::start()

@@ -27,15 +27,23 @@ struct DLL_PUBLIC IndexedFace
 {
     std::vector<unsigned> indices;
     Material              material;
+    
+    IndexedFace() { }
+    ~IndexedFace() { }
 };
 
 typedef std::vector<IndexedFace> IndexedFaceBatch;
 IndexedFaceBatch IndexedFaceBatchFromRaw(unsigned* indices, unsigned facenum, unsigned faceelem);
 
-struct DLL_PUBLIC MaterialIndexedFace
+class DLL_PUBLIC MaterialIndexedFace
 {
+public:
+    
     IndexedFaceBatch indexedFaces;
     Material         material;
+    
+    MaterialIndexedFace();
+    ~MaterialIndexedFace();
 };
 
 typedef std::vector<MaterialIndexedFace> MaterialIndexedFaceBatch;

@@ -8,6 +8,7 @@
 
 #include "ResourceManager.h"
 #include <OpenGL/gl.h>
+#include <OpenGl/gl3.h>
 #include <OpenGL/glu.h>
 #include <sstream>
 
@@ -123,7 +124,7 @@ public:
     {
         if(_mVertexBufferId)
         {
-            glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex)*_mVertexs.size(), _mVertexs.data(), GL_STREAM_DRAW);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * _mVertexs.size(), _mVertexs.data(), GL_STREAM_DRAW);
             setDirty(false);
         }
     }
@@ -197,6 +198,77 @@ private:
     GLuint _mIndexBufferId;
 };
 
+class OpenGlTexture : public TexturePrivate
+{
+public:
+    
+    OpenGlTexture (const std::string& name, const Image& img)
+    : TexturePrivate(name, img), _mTextureId(0)
+    {
+        if(!img.isEmpty())
+        {
+            const PixelBatch& pbatch = img.getPixelBatch();
+            
+            glPixelStorei(GL_UNPACK_ROW_LENGTH, pbatch.width);
+            glPixelStorei(GL_UNPACK_ALIGNMENT,  pbatch.pixelsAlignment);
+            
+            glGenTextures(1, &_mTextureId);
+            glBindTexture(GL_TEXTURE_2D, _mTextureId);
+            
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            
+            if(pbatch.samplesPerPixel == 3 || pbatch.samplesPerPixel == 4)
+            {
+                glTexImage2D(GL_TEXTURE_2D, 0,
+                             pbatch.samplesPerPixel == 4 ? GL_RGBA8 : GL_RGB8,
+                             image.getWidth(),
+                             image.getHeight(),
+                             0,
+                             pbatch.samplesPerPixel == 4 ? GL_RGBA : GL_RGB,
+                             GL_UNSIGNED_BYTE,
+                             img.getPixelBatch().pixels);
+            }
+            
+            glBindTexture(GL_TEXTURE_2D, 0);
+            image.unloadCache();
+        }
+    }
+    
+    ~OpenGlTexture()
+    {
+        if(_mTextureId)
+        {
+            glDeleteTextures(1, &_mTextureId);
+        }
+    }
+    
+    void bind() const
+    {
+        if(_mTextureId) {
+            glBindTexture(GL_TEXTURE_2D, _mTextureId);
+            setBinded(true);
+        }
+    }
+    
+    void unbind() const
+    {
+        if(_mTextureId) {
+            glBindTexture(GL_TEXTURE_2D, 0);
+            setBinded(false);
+        }
+    }
+    
+    bool isInvalid() const
+    {
+        return _mTextureId == 0;
+    }
+    
+private:
+    
+    GLuint _mTextureId;
+};
+
 class OpenGlRenderer : public RendererResource
 {
 private:
@@ -245,6 +317,26 @@ public:
 #ifdef GL_VERSION_2_1
         GL_minor = 1;
 #endif
+#ifdef GL_VERSION_3_0
+        GL_major = 3;
+        GL_minor = 0;
+#endif
+#ifdef GL_VERSION_3_1
+        GL_minor = 1;
+#endif
+#ifdef GL_VERSION_3_2
+        GL_minor = 2;
+#endif
+#ifdef GL_VERSION_3_3
+        GL_minor = 3;
+#endif
+#ifdef GL_VERSION_4_0
+        GL_major = 4;
+        GL_minor = 0;
+#endif
+#ifdef GL_VERSION_4_1
+        GL_minor = 1;
+#endif
         
         _gl_major = GL_major;
         _gl_minor = GL_minor;
@@ -284,10 +376,10 @@ public:
     
     void setClearColor (const Color& color)
     {
-        _mClearColor[0] = color.red;
-        _mClearColor[1] = color.green;
-        _mClearColor[2] = color.blue;
-        _mClearColor[3] = color.alpha;
+        _mClearColor[0] = color.getRed();
+        _mClearColor[1] = color.getGreen();
+        _mClearColor[2] = color.getBlue();
+        _mClearColor[3] = color.getAlpha();
         glClearColor(_mClearColor[0], _mClearColor[1], _mClearColor[2], _mClearColor[3]);
     }
     
@@ -322,6 +414,7 @@ protected:
         
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	// Clear Screen And Depth Buffer
         glLoadIdentity();									// Reset The Current Modelview Matrix
+        glEnable(GL_TEXTURE_2D);
     }
     
     void _render ()
@@ -361,11 +454,11 @@ public:
     void drawTriangle(float sz, const Color& color1, const Color& color2, const Color& color3)
     {
         glBegin(GL_TRIANGLES);								// Drawing Using Triangles
-            glColor4fv(&color1.red);
+            glColor4fv(color1.getData());
             glVertex3f( 0.0f, sz, 0.0f);					// Top
-            glColor4fv(&color2.red);
+            glColor4fv(color2.getData());
             glVertex3f(-sz,  -sz, 0.0f);					// Bottom Left
-            glColor4fv(&color3.red);
+            glColor4fv(color3.getData());
             glVertex3f( sz,  -sz, 0.0f);					// Bottom Right
         glEnd();											// Finished Drawing The Triangle
     }
@@ -373,13 +466,13 @@ public:
     void drawQuad(float sz, const Color& color1, const Color& color2, const Color& color3, const Color& color4)
     {
         glBegin(GL_QUADS);                                  // Draw A Quad
-            glColor4fv(&color1.red);
+            glColor3f(color1.getRed(), 0.0f, 0.0f);
             glVertex3f(-sz,  sz, 0.0f);                     // Top Left
-            glColor4fv(&color2.red);
+            glColor3f(color2.getRed(), 0.0f, 0.0f);
             glVertex3f( sz,  sz, 0.0f);                     // Top Right
-            glColor4fv(&color3.red);
+            glColor3f(color3.getRed(), 0.0f, 0.0f);
             glVertex3f( sz, -sz, 0.0f);                     // Bottom Right
-            glColor4fv(&color4.red);
+            glColor3f(color4.getRed(), 0.0f, 0.0f);
             glVertex3f(-sz, -sz, 0.0f);                     // Bottom Left
         glEnd();
     }
@@ -399,8 +492,11 @@ public:
             glEnableClientState(GL_VERTEX_ARRAY);
             glVertexPointer(3, GL_FLOAT, sizeof(Vertex), (char*) NULL);
             
-            glEnableClientState(GL_COLOR_ARRAY);
-            glColorPointer(4, GL_FLOAT, sizeof(Vertex), (char*) (sizeof(Vector3) + sizeof(Vector2)));
+            if(vbuf.isColorActivated())
+            {
+                glEnableClientState(GL_COLOR_ARRAY);
+                glColorPointer(4, GL_FLOAT, sizeof(Vertex), (char*) (sizeof(Vector3) + sizeof(Vector2)));
+            }
             
             for(auto indexbuf : mesh.getIndexBufferBatch().batchs)
             {
@@ -412,14 +508,28 @@ public:
                 }
                 
                 prepareMaterial(indexbuf.getMaterial());
+                if(indexbuf.getMaterial().texture.isBinded())
+                {
+                    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+                    glTexCoordPointer(2, GL_FLOAT, sizeof(Vertex), (char*) (sizeof(Vector3)));
+                }
+                
                 GLenum mode = OpenGlUtils::PrimitiveTypeToGl(indexbuf.getPrimitiveType());
                 GLenum stype = OpenGlUtils::StorageTypeToGl(indexbuf.getStorageType());
                 GLsizei sz = (GLsizei) indexbuf.count();
                 glDrawElements(mode, sz, stype, 0);
+                
+                if(indexbuf.getMaterial().texture.isBinded())
+                {
+                    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+                    indexbuf.getMaterial().texture.unbind();
+                }
+                
                 indexbuf.unbind();
             }
             
-            glDisableClientState(GL_COLOR_ARRAY);
+            if(vbuf.isColorActivated())
+                glDisableClientState(GL_COLOR_ARRAY);
             glDisableClientState(GL_VERTEX_ARRAY);
             vbuf.unbind();
         }
@@ -427,7 +537,15 @@ public:
     
     void prepareMaterial(const Material& mat)
     {
+        if(mat.texture.isInvalid())
+        {
+            
+        }
         
+        else
+        {
+            mat.texture.bind();
+        }
     }
     
     void renderExample ()
@@ -478,6 +596,22 @@ public:
         std::string hwdname = ResourceManager::Get().getNameGenerator().generateName("HardwareIndexBuffer");
         HardwareIndexBuffer oglbuffer = HardwareIndexBuffer(ResourceManager::Get().addResource(Resource::Type::HwdBuffer, hwdname, std::make_shared<OpenGlIndexBuffer>(ptype, stype)));
         return oglbuffer;
+    }
+    
+    Texture createTexture(const std::string& name, const std::string& file)
+    {
+        auto loader = ResourceManager::Get().getImageLoaderFactory().findBestLoader(file);
+        if(loader == nullptr)
+            return Texture::Null;
+        
+        std::string imgname = ResourceManager::Get().getNameGenerator().generateName(name + "-img");
+        Image img = Image(ResourceManager::Get().loadResourceWith(loader, Resource::Type::Image, imgname, file));
+        if(img.expired())
+            return Texture::Null;
+        
+        std::string texname = ResourceManager::Get().getNameGenerator().generateName(name);
+        Texture texture = Texture(ResourceManager::Get().addResource(Resource::Type::Texture, texname, std::make_shared<OpenGlTexture>(texname, img)));
+        return texture;
     }
     
 private:

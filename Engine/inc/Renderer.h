@@ -71,6 +71,7 @@ public:
     virtual HardwareVertexBuffer createVertexBuffer();
     virtual HardwareIndexBuffer createIndexBuffer(PrimitiveType ptype, StorageType stype);
     virtual Mesh createMeshFromBuffers(const std::string& name, const HardwareVertexBuffer& vbuf, const HardwareIndexBufferBatch& ibufs);
+    virtual Texture createTexture(const std::string& name, const std::string& file);
     
 protected:
     
@@ -153,6 +154,7 @@ public:
     HardwareVertexBuffer createVertexBuffer();
     HardwareIndexBuffer createIndexBuffer(PrimitiveType ptype, StorageType stype);
     Mesh createMeshFromBuffers(const std::string& name, const HardwareVertexBuffer& vbuf, const HardwareIndexBufferBatch& ibufs);
+    Texture createTexture(const std::string& name, const std::string& file);
     
 private:
     

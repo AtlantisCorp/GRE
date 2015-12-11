@@ -363,5 +363,71 @@ void GUnload ()
         [app terminate:app];
 }
 
+void GImageLoad(CFTypeRef* crefreturn, const char* filename)
+{
+    NSImage* retimage = [[NSImage alloc] initByReferencingFile:[NSString stringWithUTF8String:filename]];
+    *crefreturn = CFBridgingRetain(retimage);
+}
+
+void GImageUnload(CFTypeRef* crefreturn)
+{
+    CFBridgingRelease(*crefreturn);
+}
+
+int GImageIsEmpty(const CFTypeRef* cref)
+{
+    const NSImage* img = (__bridge const NSImage*) *cref;
+    return false;
+}
+
+size_t GImageGetWidth(const CFTypeRef* cref)
+{
+    const NSImage* img = (__bridge const NSImage*) *cref;
+    return (size_t) [img size].width;
+}
+
+size_t GImageGetHeight(const CFTypeRef* cref)
+{
+    const NSImage* img = (__bridge const NSImage*) *cref;
+    return (size_t) [img size].height;
+}
+
+unsigned char* GImageGetData(const CFTypeRef* cref)
+{
+    const NSImage* img = (__bridge const NSImage*) *cref;
+    
+    NSBitmapImageRep* bitmap = [NSBitmapImageRep alloc];
+    NSSize imgSize = [img size];
+    
+    [img lockFocus];
+    [bitmap initWithFocusedViewRect: NSMakeRect(0.0, 0.0, imgSize.width, imgSize.height)];
+    
+    size_t sz = sizeof(unsigned char) * [bitmap bytesPerPlane];
+    unsigned char* data = (unsigned char*) malloc(sz+1);
+    memset(data, 0, sz);
+    if(data) {
+        const unsigned char* datasrc = [bitmap bitmapData];
+        memcpy(data, datasrc, sz);
+    }
+    
+    [img unlockFocus];
+    return data;
+}
+
+int GImageGetSamples(const CFTypeRef* cref)
+{
+    const NSImage* img = (__bridge const NSImage*) *cref;
+    
+    NSBitmapImageRep* bitmap = [NSBitmapImageRep alloc];
+    NSSize imgSize = [img size];
+    
+    [img lockFocus];
+    bitmap = [bitmap initWithFocusedViewRect: NSMakeRect(0.0, 0.0, imgSize.width, imgSize.height)];
+    [img unlockFocus];
+    
+    int samples = (int) [bitmap samplesPerPixel];
+    return samples;
+}
+
 
 

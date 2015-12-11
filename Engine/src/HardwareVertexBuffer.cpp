@@ -13,6 +13,7 @@ GRE_BEGIN_NAMESPACE
 HardwareVertexBufferPrivate::HardwareVertexBufferPrivate()
 {
     _mAllowDuplicates = false;
+    _mColorActivated  = false;
 }
 
 HardwareVertexBufferPrivate::~HardwareVertexBufferPrivate()
@@ -61,6 +62,16 @@ void HardwareVertexBufferPrivate::setDuplicatesAllowed(bool allowed)
 bool HardwareVertexBufferPrivate::areDuplicatesAllowed() const
 {
     return _mAllowDuplicates;
+}
+
+void HardwareVertexBufferPrivate::activateColor(bool activate)
+{
+    _mColorActivated = activate;
+}
+
+bool HardwareVertexBufferPrivate::isColorActivated() const
+{
+    return _mColorActivated;
 }
 
 HardwareVertexBuffer::HardwareVertexBuffer()
@@ -191,6 +202,21 @@ bool HardwareVertexBuffer::isInvalid() const
     if(ptr)
         return ptr->isInvalid();
     return true;
+}
+
+void HardwareVertexBuffer::activateColor(bool activate)
+{
+    auto ptr = _mBuffer.lock();
+    if(ptr)
+        ptr->activateColor(activate);
+}
+
+bool HardwareVertexBuffer::isColorActivated() const
+{
+    auto ptr = _mBuffer.lock();
+    if(ptr)
+        return ptr->isColorActivated();
+    return false;
 }
 
 HardwareVertexBuffer& HardwareVertexBuffer::operator=(const HardwareVertexBuffer &rhs)

@@ -29,6 +29,11 @@
 			<key>orderHint</key>
 			<integer>0</integer>
 		</dict>
+		<key>jpegloader.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>7</integer>
+		</dict>
 		<key>openglrenderer.xcscheme</key>
 		<dict>
 			<key>orderHint</key>
@@ -42,6 +47,11 @@
 	</dict>
 	<key>SuppressBuildableAutocreation</key>
 	<dict>
+		<key>414012981C1094E1007375ED</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
 		<key>414BC02E1BFD63B300EA4A76</key>
 		<dict>
 			<key>primary</key>

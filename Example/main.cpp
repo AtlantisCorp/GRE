@@ -37,10 +37,10 @@ Mesh CreateTriangle (Renderer renderer)
 Mesh CreateSquare (Renderer renderer)
 {
     static float square[] = {
-        -1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
-        1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
-        1.0f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
-        -1.0f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f
+        -1.0f,  1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+         1.0f,  1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+         1.0f, -1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+        -1.0f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f
     };
     
     static unsigned squarei[] = {
@@ -48,11 +48,14 @@ Mesh CreateSquare (Renderer renderer)
         2, 3, 0
     };
     
+    Material materialWood;
+    materialWood.texture = renderer.createTexture("Textures/Wood", "textures/wood.jpg");
+    
     HardwareVertexBuffer vbuf = renderer.createVertexBuffer();
     vbuf.add(VertexBatchFromRaw(square, 4));
     
     HardwareIndexBuffer ibuf = renderer.createIndexBuffer(PrimitiveType::Triangles, StorageType::UnsignedInt);
-    ibuf.setMaterial(Material::Null);
+    ibuf.setMaterial(materialWood);
     ibuf.add(IndexedFaceBatchFromRaw(squarei, 2, 3));
     HardwareIndexBufferBatch ibufs;
     ibufs.batchs.push_back(ibuf);
@@ -93,6 +96,9 @@ int main(int argc, const char * argv[]) {
             float trispeed  = 0.5f;
             float quadspeed = 0.25f;
             
+            Mesh triangleMesh = CreateTriangle(myRenderer);
+            Mesh squareMesh   = CreateSquare(myRenderer);
+            
             Listener myGenericListener = myWindow.addListener("GenericListener");
             myGenericListener.addAction(EventType::KeyDown, [&] (const Event& e) {
                 const KeyDownEvent& kde = e.to<KeyDownEvent>();
@@ -102,6 +108,10 @@ int main(int argc, const char * argv[]) {
                 }
                 if(kde.key == Key::A) {
                     myRenderer.setActive(!myRenderer.isActive());
+                }
+                
+                if(kde.key == Key::T) {
+                    triangleMesh.getVertexBuffer().activateColor(!triangleMesh.getVertexBuffer().isColorActivated());
                 }
                 
                 if(kde.key == Key::ArrowUp) {
@@ -114,9 +124,6 @@ int main(int argc, const char * argv[]) {
                 
                 std::cout << "[Main] Key Down : " << (int) kde.key << std::endl;
             });
-            
-            Mesh triangleMesh = CreateTriangle(myRenderer);
-            Mesh squareMesh   = CreateSquare(myRenderer);
             
             myRenderer.setClearColor({0.0f, 0.0f, 0.0f, 0.0f});
             myRenderer.setImmediateMode(true);

@@ -32,4 +32,15 @@ IndexedFaceBatch IndexedFaceBatchFromRaw(unsigned* indices, unsigned facenum, un
     return ret;
 }
 
+MaterialIndexedFace::MaterialIndexedFace()
+: indexedFaces(), material()
+{
+    
+}
+
+MaterialIndexedFace::~MaterialIndexedFace()
+{
+    
+}
+
 GRE_END_NAMESPACE

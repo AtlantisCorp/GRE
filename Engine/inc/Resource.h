@@ -60,7 +60,9 @@ public:
         Window,     ///< @brief Window Type : to load a Window (specific type for Window Loaders).
         Renderer,   ///< @brief Renderer Type : to load a Renderer (specific type for Renderer Loaders).
         Mesh,       ///< @brief Mesh Type : A resource representing a 3D object.
-        HwdBuffer   ///< @brief Hardware Buffer : Resource to store Hardware Buffers and data.
+        HwdBuffer,  ///< @brief Hardware Buffer : Resource to store Hardware Buffers and data.
+        Image,      ///< @brief Image : Speak by itself...
+        Texture     ///< @brief Textures objects. Can only be loaded by the Renderer.
     };
     
     POOLED(Pools::Resource);
@@ -250,7 +252,7 @@ public:
     void clear()
     { _loaders.clear(); }
     
-private:
+protected:
     
     std::map<std::string, std::shared_ptr<T> > _loaders;
 };

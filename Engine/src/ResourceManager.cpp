@@ -67,8 +67,11 @@ ResourceManager::~ResourceManager ()
     _windowLoaders.clear();
     _rendererLoaders.clear();
     _meshLoaders.clear();
+    _imageLoaders.clear();
     
     _resourcesbyname.clear();
+    _resourcesbytype[Resource::Type::Image].clear();
+    _resourcesbytype[Resource::Type::Texture].clear();
     _resourcesbytype[Resource::Type::Text].clear();
     _resourcesbytype[Resource::Type::HwdBuffer].clear();
     _resourcesbytype[Resource::Type::Mesh].clear();
@@ -134,6 +137,11 @@ RendererLoaderFactory& ResourceManager::getRendererLoaderFactory()
 MeshLoaderFactory& ResourceManager::getMeshLoaderFactory()
 {
     return _meshLoaders;
+}
+
+ImageLoaderFactory& ResourceManager::getImageLoaderFactory()
+{
+    return _imageLoaders;
 }
 
 ResourceManager::NameGenerator& ResourceManager::getNameGenerator()

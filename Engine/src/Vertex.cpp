@@ -37,10 +37,10 @@ VertexBatch VertexBatchFromRaw(float* data, size_t sz)
         added.texture.x    = data[pos*numelemen + 3];
         added.texture.y    = data[pos*numelemen + 4];
         
-        added.color.red    = data[pos*numelemen + 5];
-        added.color.green  = data[pos*numelemen + 6];
-        added.color.blue   = data[pos*numelemen + 7];
-        added.color.alpha  = data[pos*numelemen + 8];
+        added.color.setRed(data[pos*numelemen + 5]);
+        added.color.setGreen(data[pos*numelemen + 6]);
+        added.color.setBlue(data[pos*numelemen + 7]);
+        added.color.setAlpha(data[pos*numelemen + 8]);
         batch.push_back(added);
         pos++;
     }

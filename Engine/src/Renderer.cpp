@@ -160,6 +160,11 @@ Mesh RendererResource::createMeshFromBuffers(const std::string& name, const Hard
     return std::move(ret);
 }
 
+Texture RendererResource::createTexture(const std::string &name, const std::string &file)
+{
+    return Texture::Null;
+}
+
 void RendererResource::draw(const Mesh &mesh)
 {
     
@@ -376,6 +381,14 @@ Mesh Renderer::createMeshFromBuffers(const std::string &name, const HardwareVert
     if(ptr)
         return ptr->createMeshFromBuffers(name, vbuf, ibufs);
     return Mesh::Null;
+}
+
+Texture Renderer::createTexture(const std::string &name, const std::string &file)
+{
+    auto ptr = _mRenderer.lock();
+    if(ptr)
+        return ptr->createTexture(name, file);
+    return Texture::Null;
 }
 
 void Renderer::draw(const Mesh &mesh)
