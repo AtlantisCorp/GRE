@@ -49,6 +49,16 @@
 		414BC02A1BFD4C6F00EA4A76 /* Listener.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 414BC0291BFD4C6F00EA4A76 /* Listener.cpp */; };
 		414BC0501BFD640100EA4A76 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 414BC04F1BFD640100EA4A76 /* main.cpp */; };
 		414BC0511BFD642600EA4A76 /* libgreengine.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 41877B591BEFADDE0024B643 /* libgreengine.dylib */; };
+		41867EF61C1B75850096F198 /* OpenGlIncludes.h in Headers */ = {isa = PBXBuildFile; fileRef = 41867EF51C1B75850096F198 /* OpenGlIncludes.h */; };
+		41867EF81C1B75BE0096F198 /* OpenGlIncludes.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41867EF71C1B75BE0096F198 /* OpenGlIncludes.cpp */; };
+		41867EFA1C1B78EB0096F198 /* OpenGlVertexBuffer.h in Headers */ = {isa = PBXBuildFile; fileRef = 41867EF91C1B78EB0096F198 /* OpenGlVertexBuffer.h */; };
+		41867EFC1C1B79190096F198 /* OpenGlVertexBuffer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41867EFB1C1B79190096F198 /* OpenGlVertexBuffer.cpp */; };
+		41867EFE1C1B79830096F198 /* OpenGlIndexBuffer.h in Headers */ = {isa = PBXBuildFile; fileRef = 41867EFD1C1B79830096F198 /* OpenGlIndexBuffer.h */; };
+		41867F001C1B79C50096F198 /* OpenGlIndexBuffer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41867EFF1C1B79C50096F198 /* OpenGlIndexBuffer.cpp */; };
+		41867F021C1B7A7D0096F198 /* OpenGlTexture.h in Headers */ = {isa = PBXBuildFile; fileRef = 41867F011C1B7A7D0096F198 /* OpenGlTexture.h */; };
+		41867F041C1B7AA60096F198 /* OpenGlTexture.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41867F031C1B7AA60096F198 /* OpenGlTexture.cpp */; };
+		41867F061C1B7B5D0096F198 /* OpenGlRenderer.h in Headers */ = {isa = PBXBuildFile; fileRef = 41867F051C1B7B5D0096F198 /* OpenGlRenderer.h */; };
+		41867F081C1B7BA50096F198 /* OpenGlRendererClass.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41867F071C1B7BA50096F198 /* OpenGlRendererClass.cpp */; };
 		41877B6D1BEFAE8D0024B643 /* FileLoader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41877B651BEFAE8D0024B643 /* FileLoader.cpp */; };
 		41877B6E1BEFAE8D0024B643 /* Plugin.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41877B661BEFAE8D0024B643 /* Plugin.cpp */; };
 		41877B6F1BEFAE8D0024B643 /* Pools.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41877B671BEFAE8D0024B643 /* Pools.cpp */; };
@@ -183,6 +193,16 @@
 		414BC02F1BFD63B400EA4A76 /* example2.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = example2.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		414BC0321BFD63B400EA4A76 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		414BC04F1BFD640100EA4A76 /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = main.cpp; path = ../../../../Example/main.cpp; sourceTree = "<group>"; };
+		41867EF51C1B75850096F198 /* OpenGlIncludes.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = OpenGlIncludes.h; path = ../../../Plugins/OpenGlRenderer/OpenGlIncludes.h; sourceTree = "<group>"; };
+		41867EF71C1B75BE0096F198 /* OpenGlIncludes.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = OpenGlIncludes.cpp; path = ../../../Plugins/OpenGlRenderer/OpenGlIncludes.cpp; sourceTree = "<group>"; };
+		41867EF91C1B78EB0096F198 /* OpenGlVertexBuffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = OpenGlVertexBuffer.h; path = ../../../Plugins/OpenGlRenderer/OpenGlVertexBuffer.h; sourceTree = "<group>"; };
+		41867EFB1C1B79190096F198 /* OpenGlVertexBuffer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = OpenGlVertexBuffer.cpp; path = ../../../Plugins/OpenGlRenderer/OpenGlVertexBuffer.cpp; sourceTree = "<group>"; };
+		41867EFD1C1B79830096F198 /* OpenGlIndexBuffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = OpenGlIndexBuffer.h; path = ../../../Plugins/OpenGlRenderer/OpenGlIndexBuffer.h; sourceTree = "<group>"; };
+		41867EFF1C1B79C50096F198 /* OpenGlIndexBuffer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = OpenGlIndexBuffer.cpp; path = ../../../Plugins/OpenGlRenderer/OpenGlIndexBuffer.cpp; sourceTree = "<group>"; };
+		41867F011C1B7A7D0096F198 /* OpenGlTexture.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = OpenGlTexture.h; path = ../../../Plugins/OpenGlRenderer/OpenGlTexture.h; sourceTree = "<group>"; };
+		41867F031C1B7AA60096F198 /* OpenGlTexture.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = OpenGlTexture.cpp; path = ../../../Plugins/OpenGlRenderer/OpenGlTexture.cpp; sourceTree = "<group>"; };
+		41867F051C1B7B5D0096F198 /* OpenGlRenderer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = OpenGlRenderer.h; path = ../../../Plugins/OpenGlRenderer/OpenGlRenderer.h; sourceTree = "<group>"; };
+		41867F071C1B7BA50096F198 /* OpenGlRendererClass.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = OpenGlRendererClass.cpp; path = ../../../Plugins/OpenGlRenderer/OpenGlRendererClass.cpp; sourceTree = "<group>"; };
 		41877B591BEFADDE0024B643 /* libgreengine.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libgreengine.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		41877B651BEFAE8D0024B643 /* FileLoader.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = FileLoader.cpp; path = ../../../Engine/src/FileLoader.cpp; sourceTree = "<group>"; };
 		41877B661BEFAE8D0024B643 /* Plugin.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = Plugin.cpp; path = ../../../Engine/src/Plugin.cpp; sourceTree = "<group>"; };
@@ -460,6 +480,16 @@
 			children = (
 				41877BEA1BEFB60D0024B643 /* OpenGL.framework */,
 				41877BE71BEFB5FC0024B643 /* openglrenderer.cpp */,
+				41867F051C1B7B5D0096F198 /* OpenGlRenderer.h */,
+				41867F071C1B7BA50096F198 /* OpenGlRendererClass.cpp */,
+				41867F011C1B7A7D0096F198 /* OpenGlTexture.h */,
+				41867F031C1B7AA60096F198 /* OpenGlTexture.cpp */,
+				41867EF91C1B78EB0096F198 /* OpenGlVertexBuffer.h */,
+				41867EFB1C1B79190096F198 /* OpenGlVertexBuffer.cpp */,
+				41867EFD1C1B79830096F198 /* OpenGlIndexBuffer.h */,
+				41867EFF1C1B79C50096F198 /* OpenGlIndexBuffer.cpp */,
+				41867EF51C1B75850096F198 /* OpenGlIncludes.h */,
+				41867EF71C1B75BE0096F198 /* OpenGlIncludes.cpp */,
 			);
 			name = openglrenderer;
 			sourceTree = "<group>";
@@ -636,10 +666,15 @@
 			files = (
 				41877BEC1BEFB6150024B643 /* FileLoader.h in Headers */,
 				41877BED1BEFB6150024B643 /* Plugin.h in Headers */,
+				41867EFE1C1B79830096F198 /* OpenGlIndexBuffer.h in Headers */,
 				41877BEE1BEFB6150024B643 /* Pools.h in Headers */,
 				41877BEF1BEFB6150024B643 /* Renderer.h in Headers */,
+				41867F021C1B7A7D0096F198 /* OpenGlTexture.h in Headers */,
 				41877BF01BEFB6150024B643 /* Resource.h in Headers */,
 				41877BF11BEFB6150024B643 /* ResourceManager.h in Headers */,
+				41867EF61C1B75850096F198 /* OpenGlIncludes.h in Headers */,
+				41867EFA1C1B78EB0096F198 /* OpenGlVertexBuffer.h in Headers */,
+				41867F061C1B7B5D0096F198 /* OpenGlRenderer.h in Headers */,
 				41877BF21BEFB6150024B643 /* TextResource.h in Headers */,
 				41877BF31BEFB6150024B643 /* Window.h in Headers */,
 				414BC0281BFD485100EA4A76 /* Listener.h in Headers */,
@@ -902,7 +937,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				41867F081C1B7BA50096F198 /* OpenGlRendererClass.cpp in Sources */,
 				41877BE81BEFB5FC0024B643 /* openglrenderer.cpp in Sources */,
+				41867F001C1B79C50096F198 /* OpenGlIndexBuffer.cpp in Sources */,
+				41867EF81C1B75BE0096F198 /* OpenGlIncludes.cpp in Sources */,
+				41867F041C1B7AA60096F198 /* OpenGlTexture.cpp in Sources */,
+				41867EFC1C1B79190096F198 /* OpenGlVertexBuffer.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
