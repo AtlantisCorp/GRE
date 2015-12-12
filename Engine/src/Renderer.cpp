@@ -167,6 +167,11 @@ Texture RendererResource::createTexture(const std::string &name, const std::stri
     return Texture::Null;
 }
 
+Camera RendererResource::createCamera(const std::string& name)
+{
+    return Camera(name);
+}
+
 void RendererResource::draw(const Mesh &mesh)
 {
     
@@ -393,11 +398,26 @@ Texture Renderer::createTexture(const std::string &name, const std::string &file
     return Texture::Null;
 }
 
+Camera Renderer::createCamera(const std::string &name)
+{
+    auto ptr = _mRenderer.lock();
+    if(ptr)
+        return ptr->createCamera(name);
+    return Camera(nullptr);
+}
+
 void Renderer::draw(const Mesh &mesh)
 {
     auto ptr = _mRenderer.lock();
     if(ptr)
         ptr->draw(mesh);
+}
+
+void Renderer::prepare(const Camera& cam)
+{
+    auto ptr = _mRenderer.lock();
+    if(ptr)
+        ptr->prepare(cam);
 }
 
 RendererLoader::RendererLoader()

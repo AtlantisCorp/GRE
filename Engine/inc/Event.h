@@ -20,7 +20,8 @@ GRE_BEGIN_NAMESPACE
 enum class EventType
 {
     KeyDown,
-    KeyUp
+    KeyUp,
+    Update
 };
 
 /// @brief Defines a basic event.
@@ -73,6 +74,23 @@ public:
     virtual ~KeyUpEvent ();
     
     Key key;///< @brief The released key.
+};
+
+typedef std::chrono::high_resolution_clock::duration   UpdateClock;
+typedef std::chrono::high_resolution_clock::time_point UpdateTime;
+typedef std::chrono::high_resolution_clock             UpdateChrono;
+
+/// @brief A generic update event that notify the listener it should be updated.
+class UpdateEvent : public Event
+{
+public:
+    
+    POOLED(Pools::Event)
+    
+    UpdateEvent();
+    ~UpdateEvent();
+    
+    UpdateClock elapsedTime;
 };
 
 GRE_END_NAMESPACE

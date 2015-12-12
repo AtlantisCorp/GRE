@@ -7,6 +7,7 @@
 //
 
 #include "Listener.h"
+#include "Emitter.h"
 
 GRE_BEGIN_NAMESPACE
 
@@ -86,6 +87,11 @@ void Listener::reset()
 const std::string& Listener::getName() const
 {
     return _mListener->getName();
+}
+
+void Listener::listen(Emitter& emitter)
+{
+    emitter.addListener(*this);
 }
 
 void Listener::onEvent(const Event &e)

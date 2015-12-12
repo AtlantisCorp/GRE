@@ -53,6 +53,9 @@ public:
     Listener getListener(const std::string& name);
     void removeListener(const std::string& name);
     
+    operator Emitter& ();
+    operator const Emitter& () const;
+    
     void beginUpdate();
     void endUpdate();
     

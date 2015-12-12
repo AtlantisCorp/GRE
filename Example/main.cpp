@@ -9,6 +9,8 @@
 #include "ResourceManager.h"
 #include "Listener.h"
 #include "Mesh.h"
+#include "Keyboard.h"
+#include "Camera.h"
 
 using namespace Gre;
 
@@ -106,9 +108,6 @@ int main(int argc, const char * argv[]) {
                     myWindow.setVerticalSync(!myWindow.hasVerticalSync());
                     std::cout << "[Main] Changed Vertical Sync." << std::endl;
                 }
-                if(kde.key == Key::A) {
-                    myRenderer.setActive(!myRenderer.isActive());
-                }
                 
                 if(kde.key == Key::T) {
                     triangleMesh.getVertexBuffer().activateColor(!triangleMesh.getVertexBuffer().isColorActivated());
@@ -125,11 +124,21 @@ int main(int argc, const char * argv[]) {
                 std::cout << "[Main] Key Down : " << (int) kde.key << std::endl;
             });
             
+            Keyboard myKeyboard("MyKeyboard");
+            myKeyboard.listen(myWindow);
+            
+            Camera myCamera = myRenderer.createCamera("MyCamera");
+            myCamera.setPosition(Vector3(0.0f, 0.0f, 0.0f));
+            myCamera.lookAt(Vector3(0.0f, 0.0f, -10.0f));
+            myCamera.listen(myKeyboard);
+            
             myRenderer.setClearColor({0.0f, 0.0f, 0.0f, 0.0f});
             myRenderer.setImmediateMode(true);
             myRenderer.addImmediateAction([&] () {
                 
-                myRenderer.translate(-1.5f, 0.0f, -6.0f);
+                myRenderer.prepare(myCamera);
+                
+                myRenderer.translate(-1.5f, 0.0f, -10.0f);
                 myRenderer.draw(triangleMesh);
                 
                 myRenderer.translate(3.0f, 0.0f, 0.0f);

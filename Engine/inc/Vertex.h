@@ -13,9 +13,6 @@
 
 GRE_BEGIN_NAMESPACE
 
-typedef glm::vec2 Vector2;
-typedef glm::vec3 Vector3;
-
 /// @brief Defines a simple Vertex object.
 struct DLL_PUBLIC Vertex
 {

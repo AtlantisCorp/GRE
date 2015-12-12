@@ -52,6 +52,8 @@ protected:
     std::map<EventType, std::vector<std::function<void (const Event&)> > > _actions; ///< @brief Actions related to the listener.
 };
 
+class DLL_PUBLIC Emitter;
+
 /// @brief Proxy to a ListenerPrivate object.
 /// Use this object as if it was the real Listener. It holds a shared_ptr
 /// to the ListenerPrivate class object, so you don't have to mind about
@@ -79,6 +81,9 @@ public:
     /// @brief Returns the name of the Listener.
     /// @see ListenerPrivate::getName()
     const std::string& getName() const;
+    
+    /// @brief Make the given emitter to be listened by this listener.
+    void listen(Emitter& emitter);
     
     /// @brief Handles event.
     /// @see ListenerPrivate::onEvent()

@@ -51,6 +51,7 @@ public:
     void draw(const Mesh& mesh);
     
     void prepareMaterial(const Material& mat);
+    void prepare(const Camera& camera);
     void renderExample ();
     
     HardwareVertexBuffer createVertexBuffer();

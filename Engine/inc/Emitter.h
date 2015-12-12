@@ -18,7 +18,7 @@ GRE_BEGIN_NAMESPACE
 /// and send them events. The treatment of this event belongs
 /// to the Listener object.
 /// Proxies are used to hold the Listener objects.
-class Emitter
+class DLL_PUBLIC Emitter
 {
 public:
     

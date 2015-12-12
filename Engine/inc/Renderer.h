@@ -15,6 +15,7 @@
 #include "HardwareVertexBuffer.h"
 #include "HardwareIndexBuffer.h"
 #include "Mesh.h"
+#include "Camera.h"
 
 GRE_BEGIN_NAMESPACE
 
@@ -72,6 +73,7 @@ public:
     virtual HardwareIndexBuffer createIndexBuffer(PrimitiveType ptype, StorageType stype);
     virtual Mesh createMeshFromBuffers(const std::string& name, const HardwareVertexBuffer& vbuf, const HardwareIndexBufferBatch& ibufs);
     virtual Texture createTexture(const std::string& name, const std::string& file);
+    virtual Camera createCamera(const std::string& name);
     
 protected:
     
@@ -85,6 +87,7 @@ public:
     virtual void drawTriangle(float sz, const Color& color1, const Color& color2, const Color& color3) { }
     virtual void drawQuad(float sz, const Color& color1, const Color& color2, const Color& color3, const Color& color4) { }
     virtual void draw(const Mesh& mesh);
+    virtual void prepare(const Camera& cam) { }
     
 protected:
     
@@ -150,11 +153,13 @@ public:
     void drawTriangle(float sz, const Color& color1 = Color::White, const Color& color2 = Color::White, const Color& color3 = Color::White);
     void drawQuad(float sz, const Color& color1 = Color::White, const Color& color2 = Color::White, const Color& color3 = Color::White, const Color& color4 = Color::White);
     void draw(const Mesh& mesh);
+    void prepare(const Camera& cam);
     
     HardwareVertexBuffer createVertexBuffer();
     HardwareIndexBuffer createIndexBuffer(PrimitiveType ptype, StorageType stype);
     Mesh createMeshFromBuffers(const std::string& name, const HardwareVertexBuffer& vbuf, const HardwareIndexBufferBatch& ibufs);
     Texture createTexture(const std::string& name, const std::string& file);
+    Camera createCamera(const std::string& name);
     
 private:
     

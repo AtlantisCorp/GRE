@@ -48,4 +48,15 @@ KeyUpEvent::~KeyUpEvent()
     
 }
 
+UpdateEvent::UpdateEvent()
+: Event(EventType::Update)
+{
+    
+}
+
+UpdateEvent::~UpdateEvent()
+{
+    
+}
+
 GRE_END_NAMESPACE

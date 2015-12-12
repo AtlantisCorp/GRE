@@ -61,6 +61,8 @@ protected:
     
     WindowPrivate _data;
     Renderer      _associatedRenderer;
+    
+    UpdateTime    _lastUpdate;
 };
 
 GRE_END_NAMESPACE

@@ -14,7 +14,7 @@ GRE_BEGIN_NAMESPACE
 WindowResource::WindowResource (const std::string& name, const WindowPrivate& winData)
 : Resource(name), _associatedRenderer(ResourceUser::Null)
 {
-    
+    _lastUpdate = _lastUpdate.min();
 }
 
 WindowResource::~WindowResource()
@@ -25,6 +25,20 @@ WindowResource::~WindowResource()
 void WindowResource::beginUpdate()
 {
     pollEvent();
+    
+    // Here we send an update event to listeners.
+    if(_lastUpdate != _lastUpdate.min())
+    {
+        UpdateTime now = UpdateChrono::now();
+        UpdateEvent ue;
+        ue.elapsedTime = std::chrono::duration_cast<std::chrono::nanoseconds>(now - _lastUpdate);
+        sendEvent(ue);
+        _lastUpdate = now;
+    }
+    else
+    {
+        _lastUpdate = UpdateChrono::now();
+    }
     
     if(_associatedRenderer.expired() == false)
         _associatedRenderer.beginRender();
@@ -211,6 +225,16 @@ bool Window::isExposed() const
     if(ptr)
         return ptr->isExposed();
     return false;
+}
+
+Window::operator Emitter &()
+{
+    return *(dynamic_cast<Emitter*>(_mWindow.lock().get()));
+}
+
+Window::operator const Emitter &() const
+{
+    return *(dynamic_cast<const Emitter*>(_mWindow.lock().get()));
 }
 
 WindowLoader::WindowLoader()

@@ -336,3 +336,10 @@ Texture OpenGlRenderer::createTexture(const std::string& name, const std::string
     return texture;
 }
 
+void OpenGlRenderer::prepare(const Camera &camera)
+{
+    Matrix4 m = camera.getMatrix();
+    glMatrixMode(GL_MODELVIEW);
+    glLoadMatrixf(&(m[0][0]));
+}
+

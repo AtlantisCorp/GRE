@@ -95,8 +95,7 @@
 #   include <sys/time.h>
 #endif
 
-#include "glm/vec2.hpp"
-#include "glm/vec3.hpp"
+#include "glm/glm.hpp"
 
 GRE_BEGIN_NAMESPACE
 
@@ -104,7 +103,7 @@ GRE_BEGIN_NAMESPACE
 
 #define GRE_VERSION_MAJOR 0             ///< @brief GRE Major version.
 #define GRE_VERSION_MINOR 0             ///< @brief GRE Minor version.
-#define GRE_VERSION_BUILD 10            ///< @brief GRE Build number.
+#define GRE_VERSION_BUILD 11            ///< @brief GRE Build number.
 
 /// @brief Defines the Version structure.
 typedef struct Version
@@ -155,6 +154,10 @@ private:
 };
 
 typedef GreExceptionWithText GreUnsupportedOperation;
+
+typedef glm::vec2 Vector2;
+typedef glm::vec3 Vector3;
+typedef glm::mat4 Matrix4;
 
 GRE_END_NAMESPACE
 #endif
