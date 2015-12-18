@@ -62,7 +62,8 @@ public:
         Mesh,       ///< @brief Mesh Type : A resource representing a 3D object.
         HwdBuffer,  ///< @brief Hardware Buffer : Resource to store Hardware Buffers and data.
         Image,      ///< @brief Image : Speak by itself...
-        Texture     ///< @brief Textures objects. Can only be loaded by the Renderer.
+        Texture,    ///< @brief Textures objects. Can only be loaded by the Renderer.
+        Scene       ///< @brief A simple Type to describe a Scene object.
     };
     
     POOLED(Pools::Resource);
@@ -139,6 +140,8 @@ public:
     
     /// @brief Destroys the ResourceUser.
     virtual ~ResourceUser ();
+    
+    ResourceUser& operator = (const ResourceUser& rhs) { _resource = rhs._resource; return *this; }
     
     /// @brief Returns true if pointer has been invalidated.
     /// @note This usually means that the Resource has been destroyed.
@@ -244,10 +247,20 @@ public:
     { _loaders[name].reset(loader); }
     
     T* get(const std::string& name)
-    { return reinterpret_cast<T*>(_loaders[name]->clone()); }
+    {
+        auto it = _loaders.find(name);
+        if(it != _loaders.end())
+            return reinterpret_cast<T*>(_loaders[name]->clone());
+        else
+            return nullptr;
+    }
     
     T* getFirst ()
-    { return reinterpret_cast<T*>(_loaders.begin()->second->clone()); }
+    {
+        if(!_loaders.empty())
+            return reinterpret_cast<T*>(_loaders.begin()->second->clone());
+        return nullptr;
+    }
     
     void clear()
     { _loaders.clear(); }

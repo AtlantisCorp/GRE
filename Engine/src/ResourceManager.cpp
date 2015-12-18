@@ -48,7 +48,7 @@ ResourceManager& ResourceManager::Get() {
 ResourceManager::ResourceManager()
 {
     if(_verbose) {
-        std::cout << "[ResourceManager] Constructing ResourceManager." << std::endl;
+        GreDebugPretty() << "Constructing ResourceManager." << std::endl;
     }
     
     _fileloaders.registers("TextLoader", new TextLoader());
@@ -60,7 +60,7 @@ ResourceManager::ResourceManager()
 ResourceManager::~ResourceManager ()
 {
     if(_verbose) {
-        std::cout << "[ResourceManager] Destroying ResourceManager." << std::endl;
+        GreDebugPretty() << "Destroying ResourceManager." << std::endl;
     }
     
     _fileloaders.clear();
@@ -68,8 +68,10 @@ ResourceManager::~ResourceManager ()
     _rendererLoaders.clear();
     _meshLoaders.clear();
     _imageLoaders.clear();
+    _sceneLoaders.clear();
     
     _resourcesbyname.clear();
+    _resourcesbytype[Resource::Type::Scene].clear();
     _resourcesbytype[Resource::Type::Image].clear();
     _resourcesbytype[Resource::Type::Texture].clear();
     _resourcesbytype[Resource::Type::Text].clear();
@@ -95,7 +97,7 @@ ResourceUser ResourceManager::loadResource(Resource::Type type, const std::strin
     _resourcesbyname[name] = std::shared_ptr<Resource>(new Resource (name));
     
     if(_verbose) {
-        std::cout << "[ResourceManager] Loaded Resource '" << name << "'." << std::endl;
+        GreDebugPretty() << "Loaded Resource '" << name << "'." << std::endl;
     }
     
     return ResourceUser(_resourcesbyname[name]);
@@ -105,7 +107,7 @@ void ResourceManager::unloadResource(const std::string& name) {
     _resourcesbyname.erase(name);
     
     if(_verbose) {
-        std::cout << "[ResourceManager] Unloaded Resource '" << name << "'." << std::endl;
+        GreDebugPretty() << "Unloaded Resource '" << name << "'." << std::endl;
     }
 }
 
@@ -142,6 +144,11 @@ MeshLoaderFactory& ResourceManager::getMeshLoaderFactory()
 ImageLoaderFactory& ResourceManager::getImageLoaderFactory()
 {
     return _imageLoaders;
+}
+
+SceneLoaderFactory& ResourceManager::getSceneLoaderFactory()
+{
+    return _sceneLoaders;
 }
 
 ResourceManager::NameGenerator& ResourceManager::getNameGenerator()

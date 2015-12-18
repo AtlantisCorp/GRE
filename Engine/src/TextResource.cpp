@@ -48,7 +48,7 @@ Resource* TextLoader::load (Resource::Type type, const std::string& name, const 
     TextResource* ret = new TextResource(name, file, std::string(buf));
     
 #ifdef DEBUG
-    std::cout << "[TextLoader:" << file << "] Resource Loaded." << std::endl;
+    GreDebugPretty() << file << " : Resource Loaded." << std::endl;
 #endif
     
     return ret;

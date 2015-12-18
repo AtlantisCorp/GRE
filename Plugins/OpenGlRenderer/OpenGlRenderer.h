@@ -31,7 +31,6 @@ public:
     OpenGlRenderer (const std::string& name);
     ~OpenGlRenderer ();
     
-    void initExtensions();
     bool hasExtension(const std::string& ext) const;
     void setClearColor (const Color& color);
     void setClearDepth (float depth);
@@ -57,6 +56,16 @@ public:
     HardwareVertexBuffer createVertexBuffer();
     HardwareIndexBuffer createIndexBuffer(PrimitiveType ptype, StorageType stype);
     Texture createTexture(const std::string& name, const std::string& file);
+    
+private:
+    
+    PFNGLGETSTRINGPROC   _glGetString;
+    PFNGLGETSTRINGIPROC  _glGetStringi;
+    PFNGLGETINTEGERVPROC _glGetIntegerv;
+    
+    void initializeFunctions();
+    void setGlVersion();
+    void initExtensions();
 };
 
 #endif

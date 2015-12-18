@@ -15,6 +15,7 @@
 #include "Window.h"
 #include "Renderer.h"
 #include "MeshLoader.h"
+#include "Scene.h"
 
 GRE_BEGIN_NAMESPACE
 
@@ -79,6 +80,7 @@ private:
     RendererLoaderFactory                           _rendererLoaders; ///< @brief Factory to create RendererLoaders.
     MeshLoaderFactory                               _meshLoaders;     ///< @brief Factory to create MeshLoaders.
     ImageLoaderFactory                              _imageLoaders;    ///< @brief Creates ImageLoader.
+    SceneLoaderFactory                              _sceneLoaders;    ///< @brief Creates SceneLoader objects.
     NameGenerator                                   _nameGenerator;   ///< @brief Utility class to create Names.
     bool                                            _verbose;         ///< @brief Set to true to print more informations.
     
@@ -138,7 +140,7 @@ public:
         if(resptr) {
             _resourcesbytype[type].push_back(resptr);
             _resourcesbyname[name] = resptr;
-            std::cout << "[ResourceManager] Loaded Resource " << name << "." << std::endl;
+            GreDebugPretty() << " Loaded Resource " << name << "." << std::endl;
         }
         
         return std::move(ResourceUser(_resourcesbyname[name]));
@@ -158,7 +160,7 @@ public:
         if(resptr) {
             _resourcesbytype[type].push_back(resptr);
             _resourcesbyname[name] = resptr;
-            std::cout << "[ResourceManager] Loaded Resource " << name << "." << std::endl;
+            GreDebugPretty() << "Loaded Resource " << name << "." << std::endl;
         }
         
         delete loader;
@@ -186,6 +188,8 @@ public:
     MeshLoaderFactory& getMeshLoaderFactory();
     /// @brief Returns the ImageLoader Factory.
     ImageLoaderFactory& getImageLoaderFactory();
+    /// @brief Returns the SceneLoader Factory.
+    SceneLoaderFactory& getSceneLoaderFactory();
     /// @brief Returns the NameGenerator object.
     NameGenerator& getNameGenerator();
     

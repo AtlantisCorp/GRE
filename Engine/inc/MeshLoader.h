@@ -24,7 +24,7 @@ public:
     MeshLoader(const MeshLoader&);
     virtual ~MeshLoader();
     
-    virtual Resource* load(Resource::Type type, const std::string& name, const std::string& file) const;
+    virtual Resource* load(Resource::Type type, const std::string& name, const std::string& file, Renderer renderer) const;
     
     Resource* load(Resource::Type type, const std::string& name, const HardwareVertexBuffer& vbuf, const HardwareIndexBufferBatch& ibuf) const;
     

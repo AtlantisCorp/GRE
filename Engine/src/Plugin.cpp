@@ -18,13 +18,13 @@ PluginResource::PluginResource (const std::string& name, const std::string& file
     if(found != std::string::npos) {
     }
     else {
-        std::cout << "[Plugin:" << name << "] Bad extension." << std::endl;
+        GreDebugPretty() << name << " : Bad extension." << std::endl;
         throw BadPluginExtension(_file + " [Contructor]");
     }
     
     DYNLIB_HANDLE hdl = DYNLIB_LOAD(_file.c_str());
     if(!hdl) {
-        std::cout << "[Plugin:" << name << "] Could not load file." << std::endl;
+        GreDebugPretty() << "{" << name << "} Could not load file." << std::endl;
         throw BadPluginFile(_file + " [Constructor]");
     }
     
@@ -34,7 +34,7 @@ PluginResource::PluginResource (const std::string& name, const std::string& file
     
     * (void**) &mFunc = DYNLIB_GETSYM(hdl, "GetPluginName");
     if(!mFunc) {
-        std::cout << "[Plugin:" << name << "] " << dlerror() << std::endl;
+        GreDebugPretty() << name << " : " << dlerror() << std::endl;
         DYNLIB_UNLOAD(hdl);
         throw BadPluginConception(_file + " [GetPluginName]");
     }
@@ -45,7 +45,7 @@ PluginResource::PluginResource (const std::string& name, const std::string& file
     * (void**) &mFunc3 = DYNLIB_GETSYM(hdl, "StopPlugin");
     
     if(!mFunc2 || !mFunc3) {
-        std::cout << "[Plugin:" << name << "] " << dlerror() << std::endl;
+        GreDebugPretty() << name << " : " << dlerror() << std::endl;
         DYNLIB_UNLOAD(hdl);
         throw BadPluginConception(_file + " [StartOrStopPlugin]");
     }
@@ -75,7 +75,7 @@ bool PluginResource::start ()
     if(_mStart && !_mIsStarted) {
         _mStart ();
 #ifdef DEBUG
-        std::cout << "[Plugin:" << _mName << "] Started." << std::endl;
+        GreDebugPretty() << _mName << " : Started." << std::endl;
 #endif
         _mIsStarted = true;
         return true;
@@ -90,7 +90,7 @@ void PluginResource::stop ()
         _mStop();
         _mIsStarted = false;
 #ifdef DEBUG
-        std::cout << "[Plugin:" << _mName << "] Stopped." << std::endl;
+        GreDebugPretty() << _mName << " : Stopped." << std::endl;
 #endif
     }
 }

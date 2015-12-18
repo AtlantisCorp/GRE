@@ -65,13 +65,17 @@ Mesh CreateSquare (Renderer renderer)
     return renderer.createMeshFromBuffers("Quad", vbuf, ibufs);
 }
 
+Mesh LoadMesh(const std::string& file, Renderer renderer)
+{
+    Mesh mymesh = Mesh(ResourceManager::Get().loadResourceWith(ResourceManager::Get().getMeshLoaderFactory().get("ObjMeshLoader"), Resource::Type::Mesh,  "MyMesh", file, renderer));
+    return mymesh;
+}
+
 int main(int argc, const char * argv[]) {
     
     try
     {
-        std::cout << "[Main] Initialized Gre v." << localVersion.major << "." << localVersion.minor << "." << localVersion.build << std::endl;
-        
-        
+        GreDebugPretty() << "Initialized Gre v." << localVersion.major << "." << localVersion.minor << "." << localVersion.build << std::endl;
         
         ResourceManager::Create();
         ResourceManager::Get().loadPluginsIn("./plugins");
@@ -87,7 +91,7 @@ int main(int argc, const char * argv[]) {
             myWindow.associate(myRenderer);
             myWindow.setTitle("My Cool Application");
             
-            std::cout << "Pool current size = " << ResourceManager::Get().getResourceUsage() << std::endl;
+            GreDebugPretty() << "Pool current size = " << ResourceManager::Get().getResourceUsage() << std::endl;
             
             myWindow.setVerticalSync(false);
             myRenderer.setFramerate(60.0f);
@@ -100,14 +104,11 @@ int main(int argc, const char * argv[]) {
             
             Mesh triangleMesh = CreateTriangle(myRenderer);
             Mesh squareMesh   = CreateSquare(myRenderer);
+            Mesh myCustomMesh = LoadMesh("mesh/lar-08.obj", myRenderer);
             
             Listener myGenericListener = myWindow.addListener("GenericListener");
             myGenericListener.addAction(EventType::KeyDown, [&] (const Event& e) {
                 const KeyDownEvent& kde = e.to<KeyDownEvent>();
-                if(kde.key == Key::V) {
-                    myWindow.setVerticalSync(!myWindow.hasVerticalSync());
-                    std::cout << "[Main] Changed Vertical Sync." << std::endl;
-                }
                 
                 if(kde.key == Key::T) {
                     triangleMesh.getVertexBuffer().activateColor(!triangleMesh.getVertexBuffer().isColorActivated());
@@ -121,7 +122,7 @@ int main(int argc, const char * argv[]) {
                     trispeed -= 0.05f;
                 }
                 
-                std::cout << "[Main] Key Down : " << (int) kde.key << std::endl;
+                GreDebugPretty() << "[Main] Key Down : " << (int) kde.key << std::endl;
             });
             
             Keyboard myKeyboard("MyKeyboard");
@@ -132,19 +133,20 @@ int main(int argc, const char * argv[]) {
             myCamera.lookAt(Vector3(0.0f, 0.0f, -10.0f));
             myCamera.listen(myKeyboard);
             
-            myRenderer.setClearColor({0.0f, 0.0f, 0.0f, 0.0f});
-            myRenderer.setImmediateMode(true);
-            myRenderer.addImmediateAction([&] () {
-                
-                myRenderer.prepare(myCamera);
-                
-                myRenderer.translate(-1.5f, 0.0f, -10.0f);
-                myRenderer.draw(triangleMesh);
-                
-                myRenderer.translate(3.0f, 0.0f, 0.0f);
-                myRenderer.rotate(rquad, 0.0f, 0.0f, 1.0f);
-                myRenderer.draw(squareMesh);
-            });
+            myRenderer.setClearColor({0.0f, 0.0f, 0.0f, 1.0f});
+            myRenderer.setImmediateMode(false);
+            
+            Scene scene = myRenderer.loadSceneByName("BinaryTreeScene", "Scene1");
+            Node root = myRenderer.getScene().getRoot();
+            
+            Node triangleNode = root.addChild(scene.createNode(triangleMesh));
+            triangleNode.translate(Vector3(-1.5f, 0.0f, -10.0f));
+            triangleNode.setVisible(true);
+            
+            Node quadNode = root.addChild(scene.createNode(squareMesh));
+            quadNode.translate(Vector3(1.5f, 0.0f, -10.0f));
+            quadNode.addAction(EventType::Update, [&] (const Event&) { quadNode.rotate(rquad, Vector3(0.0f, 0.0f, 1.0f)); });
+            quadNode.setVisible(true);
             
             myRenderer.resetElapsedTime();
             
@@ -172,9 +174,9 @@ int main(int argc, const char * argv[]) {
         ResourceManager::Destroy();
         
     } catch (std::exception const& e) {
-        std::cout << "Exception : " << e.what() << std::endl;
+        GreDebugPretty() << "Exception : " << e.what() << std::endl;
     }
     
-    std::cout << "end." << std::endl;
+    GreDebugPretty() << "end." << std::endl;
     return 0;
 }

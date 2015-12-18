@@ -103,7 +103,7 @@ GRE_BEGIN_NAMESPACE
 
 #define GRE_VERSION_MAJOR 0             ///< @brief GRE Major version.
 #define GRE_VERSION_MINOR 0             ///< @brief GRE Minor version.
-#define GRE_VERSION_BUILD 11            ///< @brief GRE Build number.
+#define GRE_VERSION_BUILD 12            ///< @brief GRE Build number.
 
 /// @brief Defines the Version structure.
 typedef struct Version
@@ -115,6 +115,27 @@ typedef struct Version
 
 #define localVersion (Version({ GRE_VERSION_MAJOR , GRE_VERSION_MINOR , GRE_VERSION_BUILD }))
 DLL_PUBLIC Version GetLibVersion ();
+
+//http://stackoverflow.com/questions/23230003/something-between-func-and-pretty-function/29856690?noredirect=1#comment47839355_29856690
+#include <cstring>
+#include <string>
+#include <algorithm>
+
+template<size_t FL, size_t PFL>
+const char* computeMethodName(const char (&function)[FL], const char (&prettyFunction)[PFL]) {
+    using reverse_ptr = std::reverse_iterator<const char*>;
+    /*thread_local*/ static char result[PFL];
+    const char* locFuncName = std::search(prettyFunction,prettyFunction+PFL-1,function,function+FL-1);
+    const char* locClassName = std::find(reverse_ptr(locFuncName), reverse_ptr(prettyFunction), ' ').base();
+    const char* endFuncName = std::find(locFuncName,prettyFunction+PFL-1,'(');
+    std::copy(locClassName, endFuncName, result);
+    return result;
+}
+#define __COMPACT_PRETTY_FUNCTION__ computeMethodName(__FUNCTION__,__PRETTY_FUNCTION__)
+
+/// @brief Debug using an intro (should use __PRETTY_FUNCTION__ macro) and the body message.
+DLL_PUBLIC std::ostream& GreDebug(const std::string& func);
+#define GreDebugPretty() GreDebug( __COMPACT_PRETTY_FUNCTION__ )
 
 enum class PrimitiveType
 {
@@ -139,7 +160,9 @@ enum class StorageType
     UnsignedInt     = 0x03
 };
 
-class GreExceptionWithText : public std::exception
+typedef std::exception GreException;
+
+class GreExceptionWithText : public GreException
 {
 public:
     
@@ -158,6 +181,13 @@ typedef GreExceptionWithText GreUnsupportedOperation;
 typedef glm::vec2 Vector2;
 typedef glm::vec3 Vector3;
 typedef glm::mat4 Matrix4;
+
+class MatrixUtils
+{
+public:
+    static Matrix4 Zero4;
+};
+
 
 GRE_END_NAMESPACE
 #endif

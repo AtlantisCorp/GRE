@@ -71,3 +71,21 @@ GLenum OpenGlUtils::StorageTypeToGl (StorageType stype)
             return GL_UNSIGNED_INT;
     }
 }
+
+#ifdef GRE_OSX
+
+void * MyNSGLGetProcAddress (const char *name)
+{
+    NSSymbol symbol;
+    char *symbolName;
+    symbolName = (char*) malloc (strlen (name) + 2); // 1
+    strcpy(symbolName + 1, name); // 2
+    symbolName[0] = '_'; // 3
+    symbol = NULL;
+    if (NSIsSymbolNameDefined (symbolName)) // 4
+        symbol = NSLookupAndBindSymbol (symbolName);
+    free (symbolName); // 5
+    return symbol ? NSAddressOfSymbol (symbol) : NULL; // 6
+}
+
+#endif

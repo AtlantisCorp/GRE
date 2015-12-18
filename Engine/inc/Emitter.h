@@ -50,5 +50,25 @@ protected:
     std::map<std::string, Listener> _mListeners;
 };
 
+//////////////////////////////////////////////////////////////////////
+/// @brief A particular type of Emitter, which can listen to other
+/// Emitters and transmit their events.
+//////////////////////////////////////////////////////////////////////
+class DLL_PUBLIC Transmitter : public Listener, public Emitter
+{
+public:
+    
+    POOLED(Pools::Event)
+    
+    Transmitter(const std::string& name);
+    virtual ~Transmitter();
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Transmits the event to the Listeners regitered, and then
+    /// treat the event.
+    //////////////////////////////////////////////////////////////////////
+    virtual void onEvent(const Event& e);
+};
+
 GRE_END_NAMESPACE
 #endif

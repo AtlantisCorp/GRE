@@ -25,7 +25,7 @@ MeshLoader::~MeshLoader()
     
 }
 
-Resource* MeshLoader::load(Resource::Type type, const std::string &name, const std::string &file) const
+Resource* MeshLoader::load(Resource::Type type, const std::string &name, const std::string &file, Renderer renderer) const
 {
     return nullptr;
 }

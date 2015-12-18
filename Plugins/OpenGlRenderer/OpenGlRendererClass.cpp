@@ -8,6 +8,20 @@
 
 #include "OpenGlRenderer.h"
 
+int FindFirstOccurence(const std::string& in, char what)
+{
+    if(in.empty())
+        return -1;
+    
+    int i = 0;
+    while(in[i] != '\0' && in[i] != what)
+        ++i;
+    
+    if(in[i] == '\0' || in[i] == what)
+        return i;
+    return -1;
+}
+
 OpenGlRenderer::OpenGlRenderer (const std::string& name)
 : RendererResource(name)
 {
@@ -17,69 +31,13 @@ OpenGlRenderer::OpenGlRenderer (const std::string& name)
     _mClearColor[3] = 0.0f;
     _mClearDepth    = 1.0f;
     
-    GLint GL_major, GL_minor;
-    
-#ifdef GL_VERSION_1_1
-    GL_major = 1;
-    GL_minor = 1;
-#endif
-#ifdef GL_VERSION_1_2
-    GL_minor = 2;
-#endif
-#ifdef GL_VERSION_1_3
-    GL_minor = 3;
-#endif
-#ifdef GL_VERSION_1_4
-    GL_minor = 4;
-#endif
-#ifdef GL_VERSION_1_5
-    GL_minor = 5;
-#endif
-#ifdef GL_VERSION_2_0
-    GL_major = 2;
-    GL_minor = 0;
-#endif
-#ifdef GL_VERSION_2_1
-    GL_minor = 1;
-#endif
-#ifdef GL_VERSION_3_0
-    GL_major = 3;
-    GL_minor = 0;
-#endif
-#ifdef GL_VERSION_3_1
-    GL_minor = 1;
-#endif
-#ifdef GL_VERSION_3_2
-    GL_minor = 2;
-#endif
-#ifdef GL_VERSION_3_3
-    GL_minor = 3;
-#endif
-#ifdef GL_VERSION_4_0
-    GL_major = 4;
-    GL_minor = 0;
-#endif
-#ifdef GL_VERSION_4_1
-    GL_minor = 1;
-#endif
-    
-    _gl_major = GL_major;
-    _gl_minor = GL_minor;
-    
+    initializeFunctions();
+    setGlVersion();
     initExtensions();
     
-    char* GL_version  = (char*) glGetString(GL_VERSION);
-    char* GL_vendor   = (char*) glGetString(GL_VENDOR);
-    char* GL_renderer = (char*) glGetString(GL_RENDERER);
-    
-    std::cout << "[OpenGl] Version  : " << GL_version << std::endl;
-    std::cout << "[OpenGl] Vendor   : " << GL_vendor << std::endl;
-    std::cout << "[OpenGl] Renderer : " << GL_renderer << std::endl;
-    std::cout << "[OpenGl] Num Ext  : " << _extensions.size() << std::endl;
-    
-    _suportVbo = hasExtension("GL_ARB_vertex_buffer_object");
+    _suportVbo = hasExtension("GL_ARB_vertex_buffer_object") || _gl_major >= 3;
     if(!_suportVbo) {
-        std::cout << "[OpenGl] Warning : Current Hardware does not support Vertex Buffer Objects ! This can be followed by very bad performances." << std::endl;
+        GreDebugPretty() << "Warning : Current Hardware does not support Vertex Buffer Objects ! This can be followed by very bad performances." << std::endl;
     }
 }
 
@@ -88,10 +46,66 @@ OpenGlRenderer::~OpenGlRenderer ()
     
 }
 
+void OpenGlRenderer::initializeFunctions()
+{
+    _glGetStringi  = (PFNGLGETSTRINGIPROC)  GlGetProcAddress("glGetStringi");
+    _glGetIntegerv = (PFNGLGETINTEGERVPROC) GlGetProcAddress("glGetIntegerv");
+    _glGetString   = (PFNGLGETSTRINGPROC)   GlGetProcAddress("glGetString");
+}
+
+void OpenGlRenderer::setGlVersion()
+{
+    if(!_glGetString) {
+        GreDebugPretty() << "Couldn't find glGetString entry point." << std::endl;
+        throw RendererInvalidApi();
+    }
+    
+    char* GL_version  = (char*) _glGetString(GL_VERSION);
+    char* GL_vendor   = (char*) _glGetString(GL_VENDOR);
+    char* GL_renderer = (char*) _glGetString(GL_RENDERER);
+    
+    int vpoint = FindFirstOccurence(std::string(GL_version), '.');
+    if(vpoint >= 0)
+    {
+        _gl_major = GL_version[vpoint-1] - '0';
+        _gl_minor = GL_version[vpoint+1] - '0';
+    }
+    else
+        throw RendererInvalidVersion();
+    
+    GreDebugPretty() << "Version  : " << GL_version << std::endl;
+    GreDebugPretty() << "Vendor   : " << GL_vendor << std::endl;
+    GreDebugPretty() << "Renderer : " << GL_renderer << std::endl;
+}
+
 void OpenGlRenderer::initExtensions()
 {
-    char* exts = (char*) glGetString(GL_EXTENSIONS);
-    _extensions = split(std::string(exts), ' ');
+    if(_gl_major >= 3)
+    {
+        if(!_glGetStringi || !_glGetIntegerv) {
+            GreDebugPretty() << "Couldn't find glGetStringi or glGetIntegerv entry points." << std::endl;
+            return;
+        }
+        
+        GLint extnum = 0;
+        _glGetIntegerv(GL_NUM_EXTENSIONS, &extnum);
+        
+        for(GLuint cext = 0; cext < extnum; ++cext) {
+            _extensions.push_back(std::string((char*) _glGetStringi(GL_EXTENSIONS, cext)));
+        }
+    }
+    else
+    {
+        if(!_glGetString) {
+            GreDebugPretty() << "Couldn't find glGetString entry point." << std::endl;
+            return;
+        }
+        
+        char* exts = (char*) _glGetString(GL_EXTENSIONS);
+        _extensions = split(std::string(exts), ' ');
+    }
+    
+    GreDebugPretty() << "Num Ext  : " << _extensions.size() << std::endl;
 }
 
 bool OpenGlRenderer::hasExtension(const std::string& ext) const
@@ -137,25 +151,25 @@ void OpenGlRenderer::_preRender()
     // --------------------------------------------
     
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	// Clear Screen And Depth Buffer
-    glLoadIdentity();									// Reset The Current Modelview Matrix
     glEnable(GL_TEXTURE_2D);
 }
 
 void OpenGlRenderer::_render ()
 {
-    glTranslatef(-1.5f,0.0f,-6.0f);						// Move Left 1.5 Units And Into The Screen 6.0
-    glBegin(GL_TRIANGLES);								// Drawing Using Triangles
-    glVertex3f( 0.0f, 1.0f, 0.0f);					// Top
-    glVertex3f(-1.0f,-1.0f, 0.0f);					// Bottom Left
-    glVertex3f( 1.0f,-1.0f, 0.0f);					// Bottom Right
-    glEnd();											// Finished Drawing The Triangle
-    glTranslatef(3.0f,0.0f,0.0f);						// Move Right 3 Units
-    glBegin(GL_QUADS);									// Draw A Quad
-    glVertex3f(-1.0f, 1.0f, 0.0f);					// Top Left
-    glVertex3f( 1.0f, 1.0f, 0.0f);					// Top Right
-    glVertex3f( 1.0f,-1.0f, 0.0f);					// Bottom Right
-    glVertex3f(-1.0f,-1.0f, 0.0f);					// Bottom Left
-    glEnd();
+    // Here we draw the scene.
+    Camera& camera = _mScene.getCamera();
+    prepare(camera);
+    
+    // Now we draw each nodes.
+    for(auto node : _mScene.getNodesByFilter(Node::Filter::FarthestToNearest))
+    {
+        pushMatrix(MatrixType::ModelView);
+        
+        transform(node);
+        draw(node.getMesh());
+        
+        popMatrix(MatrixType::ModelView);
+    }
 }
 
 void OpenGlRenderer::_postRender()
@@ -253,6 +267,7 @@ void OpenGlRenderer::draw(const Mesh& mesh)
         if(vbuf.isColorActivated())
             glDisableClientState(GL_COLOR_ARRAY);
         glDisableClientState(GL_VERTEX_ARRAY);
+        
         vbuf.unbind();
     }
 }
@@ -338,8 +353,11 @@ Texture OpenGlRenderer::createTexture(const std::string& name, const std::string
 
 void OpenGlRenderer::prepare(const Camera &camera)
 {
+    glMatrixMode(GL_PROJECTION);
+    
     Matrix4 m = camera.getMatrix();
-    glMatrixMode(GL_MODELVIEW);
     glLoadMatrixf(&(m[0][0]));
+    
+    glMatrixMode(GL_MODELVIEW);
 }
 

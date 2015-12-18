@@ -55,4 +55,21 @@ void Emitter::sendEvent(const Event &e)
     }
 }
 
+Transmitter::Transmitter(const std::string& name)
+: Listener(name), Emitter()
+{
+    
+}
+
+Transmitter::~Transmitter()
+{
+    
+}
+
+void Transmitter::onEvent(const Event& e)
+{
+    Emitter ::sendEvent(e);
+    Listener::onEvent(e);
+}
+
 GRE_END_NAMESPACE

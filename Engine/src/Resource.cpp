@@ -14,14 +14,14 @@ Resource::Resource (const std::string& name) :
 _name (name)
 {
 #ifdef DEBUG
-    std::cout << "[Resource:" << name << "] Constructed." << std::endl;
+    GreDebugPretty() << name << " : Constructed." << std::endl;
 #endif
 }
 
 Resource::~Resource ()
 {
 #ifdef DEBUG
-    std::cout << "[Resource:" << _name << "] Destroyed." << std::endl;
+    GreDebugPretty() << _name << " : Destroyed." << std::endl;
 #endif
 }
 
@@ -41,14 +41,14 @@ ResourceUser::ResourceUser (std::weak_ptr<Resource> r) :
 _resource ( std::move(r) )
 {
 #ifdef DEBUG
-//    std::cout << "[ResourceUser:" << ( _resource.lock() ? _resource.lock()->getName() : "null" ) << "] Constructed." << std::endl;
+//    GreDebugPretty() << "[ResourceUser:" << ( _resource.lock() ? _resource.lock()->getName() : "null" ) << "] Constructed." << std::endl;
 #endif
 }
 
 ResourceUser::~ResourceUser ()
 {
 #ifdef DEBUG
-//    std::cout << "[ResourceUser:" << ( _resource.lock() ? _resource.lock()->getName() : "null" ) << "] Destroyed." << std::endl;
+//    GreDebugPretty() << "[ResourceUser:" << ( _resource.lock() ? _resource.lock()->getName() : "null" ) << "] Destroyed." << std::endl;
 #endif
 }
 

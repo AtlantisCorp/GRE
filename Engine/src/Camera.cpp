@@ -372,4 +372,6 @@ void Camera::setMoveSpeed(float speed)
         ptr->setMoveSpeed(speed);
 }
 
+Camera Camera::Null = Camera(std::string());
+
 GRE_END_NAMESPACE

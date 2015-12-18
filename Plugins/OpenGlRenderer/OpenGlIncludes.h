@@ -28,4 +28,15 @@ public:
     static GLenum StorageTypeToGl (StorageType stype);
 };
 
+#ifdef GRE_OSX
+
+#include <mach-o/dyld.h>
+#include <stdlib.h>
+#include <string.h>
+void * MyNSGLGetProcAddress (const char *name);
+
+#define GlGetProcAddress(name) MyNSGLGetProcAddress( name )
+
+#endif
+
 #endif

@@ -16,12 +16,21 @@
 #include "HardwareIndexBuffer.h"
 #include "Mesh.h"
 #include "Camera.h"
+#include "Scene.h"
+#include "Emitter.h"
 
 GRE_BEGIN_NAMESPACE
 
 typedef std::chrono::milliseconds ElapsedTime;
 
-class DLL_PUBLIC RendererResource : public Resource
+/// @brief Matrix Types used by the Engine.
+enum class MatrixType
+{
+    Projection,
+    ModelView
+};
+
+class DLL_PUBLIC RendererResource : public Resource, public Transmitter
 {
 public:
     
@@ -67,6 +76,48 @@ public:
     void addImmediateAction(std::function<void(void)> action);
     void resetImmediateActions();
     
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Loads a Scene object, loading it using the Resource Manager
+    /// system.
+    /// @param name     Name of the loader to use to create the Scene Object.
+    /// @param sname    Name of the Scene that will be loaded.
+    //////////////////////////////////////////////////////////////////////
+    Scene loadSceneByName(const std::string& name, const std::string& sname);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Loads a Scene object already created using the Resource Manager
+    /// system.
+    /// @param scene    The scene to load.
+    //////////////////////////////////////////////////////////////////////
+    Scene loadSceneByResource(Scene scene);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Push the given matrix to save data.
+    //////////////////////////////////////////////////////////////////////
+    virtual void pushMatrix(MatrixType matrix);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Pop the given matrix to restore data.
+    //////////////////////////////////////////////////////////////////////
+    virtual void popMatrix(MatrixType matrix);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the Scene object.
+    //////////////////////////////////////////////////////////////////////
+    Scene& getScene();
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the Scene object.
+    //////////////////////////////////////////////////////////////////////
+    const Scene& getScene() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Apply the transformation in the given node.
+    /// You should always call ::pushMatrix() before applying transformations
+    /// and ::popMatrix() to preserve Matrix transformations.
+    //////////////////////////////////////////////////////////////////////
+    virtual void transform(const Node& node);
+    
 public:
     
     virtual HardwareVertexBuffer createVertexBuffer();
@@ -97,6 +148,7 @@ protected:
     bool   _mIsActive;
     bool   _mIsImmediateMode; ///< @brief True if renderer is in immediate mode.
     std::vector<std::function<void(void)> > _mImmediateFunctions; ///< @brief Vector of functions to be called in immediate mode.
+    Scene  _mScene; ///< @brief THE Scene object :) .
     
 private:
     
@@ -147,6 +199,41 @@ public:
     void addImmediateAction(std::function<void(void)> action);
     void resetImmediateActions();
     
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Loads a Scene object, loading it using the Resource Manager
+    /// system.
+    /// @param name     Name of the loader to use to create the Scene Object.
+    /// @param sname    Name of the Scene that will be loaded.
+    //////////////////////////////////////////////////////////////////////
+    Scene loadSceneByName(const std::string& name, const std::string& sname);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Loads a Scene object already created using the Resource Manager
+    /// system.
+    /// @param scene    The scene to load.
+    //////////////////////////////////////////////////////////////////////
+    Scene loadSceneByResource(Scene scene);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Push the given matrix to save data.
+    //////////////////////////////////////////////////////////////////////
+    void pushMatrix(MatrixType matrix);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Pop the given matrix to restore data.
+    //////////////////////////////////////////////////////////////////////
+    void popMatrix(MatrixType matrix);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the Scene object.
+    //////////////////////////////////////////////////////////////////////
+    Scene& getScene();
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the Scene object.
+    //////////////////////////////////////////////////////////////////////
+    const Scene& getScene() const;
+    
     void translate(float x, float y, float z);
     void rotate(float angle, float x, float y, float z);
     
@@ -160,6 +247,11 @@ public:
     Mesh createMeshFromBuffers(const std::string& name, const HardwareVertexBuffer& vbuf, const HardwareIndexBufferBatch& ibufs);
     Texture createTexture(const std::string& name, const std::string& file);
     Camera createCamera(const std::string& name);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Apply the transformation in the given node.
+    //////////////////////////////////////////////////////////////////////
+    void transform(const Node& node);
     
 private:
     
@@ -185,6 +277,8 @@ protected:
 };
 
 typedef ResourceLoaderFactory<RendererLoader> RendererLoaderFactory;
+typedef GreException                          RendererInvalidVersion;
+typedef GreException                          RendererInvalidApi;
 
 GRE_END_NAMESPACE
 #endif

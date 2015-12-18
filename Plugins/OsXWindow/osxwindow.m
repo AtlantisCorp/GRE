@@ -209,6 +209,78 @@ void GAddMenu (void)
     [pool release];
 }
 
+// Return the best PixelFormat for this computer.
+NSOpenGLPixelFormat* GChooseBestOpenGlPixelFormat()
+{
+    NSOpenGLPixelFormatAttribute formatAttribCore4[] =
+    {
+        NSOpenGLPFADepthSize, (NSOpenGLPixelFormatAttribute) 32,
+        NSOpenGLPFADoubleBuffer,
+        NSOpenGLPFAOpenGLProfile, NSOpenGLProfileVersion4_1Core,
+        NSOpenGLPFAAccelerated,
+        0
+    };
+    
+    NSOpenGLPixelFormatAttribute formatAttribCore3[] =
+    {
+        NSOpenGLPFADepthSize, (NSOpenGLPixelFormatAttribute) 32,
+        NSOpenGLPFADoubleBuffer,
+        NSOpenGLPFAOpenGLProfile, NSOpenGLProfileVersion3_2Core,
+        NSOpenGLPFAAccelerated,
+        0
+    };
+    
+    NSOpenGLPixelFormatAttribute formatAttrib[] =
+    {
+        NSOpenGLPFADepthSize,(NSOpenGLPixelFormatAttribute)32,
+        NSOpenGLPFADoubleBuffer,
+        NSOpenGLPFAOpenGLProfile, NSOpenGLProfileVersionLegacy,
+        NSOpenGLPFAAccelerated,
+        0
+    };
+    
+    NSOpenGLPixelFormatAttribute formatAttribSoft[] =
+    {
+        NSOpenGLPFADepthSize,(NSOpenGLPixelFormatAttribute)32,
+        NSOpenGLPFADoubleBuffer,
+        0
+    };
+    
+    NSOpenGLPixelFormat* result = nil;
+    
+    result = [[NSOpenGLPixelFormat alloc] initWithAttributes: formatAttribCore4];
+    
+    if(result == nil) {
+        printf("[OSXWindow] Can't find OpenGL Core Profile 4.1 . \n");
+        result = [[NSOpenGLPixelFormat alloc] initWithAttributes: formatAttribCore3];
+        
+        if(result == nil) {
+            printf("[OSXWindow] Can't find OpenGL Core Profile 3.2 . \n");
+            result = [[NSOpenGLPixelFormat alloc] initWithAttributes: formatAttrib];
+            
+            if(result == nil) {
+                printf("[OSXWindow] Can't find OpenGL Legacy Profile. \n");
+                result = [[NSOpenGLPixelFormat alloc] initWithAttributes:formatAttribSoft];
+                
+                if(result != nil) {
+                    printf("[OSXWindow] Using not 'hardware-accelerated' renderer. \n");
+                } else {
+                    printf("[OSXWindow] No Renderer found on this Mac. \n");
+                }
+                
+            } else {
+                printf("[OSXWindow] Found OpenGL Legacy Profile. \n");
+            }
+        } else {
+            printf("[OSXWindow] Found OpenGL Core Profile 3.2 . \n");
+        }
+    } else {
+        printf("[OSXWindow] Found OpenGL Core Profile 4.1 . \n");
+    }
+    
+    return result;
+}
+
 void GCreateWindow (int x0,int y0,int wid,int hei)
 {
     NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
@@ -236,6 +308,9 @@ void GCreateWindow (int x0,int y0,int wid,int hei)
                              owner:NSApp];
         }
         
+        // We create the NSOpenGLWindow object with given x, y, width and height.
+        // [TODO] Make Window's style customizable.
+        
         NSRect contRect;
         contRect=NSMakeRect(x0,y0,wid,hei);
         
@@ -248,21 +323,22 @@ void GCreateWindow (int x0,int y0,int wid,int hei)
                                    backing:NSBackingStoreBuffered
                                      defer:NO];
         
-        NSOpenGLPixelFormat *format;
-        NSOpenGLPixelFormatAttribute formatAttrib[]=
-        {
-            NSOpenGLPFADepthSize,(NSOpenGLPixelFormatAttribute)32,
-            NSOpenGLPFADoubleBuffer,
-            0
-        };
+        // We try to load the Pixel Format with Opengl Core or Opengl legacy.
+        // We have 3 possibilities, OpenGL 2.1, 4.1 or 3.2.
+        // [TODO] Let the user force a specific context version, if possible.
+        NSOpenGLPixelFormat* format = GChooseBestOpenGlPixelFormat();
+        if(!format) {
+            [pool release];
+            return;
+        }
         
-        format   = [NSOpenGLPixelFormat alloc];
-        format   = [format initWithAttributes: formatAttrib];
         contRect = NSMakeRect(0,0,800,600);
         
-        ysView   = [YsOpenGLView alloc];
-        ysView   = [ysView initWithFrame:contRect
-                             pixelFormat:format];
+        ysView = [[YsOpenGLView alloc] initWithFrame:contRect pixelFormat:format];
+        if(!ysView) {
+            printf("[OSXWindow] Can't initialize NSOpenGLView object. \n");
+            return;
+        }
         
         int param = 0;
         CGLSetParameter([[ysView openGLContext] CGLContextObj], kCGLCPSwapInterval, &param);

@@ -14,7 +14,7 @@ GRE_BEGIN_NAMESPACE
 typedef std::chrono::high_resolution_clock Clock;
 
 RendererResource::RendererResource (const std::string& name)
-: Resource(name)
+: Resource(name), Transmitter(name)
 {
     _sum_frames = 0;
     _wantedFps  = 0.0f;
@@ -140,6 +140,49 @@ void RendererResource::resetImmediateActions()
     _mImmediateFunctions.clear();
 }
 
+Scene RendererResource::loadSceneByName(const std::string& name, const std::string& sname)
+{
+    SceneLoader* sceneLoader = ResourceManager::Get().getSceneLoaderFactory().get(name);
+    if(sceneLoader) {
+        return loadSceneByResource(Scene(ResourceManager::Get().loadResourceWith(sceneLoader, Resource::Type::Scene, sname)));
+    }
+    
+    return Scene::Null;
+}
+
+Scene RendererResource::loadSceneByResource(Scene scene)
+{
+    if(!_mScene.expired()) {
+        Emitter::removeListener(_mScene.getName());
+        _mScene.clear();
+    }
+    
+    _mScene = scene;
+    if(!_mScene.expired())
+        _mScene.getRoot().listen(*this);
+    return _mScene;
+}
+
+void RendererResource::pushMatrix(MatrixType matrix)
+{
+    
+}
+
+void RendererResource::popMatrix(MatrixType matrix)
+{
+    
+}
+
+Scene& RendererResource::getScene()
+{
+    return _mScene;
+}
+
+const Scene& RendererResource::getScene() const
+{
+    return _mScene;
+}
+
 HardwareVertexBuffer RendererResource::createVertexBuffer()
 {
     return HardwareVertexBuffer::Null;
@@ -173,6 +216,11 @@ Camera RendererResource::createCamera(const std::string& name)
 }
 
 void RendererResource::draw(const Mesh &mesh)
+{
+    
+}
+
+void RendererResource::transform(const Node &node)
 {
     
 }
@@ -418,6 +466,59 @@ void Renderer::prepare(const Camera& cam)
     auto ptr = _mRenderer.lock();
     if(ptr)
         ptr->prepare(cam);
+}
+
+Scene Renderer::loadSceneByName(const std::string& name, const std::string& sname)
+{
+    auto ptr = _mRenderer.lock();
+    if(ptr)
+        return ptr->loadSceneByName(name, sname);
+    return Scene::Null;
+}
+
+Scene Renderer::loadSceneByResource(Scene scene)
+{
+    auto ptr = _mRenderer.lock();
+    if(ptr)
+        return ptr->loadSceneByResource(scene);
+    return Scene::Null;
+}
+
+void Renderer::pushMatrix(MatrixType matrix)
+{
+    auto ptr = _mRenderer.lock();
+    if(ptr)
+        ptr->pushMatrix(matrix);
+}
+
+void Renderer::popMatrix(MatrixType matrix)
+{
+    auto ptr = _mRenderer.lock();
+    if(ptr)
+        ptr->popMatrix(matrix);
+}
+
+Scene& Renderer::getScene()
+{
+    auto ptr = _mRenderer.lock();
+    if(ptr)
+        return ptr->getScene();
+    return Scene::Null;
+}
+
+const Scene& Renderer::getScene() const
+{
+    auto ptr = _mRenderer.lock();
+    if(ptr)
+        return ptr->getScene();
+    return Scene::Null;
+}
+
+void Renderer::transform(const Node &node)
+{
+    auto ptr = _mRenderer.lock();
+    if(ptr)
+        ptr->transform(node);
 }
 
 RendererLoader::RendererLoader()

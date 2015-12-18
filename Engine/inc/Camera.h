@@ -105,7 +105,7 @@ class DLL_PUBLIC Camera : public Listener
 {
 public:
     
-    Camera(const std::string& name);
+    Camera(const std::string& name = std::string());
     Camera(const Camera& rhs);
     explicit Camera(ListenerPrivate* rhs);
     
@@ -168,6 +168,9 @@ public:
     /// @brief Returns the speed of the camera.
     float getMoveSpeed() const;
     void setMoveSpeed(float speed);
+    
+    /// @brief A Null Camera object.
+    static Camera Null;
     
 private:
     
