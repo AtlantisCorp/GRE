@@ -8,6 +8,8 @@
 
 #include "ResourceManager.h"
 
+#include "BinaryTreeScene.h"
+
 GRE_BEGIN_NAMESPACE
 
 ResourceManager* _manager = nullptr;
@@ -54,6 +56,7 @@ ResourceManager::ResourceManager()
     _fileloaders.registers("TextLoader", new TextLoader());
     _fileloaders.registers("PluginLoader", new PluginLoader());
     _meshLoaders.registers("DefaultLoader", new MeshLoader());
+    _sceneLoaders.registers("BinaryTreeScene", new BinaryTreeSceneLoader());
     _verbose = false;
 }
 
@@ -69,8 +72,12 @@ ResourceManager::~ResourceManager ()
     _meshLoaders.clear();
     _imageLoaders.clear();
     _sceneLoaders.clear();
+    _shaderLoaders.clear();
+    _progManLoaders.clear();
     
     _resourcesbyname.clear();
+    _resourcesbytype[Resource::Type::HdwShader].clear();
+    _resourcesbytype[Resource::Type::HwdProgManager].clear();
     _resourcesbytype[Resource::Type::Scene].clear();
     _resourcesbytype[Resource::Type::Image].clear();
     _resourcesbytype[Resource::Type::Texture].clear();
@@ -154,6 +161,16 @@ SceneLoaderFactory& ResourceManager::getSceneLoaderFactory()
 ResourceManager::NameGenerator& ResourceManager::getNameGenerator()
 {
     return _nameGenerator;
+}
+
+HardwareShaderLoaderFactory& ResourceManager::getHardwareShaderLoaderFactory()
+{
+    return _shaderLoaders;
+}
+
+HardwareProgramManagerLoaderFactory& ResourceManager::getHardwareProgramManagerLoaderFactory()
+{
+    return _progManLoaders;
 }
 
 void ResourceManager::setVerbose(bool flag)

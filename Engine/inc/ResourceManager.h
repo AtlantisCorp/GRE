@@ -81,6 +81,8 @@ private:
     MeshLoaderFactory                               _meshLoaders;     ///< @brief Factory to create MeshLoaders.
     ImageLoaderFactory                              _imageLoaders;    ///< @brief Creates ImageLoader.
     SceneLoaderFactory                              _sceneLoaders;    ///< @brief Creates SceneLoader objects.
+    HardwareShaderLoaderFactory                     _shaderLoaders;   ///< @brief Creates HardwareShaderLoader objects.
+    HardwareProgramManagerLoaderFactory             _progManLoaders;  ///< @brief Creates HardwareProgramManagerLoader objects.
     NameGenerator                                   _nameGenerator;   ///< @brief Utility class to create Names.
     bool                                            _verbose;         ///< @brief Set to true to print more informations.
     
@@ -192,6 +194,10 @@ public:
     SceneLoaderFactory& getSceneLoaderFactory();
     /// @brief Returns the NameGenerator object.
     NameGenerator& getNameGenerator();
+    /// @brief Returns the HardwareShaderLoader Factory.
+    HardwareShaderLoaderFactory& getHardwareShaderLoaderFactory();
+    /// @brief Returns the HardwareProgramManagerLoader Factory.
+    HardwareProgramManagerLoaderFactory& getHardwareProgramManagerLoaderFactory();
     
     /// @brief Set to true if you want verbose mode.
     void setVerbose(bool flag);

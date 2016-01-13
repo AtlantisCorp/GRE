@@ -1,130 +1,148 @@
 //
-//  Node.h
+//  NodePrivate.h
 //  GRE
 //
-//  Created by Jacques Tronconi on 14/12/2015.
+//  Created by Jacques Tronconi on 06/01/2016.
 //
 //
 
-#ifndef GRE_Node_h
-#define GRE_Node_h
+#ifndef GRE_NodePrivate_h
+#define GRE_NodePrivate_h
 
-#include "NodePrivate.h"
-
-#include "Listener.h"
-#include "Emitter.h"
+#include "Pools.h"
+#include "Resource.h"
+#include "Mesh.h"
+#include "Camera.h"
 
 GRE_BEGIN_NAMESPACE
 
+class DLL_PUBLIC Node;
+class DLL_PUBLIC Scene;
+
 //////////////////////////////////////////////////////////////////////
-/// @brief Proxy object to use a Node.
-/// The Node User object can also be a Listener. It permits the Node to
-/// be updated by the Scene object, and by the Renderer.
+/// @brief A Generic Base Node object.
+///
+/// Why make a Resource object for a Node ?
+///
+/// A Node object can be created by any plugin (from the Scene object),
+/// and so needs to have an interface with which the user will be able to
+/// interact normally.
+///
+/// The Node implementator should not take care about adding those
+/// objects to the ResourceManager. He can just hold an std::vector filled
+/// with std::shared_ptr, pointing to NodePrivate object.
+/// The Goal here is to make Node an interface fully customizable for the
+/// maintainer, but also easilly usable by the user.
+///
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC Node : public ResourceUser, public Transmitter
+class DLL_PUBLIC NodePrivate : public Resource
 {
-public:
-    
-    /// @brief Describes some filters used when accessing Nodes.
-    enum class Filter
-    {
-        FarthestToNearest,  ///< @brief Filter Nodes from the farthest to the nearest.
-        NearestToFarthest,  ///< @brief Filter Nodes from the nearest to the farthest.
-        Default             ///< @brief No filters.
-    };
-    
 public:
     
     POOLED(Pools::Resource)
     
-    Node();
-    Node(Node&& rhs);
-    Node(const Node& rhs);
-    explicit Node(const ResourceUser& rhs);
-    explicit Node(std::weak_ptr<NodePrivate> rhs);
-    
-    ~Node();
-    
-    Node& operator = (const Node& node);
+    NodePrivate(const std::string& name = std::string());
+    virtual ~NodePrivate();
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Adds a new child to this Node.
+    /// In the case the Node could not be added, Node::Null is returned by
+    /// by the Node user object. This function should return nullptr.
+    /// The Node may or may not store the child, depending on the
+    /// implementation. Keep in mind that a std::shared_ptr has to manage
+    /// the lifetime of the NodePrivate object, because Node is a ResourceUser
+    /// so it only has a std::weak_ptr.
     /// @param child    The Node to add.
     //////////////////////////////////////////////////////////////////////
-    Node addChild(const Node& child);
+    virtual Node addChild(const Node& child);
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Adds a new child to this Node and owns the shared pointer.
+    /// @brief Adds a new child to this Node.
+    /// This function should take ownership of the shared pointer.
     /// @param child    The Node to add.
     //////////////////////////////////////////////////////////////////////
-    Node addChild(NodePrivate* child);
+    virtual Node addChild(NodePrivate* child);
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Translate the Node by given vector.
     //////////////////////////////////////////////////////////////////////
-    void translate(const Vector3& vector);
+    virtual void translate(const Vector3& vector);
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Rotates the Node from given Angle to given Axis.
     //////////////////////////////////////////////////////////////////////
-    void rotate(float angle, const Vector3& axe);
+    virtual void rotate(float angle, const Vector3& axe);
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Set the visible property of the Node.
+    /// Normally, if the visible property is set to false, the Node will
+    /// not be drew.
     //////////////////////////////////////////////////////////////////////
-    void setVisible(bool visible);
+    virtual void setVisible(bool visible);
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the value of the visible property.
     //////////////////////////////////////////////////////////////////////
-    bool isVisible() const;
+    virtual bool isVisible() const;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Changes the Mesh used by this Node.
     //////////////////////////////////////////////////////////////////////
-    void setMesh(const Mesh& mesh);
+    virtual void setMesh(const Mesh& mesh);
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Mesh contained in a Node.
+    /// @brief Returns the Mesh contained in a Node, if this node contains
+    /// a mesh or Mesh::Null.
     //////////////////////////////////////////////////////////////////////
-    Mesh& getMesh();
+    virtual Mesh& getMesh();
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Mesh contained in a Node.
+    /// @brief Returns the Mesh contained in a Node, if this node contains
+    /// a mesh or Mesh::Null.
     //////////////////////////////////////////////////////////////////////
-    const Mesh& getMesh() const;
+    virtual const Mesh& getMesh() const;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Changes the Camera holded by this Node.
     //////////////////////////////////////////////////////////////////////
-    void setCamera(const Camera& camera);
+    virtual void setCamera(const Camera& camera);
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the Camera holded in this Node, or Camera::Null if
     /// none is holded.
     //////////////////////////////////////////////////////////////////////
-    Camera& getCamera();
+    virtual Camera& getCamera();
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the Camera holded in this Node, or Camera::Null if
     /// none is holded.
     //////////////////////////////////////////////////////////////////////
-    const Camera& getCamera() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the NodePrivate object in a std::weak_ptr .
-    //////////////////////////////////////////////////////////////////////
-    std::weak_ptr<NodePrivate> toWeakPtr();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the NodePrivate object in a std::weak_ptr .
-    //////////////////////////////////////////////////////////////////////
-    const std::weak_ptr<NodePrivate> toWeakPtr() const;
+    virtual const Camera& getCamera() const;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Changes the Parent of this Node.
     //////////////////////////////////////////////////////////////////////
-    void setParent(const Node& node);
+    virtual void setParent(const Node& node);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Sets the Scene owning this Node.
+    //////////////////////////////////////////////////////////////////////
+    virtual void setScene(const Scene& scene);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Gets the Scene owning this Node.
+    //////////////////////////////////////////////////////////////////////
+    virtual Scene getScene() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Changes the owning of this Node.
+    //////////////////////////////////////////////////////////////////////
+    void setThisNode(const Node& thisNode);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns this NodePrivate object into a Node object.
+    //////////////////////////////////////////////////////////////////////
+    Node toNode() const;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the Node matrix.
@@ -141,13 +159,18 @@ public:
     //////////////////////////////////////////////////////////////////////
     void setNodeMatrix(const Matrix4& mat4);
     
-    /// @brief Represent a Node null.
-    static Node Null;
+protected:
     
-private:
+    /// @brief Visible property (will be drew or not.)
+    bool _mIsVisible;
     
-    /// @brief Hold a pointer to real class object.
-    std::weak_ptr<NodePrivate> _mNode;
+    /// @brief Node matrix. (Position referenced in the Node's view)
+    Matrix4 _mMatrix;
+    
+    /// @brief Holds a Node object to this NodePrivate. This property can seems strange, but it is
+    /// useful in some cases, because this weak_ptr must hold an adress to the currently holding
+    /// shared_ptr.
+    std::weak_ptr<NodePrivate> _mThisNode;
 };
 
 GRE_END_NAMESPACE

@@ -39,6 +39,9 @@ OpenGlRenderer::OpenGlRenderer (const std::string& name)
     if(!_suportVbo) {
         GreDebugPretty() << "Warning : Current Hardware does not support Vertex Buffer Objects ! This can be followed by very bad performances." << std::endl;
     }
+    
+    HardwareProgramManagerLoader* hdwLoader = ResourceManager::Get().getHardwareProgramManagerLoaderFactory().get("OpenGlHdwProgramManagerLoader");
+    _mProgramManager = HardwareProgramManager(ResourceManager::Get().loadResourceWith(hdwLoader, Resource::Type::HwdProgManager, "OpenGlProgManager"));
 }
 
 OpenGlRenderer::~OpenGlRenderer ()
@@ -128,53 +131,69 @@ void OpenGlRenderer::setClearDepth (float depth)
     glClearDepth(_mClearDepth);
 }
 
-void OpenGlRenderer::_preRender()
+bool OpenGlRenderer::isCoreProfile() const
 {
-    // [TODO] Handle resizing in a separate method.
-    WindowSize sz = _window.getWindowSize();
-    GLsizei width = sz.first;
-    GLsizei height = sz.second;
-    
-    // Set the viewport.
-    glViewport(0, 0, width, height);
-    
-    // Set the Projection Matrix
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    
-    // Calculate aspect ratio of the window
-    gluPerspective(45.0f, (GLfloat)width/(GLfloat)height, 0.1f, 100.0f);
-    
-    // Reset ModelView Matrix.
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-    // --------------------------------------------
-    
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	// Clear Screen And Depth Buffer
-    glEnable(GL_TEXTURE_2D);
+    return _gl_major > 2;
 }
 
-void OpenGlRenderer::_render ()
+GLuint vao;
+
+void OpenGlRenderer::_preRender()
 {
-    // Here we draw the scene.
-    Camera& camera = _mScene.getCamera();
-    prepare(camera);
-    
-    // Now we draw each nodes.
-    for(auto node : _mScene.getNodesByFilter(Node::Filter::FarthestToNearest))
+    if(isCoreProfile())
     {
-        pushMatrix(MatrixType::ModelView);
+        glGenVertexArrays(1, &vao);
+        glBindVertexArray(vao);
         
-        transform(node);
-        draw(node.getMesh());
+        // First we set up the Viewport.
+        WindowSize sz = _window.getWindowSize();
+        GLsizei width = sz.first;
+        GLsizei height = sz.second;
+        glViewport(0, 0, width, height);
         
-        popMatrix(MatrixType::ModelView);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	// Clear Screen And Depth Buffer
+        glEnable(GL_TEXTURE_2D);
+        glDisable(GL_LIGHTING);
+    }
+    
+    else
+    {
+        // This stuff is for none - OpenGl Core profile.
+        // It is deprecated. Please don't use, but you can of course
+        // make it better if you want. But that's deprecated.
+        
+        // [TODO] Handle resizing in a separate method.
+        WindowSize sz = _window.getWindowSize();
+        GLsizei width = sz.first;
+        GLsizei height = sz.second;
+        
+        // Set the viewport.
+        glViewport(0, 0, width, height);
+        
+        // Set the Projection Matrix
+        glMatrixMode(GL_PROJECTION);
+        glLoadIdentity();
+        
+        // Calculate aspect ratio of the window
+        gluPerspective(45.0f, (GLfloat)width/(GLfloat)height, 0.1f, 100.0f);
+        
+        // Reset ModelView Matrix.
+        glMatrixMode(GL_MODELVIEW);
+        glLoadIdentity();
+        // --------------------------------------------
+        
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	// Clear Screen And Depth Buffer
+        glEnable(GL_TEXTURE_2D);
+        glDisable(GL_LIGHTING);
     }
 }
 
 void OpenGlRenderer::_postRender()
 {
     glFlush();
+    
+    glBindVertexArray(0);
+    glDeleteVertexArrays(1, &vao);
 }
 
 void OpenGlRenderer::translate(float x, float y, float z)
@@ -213,7 +232,7 @@ void OpenGlRenderer::drawQuad(float sz, const Color& color1, const Color& color2
     glEnd();
 }
 
-void OpenGlRenderer::draw(const Mesh& mesh)
+void OpenGlRenderer::draw_legacy(const Mesh& mesh)
 {
     if(mesh.getType() == MeshPrivate::Type::Buffered)
     {
@@ -272,6 +291,89 @@ void OpenGlRenderer::draw(const Mesh& mesh)
     }
 }
 
+void OpenGlRenderer::draw(const Mesh& mesh, const HardwareProgram& activProgram)
+{
+    if(!isCoreProfile())
+    {
+        draw_legacy(mesh);
+    }
+    
+    if(mesh.getType() == MeshPrivate::Type::Buffered)
+    {
+        bool isPosAttribEnabled = false;
+        GLint posAttribLoc = -1;
+        
+        bool isColorAttribEnabled = false;
+        GLint colorAttribLoc = -1;
+        
+        auto vbuf = mesh.getVertexBuffer();
+        vbuf.bind();
+        
+        if(vbuf.isDirty())
+        {
+            vbuf.update();
+        }
+        
+        
+        posAttribLoc = activProgram.getAttribLocation("Position");
+        glVertexAttribPointer(posAttribLoc, 3, GL_FLOAT, false, sizeof(Vertex), (char*) NULL);
+        glEnableVertexAttribArray(posAttribLoc);
+        isPosAttribEnabled = true;
+    
+        
+        if(vbuf.isColorActivated())
+        {
+            colorAttribLoc = activProgram.getAttribLocation("Color");
+            glVertexAttribPointer(colorAttribLoc, 3, GL_FLOAT, false, sizeof(Vertex), (char*) NULL);
+            glEnableVertexAttribArray(colorAttribLoc);
+            isColorAttribEnabled = true;
+        }
+        
+        for(auto indexbuf : mesh.getIndexBufferBatch().batchs)
+        {
+            indexbuf.bind();
+            
+            if(indexbuf.isDirty())
+            {
+                indexbuf.update();
+            }
+            
+            prepareMaterial(indexbuf.getMaterial());
+            if(indexbuf.getMaterial().texture.isBinded())
+            {
+                glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+                glTexCoordPointer(2, GL_FLOAT, sizeof(Vertex), (char*) (sizeof(Vector3)));
+            }
+            
+            GLenum mode = OpenGlUtils::PrimitiveTypeToGl(indexbuf.getPrimitiveType());
+            GLenum stype = OpenGlUtils::StorageTypeToGl(indexbuf.getStorageType());
+            GLsizei sz = (GLsizei) indexbuf.count();
+            glDrawElements(mode, sz, stype, 0);
+            
+            if(indexbuf.getMaterial().texture.isBinded())
+            {
+                glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+                indexbuf.getMaterial().texture.unbind();
+            }
+            
+            indexbuf.unbind();
+        }
+        
+        if(!isCoreProfile())
+        {
+            if(vbuf.isColorActivated())
+                glDisableClientState(GL_COLOR_ARRAY);
+            glDisableClientState(GL_VERTEX_ARRAY);
+        }
+        
+        if(vbuf.isColorActivated())
+            glDisableVertexAttribArray(colorAttribLoc);
+        glDisableVertexAttribArray(posAttribLoc);
+        
+        vbuf.unbind();
+    }
+}
+
 void OpenGlRenderer::prepareMaterial(const Material& mat)
 {
     if(mat.texture.isInvalid())
@@ -313,6 +415,11 @@ void OpenGlRenderer::renderExample ()
     g=rand()%256;
     b=rand()%256;
     
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    
     glColor3ub(r,g,b);
     glBegin(GL_LINES);
     glVertex2i(x1,y1);
@@ -353,11 +460,72 @@ Texture OpenGlRenderer::createTexture(const std::string& name, const std::string
 
 void OpenGlRenderer::prepare(const Camera &camera)
 {
-    glMatrixMode(GL_PROJECTION);
+    if(isCoreProfile())
+    {
+        // We load the perspective matrix into the ShaderManager.
+        Matrix4 projectionMatrix = camera.getProjection();
+        _mProgramManager.setSdkUniformMat4("ProjectionMatrix", projectionMatrix);
+        
+        // The View Matrix.
+        Matrix4 viewMatrix = camera.getView();
+        _mProgramManager.setSdkUniformMat4("ViewMatrix", viewMatrix);
+    }
     
-    Matrix4 m = camera.getMatrix();
-    glLoadMatrixf(&(m[0][0]));
+    else
+    {
+        glMatrixMode(GL_PROJECTION);
+        glLoadMatrixf(&(camera.getProjection()[0][0]));
+        glMatrixMode(GL_MODELVIEW);
+        glLoadIdentity();
+        glMultMatrixf(&(camera.getView()[0][0]));
+    }
+}
+
+HardwareProgram OpenGlRenderer::createHardwareProgram(const std::string& name, const Gre::HardwareShader &vertexShader, const Gre::HardwareShader &fragmentShader)
+{
+    HardwareShader vshader = vertexShader;
+    if(vshader == HardwareShader::VertexPassThrough)
+    {
+        vshader = _mProgramManager.loadShader(ShaderType::Vertex, "passthrough-vs", "shaders/ogl-vertex-ps.vs");
+#ifdef GreIsDebugMode
+        if(vshader.expired())
+        {
+            GreDebugPretty() << "No passthrough vertex shader detected ! Should be in 'shaders/ogl-vertex-ps.vs'." << std::endl;
+        }
+#endif
+    }
     
-    glMatrixMode(GL_MODELVIEW);
+    HardwareShader fshader = fragmentShader;
+    if(fshader == HardwareShader::FragmentPassThrough)
+    {
+        fshader = _mProgramManager.loadShader(ShaderType::Fragment, "passthrough-fs", "shaders/ogl-fragment-ps.fs");
+#ifdef GreIsDebugMode
+        if(vshader.expired())
+        {
+            GreDebugPretty() << "No passthrough fragment shader detected ! Should be in 'shaders/ogl-fragment-ps.fs'." << std::endl;
+        }
+#endif
+    }
+    
+    if(vshader == HardwareShader::Null || fshader == HardwareShader::Null)
+    {
+        GreDebugPretty() << "Unable to create HardwareProgram '" << name << "'." << std::endl;
+        if(!vshader.expired())
+        {
+#ifdef GreIsDebugMode
+            GreDebugPretty() << "No fragment shader !" << std::endl;
+#endif
+            _mProgramManager.unloadShader(vshader);
+        }
+        if(!fshader.expired())
+        {
+#ifdef GreIsDebugMode
+            GreDebugPretty() << "No vertex shader !" << std::endl;
+#endif
+            _mProgramManager.unloadShader(fshader);
+        }
+    }
+    
+    return _mProgramManager.createHardwareProgram(name, vshader, fshader);
 }
 

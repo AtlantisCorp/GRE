@@ -11,6 +11,8 @@
 #include "OpenGlIndexBuffer.h"
 #include "OpenGlTexture.h"
 #include "OpenGlRenderer.h"
+#include "OpenGlHardwareShader.h"
+#include "OpenGlHardwareProgramManager.h"
 
 class OpenGlRendererLoader : public RendererLoader
 {
@@ -40,6 +42,8 @@ extern "C" DLL_PUBLIC void* GetPluginName (void)
 extern "C" DLL_PUBLIC void StartPlugin (void)
 {
     ResourceManager::Get().getRendererLoaderFactory().registers("OpenGlLoader", new OpenGlRendererLoader);
+    ResourceManager::Get().getHardwareShaderLoaderFactory().registers("OpenGlHdwShaderLoader", new OpenGlHardwareShaderLoader);
+    ResourceManager::Get().getHardwareProgramManagerLoaderFactory().registers("OpenGlHdwProgramManagerLoader", new OpenGlHardwareProgramManagerLoader);
 }
 
 extern "C" DLL_PUBLIC void StopPlugin (void)

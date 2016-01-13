@@ -146,6 +146,8 @@ public:
     
     ~Mesh();
     
+    Mesh& operator = (const Mesh& mesh);
+    
     /// @brief Returns the Vertex Buffer object.
     HardwareVertexBuffer& getVertexBuffer();
     /// @brief Returns the Vertex Buffer object.

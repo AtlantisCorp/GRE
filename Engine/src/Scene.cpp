@@ -7,13 +7,17 @@
 //
 
 #include "Scene.h"
+#include "ResourceManager.h"
 
 GRE_BEGIN_NAMESPACE
 
 ScenePrivate::ScenePrivate(const std::string& name)
 : Resource(name)
 {
-    
+    // We always add the Default first Pass.
+    createAndAddPass("Default", (PassNumber) PassPurpose::First);
+    // By default, a Pass should always load a new passtrough shader program
+    // when the Renderer ask it to draw.
 }
 
 ScenePrivate::~ScenePrivate()
@@ -23,38 +27,211 @@ ScenePrivate::~ScenePrivate()
 
 Node& ScenePrivate::getRoot()
 {
+    GreDebugFunctionNotImplemented();
     return Node::Null;
 }
 
 const Node& ScenePrivate::getRoot() const
 {
+    GreDebugFunctionNotImplemented();
     return Node::Null;
 }
 
-Node ScenePrivate::createNode(const Mesh &mesh)
+NodePrivate* ScenePrivate::createNode(const Mesh &mesh)
 {
-    return Node::Null;
+    GreDebugFunctionNotImplemented();
+    return nullptr;
+}
+
+NodePrivate* ScenePrivate::createNode(const Camera &camera)
+{
+    GreDebugFunctionNotImplemented();
+    return nullptr;
 }
 
 void ScenePrivate::clear()
 {
-    
+    GreDebugFunctionNotImplemented();
 }
 
 Camera& ScenePrivate::getCamera()
 {
+    GreDebugFunctionNotImplemented();
     return Camera::Null;
 }
 
 const Camera& ScenePrivate::getCamera() const
 {
+    GreDebugFunctionNotImplemented();
     return Camera::Null;
 }
 
 std::vector<const Node> ScenePrivate::getNodesByFilter(Node::Filter filter) const
 {
+    GreDebugFunctionNotImplemented();
     return std::vector<const Node> ();
 }
+
+void ScenePrivate::setActiveCamera(const Node &cameraNode)
+{
+    GreDebugFunctionNotImplemented();
+}
+
+Pass ScenePrivate::createAndAddPass(const std::string &name, const PassNumber &passNumber)
+{
+    if(passNumber < (PassNumber)PassPurpose::First || passNumber > (PassNumber)PassPurpose::Last)
+    {
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "PassNumber '" << passNumber << "' is invalid." << std::endl;
+#endif
+        return Pass::Null;
+    }
+    
+    PassPrivate* check = _mPassesByNumber[passNumber].lock().get();
+    if(check)
+    {
+        GreDebugPretty() << "PassNumber '" << passNumber << "' was already allocated." << std::endl;
+        return Pass::Null;
+    }
+    
+    PassPrivate* newPass = new PassPrivate(name, passNumber);
+    std::shared_ptr<PassPrivate> shrdPass (newPass);
+    
+    _mPasses.push_back(shrdPass);
+    _mPassesByNumber[passNumber] = shrdPass;
+    
+#ifdef GreIsDebugMode
+    GreDebugPretty() << "Pass successfully created and added at PassNumber '" << passNumber << "'." << std::endl;
+#endif
+    
+    return Pass(ResourceUser(shrdPass));
+}
+
+Pass ScenePrivate::addPass(PassPrivate *customPass)
+{
+    if(!customPass)
+    {
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "Provided arg 'customPass' is null." << std::endl;
+#endif
+        return Pass::Null;
+    }
+    
+    PassNumber passNumber = customPass->getPassNumber();
+    if(passNumber < (PassNumber)PassPurpose::First || passNumber > (PassNumber)PassPurpose::Last)
+    {
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "PassNumber '" << passNumber << "' is invalid." << std::endl;
+#endif
+        return Pass::Null;
+    }
+    
+    PassPrivate* check = _mPassesByNumber[customPass->getPassNumber()].lock().get();
+    if(check)
+    {
+        GreDebugPretty() << "PassNumber '" << customPass->getPassNumber() << "' was already allocated." << std::endl;
+        return Pass::Null;
+    }
+    
+    std::shared_ptr<PassPrivate> shrdPass (customPass);
+    _mPasses.push_back(shrdPass);
+    _mPassesByNumber[customPass->getPassNumber()] = shrdPass;
+    
+#ifdef GreIsDebugMode
+    GreDebugPretty() << "Pass successfully added at PassNumber '" << customPass->getPassNumber() << "'." << std::endl;
+#endif
+    
+    return Pass(ResourceUser(shrdPass));
+}
+
+Pass ScenePrivate::getPassByName(const std::string &name)
+{
+    for(std::shared_ptr<PassPrivate>& passShrd : _mPasses)
+    {
+        if(passShrd->getName() == name)
+            return Pass(ResourceUser(passShrd));
+    }
+    
+#ifdef GreIsDebugMode
+    GreDebugPretty() << "Pass '" << name << "' not found." << std::endl;
+#endif
+    
+    return Pass::Null;
+}
+
+Pass ScenePrivate::getPassByNumber(const PassNumber &passNumber)
+{
+    std::weak_ptr<PassPrivate> passWeak = _mPassesByNumber[passNumber];
+    if(passWeak.expired())
+    {
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "Pass with PassNumber '" << passNumber << "' not found." << std::endl;
+#endif
+        return Pass::Null;
+    }
+    
+    return Pass(ResourceUser(passWeak));
+}
+
+void ScenePrivate::removePassByName(const std::string &name)
+{
+    PassPrivateOwnedList::const_iterator end = _mPasses.end();
+    PassPrivateOwnedList::iterator it;
+    
+    for(it = _mPasses.begin(); it != end; it++)
+    {
+        if( (*it)->getName() == name) {
+            _mPassesByNumber[(*it)->getPassNumber()].reset();
+            _mPasses.erase(it);
+            return;
+        }
+    }
+    
+#ifdef GreIsDebugMode
+    GreDebugPretty() << "Pass '" << name << "' not found." << std::endl;
+#endif
+}
+
+void ScenePrivate::removePassByNumber(const PassNumber &passNumber)
+{
+    PassPrivateOwnedList::const_iterator end = _mPasses.end();
+    PassPrivateOwnedList::iterator it;
+    
+    for(it = _mPasses.begin(); it != end; it++)
+    {
+        if( (*it)->getPassNumber() == passNumber) {
+            _mPassesByNumber[(*it)->getPassNumber()].reset();
+            _mPasses.erase(it);
+            return;
+        }
+    }
+    
+#ifdef GreIsDebugMode
+    GreDebugPretty() << "Pass '" << passNumber << "' not found." << std::endl;
+#endif
+}
+
+PassList ScenePrivate::getActivePasses() const
+{
+    PassList retPass;
+    
+    for(auto const& passIt : _mPassesByNumber)
+    {
+        if(!passIt.second.expired()) {
+            retPass.push_back(Pass(ResourceUser(passIt.second)));
+        }
+    }
+    
+#ifdef GreIsDebugMode
+    if(retPass.size() == 0) {
+        GreDebugPretty() << "No active pass detected." << std::endl;
+    }
+#endif
+    
+    return retPass;
+}
+
+// ---------------------------------------------------------------------------------------------------
 
 Scene::Scene()
 : ResourceUser(), _mScene()
@@ -108,12 +285,20 @@ const Node& Scene::getRoot() const
     return Node::Null;
 }
 
-Node Scene::createNode(const Mesh &mesh)
+NodePrivate* Scene::createNode(const Mesh &mesh)
 {
     auto ptr = _mScene.lock();
     if(ptr)
         return ptr->createNode(mesh);
-    return Node::Null;
+    return nullptr;
+}
+
+NodePrivate* Scene::createNode(const Camera &camera)
+{
+    auto ptr = _mScene.lock();
+    if(ptr)
+        return ptr->createNode(camera);
+    return nullptr;
 }
 
 void Scene::clear()
@@ -152,6 +337,76 @@ std::vector<const Node> Scene::getNodesByFilter(Node::Filter filter) const
     return std::vector<const Node> ();
 }
 
+void Scene::setActiveCamera(const Node &cameraNode)
+{
+    auto ptr = _mScene.lock();
+    if(ptr)
+        ptr->setActiveCamera(cameraNode);
+}
+
+Pass Scene::createAndAddPass(const std::string &name, const PassNumber &passNumber)
+{
+    auto ptr = _mScene.lock();
+    
+    if(ptr)
+        return ptr->createAndAddPass(name, passNumber);
+    return Pass::Null;
+}
+
+Pass Scene::addPass(Gre::PassPrivate *customPass)
+{
+    auto ptr = _mScene.lock();
+    
+    if(ptr)
+        return ptr->addPass(customPass);
+    return Pass::Null;
+}
+
+Pass Scene::getPassByName(const std::string &name)
+{
+    auto ptr = _mScene.lock();
+    
+    if(ptr)
+        return ptr->getPassByName(name);
+    return Pass::Null;
+}
+
+Pass Scene::getPassByNumber(const PassNumber &passNumber)
+{
+    auto ptr = _mScene.lock();
+    
+    if(ptr)
+        return ptr->getPassByNumber(passNumber);
+    return Pass::Null;
+}
+
+void Scene::removePassByName(const std::string &name)
+{
+    auto ptr = _mScene.lock();
+    
+    if(ptr)
+        ptr->removePassByName(name);
+}
+
+void Scene::removePassByNumber(const PassNumber &passNumber)
+{
+    auto ptr = _mScene.lock();
+    
+    if(ptr)
+        ptr->removePassByNumber(passNumber);
+}
+
+PassList Scene::getActivePasses() const
+{
+    auto ptr = _mScene.lock();
+    
+    if(ptr)
+        return ptr->getActivePasses();
+    return PassList();
+}
+
+// ---------------------------------------------------------------------------------------------------
+
 SceneLoader::SceneLoader()
 {
     
@@ -169,6 +424,7 @@ bool SceneLoader::isTypeSupported(Resource::Type type) const
 
 Resource* SceneLoader::load(Resource::Type type, const std::string& name) const
 {
+    GreDebugFunctionNotImplemented();
     return nullptr;
 }
 

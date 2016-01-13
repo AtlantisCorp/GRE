@@ -27,6 +27,7 @@ FileLoader::~FileLoader()
 
 Resource* FileLoader::load (Resource::Type type, const std::string& name, const std::string& file) const
 {
+    GreDebugFunctionNotImplemented();
     return nullptr;
 }
 

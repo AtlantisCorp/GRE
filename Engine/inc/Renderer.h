@@ -18,6 +18,8 @@
 #include "Camera.h"
 #include "Scene.h"
 #include "Emitter.h"
+#include "HardwareProgram.h"
+#include "HardwareProgramManager.h"
 
 GRE_BEGIN_NAMESPACE
 
@@ -118,6 +120,34 @@ public:
     //////////////////////////////////////////////////////////////////////
     virtual void transform(const Node& node);
     
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Draw given PassPrivate, giving the Nodes to draw.
+    /// In Release mode, the PassPrivate pointer is assumed to be valid,
+    /// to have a correct HardwareProgram, and to be activated. Those
+    /// assertions are made again in Debug mode.
+    //////////////////////////////////////////////////////////////////////
+    virtual void drawPass(const PassPrivate* pass, const std::vector<const Node>& nodes);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Draw given Mesh and updates the set of HardwareProgramVariables
+    /// provided.
+    /// Normally, this function is called from ::drawPass().
+    //////////////////////////////////////////////////////////////////////
+    virtual void draw(const Mesh& mesh, HardwareProgramVariables& variables);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Draw a mesh using given Node Matrix.
+    //////////////////////////////////////////////////////////////////////
+    void draw(const Mesh& mesh, const Matrix4& nodeMatrix, const HardwareProgram& activProgram);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Constructs a HardwareProgram using given Vertex Shader,
+    /// IndexShader.
+    /// @note You can set every value to HardwareShader::PassThrough if you
+    /// just want default Program.
+    //////////////////////////////////////////////////////////////////////
+    virtual HardwareProgram createHardwareProgram(const std::string& name, const HardwareShader& vertexShader, const HardwareShader& fragmentShader);
+    
 public:
     
     virtual HardwareVertexBuffer createVertexBuffer();
@@ -137,7 +167,7 @@ public:
     
     virtual void drawTriangle(float sz, const Color& color1, const Color& color2, const Color& color3) { }
     virtual void drawQuad(float sz, const Color& color1, const Color& color2, const Color& color3, const Color& color4) { }
-    virtual void draw(const Mesh& mesh);
+    virtual void draw(const Mesh& mesh, const HardwareProgram& activProgram);
     virtual void prepare(const Camera& cam) { }
     
 protected:
@@ -149,6 +179,7 @@ protected:
     bool   _mIsImmediateMode; ///< @brief True if renderer is in immediate mode.
     std::vector<std::function<void(void)> > _mImmediateFunctions; ///< @brief Vector of functions to be called in immediate mode.
     Scene  _mScene; ///< @brief THE Scene object :) .
+    HardwareProgramManager _mProgramManager; ///< @brief The Shader Program Manager. 
     
 private:
     
@@ -239,7 +270,7 @@ public:
     
     void drawTriangle(float sz, const Color& color1 = Color::White, const Color& color2 = Color::White, const Color& color3 = Color::White);
     void drawQuad(float sz, const Color& color1 = Color::White, const Color& color2 = Color::White, const Color& color3 = Color::White, const Color& color4 = Color::White);
-    void draw(const Mesh& mesh);
+    void draw(const Mesh& mesh, const HardwareProgram& activProgram);
     void prepare(const Camera& cam);
     
     HardwareVertexBuffer createVertexBuffer();
@@ -249,9 +280,32 @@ public:
     Camera createCamera(const std::string& name);
     
     //////////////////////////////////////////////////////////////////////
+    /// @brief Constructs a HardwareProgram using given Vertex Shader,
+    /// IndexShader.
+    /// @note You can set every value to HardwareShader::PassThrough if you
+    /// just want default Program.
+    //////////////////////////////////////////////////////////////////////
+    HardwareProgram createHardwareProgram(const std::string& name, const HardwareShader& vertexShader, const HardwareShader& fragmentShader);
+    
+    //////////////////////////////////////////////////////////////////////
     /// @brief Apply the transformation in the given node.
     //////////////////////////////////////////////////////////////////////
     void transform(const Node& node);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Draw given PassPrivate.
+    /// In Release mode, the PassPrivate pointer is assumed to be valid,
+    /// to have a correct HardwareProgram, and to be activated. Those
+    /// assertions are made again in Debug mode.
+    //////////////////////////////////////////////////////////////////////
+    void drawPass(const PassPrivate* pass);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Draw given Mesh and updates the set of HardwareProgramVariables
+    /// provided.
+    /// Normally, this function is called from ::drawPass().
+    //////////////////////////////////////////////////////////////////////
+    void draw(const Mesh& mesh, HardwareProgramVariables& variables);
     
 private:
     

@@ -12,6 +12,15 @@
 		410C1C2F1C035C8100937366 /* Event.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 410C1C2E1C035C8100937366 /* Event.cpp */; };
 		410C1C311C03607900937366 /* Emitter.h in Headers */ = {isa = PBXBuildFile; fileRef = 410C1C301C03607900937366 /* Emitter.h */; };
 		410C1C331C03616800937366 /* Emitter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 410C1C321C03616800937366 /* Emitter.cpp */; };
+		4120041D1C3DBED10010739D /* Pass.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4120041C1C3DBED10010739D /* Pass.cpp */; };
+		412004201C3DC4330010739D /* HardwareProgram.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4120041F1C3DC4330010739D /* HardwareProgram.cpp */; };
+		412427F41C3C9492006478BD /* NodePrivate.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 412427F31C3C9492006478BD /* NodePrivate.cpp */; };
+		4131D53D1C41715600AB376A /* HardwareShader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4131D53C1C41715600AB376A /* HardwareShader.cpp */; };
+		4131D5401C41ED4900AB376A /* HardwareProgramManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4131D53F1C41ED4900AB376A /* HardwareProgramManager.cpp */; };
+		4131D5431C43506900AB376A /* OpenGlHardwareProgramManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4131D5421C43506900AB376A /* OpenGlHardwareProgramManager.cpp */; };
+		4131D5461C43DCE300AB376A /* OpenGlHardwareProgram.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4131D5451C43DCE300AB376A /* OpenGlHardwareProgram.cpp */; };
+		4131D5481C43EBD900AB376A /* OpenGlHardwareShader.h in Headers */ = {isa = PBXBuildFile; fileRef = 4131D5471C43EBD900AB376A /* OpenGlHardwareShader.h */; };
+		4131D54A1C43ECB500AB376A /* OpenGlHardwareShader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4131D5491C43ECB500AB376A /* OpenGlHardwareShader.cpp */; };
 		413F0A951C0F9CCF0003F41F /* Image.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 413F0A941C0F9CCF0003F41F /* Image.cpp */; };
 		413F0A971C0FD98B0003F41F /* Texture.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 413F0A961C0FD98B0003F41F /* Texture.cpp */; };
 		414012A51C1095A3007375ED /* jpegloader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 414012A41C1095A3007375ED /* jpegloader.cpp */; };
@@ -133,6 +142,8 @@
 		418A92611C07B03F00806BA3 /* Mesh.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 418A92601C07B03F00806BA3 /* Mesh.cpp */; };
 		418A92631C07B23E00806BA3 /* MeshLoader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 418A92621C07B23E00806BA3 /* MeshLoader.cpp */; };
 		418A92651C07C93900806BA3 /* Material.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 418A92641C07C93900806BA3 /* Material.cpp */; };
+		418C1AB81C2743AC005FF276 /* BinaryTreeScene.h in Headers */ = {isa = PBXBuildFile; fileRef = 418C1AB71C2743AC005FF276 /* BinaryTreeScene.h */; };
+		418C1ABA1C2786BB005FF276 /* BinaryTreeScene.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 418C1AB91C2786BB005FF276 /* BinaryTreeScene.cpp */; };
 		418D20171C19F24C005E00AE /* OSXWindow.h in Headers */ = {isa = PBXBuildFile; fileRef = 418D20161C19F24C005E00AE /* OSXWindow.h */; };
 		418D20191C19F2E1005E00AE /* OSXFunctions.h in Headers */ = {isa = PBXBuildFile; fileRef = 418D20181C19F2E1005E00AE /* OSXFunctions.h */; };
 		418D201B1C19F30B005E00AE /* OSXImage.h in Headers */ = {isa = PBXBuildFile; fileRef = 418D201A1C19F30B005E00AE /* OSXImage.h */; };
@@ -174,6 +185,9 @@
 		41B8C8421C1C601C000084F2 /* Keyboard.h in Headers */ = {isa = PBXBuildFile; fileRef = 41867F091C1B8C380096F198 /* Keyboard.h */; };
 		41B8C8431C1C6630000084F2 /* libgreengine.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 41877B591BEFADDE0024B643 /* libgreengine.dylib */; };
 		41B8C8451C1CD058000084F2 /* Scene.h in Headers */ = {isa = PBXBuildFile; fileRef = 41B8C8441C1CD058000084F2 /* Scene.h */; };
+		41D1216D1C4473B7009E5B0F /* HardwareProgramVariables.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41D1216C1C4473B7009E5B0F /* HardwareProgramVariables.cpp */; };
+		41D1216F1C44759E009E5B0F /* HardwareProgramVariable.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41D1216E1C44759E009E5B0F /* HardwareProgramVariable.cpp */; };
+		41D121711C447681009E5B0F /* OpenGlHardwareVariable.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41D121701C447681009E5B0F /* OpenGlHardwareVariable.cpp */; };
 		41D4C7FD1BF2885500357EC2 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41D4C7FC1BF2885500357EC2 /* main.cpp */; };
 /* End PBXBuildFile section */
 
@@ -198,6 +212,23 @@
 		410C1C2E1C035C8100937366 /* Event.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Event.cpp; path = ../../../Engine/src/Event.cpp; sourceTree = "<group>"; };
 		410C1C301C03607900937366 /* Emitter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Emitter.h; path = ../../../Engine/inc/Emitter.h; sourceTree = "<group>"; };
 		410C1C321C03616800937366 /* Emitter.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Emitter.cpp; path = ../../../Engine/src/Emitter.cpp; sourceTree = "<group>"; };
+		4120041B1C3DBB0E0010739D /* Pass.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Pass.h; path = ../../../Engine/inc/Pass.h; sourceTree = "<group>"; };
+		4120041C1C3DBED10010739D /* Pass.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Pass.cpp; path = ../../../Engine/src/Pass.cpp; sourceTree = "<group>"; };
+		4120041E1C3DC39C0010739D /* HardwareProgram.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = HardwareProgram.h; path = ../../../Engine/inc/HardwareProgram.h; sourceTree = "<group>"; };
+		4120041F1C3DC4330010739D /* HardwareProgram.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = HardwareProgram.cpp; path = ../../../Engine/src/HardwareProgram.cpp; sourceTree = "<group>"; };
+		412004211C3DE04A0010739D /* HardwareShader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = HardwareShader.h; path = ../../../Engine/inc/HardwareShader.h; sourceTree = "<group>"; };
+		412004221C3DE2E30010739D /* HardwareProgramVariables.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = HardwareProgramVariables.h; path = ../../../Engine/inc/HardwareProgramVariables.h; sourceTree = "<group>"; };
+		412427F21C3C93A2006478BD /* NodePrivate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = NodePrivate.h; path = ../../../Engine/inc/NodePrivate.h; sourceTree = "<group>"; };
+		412427F31C3C9492006478BD /* NodePrivate.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = NodePrivate.cpp; path = ../../../Engine/src/NodePrivate.cpp; sourceTree = "<group>"; };
+		4131D53C1C41715600AB376A /* HardwareShader.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = HardwareShader.cpp; path = ../../../Engine/src/HardwareShader.cpp; sourceTree = "<group>"; };
+		4131D53E1C41E87B00AB376A /* HardwareProgramManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = HardwareProgramManager.h; path = ../../../Engine/inc/HardwareProgramManager.h; sourceTree = "<group>"; };
+		4131D53F1C41ED4900AB376A /* HardwareProgramManager.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = HardwareProgramManager.cpp; path = ../../../Engine/src/HardwareProgramManager.cpp; sourceTree = "<group>"; };
+		4131D5411C434F9700AB376A /* OpenGlHardwareProgramManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = OpenGlHardwareProgramManager.h; path = ../../../Plugins/OpenGlRenderer/OpenGlHardwareProgramManager.h; sourceTree = "<group>"; };
+		4131D5421C43506900AB376A /* OpenGlHardwareProgramManager.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = OpenGlHardwareProgramManager.cpp; path = ../../../Plugins/OpenGlRenderer/OpenGlHardwareProgramManager.cpp; sourceTree = "<group>"; };
+		4131D5441C43DC0F00AB376A /* OpenGlHardwareProgram.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = OpenGlHardwareProgram.h; path = ../../../Plugins/OpenGlRenderer/OpenGlHardwareProgram.h; sourceTree = "<group>"; };
+		4131D5451C43DCE300AB376A /* OpenGlHardwareProgram.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = OpenGlHardwareProgram.cpp; path = ../../../Plugins/OpenGlRenderer/OpenGlHardwareProgram.cpp; sourceTree = "<group>"; };
+		4131D5471C43EBD900AB376A /* OpenGlHardwareShader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = OpenGlHardwareShader.h; path = ../../../Plugins/OpenGlRenderer/OpenGlHardwareShader.h; sourceTree = "<group>"; };
+		4131D5491C43ECB500AB376A /* OpenGlHardwareShader.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = OpenGlHardwareShader.cpp; path = ../../../Plugins/OpenGlRenderer/OpenGlHardwareShader.cpp; sourceTree = "<group>"; };
 		413F0A931C0F87D50003F41F /* Image.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Image.h; path = ../../../Engine/inc/Image.h; sourceTree = "<group>"; };
 		413F0A941C0F9CCF0003F41F /* Image.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Image.cpp; path = ../../../Engine/src/Image.cpp; sourceTree = "<group>"; };
 		413F0A961C0FD98B0003F41F /* Texture.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Texture.cpp; path = ../../../Engine/src/Texture.cpp; sourceTree = "<group>"; };
@@ -270,6 +301,8 @@
 		418A92601C07B03F00806BA3 /* Mesh.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Mesh.cpp; path = ../../../Engine/src/Mesh.cpp; sourceTree = "<group>"; };
 		418A92621C07B23E00806BA3 /* MeshLoader.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = MeshLoader.cpp; path = ../../../Engine/src/MeshLoader.cpp; sourceTree = "<group>"; };
 		418A92641C07C93900806BA3 /* Material.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Material.cpp; path = ../../../Engine/src/Material.cpp; sourceTree = "<group>"; };
+		418C1AB71C2743AC005FF276 /* BinaryTreeScene.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = BinaryTreeScene.h; path = ../../../Engine/inc/BinaryTreeScene.h; sourceTree = "<group>"; };
+		418C1AB91C2786BB005FF276 /* BinaryTreeScene.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = BinaryTreeScene.cpp; path = ../../../Engine/src/BinaryTreeScene.cpp; sourceTree = "<group>"; };
 		418D20161C19F24C005E00AE /* OSXWindow.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = OSXWindow.h; path = ../../../Plugins/OsXWindow/OSXWindow.h; sourceTree = "<group>"; };
 		418D20181C19F2E1005E00AE /* OSXFunctions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = OSXFunctions.h; path = ../../../Plugins/OsXWindow/OSXFunctions.h; sourceTree = "<group>"; };
 		418D201A1C19F30B005E00AE /* OSXImage.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = OSXImage.h; path = ../../../Plugins/OsXWindow/OSXImage.h; sourceTree = "<group>"; };
@@ -279,6 +312,11 @@
 		41B8C81B1C1C5F71000084F2 /* libObjLoader.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libObjLoader.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		41B8C8211C1C5F71000084F2 /* ObjLoader.cp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; lineEnding = 0; path = ObjLoader.cp; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
 		41B8C8441C1CD058000084F2 /* Scene.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Scene.h; path = ../../../Engine/inc/Scene.h; sourceTree = "<group>"; };
+		41D1216A1C446F03009E5B0F /* HardwareProgramVariable.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = HardwareProgramVariable.h; path = ../../../Engine/inc/HardwareProgramVariable.h; sourceTree = "<group>"; };
+		41D1216B1C447246009E5B0F /* OpenGlHardwareVariable.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = OpenGlHardwareVariable.h; path = ../../../Plugins/OpenGlRenderer/OpenGlHardwareVariable.h; sourceTree = "<group>"; };
+		41D1216C1C4473B7009E5B0F /* HardwareProgramVariables.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = HardwareProgramVariables.cpp; path = ../../../Engine/src/HardwareProgramVariables.cpp; sourceTree = "<group>"; };
+		41D1216E1C44759E009E5B0F /* HardwareProgramVariable.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = HardwareProgramVariable.cpp; path = ../../../Engine/src/HardwareProgramVariable.cpp; sourceTree = "<group>"; };
+		41D121701C447681009E5B0F /* OpenGlHardwareVariable.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = OpenGlHardwareVariable.cpp; path = ../../../Plugins/OpenGlRenderer/OpenGlHardwareVariable.cpp; sourceTree = "<group>"; };
 		41D4C7FC1BF2885500357EC2 /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = main.cpp; path = ../../../../Example/main.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -443,10 +481,16 @@
 				410C1C281C034DF800937366 /* Clonable.h */,
 				410C1C271C03483200937366 /* Version.h */,
 				41877B7A1BEFAED10024B643 /* Renderer.h */,
+				4131D53E1C41E87B00AB376A /* HardwareProgramManager.h */,
+				4131D53F1C41ED4900AB376A /* HardwareProgramManager.cpp */,
 				41B8C8441C1CD058000084F2 /* Scene.h */,
 				414B6A181C1F386F00D09D5E /* Node.h */,
+				412427F21C3C93A2006478BD /* NodePrivate.h */,
 				414B6A1A1C1F603500D09D5E /* Node.cpp */,
+				412427F31C3C9492006478BD /* NodePrivate.cpp */,
 				414B6A161C1F359D00D09D5E /* Scene.cpp */,
+				418C1AB71C2743AC005FF276 /* BinaryTreeScene.h */,
+				418C1AB91C2786BB005FF276 /* BinaryTreeScene.cpp */,
 				41877B7B1BEFAED10024B643 /* Resource.h */,
 				41877B7C1BEFAED10024B643 /* ResourceManager.h */,
 				41877B7D1BEFAED10024B643 /* TextResource.h */,
@@ -463,6 +507,16 @@
 				41877B661BEFAE8D0024B643 /* Plugin.cpp */,
 				41877B671BEFAE8D0024B643 /* Pools.cpp */,
 				41877B681BEFAE8D0024B643 /* Renderer.cpp */,
+				4120041B1C3DBB0E0010739D /* Pass.h */,
+				4120041E1C3DC39C0010739D /* HardwareProgram.h */,
+				412004221C3DE2E30010739D /* HardwareProgramVariables.h */,
+				41D1216C1C4473B7009E5B0F /* HardwareProgramVariables.cpp */,
+				41D1216A1C446F03009E5B0F /* HardwareProgramVariable.h */,
+				41D1216E1C44759E009E5B0F /* HardwareProgramVariable.cpp */,
+				412004211C3DE04A0010739D /* HardwareShader.h */,
+				4131D53C1C41715600AB376A /* HardwareShader.cpp */,
+				4120041F1C3DC4330010739D /* HardwareProgram.cpp */,
+				4120041C1C3DBED10010739D /* Pass.cpp */,
 				41877B691BEFAE8D0024B643 /* Resource.cpp */,
 				41877B6A1BEFAE8D0024B643 /* ResourceManager.cpp */,
 				41877B6B1BEFAE8D0024B643 /* TextResource.cpp */,
@@ -499,6 +553,14 @@
 				41877BE71BEFB5FC0024B643 /* openglrenderer.cpp */,
 				41867F051C1B7B5D0096F198 /* OpenGlRenderer.h */,
 				41867F071C1B7BA50096F198 /* OpenGlRendererClass.cpp */,
+				4131D5411C434F9700AB376A /* OpenGlHardwareProgramManager.h */,
+				4131D5421C43506900AB376A /* OpenGlHardwareProgramManager.cpp */,
+				41D1216B1C447246009E5B0F /* OpenGlHardwareVariable.h */,
+				41D121701C447681009E5B0F /* OpenGlHardwareVariable.cpp */,
+				4131D5471C43EBD900AB376A /* OpenGlHardwareShader.h */,
+				4131D5491C43ECB500AB376A /* OpenGlHardwareShader.cpp */,
+				4131D5441C43DC0F00AB376A /* OpenGlHardwareProgram.h */,
+				4131D5451C43DCE300AB376A /* OpenGlHardwareProgram.cpp */,
 				41867F011C1B7A7D0096F198 /* OpenGlTexture.h */,
 				41867F031C1B7AA60096F198 /* OpenGlTexture.cpp */,
 				41867EF91C1B78EB0096F198 /* OpenGlVertexBuffer.h */,
@@ -591,6 +653,7 @@
 				41B59B5D1BF9148B008655A1 /* WindowResource.h in Headers */,
 				41867F0A1C1B8C380096F198 /* Keyboard.h in Headers */,
 				418A924D1C07596F00806BA3 /* Mesh.h in Headers */,
+				418C1AB81C2743AC005FF276 /* BinaryTreeScene.h in Headers */,
 				418A924B1C07593C00806BA3 /* Face.h in Headers */,
 				410C1C311C03607900937366 /* Emitter.h in Headers */,
 			);
@@ -643,6 +706,7 @@
 				41877BEE1BEFB6150024B643 /* Pools.h in Headers */,
 				41877BEF1BEFB6150024B643 /* Renderer.h in Headers */,
 				41867F021C1B7A7D0096F198 /* OpenGlTexture.h in Headers */,
+				4131D5481C43EBD900AB376A /* OpenGlHardwareShader.h in Headers */,
 				41877BF01BEFB6150024B643 /* Resource.h in Headers */,
 				41877BF11BEFB6150024B643 /* ResourceManager.h in Headers */,
 				41867EF61C1B75850096F198 /* OpenGlIncludes.h in Headers */,
@@ -922,14 +986,19 @@
 			files = (
 				418A92611C07B03F00806BA3 /* Mesh.cpp in Sources */,
 				418A92591C078A2900806BA3 /* HardwareIndexBuffer.cpp in Sources */,
+				41D1216F1C44759E009E5B0F /* HardwareProgramVariable.cpp in Sources */,
+				41D1216D1C4473B7009E5B0F /* HardwareProgramVariables.cpp in Sources */,
 				41877B6D1BEFAE8D0024B643 /* FileLoader.cpp in Sources */,
 				418D411D1C0647B100D623AF /* Color.cpp in Sources */,
 				41867F101C1B96FF0096F198 /* Camera.cpp in Sources */,
 				418A92511C07841B00806BA3 /* HardwareBuffer.cpp in Sources */,
 				418A92551C07869300806BA3 /* HardwareVertexBuffer.cpp in Sources */,
+				418C1ABA1C2786BB005FF276 /* BinaryTreeScene.cpp in Sources */,
+				4120041D1C3DBED10010739D /* Pass.cpp in Sources */,
 				414BC02A1BFD4C6F00EA4A76 /* Listener.cpp in Sources */,
 				410C1C2F1C035C8100937366 /* Event.cpp in Sources */,
 				414B6A1B1C1F603500D09D5E /* Node.cpp in Sources */,
+				4131D5401C41ED4900AB376A /* HardwareProgramManager.cpp in Sources */,
 				418A92651C07C93900806BA3 /* Material.cpp in Sources */,
 				41877B6E1BEFAE8D0024B643 /* Plugin.cpp in Sources */,
 				41877B6F1BEFAE8D0024B643 /* Pools.cpp in Sources */,
@@ -940,6 +1009,9 @@
 				418A925D1C079D3500806BA3 /* Face.cpp in Sources */,
 				410C1C331C03616800937366 /* Emitter.cpp in Sources */,
 				41877B721BEFAE8D0024B643 /* ResourceManager.cpp in Sources */,
+				412004201C3DC4330010739D /* HardwareProgram.cpp in Sources */,
+				412427F41C3C9492006478BD /* NodePrivate.cpp in Sources */,
+				4131D53D1C41715600AB376A /* HardwareShader.cpp in Sources */,
 				413F0A951C0F9CCF0003F41F /* Image.cpp in Sources */,
 				41877B731BEFAE8D0024B643 /* TextResource.cpp in Sources */,
 				41877B741BEFAE8D0024B643 /* Window.cpp in Sources */,
@@ -974,8 +1046,12 @@
 				41867F081C1B7BA50096F198 /* OpenGlRendererClass.cpp in Sources */,
 				41877BE81BEFB5FC0024B643 /* openglrenderer.cpp in Sources */,
 				41867F001C1B79C50096F198 /* OpenGlIndexBuffer.cpp in Sources */,
+				4131D54A1C43ECB500AB376A /* OpenGlHardwareShader.cpp in Sources */,
+				41D121711C447681009E5B0F /* OpenGlHardwareVariable.cpp in Sources */,
 				41867EF81C1B75BE0096F198 /* OpenGlIncludes.cpp in Sources */,
 				41867F041C1B7AA60096F198 /* OpenGlTexture.cpp in Sources */,
+				4131D5461C43DCE300AB376A /* OpenGlHardwareProgram.cpp in Sources */,
+				4131D5431C43506900AB376A /* OpenGlHardwareProgramManager.cpp in Sources */,
 				41867EFC1C1B79190096F198 /* OpenGlVertexBuffer.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

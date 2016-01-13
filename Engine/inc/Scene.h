@@ -12,6 +12,7 @@
 #include "Mesh.h"
 #include "Node.h"
 #include "Camera.h"
+#include "Pass.h"
 
 GRE_BEGIN_NAMESPACE
 
@@ -21,6 +22,11 @@ GRE_BEGIN_NAMESPACE
 /// The default implementation does nothing. You should create
 /// or use a plugin that register a correct ScenePrivate object,
 /// and load it to your Renderer object.
+///
+/// Pass Management : The Scene object automaticly creates a Default
+/// PassPurpose::First Pass object. This Pass normally should only draws
+/// every objects in the Scene, according to the active Camera, with a
+/// pass-through HardwareProgram. But this behaviour is not guaranteed.
 ///
 //////////////////////////////////////////////////////////////////////
 class DLL_PUBLIC ScenePrivate : public Resource
@@ -53,7 +59,14 @@ public:
     /// returns Node::Null.
     /// @param mesh     A Mesh to initialize the Node with.
     //////////////////////////////////////////////////////////////////////
-    virtual Node createNode(const Mesh& mesh);
+    virtual NodePrivate* createNode(const Mesh& mesh);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Creates a new Node with a camera in it.
+    /// The Node will return a Camera with Node::getCamera() and Mesh::Null
+    /// with Node::getMesh() if it does not contain any Mesh.
+    //////////////////////////////////////////////////////////////////////
+    virtual NodePrivate* createNode(const Camera& camera);
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Empty the Scene and destroy every Node objects.
@@ -77,7 +90,59 @@ public:
     /// used as a fallback generally, but this behaviour can be undefined.
     /// @note By default, not implemented function return an empty vector.
     //////////////////////////////////////////////////////////////////////
-    std::vector<const Node> getNodesByFilter(Node::Filter filter) const;
+    virtual std::vector<const Node> getNodesByFilter(Node::Filter filter) const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Sets the active Camera given its Node.
+    //////////////////////////////////////////////////////////////////////
+    virtual void setActiveCamera(const Node& cameraNode);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Create a Default Pass given its name and number.
+    /// If passNumber is already taken, return Pass::Null.
+    //////////////////////////////////////////////////////////////////////
+    Pass createAndAddPass(const std::string& name, const PassNumber& passNumber);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Adds given custom created pass.
+    /// This function takes ownership of the Pointer. Also, it may return
+    /// Pass::Null if an error occured.
+    //////////////////////////////////////////////////////////////////////
+    Pass addPass(PassPrivate* customPass);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the first Pass with given name.
+    //////////////////////////////////////////////////////////////////////
+    Pass getPassByName(const std::string& name);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the pass at given number.
+    //////////////////////////////////////////////////////////////////////
+    Pass getPassByNumber(const PassNumber& passNumber);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Removes the first Pass with given name.
+    //////////////////////////////////////////////////////////////////////
+    void removePassByName(const std::string& name);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Removes the Pass with given number.
+    //////////////////////////////////////////////////////////////////////
+    void removePassByNumber(const PassNumber& passNumber);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns every active Pass, sorted by PassNumber from first
+    /// to last.
+    //////////////////////////////////////////////////////////////////////
+    PassList getActivePasses() const;
+    
+protected:
+    
+    /// @brief Holds every Pass in the Scene.
+    PassPrivateOwnedList _mPasses;
+    
+    /// @brief Catalog to Pass objects by name.
+    std::map<PassNumber, std::weak_ptr<PassPrivate> > _mPassesByNumber;
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -121,7 +186,12 @@ public:
     /// valid.
     /// @param mesh     A Mesh to initialize the Node with.
     //////////////////////////////////////////////////////////////////////
-    Node createNode(const Mesh& mesh);
+    NodePrivate* createNode(const Mesh& mesh);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Creates a new Node with a camera in it.
+    //////////////////////////////////////////////////////////////////////
+    NodePrivate* createNode(const Camera& camera);
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Empty the Scene and destroy every Node objects.
@@ -151,6 +221,50 @@ public:
     /// used as a fallback generally, but this behaviour can be undefined.
     //////////////////////////////////////////////////////////////////////
     std::vector<const Node> getNodesByFilter(Node::Filter filter) const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Sets the active Camera given its Node.
+    //////////////////////////////////////////////////////////////////////
+    void setActiveCamera(const Node& cameraNode);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Create a Default Pass given its name and number.
+    /// If passNumber is already taken, return Pass::Null.
+    //////////////////////////////////////////////////////////////////////
+    Pass createAndAddPass(const std::string& name, const PassNumber& passNumber);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Adds given custom created pass.
+    /// This function takes ownership of the Pointer. Also, it may return
+    /// Pass::Null if an error occured.
+    //////////////////////////////////////////////////////////////////////
+    Pass addPass(PassPrivate* customPass);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the first Pass with given name.
+    //////////////////////////////////////////////////////////////////////
+    Pass getPassByName(const std::string& name);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the pass at given number.
+    //////////////////////////////////////////////////////////////////////
+    Pass getPassByNumber(const PassNumber& passNumber);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Removes the first Pass with given name.
+    //////////////////////////////////////////////////////////////////////
+    void removePassByName(const std::string& name);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Removes the Pass with given number.
+    //////////////////////////////////////////////////////////////////////
+    void removePassByNumber(const PassNumber& passNumber);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns every active Pass, sorted by PassNumber from first
+    /// to last.
+    //////////////////////////////////////////////////////////////////////
+    PassList getActivePasses() const;
     
     /// @brief A Null Scene User.
     static Scene Null;

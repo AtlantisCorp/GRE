@@ -54,16 +54,18 @@ public:
     
     /// @brief Enumerates every types a Resource can be.
     enum class DLL_PUBLIC Type {
-        Null,       ///< @brief A Null Type. Should not be used.
-        Text,       ///< @brief Text type : to load files as text.
-        Plugin,     ///< @brief Plugin Type : to load a file as a plugin.
-        Window,     ///< @brief Window Type : to load a Window (specific type for Window Loaders).
-        Renderer,   ///< @brief Renderer Type : to load a Renderer (specific type for Renderer Loaders).
-        Mesh,       ///< @brief Mesh Type : A resource representing a 3D object.
-        HwdBuffer,  ///< @brief Hardware Buffer : Resource to store Hardware Buffers and data.
-        Image,      ///< @brief Image : Speak by itself...
-        Texture,    ///< @brief Textures objects. Can only be loaded by the Renderer.
-        Scene       ///< @brief A simple Type to describe a Scene object.
+        Null,           ///< @brief A Null Type. Should not be used.
+        Text,           ///< @brief Text type : to load files as text.
+        Plugin,         ///< @brief Plugin Type : to load a file as a plugin.
+        Window,         ///< @brief Window Type : to load a Window (specific type for Window Loaders).
+        Renderer,       ///< @brief Renderer Type : to load a Renderer (specific type for Renderer Loaders).
+        Mesh,           ///< @brief Mesh Type : A resource representing a 3D object.
+        HwdBuffer,      ///< @brief Hardware Buffer : Resource to store Hardware Buffers and data.
+        Image,          ///< @brief Image : Speak by itself...
+        Texture,        ///< @brief Textures objects. Can only be loaded by the Renderer.
+        Scene,          ///< @brief A simple Type to describe a Scene object.
+        HwdProgManager, ///< @brief For HardwareProgramManager.
+        HdwShader       ///< @brief HardwareShader Resource.
     };
     
     POOLED(Pools::Resource);
@@ -85,6 +87,11 @@ public:
     template<typename T>
     const T& getData() const
     { return *reinterpret_cast<const T*>(_getData()); }
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns expected data for user.
+    //////////////////////////////////////////////////////////////////////
+    virtual const void* getCustomData(const std::string& dataname) const;
     
 protected:
     
@@ -157,6 +164,11 @@ public:
     /// a std::string containing the whole file in text).
     template<typename T>
     const T getData() const { auto ptr = _resource.lock(); return ptr->getData<T>(); }
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns expected data for user.
+    //////////////////////////////////////////////////////////////////////
+    const void* getCustomData(const std::string& dataname) const;
     
     /// @brief Lock the pointer in order to use it.
     /// This function guarantees the pointer is not destroyed while using it.

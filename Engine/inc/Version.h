@@ -96,6 +96,7 @@
 #endif
 
 #include "glm/glm.hpp"
+#include "glm/ext.hpp"
 
 GRE_BEGIN_NAMESPACE
 
@@ -103,7 +104,7 @@ GRE_BEGIN_NAMESPACE
 
 #define GRE_VERSION_MAJOR 0             ///< @brief GRE Major version.
 #define GRE_VERSION_MINOR 0             ///< @brief GRE Minor version.
-#define GRE_VERSION_BUILD 12            ///< @brief GRE Build number.
+#define GRE_VERSION_BUILD 13            ///< @brief GRE Build number.
 
 /// @brief Defines the Version structure.
 typedef struct Version
@@ -136,6 +137,14 @@ const char* computeMethodName(const char (&function)[FL], const char (&prettyFun
 /// @brief Debug using an intro (should use __PRETTY_FUNCTION__ macro) and the body message.
 DLL_PUBLIC std::ostream& GreDebug(const std::string& func);
 #define GreDebugPretty() GreDebug( __COMPACT_PRETTY_FUNCTION__ )
+
+#define _GreDebugNotImplemented( message , arg ) \
+    static std::string __message##__arg = std::string( message ); \
+    static bool __already_passed##__arg = false; \
+    if( __already_passed##__arg ) { GreDebugPretty() << message << std::endl; __already_passed##__arg = true; }
+
+#define GreDebugNotImplemented( message ) _GreDebugNotImplemented( message , __LINE__ )
+#define GreDebugFunctionNotImplemented() GreDebugNotImplemented( std::string ( __COMPACT_PRETTY_FUNCTION__ ) + " : Not implemented !" )
 
 enum class PrimitiveType
 {
@@ -180,12 +189,14 @@ typedef GreExceptionWithText GreUnsupportedOperation;
 
 typedef glm::vec2 Vector2;
 typedef glm::vec3 Vector3;
+typedef glm::vec4 Vector4;
 typedef glm::mat4 Matrix4;
 
 class MatrixUtils
 {
 public:
     static Matrix4 Zero4;
+    static Matrix4 Identity;
 };
 
 

@@ -129,12 +129,14 @@ Plugin::~Plugin ()
     
 }
 
+std::string _tmp;
+
 const std::string& Plugin::getName() const
 {
     auto ptr = _mPlugin.lock();
     if(ptr)
         return ptr->getName();
-    return std::string();
+    return _tmp;
 }
 
 bool Plugin::start()

@@ -23,27 +23,29 @@ HardwareBufferPrivate::~HardwareBufferPrivate()
 
 size_t HardwareBufferPrivate::getSize() const
 {
+    GreDebugFunctionNotImplemented();
     return 0;
 }
 
 size_t HardwareBufferPrivate::count() const
 {
+    GreDebugFunctionNotImplemented();
     return 0;
 }
 
 void HardwareBufferPrivate::bind() const
 {
-    
+    GreDebugFunctionNotImplemented();
 }
 
 void HardwareBufferPrivate::unbind() const
 {
-    
+    GreDebugFunctionNotImplemented();
 }
 
 void HardwareBufferPrivate::update() const
 {
-    
+    GreDebugFunctionNotImplemented();
 }
 
 bool HardwareBufferPrivate::isDirty() const
@@ -58,6 +60,7 @@ void HardwareBufferPrivate::setDirty(bool dirty) const
 
 bool HardwareBufferPrivate::isInvalid() const
 {
+    GreDebugFunctionNotImplemented();
     return true;
 }
 

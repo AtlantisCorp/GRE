@@ -10,52 +10,6 @@
 
 GRE_BEGIN_NAMESPACE
 
-NodePrivate::NodePrivate(const std::string& name)
-: Resource(name), _mIsVisible(false)
-{
-    
-}
-
-NodePrivate::~NodePrivate()
-{
-    
-}
-
-NodePrivate::NodePtr NodePrivate::addChild(NodePrivate::NodePtr child)
-{
-    return NodePtr();
-}
-
-void NodePrivate::translate(const Vector3 &vector)
-{
-    
-}
-
-void NodePrivate::setVisible(bool visible)
-{
-    _mIsVisible = visible;
-}
-
-bool NodePrivate::isVisible() const
-{
-    return _mIsVisible;
-}
-
-const Matrix4& NodePrivate::getTransformation() const
-{
-    return MatrixUtils::Zero4;
-}
-
-Mesh& NodePrivate::getMesh()
-{
-    return Mesh::Null;
-}
-
-const Mesh& NodePrivate::getMesh() const
-{
-    return Mesh::Null;
-}
-
 Node::Node()
 : ResourceUser(), Transmitter(std::string()), _mNode()
 {
@@ -80,19 +34,33 @@ Node::Node(const ResourceUser& rhs)
     
 }
 
+Node::Node(std::weak_ptr<NodePrivate> rhs)
+: ResourceUser(rhs), Transmitter(std::string()), _mNode(rhs)
+{
+    
+}
+
 Node::~Node()
 {
     
 }
 
-Node Node::addChild(Node child)
+Node& Node::operator = (const Node& node)
+{
+    ResourceUser::operator=(node);
+    _mNode = node._mNode;
+    return *this;
+}
+
+Node Node::addChild(const Node& child)
 {
     auto ptr = _mNode.lock();
+    
     if(ptr) {
-        if(ptr->addChild(child._mNode).expired())
+        if(ptr->addChild(child).expired()) {
             return Node::Null;
+        }
         else {
-            child.listen(*this);
             return child;
         }
     }
@@ -100,16 +68,35 @@ Node Node::addChild(Node child)
     return Node::Null;
 }
 
+Node Node::addChild(NodePrivate *child)
+{
+    auto ptr = _mNode.lock();
+    
+    if(ptr)
+        return ptr->addChild(child);
+    return Node::Null;
+}
+
 void Node::translate(const Vector3 &vector)
 {
     auto ptr = _mNode.lock();
+    
     if(ptr)
         ptr->translate(vector);
+}
+
+void Node::rotate(float angle, const Vector3 &axe)
+{
+    auto ptr = _mNode.lock();
+    
+    if(ptr)
+        ptr->rotate(angle, axe);
 }
 
 void Node::setVisible(bool visible)
 {
     auto ptr = _mNode.lock();
+    
     if(ptr)
         ptr->setVisible(visible);
 }
@@ -117,33 +104,107 @@ void Node::setVisible(bool visible)
 bool Node::isVisible() const
 {
     auto ptr = _mNode.lock();
+    
     if(ptr)
         return ptr->isVisible();
     return false;
 }
 
-const Matrix4& Node::getTransformation() const
+void Node::setMesh(const Mesh &mesh)
 {
     auto ptr = _mNode.lock();
+    
     if(ptr)
-        return ptr->getTransformation();
-    return MatrixUtils::Zero4;
+        ptr->setMesh(mesh);
 }
 
 Mesh& Node::getMesh()
 {
     auto ptr = _mNode.lock();
+    
     if(ptr)
         return ptr->getMesh();
+    
     return Mesh::Null;
 }
 
 const Mesh& Node::getMesh() const
 {
     auto ptr = _mNode.lock();
+    
     if(ptr)
         return ptr->getMesh();
+    
     return Mesh::Null;
+}
+
+void Node::setCamera(const Camera &camera)
+{
+    auto ptr = _mNode.lock();
+    
+    if(ptr)
+        ptr->setCamera(camera);
+}
+
+Camera& Node::getCamera()
+{
+    auto ptr = _mNode.lock();
+    
+    if(ptr)
+        return ptr->getCamera();
+    
+    return Camera::Null;
+}
+
+const Camera& Node::getCamera() const
+{
+    auto ptr = _mNode.lock();
+    
+    if(ptr)
+        return ptr->getCamera();
+    
+    return Camera::Null;
+}
+
+std::weak_ptr<NodePrivate> Node::toWeakPtr()
+{
+    return _mNode;
+}
+
+const std::weak_ptr<NodePrivate> Node::toWeakPtr() const
+{
+    return _mNode;
+}
+
+void Node::setParent(const Node &node)
+{
+    auto ptr = _mNode.lock();
+    
+    if(ptr)
+        ptr->setParent(node);
+}
+
+Matrix4& Node::getNodeMatrix()
+{
+    auto ptr = _mNode.lock();
+    if(ptr)
+        return ptr->getNodeMatrix();
+    return MatrixUtils::Identity;
+}
+
+const Matrix4& Node::getNodeMatrix() const
+{
+    auto ptr = _mNode.lock();
+    if(ptr)
+        return ptr->getNodeMatrix();
+    return MatrixUtils::Identity;
+}
+
+void Node::setNodeMatrix(const Matrix4 &mat4)
+{
+    auto ptr = _mNode.lock();
+    if(ptr)
+        ptr->setNodeMatrix(mat4);
 }
 
 Node Node::Null = Node();

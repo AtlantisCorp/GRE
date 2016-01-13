@@ -8,6 +8,7 @@
 
 #include "Renderer.h"
 #include "ResourceManager.h"
+#include "Pass.h"
 
 GRE_BEGIN_NAMESPACE
 
@@ -99,17 +100,28 @@ void RendererResource::render()
 
 void RendererResource::_preRender()
 {
-    
+    GreDebugFunctionNotImplemented();
 }
 
 void RendererResource::_render()
 {
+    // ScenePrivate::getActivPasses should returns the
+    // list of Pass objects, currently activated, and by
+    // order of draw.
+    PassList passes = _mScene.getActivePasses();
     
+    // For each Pass object, we use the PassPrivate::renderWith()
+    // function. Each Pass object has the possibility to customize
+    // the Render process as they want.
+    for(Pass pass : passes)
+    {
+        pass.renderWith(this);
+    }
 }
 
 void RendererResource::_postRender()
 {
-    
+    GreDebugFunctionNotImplemented();
 }
 
 bool RendererResource::isImmediate() const
@@ -165,12 +177,12 @@ Scene RendererResource::loadSceneByResource(Scene scene)
 
 void RendererResource::pushMatrix(MatrixType matrix)
 {
-    
+    GreDebugFunctionNotImplemented();
 }
 
 void RendererResource::popMatrix(MatrixType matrix)
 {
-    
+    GreDebugFunctionNotImplemented();
 }
 
 Scene& RendererResource::getScene()
@@ -185,11 +197,13 @@ const Scene& RendererResource::getScene() const
 
 HardwareVertexBuffer RendererResource::createVertexBuffer()
 {
+    GreDebugFunctionNotImplemented();
     return HardwareVertexBuffer::Null;
 }
 
 HardwareIndexBuffer RendererResource::createIndexBuffer(PrimitiveType ptype, StorageType stype)
 {
+    GreDebugFunctionNotImplemented();
     return HardwareIndexBuffer::Null;
 }
 
@@ -207,6 +221,7 @@ Mesh RendererResource::createMeshFromBuffers(const std::string& name, const Hard
 
 Texture RendererResource::createTexture(const std::string &name, const std::string &file)
 {
+    GreDebugFunctionNotImplemented();
     return Texture::Null;
 }
 
@@ -215,15 +230,57 @@ Camera RendererResource::createCamera(const std::string& name)
     return Camera(name);
 }
 
-void RendererResource::draw(const Mesh &mesh)
+void RendererResource::draw(const Mesh &mesh, const HardwareProgram& activProgram)
 {
-    
+    GreDebugFunctionNotImplemented();
 }
 
 void RendererResource::transform(const Node &node)
 {
-    
+    GreDebugFunctionNotImplemented();
 }
+
+void RendererResource::drawPass(const PassPrivate *pass, const std::vector<const Node>& nodes)
+{
+#ifdef GreIsDebugMode
+    if(pass)
+    {
+        if(pass->isActivated())
+        {
+#endif
+            
+            
+#ifdef GreIsDebugMode
+        
+        }
+    }
+#endif
+}
+
+void RendererResource::draw(const Mesh& mesh, const Matrix4& mat4, const HardwareProgram& activProgram)
+{
+    // If we arrive here, the Pass object should have set already the ShaderProgram,
+    // the Projection and View matrix.
+    
+    // Set the Model Matrix.
+    _mProgramManager.setSdkUniformMat4("ModelMatrix", mat4);
+    
+    // Now, we draw the Mesh.
+    draw(mesh, activProgram);
+}
+
+void RendererResource::draw(const Mesh &mesh, HardwareProgramVariables &variables)
+{
+    GreDebugFunctionNotImplemented();
+}
+
+HardwareProgram RendererResource::createHardwareProgram(const std::string& name, const HardwareShader &vertexShader, const HardwareShader &fragmentShader)
+{
+    GreDebugFunctionNotImplemented();
+    return HardwareProgram::Null;
+}
+
+// ---------------------------------------------------------------------------------------------------
 
 Renderer::Renderer(Renderer&& movref)
 : ResourceUser(movref), _mRenderer(std::move(movref._mRenderer))
@@ -454,11 +511,11 @@ Camera Renderer::createCamera(const std::string &name)
     return Camera(nullptr);
 }
 
-void Renderer::draw(const Mesh &mesh)
+void Renderer::draw(const Mesh &mesh, const HardwareProgram& activProgram)
 {
     auto ptr = _mRenderer.lock();
     if(ptr)
-        ptr->draw(mesh);
+        ptr->draw(mesh, activProgram);
 }
 
 void Renderer::prepare(const Camera& cam)
@@ -520,6 +577,16 @@ void Renderer::transform(const Node &node)
     if(ptr)
         ptr->transform(node);
 }
+
+HardwareProgram Renderer::createHardwareProgram(const std::string& name, const HardwareShader &vertexShader, const HardwareShader &fragmentShader)
+{
+    auto ptr = _mRenderer.lock();
+    if(ptr)
+        return ptr->createHardwareProgram(name, vertexShader, fragmentShader);
+    return HardwareProgram::Null;
+}
+
+// ---------------------------------------------------------------------------------------------------
 
 RendererLoader::RendererLoader()
 {

@@ -116,6 +116,13 @@ Mesh::~Mesh()
     
 }
 
+Mesh& Mesh::operator = (const Mesh& mesh)
+{
+    ResourceUser::operator=(mesh);
+    _mMesh = mesh._mMesh;
+    return *this;
+}
+
 HardwareVertexBuffer& Mesh::getVertexBuffer()
 {
     auto ptr = _mMesh.lock();

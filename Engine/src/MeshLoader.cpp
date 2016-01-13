@@ -27,6 +27,7 @@ MeshLoader::~MeshLoader()
 
 Resource* MeshLoader::load(Resource::Type type, const std::string &name, const std::string &file, Renderer renderer) const
 {
+    GreDebugFunctionNotImplemented();
     return nullptr;
 }
 
@@ -45,6 +46,7 @@ Resource* MeshLoader::load(Resource::Type type, const std::string &name, const H
 
 Resource* MeshLoader::load(Resource::Type type, const std::string &name, const MeshPrivate::Type &meshtype, const Gre::Renderer &renderer, const VertexBatch &vbatch, const MaterialIndexedFaceBatch &ibatch) const
 {
+    GreDebugFunctionNotImplemented();
     return nullptr;
 }
 

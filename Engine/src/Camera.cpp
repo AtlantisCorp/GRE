@@ -181,6 +181,12 @@ void CameraPrivate::setMoveSpeed(float speed)
     _moveSpeed = speed;
 }
 
+Camera::Camera()
+: Listener(), _camera()
+{
+    
+}
+
 Camera::Camera(const std::string& name)
 : Listener(new CameraPrivate(name)), _camera()
 {
@@ -372,6 +378,6 @@ void Camera::setMoveSpeed(float speed)
         ptr->setMoveSpeed(speed);
 }
 
-Camera Camera::Null = Camera(std::string());
+Camera Camera::Null = Camera();
 
 GRE_END_NAMESPACE

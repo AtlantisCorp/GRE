@@ -37,7 +37,6 @@ public:
     
 protected:
     void _preRender();
-    void _render ();
     void _postRender();
     
 public:
@@ -47,7 +46,12 @@ public:
     
     void drawTriangle(float sz, const Color& color1, const Color& color2, const Color& color3);
     void drawQuad(float sz, const Color& color1, const Color& color2, const Color& color3, const Color& color4);
-    void draw(const Mesh& mesh);
+    void draw(const Mesh& mesh, const HardwareProgram& activProgram);
+    
+private:
+    void draw_legacy(const Mesh& mesh);
+    
+public:
     
     void prepareMaterial(const Material& mat);
     void prepare(const Camera& camera);
@@ -57,11 +61,22 @@ public:
     HardwareIndexBuffer createIndexBuffer(PrimitiveType ptype, StorageType stype);
     Texture createTexture(const std::string& name, const std::string& file);
     
+    bool isCoreProfile() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Constructs a HardwareProgram using given Vertex Shader,
+    /// IndexShader.
+    /// @note You can set every value to HardwareShader::PassThrough if you
+    /// just want default Program.
+    //////////////////////////////////////////////////////////////////////
+    HardwareProgram createHardwareProgram(const std::string& name, const HardwareShader& vertexShader, const HardwareShader& fragmentShader);
+    
 private:
     
     PFNGLGETSTRINGPROC   _glGetString;
     PFNGLGETSTRINGIPROC  _glGetStringi;
     PFNGLGETINTEGERVPROC _glGetIntegerv;
+    PFNGLCLEARCOLORPROC  _glClearColor;
     
     void initializeFunctions();
     void setGlVersion();

@@ -128,16 +128,18 @@ int main(int argc, const char * argv[]) {
             Keyboard myKeyboard("MyKeyboard");
             myKeyboard.listen(myWindow);
             
-            Camera myCamera = myRenderer.createCamera("MyCamera");
-            myCamera.setPosition(Vector3(0.0f, 0.0f, 0.0f));
-            myCamera.lookAt(Vector3(0.0f, 0.0f, -10.0f));
-            myCamera.listen(myKeyboard);
-            
             myRenderer.setClearColor({0.0f, 0.0f, 0.0f, 1.0f});
             myRenderer.setImmediateMode(false);
             
             Scene scene = myRenderer.loadSceneByName("BinaryTreeScene", "Scene1");
             Node root = myRenderer.getScene().getRoot();
+            
+            Camera myCamera = myRenderer.createCamera("MyCamera");
+            myCamera.setPosition(Vector3(0.0f, 0.0f, 0.0f));
+            myCamera.lookAt(Vector3(0.0f, 0.0f, -10.0f));
+            myCamera.listen(myKeyboard);
+            Node myCameraNode = root.addChild(scene.createNode(myCamera));
+            scene.setActiveCamera(myCameraNode);
             
             Node triangleNode = root.addChild(scene.createNode(triangleMesh));
             triangleNode.translate(Vector3(-1.5f, 0.0f, -10.0f));

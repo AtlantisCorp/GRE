@@ -29,17 +29,18 @@ TexturePrivate::~TexturePrivate()
 
 bool TexturePrivate::isInvalid() const
 {
+    GreDebugFunctionNotImplemented();
     return true;
 }
 
 void TexturePrivate::bind() const
 {
-    
+    GreDebugFunctionNotImplemented();
 }
 
 void TexturePrivate::unbind() const
 {
-    
+    GreDebugFunctionNotImplemented();
 }
 
 bool TexturePrivate::isBinded() const

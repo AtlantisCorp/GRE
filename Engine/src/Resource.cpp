@@ -35,6 +35,11 @@ const void* Resource::_getData() const
     return nullptr;
 }
 
+const void* Resource::getCustomData(const std::string &dataname) const
+{
+    return nullptr;
+}
+
 ResourceUser ResourceUser::Null = ResourceUser(std::weak_ptr<Resource>());
 
 ResourceUser::ResourceUser (std::weak_ptr<Resource> r) :
@@ -71,6 +76,14 @@ std::shared_ptr<Resource> ResourceUser::lock()
 const std::shared_ptr<Resource> ResourceUser::lock() const
 {
     return _resource.lock();
+}
+
+const void* ResourceUser::getCustomData(const std::string &dataname) const
+{
+    auto ptr = _resource.lock();
+    if(ptr)
+        return ptr->getCustomData(dataname);
+    return nullptr;
 }
 
 
