@@ -16,16 +16,6 @@
 
 class OpenGlRenderer : public RendererResource
 {
-private:
-    
-    GLfloat _mClearColor [4];
-    GLfloat _mClearDepth;
-    GLint   _gl_major;
-    GLint   _gl_minor;
-    std::vector<std::string> _extensions; ///< @brief Supported extensions.
-    
-    bool _suportVbo;
-    
 public:
     
     OpenGlRenderer (const std::string& name);
@@ -71,14 +61,37 @@ public:
     //////////////////////////////////////////////////////////////////////
     HardwareProgram createHardwareProgram(const std::string& name, const HardwareShader& vertexShader, const HardwareShader& fragmentShader);
     
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns expected data for user.
+    //////////////////////////////////////////////////////////////////////
+    const void* getCustomData(const std::string& dataname) const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Prepare the Pass object to be drew.
+    //////////////////////////////////////////////////////////////////////
+    void prepare(PassPrivate* privPass);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Renders Framebuffer's in the Queue to the screen (default
+    /// frame buffer), and clear the queue.
+    //////////////////////////////////////////////////////////////////////
+    void renderFrameBuffers(std::queue<FrameBuffer>& fboQueue);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Creates a blank Texture object and returns it.
+    //////////////////////////////////////////////////////////////////////
+    Texture createTexture(const std::string& name) const;
+    
 private:
     
-    PFNGLGETSTRINGPROC   _glGetString;
-    PFNGLGETSTRINGIPROC  _glGetStringi;
-    PFNGLGETINTEGERVPROC _glGetIntegerv;
-    PFNGLCLEARCOLORPROC  _glClearColor;
+    GLfloat _mClearColor [4];
+    GLfloat _mClearDepth;
     
-    void initializeFunctions();
+    bool _suportVbo;
+    
+    /// @brief Global Vertex Array Object used by the Engine.
+    GLuint _mVao;
+    
     void setGlVersion();
     void initExtensions();
 };

@@ -39,6 +39,12 @@ public:
     ~Material() { }
     
     Material& operator = (const Material& rhs);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns true if this Material has Texture object.
+    //////////////////////////////////////////////////////////////////////
+    bool hasTexture() const;
+    
 };
 
 GRE_END_NAMESPACE

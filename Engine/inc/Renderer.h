@@ -121,14 +121,6 @@ public:
     virtual void transform(const Node& node);
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Draw given PassPrivate, giving the Nodes to draw.
-    /// In Release mode, the PassPrivate pointer is assumed to be valid,
-    /// to have a correct HardwareProgram, and to be activated. Those
-    /// assertions are made again in Debug mode.
-    //////////////////////////////////////////////////////////////////////
-    virtual void drawPass(const PassPrivate* pass, const std::vector<const Node>& nodes);
-    
-    //////////////////////////////////////////////////////////////////////
     /// @brief Draw given Mesh and updates the set of HardwareProgramVariables
     /// provided.
     /// Normally, this function is called from ::drawPass().
@@ -142,11 +134,17 @@ public:
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Constructs a HardwareProgram using given Vertex Shader,
-    /// IndexShader.
+    /// FragmentShader.
     /// @note You can set every value to HardwareShader::PassThrough if you
     /// just want default Program.
     //////////////////////////////////////////////////////////////////////
     virtual HardwareProgram createHardwareProgram(const std::string& name, const HardwareShader& vertexShader, const HardwareShader& fragmentShader);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Constructs a HardwareProgram using given Vertex and Fragment
+    /// Shader's files.
+    //////////////////////////////////////////////////////////////////////
+    HardwareProgram createHardwareProgram(const std::string& name, const std::string& vertexShaderPath, const std::string& fragmentShaderPath);
     
 public:
     
@@ -170,6 +168,43 @@ public:
     virtual void draw(const Mesh& mesh, const HardwareProgram& activProgram);
     virtual void prepare(const Camera& cam) { }
     
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Prepare the Pass object to be drew.
+    /// @note This function prepare every api-specific content of the Pass
+    /// to be binded, for example on OpenGl for Vertex Array Objects, as they
+    /// do not have any objects we must use the VariantData tables and this
+    /// function should create a VAO for the Pass.
+    //////////////////////////////////////////////////////////////////////
+    virtual void prepare(PassPrivate* privPass);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Prepare given fbo to be drawed on.
+    //////////////////////////////////////////////////////////////////////
+    virtual void prepare(const FrameBuffer& fbo);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Finish use of given FrameBuffer.
+    /// @note Usually this function make the Pipeline to render again to
+    /// the default framebuffer, the screen.
+    //////////////////////////////////////////////////////////////////////
+    virtual void finish(const FrameBuffer& fbo);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Renders Framebuffer's in the Queue to the screen (default
+    /// frame buffer), and clear the queue.
+    //////////////////////////////////////////////////////////////////////
+    virtual void renderFrameBuffers(std::queue<FrameBuffer>& fboQueue);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Creates a FrameBuffer object and returns it.
+    //////////////////////////////////////////////////////////////////////
+    virtual FrameBuffer createFrameBuffer(const std::string& name) const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Creates a blank Texture object and returns it.
+    //////////////////////////////////////////////////////////////////////
+    virtual Texture createTexture(const std::string& name) const;
+    
 protected:
     
     Window _window;
@@ -179,7 +214,13 @@ protected:
     bool   _mIsImmediateMode; ///< @brief True if renderer is in immediate mode.
     std::vector<std::function<void(void)> > _mImmediateFunctions; ///< @brief Vector of functions to be called in immediate mode.
     Scene  _mScene; ///< @brief THE Scene object :) .
-    HardwareProgramManager _mProgramManager; ///< @brief The Shader Program Manager. 
+    HardwareProgramManager _mProgramManager; ///< @brief The Shader Program Manager.
+    
+    /// @brief FBO data : Holds a Mesh to draw FrameBuffers on screen.
+    Mesh _mPlaneFboMesh;
+    
+    /// @brief FBO data : Holds the shader to draw the FrameBuffers on screen.
+    HardwareProgram _mfboHdwProgram;
     
 private:
     
@@ -273,6 +314,29 @@ public:
     void draw(const Mesh& mesh, const HardwareProgram& activProgram);
     void prepare(const Camera& cam);
     
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Prepare the Pass object to be drew.
+    //////////////////////////////////////////////////////////////////////
+    void prepare(PassPrivate* privPass);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Prepare given fbo to be drawed on.
+    //////////////////////////////////////////////////////////////////////
+    void prepare(const FrameBuffer& fbo);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Finish use of given FrameBuffer.
+    /// @note Usually this function make the Pipeline to render again to
+    /// the default framebuffer, the screen.
+    //////////////////////////////////////////////////////////////////////
+    void finish(const FrameBuffer& fbo);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Renders Framebuffer's in the Queue to the screen (default
+    /// frame buffer), and clear the queue.
+    //////////////////////////////////////////////////////////////////////
+    void renderFrameBuffers(std::queue<FrameBuffer>& fboQueue);
+    
     HardwareVertexBuffer createVertexBuffer();
     HardwareIndexBuffer createIndexBuffer(PrimitiveType ptype, StorageType stype);
     Mesh createMeshFromBuffers(const std::string& name, const HardwareVertexBuffer& vbuf, const HardwareIndexBufferBatch& ibufs);
@@ -288,17 +352,15 @@ public:
     HardwareProgram createHardwareProgram(const std::string& name, const HardwareShader& vertexShader, const HardwareShader& fragmentShader);
     
     //////////////////////////////////////////////////////////////////////
+    /// @brief Constructs a HardwareProgram using given Vertex and Fragment
+    /// Shader's files.
+    //////////////////////////////////////////////////////////////////////
+    HardwareProgram createHardwareProgram(const std::string& name, const std::string& vertexShaderPath, const std::string& fragmentShaderPath);
+    
+    //////////////////////////////////////////////////////////////////////
     /// @brief Apply the transformation in the given node.
     //////////////////////////////////////////////////////////////////////
     void transform(const Node& node);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Draw given PassPrivate.
-    /// In Release mode, the PassPrivate pointer is assumed to be valid,
-    /// to have a correct HardwareProgram, and to be activated. Those
-    /// assertions are made again in Debug mode.
-    //////////////////////////////////////////////////////////////////////
-    void drawPass(const PassPrivate* pass);
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Draw given Mesh and updates the set of HardwareProgramVariables
@@ -306,6 +368,16 @@ public:
     /// Normally, this function is called from ::drawPass().
     //////////////////////////////////////////////////////////////////////
     void draw(const Mesh& mesh, HardwareProgramVariables& variables);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Creates a FrameBuffer object and returns it.
+    //////////////////////////////////////////////////////////////////////
+    FrameBuffer createFrameBuffer(const std::string& name) const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Creates a blank Texture object and returns it.
+    //////////////////////////////////////////////////////////////////////
+    Texture createTexture(const std::string& name) const;
     
 private:
     
@@ -333,6 +405,8 @@ protected:
 typedef ResourceLoaderFactory<RendererLoader> RendererLoaderFactory;
 typedef GreException                          RendererInvalidVersion;
 typedef GreException                          RendererInvalidApi;
+typedef GreExceptionWithText                  RendererNoProgramManagerException;
+typedef GreExceptionWithText                  RendererNoCapacityException;
 
 GRE_END_NAMESPACE
 #endif

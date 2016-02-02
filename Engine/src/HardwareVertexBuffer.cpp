@@ -74,6 +74,18 @@ bool HardwareVertexBufferPrivate::isColorActivated() const
     return _mColorActivated;
 }
 
+void HardwareVertexBufferPrivate::activateTexCoord(bool activate)
+{
+    _mTexCoordActivated = activate;
+}
+
+bool HardwareVertexBufferPrivate::isTexCoordActivated() const
+{
+    return _mTexCoordActivated;
+}
+
+// ---------------------------------------------------------------------------------------------------
+
 HardwareVertexBuffer::HardwareVertexBuffer()
 : _mBuffer()
 {
@@ -216,6 +228,21 @@ bool HardwareVertexBuffer::isColorActivated() const
     auto ptr = _mBuffer.lock();
     if(ptr)
         return ptr->isColorActivated();
+    return false;
+}
+
+void HardwareVertexBuffer::activateTexCoord(bool activate)
+{
+    auto ptr = _mBuffer.lock();
+    if(ptr)
+        ptr->activateTexCoord(activate);
+}
+
+bool HardwareVertexBuffer::isTexCoordActivated() const
+{
+    auto ptr = _mBuffer.lock();
+    if(ptr)
+        return ptr->isTexCoordActivated();
     return false;
 }
 

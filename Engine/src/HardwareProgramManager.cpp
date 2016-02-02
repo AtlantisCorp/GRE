@@ -156,6 +156,8 @@ HardwareProgram HardwareProgramManager::createHardwareProgram(const std::string 
     return HardwareProgram::Null;
 }
 
+HardwareProgramManager HardwareProgramManager::Null = HardwareProgramManager();
+
 // ---------------------------------------------------------------------------------------------------
 
 HardwareProgramManagerLoader::HardwareProgramManagerLoader()

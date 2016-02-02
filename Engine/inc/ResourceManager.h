@@ -16,6 +16,7 @@
 #include "Renderer.h"
 #include "MeshLoader.h"
 #include "Scene.h"
+#include "FrameBuffer.h"
 
 GRE_BEGIN_NAMESPACE
 
@@ -83,6 +84,7 @@ private:
     SceneLoaderFactory                              _sceneLoaders;    ///< @brief Creates SceneLoader objects.
     HardwareShaderLoaderFactory                     _shaderLoaders;   ///< @brief Creates HardwareShaderLoader objects.
     HardwareProgramManagerLoaderFactory             _progManLoaders;  ///< @brief Creates HardwareProgramManagerLoader objects.
+    FrameBufferLoaderFactory                        _fboLoaders;      ///< @brief Creates FrameBufferLoader objects.
     NameGenerator                                   _nameGenerator;   ///< @brief Utility class to create Names.
     bool                                            _verbose;         ///< @brief Set to true to print more informations.
     
@@ -169,6 +171,11 @@ public:
         return std::move(ResourceUser(_resourcesbyname[name]));
     }
     
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the first Resource that has given name.
+    //////////////////////////////////////////////////////////////////////
+    ResourceUser findResourceByName(const std::string& name);
+    
     /// @brief Unload Resource giving its name.
     /// @note This function does not destroy the ResourceUser objects, but
     /// they will be invalidated (ResourceUser::isExpired() should return true).
@@ -198,6 +205,8 @@ public:
     HardwareShaderLoaderFactory& getHardwareShaderLoaderFactory();
     /// @brief Returns the HardwareProgramManagerLoader Factory.
     HardwareProgramManagerLoaderFactory& getHardwareProgramManagerLoaderFactory();
+    /// @brief Returns the FrameBufferLoader Factory.
+    FrameBufferLoaderFactory& getFrameBufferLoaderFactory();
     
     /// @brief Set to true if you want verbose mode.
     void setVerbose(bool flag);

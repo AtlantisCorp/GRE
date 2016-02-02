@@ -26,7 +26,7 @@ void OpenGlHardwareVariable::bind() const
     if(_mCachedAttribLoc >= 0 && _mUsage == VariableUsage::Uniform) {
         
         if(_mType == VariableType::Mat4) {
-            glUniformMatrix4fv(_mCachedAttribLoc, 1, GL_FALSE, &_mMat4[0][0]);
+            Gl::UniformMatrix4fv(_mCachedAttribLoc, 1, GL_FALSE, &_mMat4[0][0]);
             _mIsDirty = false;
         }
         

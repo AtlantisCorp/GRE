@@ -10,6 +10,7 @@
 #define GResource_Resource_h
 
 #include "Pools.h"
+#include "Variant.h"
 
 GRE_BEGIN_NAMESPACE
 
@@ -46,10 +47,6 @@ GRE_BEGIN_NAMESPACE
 ////////////////////////////////////////////////////////////////////////
 class DLL_PUBLIC Resource
 {
-private:
-    
-    std::string _name; ///< @brief The name of the Resource.
-    
 public:
     
     /// @brief Enumerates every types a Resource can be.
@@ -65,7 +62,8 @@ public:
         Texture,        ///< @brief Textures objects. Can only be loaded by the Renderer.
         Scene,          ///< @brief A simple Type to describe a Scene object.
         HwdProgManager, ///< @brief For HardwareProgramManager.
-        HdwShader       ///< @brief HardwareShader Resource.
+        HdwShader,      ///< @brief HardwareShader Resource.
+        FrameBuff       ///< @brief FrameBuffer Resource.
     };
     
     POOLED(Pools::Resource);
@@ -93,6 +91,18 @@ public:
     //////////////////////////////////////////////////////////////////////
     virtual const void* getCustomData(const std::string& dataname) const;
     
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Stores Variant data at given index.
+    //////////////////////////////////////////////////////////////////////
+    void storeVariantData(int index, const Variant& data);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the Variant data at given index.
+    /// @note Index inferior to 0 are reserved.
+    //////////////////////////////////////////////////////////////////////
+    Variant& getVariantData(int index);
+    const Variant& getVariantData(int index) const;
+    
 protected:
     
     /// @brief Returns the Data structure, if one.
@@ -101,6 +111,19 @@ protected:
     /// except for TextResource which is a special basic Resource (this function so return
     /// a std::string containing the whole file in text).
     virtual const void* _getData() const;
+    
+    /// @brief Defines a descriptor for a Variant entry in the resource table.
+    typedef struct
+    {
+        Variant variant;
+    } VariantDescriptor;
+    
+private:
+    
+    std::string _name; ///< @brief The name of the Resource.
+    
+    /// @brief A dictionnary containing Variant data.
+    std::map<int, VariantDescriptor> _mVariantDatas;
 };
 
 ////////////////////////////////////////////////////////////////////////
@@ -176,6 +199,18 @@ public:
     /// @brief Lock the pointer in order to use it.
     /// This function guarantees the pointer is not destroyed while using it.
     const std::shared_ptr<Resource> lock() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Stores Variant data at given index.
+    //////////////////////////////////////////////////////////////////////
+    void storeVariantData(int index, const Variant& data);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the Variant data at given index.
+    /// @note Index inferior to 0 are reserved.
+    //////////////////////////////////////////////////////////////////////
+    Variant& getVariantData(int index);
+    const Variant& getVariantData(int index) const;
 
     static ResourceUser Null; ///< @brief A Generic null ResourceUser.
 };
@@ -281,6 +316,10 @@ protected:
     
     std::map<std::string, std::shared_ptr<T> > _loaders;
 };
+
+/// @brief Use this Exception to notifiate that the wanted Loader
+/// has not been found in the Loader Factory.
+typedef GreExceptionWithText GreNoLoaderFound;
 
 GRE_END_NAMESPACE
 

@@ -16,6 +16,12 @@ TexturePrivate::TexturePrivate()
     
 }
 
+TexturePrivate::TexturePrivate(const std::string& name)
+: Resource(name), image(Image::Null), _isBinded(false)
+{
+    
+}
+
 TexturePrivate::TexturePrivate(const std::string& name, const Image& img)
 : Resource(name), image(img), _isBinded(false)
 {

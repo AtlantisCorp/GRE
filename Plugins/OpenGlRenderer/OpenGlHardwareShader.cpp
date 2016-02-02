@@ -16,25 +16,25 @@ OpenGlHardwareShader::OpenGlHardwareShader(const std::string& name, const Shader
     if(!text.empty())
     {
         if(type == ShaderType::Vertex)
-            _mShaderId = glCreateShader(GL_VERTEX_SHADER);
+            _mShaderId = Gl::CreateShader(GL_VERTEX_SHADER);
         else if(type == ShaderType::Fragment)
-            _mShaderId= glCreateShader(GL_FRAGMENT_SHADER);
-        
+            _mShaderId= Gl::CreateShader(GL_FRAGMENT_SHADER);
+
         if(_mShaderId)
         {
             const char* source = text.c_str();
-            GLint lenght = (GLint) text.size();
+//          GLint lenght = (GLint) text.size();
             GLint isCompiled;
-            glShaderSource(_mShaderId, 1, (const GLchar**) &source, 0);
-            glCompileShader(_mShaderId);
+            Gl::ShaderSource(_mShaderId, 1, (const GLchar**) &source, 0);
+            Gl::CompileShader(_mShaderId);
             
             int infoLogLenght;
-            glGetShaderiv(_mShaderId, GL_COMPILE_STATUS, &isCompiled);
-            glGetShaderiv(_mShaderId, GL_INFO_LOG_LENGTH, &infoLogLenght);
+            Gl::GetShaderiv(_mShaderId, GL_COMPILE_STATUS, &isCompiled);
+            Gl::GetShaderiv(_mShaderId, GL_INFO_LOG_LENGTH, &infoLogLenght);
             if(isCompiled == GL_FALSE)
             {
                 std::vector<char> shaderErrorMessage(infoLogLenght+1);
-                glGetProgramInfoLog(_mShaderId, infoLogLenght, NULL, &shaderErrorMessage[0]);
+                Gl::GetProgramInfoLog(_mShaderId, infoLogLenght, NULL, &shaderErrorMessage[0]);
                 GreDebugPretty() << "Glsl Linker Error : " << &shaderErrorMessage[0] << std::endl;
             }
             
@@ -56,7 +56,7 @@ OpenGlHardwareShader::OpenGlHardwareShader(const std::string& name, const Shader
 OpenGlHardwareShader::~OpenGlHardwareShader()
 {
     if(_mShaderId)
-        glDeleteShader(_mShaderId);
+        Gl::DeleteShader(_mShaderId);
 }
 
 const void* OpenGlHardwareShader::getCustomData(const std::string &dataname) const

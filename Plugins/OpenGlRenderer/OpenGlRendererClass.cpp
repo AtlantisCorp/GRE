@@ -8,112 +8,80 @@
 
 #include "OpenGlRenderer.h"
 
-int FindFirstOccurence(const std::string& in, char what)
-{
-    if(in.empty())
-        return -1;
-    
-    int i = 0;
-    while(in[i] != '\0' && in[i] != what)
-        ++i;
-    
-    if(in[i] == '\0' || in[i] == what)
-        return i;
-    return -1;
-}
-
 OpenGlRenderer::OpenGlRenderer (const std::string& name)
 : RendererResource(name)
 {
+    // Before everything, we MUST init the GreOpenGl extension helper.
+    Gl::GreOpenGlInit();
+    
     _mClearColor[0] = 1.0f;
     _mClearColor[1] = 1.0f;
     _mClearColor[2] = 1.0f;
     _mClearColor[3] = 0.0f;
     _mClearDepth    = 1.0f;
+    _mVao = 0;
     
-    initializeFunctions();
-    setGlVersion();
-    initExtensions();
+    if (Gl::VersionMajor >= 3 ||
+        Gl::IsExtensionSupported("GL_ARB_vertex_buffer_object") ||
+        Gl::IsExtensionSupported("GL_EXT_vertex_buffer_object"))
+        _suportVbo = true;
+    else
+        _suportVbo = false;
+
     
-    _suportVbo = hasExtension("GL_ARB_vertex_buffer_object") || _gl_major >= 3;
+#ifdef GreIsDebugMode
     if(!_suportVbo) {
         GreDebugPretty() << "Warning : Current Hardware does not support Vertex Buffer Objects ! This can be followed by very bad performances." << std::endl;
+        throw RendererNoCapacityException("GL_ARB_vertex_buffer_object/GL_EXT_vertex_buffer_object is missing.");
     }
+#endif
     
     HardwareProgramManagerLoader* hdwLoader = ResourceManager::Get().getHardwareProgramManagerLoaderFactory().get("OpenGlHdwProgramManagerLoader");
-    _mProgramManager = HardwareProgramManager(ResourceManager::Get().loadResourceWith(hdwLoader, Resource::Type::HwdProgManager, "OpenGlProgManager"));
+    if(hdwLoader)
+    {
+        _mProgramManager = HardwareProgramManager(ResourceManager::Get().loadResourceWith(hdwLoader, Resource::Type::HwdProgManager, "OpenGlProgManager"));
+    }
+    
+#ifdef GreIsDebugMode
+    else
+    {
+        _mProgramManager = HardwareProgramManager::Null;
+        GreDebugPretty() << "No OpenGlHdwProgramManagerLoader could be created." << std::endl;
+        throw RendererNoProgramManagerException("No OpenGlHdwProgramManagerLoader could be created.");
+    }
+#endif
 }
 
 OpenGlRenderer::~OpenGlRenderer ()
 {
-    
+    if(_mVao != 0)
+    {
+#   ifdef GreIsDebugMode
+        GreDebugPretty() << "Deleted Vao (id=" << _mVao << ")." << std::endl;
+#   endif
+        Gl::DeleteVertexArrays(1, &_mVao);
+    }
 }
 
-void OpenGlRenderer::initializeFunctions()
+const void* OpenGlRenderer::getCustomData(const std::string &dataname) const
 {
-    _glGetStringi  = (PFNGLGETSTRINGIPROC)  GlGetProcAddress("glGetStringi");
-    _glGetIntegerv = (PFNGLGETINTEGERVPROC) GlGetProcAddress("glGetIntegerv");
-    _glGetString   = (PFNGLGETSTRINGPROC)   GlGetProcAddress("glGetString");
-}
-
-void OpenGlRenderer::setGlVersion()
-{
-    if(!_glGetString) {
-        GreDebugPretty() << "Couldn't find glGetString entry point." << std::endl;
-        throw RendererInvalidApi();
+    if(dataname == "OpenGlVendor") {
+        return &Gl::Vendor;
     }
-    
-    char* GL_version  = (char*) _glGetString(GL_VERSION);
-    char* GL_vendor   = (char*) _glGetString(GL_VENDOR);
-    char* GL_renderer = (char*) _glGetString(GL_RENDERER);
-    
-    int vpoint = FindFirstOccurence(std::string(GL_version), '.');
-    if(vpoint >= 0)
-    {
-        _gl_major = GL_version[vpoint-1] - '0';
-        _gl_minor = GL_version[vpoint+1] - '0';
+    else if(dataname == "OpenGlRenderer") {
+        return &Gl::Renderer;
     }
-    else
-        throw RendererInvalidVersion();
-    
-    GreDebugPretty() << "Version  : " << GL_version << std::endl;
-    GreDebugPretty() << "Vendor   : " << GL_vendor << std::endl;
-    GreDebugPretty() << "Renderer : " << GL_renderer << std::endl;
-}
-
-void OpenGlRenderer::initExtensions()
-{
-    if(_gl_major >= 3)
-    {
-        if(!_glGetStringi || !_glGetIntegerv) {
-            GreDebugPretty() << "Couldn't find glGetStringi or glGetIntegerv entry points." << std::endl;
-            return;
-        }
-        
-        GLint extnum = 0;
-        _glGetIntegerv(GL_NUM_EXTENSIONS, &extnum);
-        
-        for(GLuint cext = 0; cext < extnum; ++cext) {
-            _extensions.push_back(std::string((char*) _glGetStringi(GL_EXTENSIONS, cext)));
-        }
+    else {
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "No data called '" << dataname << "' in OpenGlRenderer." << std::endl;
+#endif
+        return nullptr;
     }
-    else
-    {
-        if(!_glGetString) {
-            GreDebugPretty() << "Couldn't find glGetString entry point." << std::endl;
-            return;
-        }
-        
-        char* exts = (char*) _glGetString(GL_EXTENSIONS);
-        _extensions = split(std::string(exts), ' ');
-    }
-    
-    GreDebugPretty() << "Num Ext  : " << _extensions.size() << std::endl;
 }
 
 bool OpenGlRenderer::hasExtension(const std::string& ext) const
 {
-    return std::find(_extensions.begin(), _extensions.end(), ext) != _extensions.end();
+    return Gl::IsExtensionSupported(ext);
 }
 
 void OpenGlRenderer::setClearColor (const Color& color)
@@ -122,38 +90,43 @@ void OpenGlRenderer::setClearColor (const Color& color)
     _mClearColor[1] = color.getGreen();
     _mClearColor[2] = color.getBlue();
     _mClearColor[3] = color.getAlpha();
-    glClearColor(_mClearColor[0], _mClearColor[1], _mClearColor[2], _mClearColor[3]);
+    Gl::ClearColor(_mClearColor[0], _mClearColor[1], _mClearColor[2], _mClearColor[3]);
 }
 
 void OpenGlRenderer::setClearDepth (float depth)
 {
     _mClearDepth = depth;
-    glClearDepth(_mClearDepth);
+    Gl::ClearDepth(_mClearDepth);
 }
 
 bool OpenGlRenderer::isCoreProfile() const
 {
-    return _gl_major > 2;
+    return Gl::VersionMajor > 2;
 }
-
-GLuint vao;
 
 void OpenGlRenderer::_preRender()
 {
     if(isCoreProfile())
     {
-        glGenVertexArrays(1, &vao);
-        glBindVertexArray(vao);
+        if(_mVao == 0)
+        {
+            Gl::GenVertexArrays(1, &_mVao);
+#ifdef GreIsDebugMode
+            GreDebugPretty() << "Vertex Array created (id=" << _mVao << ")." << std::endl;
+#endif
+        }
+        
+        Gl::BindVertexArray(_mVao);
         
         // First we set up the Viewport.
         WindowSize sz = _window.getWindowSize();
         GLsizei width = sz.first;
         GLsizei height = sz.second;
-        glViewport(0, 0, width, height);
+        Gl::Viewport(0, 0, width, height);
         
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	// Clear Screen And Depth Buffer
-        glEnable(GL_TEXTURE_2D);
-        glDisable(GL_LIGHTING);
+        Gl::Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	// Clear Screen And Depth Buffer
+        Gl::Enable(GL_TEXTURE_2D);
+        Gl::Disable(GL_LIGHTING);
     }
     
     else
@@ -168,12 +141,12 @@ void OpenGlRenderer::_preRender()
         GLsizei height = sz.second;
         
         // Set the viewport.
-        glViewport(0, 0, width, height);
+        Gl::Viewport(0, 0, width, height);
         
         // Set the Projection Matrix
         glMatrixMode(GL_PROJECTION);
         glLoadIdentity();
-        
+
         // Calculate aspect ratio of the window
         gluPerspective(45.0f, (GLfloat)width/(GLfloat)height, 0.1f, 100.0f);
         
@@ -182,18 +155,16 @@ void OpenGlRenderer::_preRender()
         glLoadIdentity();
         // --------------------------------------------
         
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	// Clear Screen And Depth Buffer
-        glEnable(GL_TEXTURE_2D);
-        glDisable(GL_LIGHTING);
+        Gl::Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	// Clear Screen And Depth Buffer
+        Gl::Enable(GL_TEXTURE_2D);
+        Gl::Disable(GL_LIGHTING);
     }
 }
 
 void OpenGlRenderer::_postRender()
 {
-    glFlush();
-    
-    glBindVertexArray(0);
-    glDeleteVertexArrays(1, &vao);
+    Gl::Flush();
+    Gl::BindVertexArray(0);
 }
 
 void OpenGlRenderer::translate(float x, float y, float z)
@@ -234,6 +205,8 @@ void OpenGlRenderer::drawQuad(float sz, const Color& color1, const Color& color2
 
 void OpenGlRenderer::draw_legacy(const Mesh& mesh)
 {
+    // All of this stuff is DEPRECATED
+    
     if(mesh.getType() == MeshPrivate::Type::Buffered)
     {
         auto vbuf = mesh.getVertexBuffer();
@@ -306,6 +279,9 @@ void OpenGlRenderer::draw(const Mesh& mesh, const HardwareProgram& activProgram)
         bool isColorAttribEnabled = false;
         GLint colorAttribLoc = -1;
         
+        bool isTexCoordAttribEnabled = false;
+        GLint texCoordAttribLoc = -1;
+        
         auto vbuf = mesh.getVertexBuffer();
         vbuf.bind();
         
@@ -313,64 +289,188 @@ void OpenGlRenderer::draw(const Mesh& mesh, const HardwareProgram& activProgram)
         {
             vbuf.update();
         }
-        
-        
+
         posAttribLoc = activProgram.getAttribLocation("Position");
-        glVertexAttribPointer(posAttribLoc, 3, GL_FLOAT, false, sizeof(Vertex), (char*) NULL);
-        glEnableVertexAttribArray(posAttribLoc);
+#ifdef GreIsDebugMode
+        if(posAttribLoc == -1)
+        {
+            GreDebugPretty() << "No Attrib 'Position' in shader. Please add it." << std::endl;
+            return;
+        }
+#endif
+        
+        Gl::VertexAttribPointer(posAttribLoc, 3, GL_FLOAT, false, sizeof(Vertex), (char*) NULL);
+        Gl::EnableVertexAttribArray(posAttribLoc);
         isPosAttribEnabled = true;
     
         
         if(vbuf.isColorActivated())
         {
             colorAttribLoc = activProgram.getAttribLocation("Color");
-            glVertexAttribPointer(colorAttribLoc, 3, GL_FLOAT, false, sizeof(Vertex), (char*) NULL);
-            glEnableVertexAttribArray(colorAttribLoc);
-            isColorAttribEnabled = true;
+#ifdef GreIsDebugMode
+            if(colorAttribLoc == -1)
+            {
+                GreDebugPretty() << "No Attrib 'Color' in shader. Please add it." << std::endl;
+                isColorAttribEnabled = false;
+            }
+            else
+            {
+#endif
+                
+                Gl::VertexAttribPointer(colorAttribLoc, 4, GL_FLOAT, false, sizeof(Vertex), (char*) (sizeof(Vector3) + sizeof(Vector2)));
+                Gl::EnableVertexAttribArray(colorAttribLoc);
+                isColorAttribEnabled = true;
+                
+#ifdef GreIsDebugMode
+            }
+#endif
+        }
+        
+        // [Experimental Texture support]
+        if(vbuf.isTexCoordActivated())
+        {
+            texCoordAttribLoc = activProgram.getAttribLocation("TexCoord");
+#ifdef GreIsDebugMode
+            if(texCoordAttribLoc == -1)
+            {
+                GreDebugPretty() << "No Attrib 'TexCoord' in shader. Please add it." << std::endl;
+                isTexCoordAttribEnabled = false;
+            }
+            else
+            {
+#endif
+        
+                Gl::VertexAttribPointer(texCoordAttribLoc, 2, GL_FLOAT, true, sizeof(Vertex), (char*) sizeof(Vector3));
+                Gl::EnableVertexAttribArray(texCoordAttribLoc);
+                isTexCoordAttribEnabled = true;
+                
+#ifdef GreIsDebugMode
+            }
+#endif
         }
         
         for(auto indexbuf : mesh.getIndexBufferBatch().batchs)
         {
             indexbuf.bind();
-            
             if(indexbuf.isDirty())
             {
                 indexbuf.update();
             }
+        
+            if(indexbuf.getMaterial().hasTexture())
+            {
+                Gl::ActiveTexture(GL_TEXTURE0);
+                indexbuf.getMaterial().texture.bind();
+            }
             
             prepareMaterial(indexbuf.getMaterial());
-            if(indexbuf.getMaterial().texture.isBinded())
-            {
-                glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-                glTexCoordPointer(2, GL_FLOAT, sizeof(Vertex), (char*) (sizeof(Vector3)));
-            }
             
             GLenum mode = OpenGlUtils::PrimitiveTypeToGl(indexbuf.getPrimitiveType());
             GLenum stype = OpenGlUtils::StorageTypeToGl(indexbuf.getStorageType());
             GLsizei sz = (GLsizei) indexbuf.count();
             glDrawElements(mode, sz, stype, 0);
-            
-            if(indexbuf.getMaterial().texture.isBinded())
+        
+            if(indexbuf.getMaterial().hasTexture())
             {
-                glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+                Gl::ActiveTexture(GL_TEXTURE0);
                 indexbuf.getMaterial().texture.unbind();
             }
             
             indexbuf.unbind();
         }
         
-        if(!isCoreProfile())
-        {
-            if(vbuf.isColorActivated())
-                glDisableClientState(GL_COLOR_ARRAY);
-            glDisableClientState(GL_VERTEX_ARRAY);
-        }
+        if(vbuf.isTexCoordActivated())
+            Gl::DisableVertexAttribArray(texCoordAttribLoc);
         
         if(vbuf.isColorActivated())
-            glDisableVertexAttribArray(colorAttribLoc);
-        glDisableVertexAttribArray(posAttribLoc);
+            Gl::DisableVertexAttribArray(colorAttribLoc);
+        
+        Gl::DisableVertexAttribArray(posAttribLoc);
         
         vbuf.unbind();
+    }
+}
+
+void OpenGlRenderer::renderFrameBuffers(std::queue<FrameBuffer> &fboQueue)
+{
+    // For each FrameBuffer, we render a plane with the Viewport size (i.e. the FrameBuffer
+    // size). Those Framebuffers shoud have been given by the Pass's objects. Those FrameBuffer
+    // only goals should be the final Rendered image on Screen. Custom FrameBuffers which do not
+    // match the Viewport Size should not be used here.
+    
+    if(_mPlaneFboMesh.expired())
+    {
+        // This Vertices Positions corresponds to a Plane which have blanck color and
+        // corresponding Texture Coord.
+        float planeMeshVertexPosition [] =
+        {// == V ==  ==T== ====C=====
+            0, 0, 0, 0, 0, 0, 0, 0, 1,
+            1, 0, 0, 1, 0, 0, 0, 0, 1,
+            1, 1, 0, 1, 1, 0, 0, 0, 1,
+            0, 1, 0, 0, 1, 0, 0, 0, 1
+        };
+        
+        unsigned int planeMeshIndice [] =
+        {
+            0, 1, 2,
+            2, 3, 0
+        };
+        
+        // Create the Plane mesh.
+        HardwareVertexBuffer vbuf = createVertexBuffer();
+        vbuf.add(VertexBatchFromRaw(planeMeshVertexPosition, 4));
+        vbuf.activateColor(false);
+        
+        HardwareIndexBuffer ibuf = createIndexBuffer(PrimitiveType::Triangles, StorageType::UnsignedInt);
+        ibuf.add(IndexedFaceBatchFromRaw(planeMeshIndice, 2, 3));
+        HardwareIndexBufferBatch ibufs;
+        ibufs.batchs.push_back(ibuf);
+        
+        _mPlaneFboMesh = createMeshFromBuffers("_RendererPlaneFbo", vbuf, ibufs);
+    }
+    
+    while (!fboQueue.empty())
+    {
+        FrameBuffer fbo = fboQueue.front();
+        fboQueue.pop();
+        
+        // Just in case the fbo has not been unbinded.
+        fbo.unbind();
+        
+        // Prepare the textures and renders it.
+        // Function FrameBuffer::getDefaultAccessibleTexture() should returns
+        // the default texture to render, i.e. Attachement::Color.
+        _mPlaneFboMesh.getIndexBufferBatch().batchs.at(0).getMaterial().texture = fbo.getDefaultTextureAccessible();
+        
+        // We must have the valid fbohdwProgram.
+        if(_mfboHdwProgram.expired())
+        {
+            // Create the fboHdwProgram
+            _mfboHdwProgram = RendererResource::createHardwareProgram("shader-program-passthrough-fbo", "shaders/ogl-vertex-fbo.vs", "shaders/ogl-fragment-fbo.fs");
+        }
+        
+        // Now we can render the Mesh.
+        _mfboHdwProgram.bind();
+        draw(_mPlaneFboMesh, _mfboHdwProgram);
+        _mfboHdwProgram.unbind();
+    }
+    
+    // After all this, every framebuffers have been renderer on the screen.
+}
+
+void OpenGlRenderer::prepare(PassPrivate *privPass)
+{
+    if(privPass)
+    {
+        Variant& vaoVariant = privPass->getVariantData(0);
+        
+        if(vaoVariant.isNull()) {
+            GLuint vaopass = 0;
+            Gl::GenVertexArrays(1, &vaopass);
+            vaoVariant.reset(Variant::Policy::Integer, &vaopass);
+        }
+        
+        Gl::BindVertexArray(vaoVariant.toInteger());
     }
 }
 
@@ -389,16 +489,16 @@ void OpenGlRenderer::prepareMaterial(const Material& mat)
 
 void OpenGlRenderer::renderExample ()
 {
-    glDisable(GL_DEPTH_TEST);
-    glDisable(GL_LIGHTING);
-    glDepthFunc(GL_ALWAYS);
+    Gl::Disable(GL_DEPTH_TEST);
+    Gl::Disable(GL_LIGHTING);
+    Gl::DepthFunc(GL_ALWAYS);
     
-    glClearColor(_mClearColor[0], _mClearColor[1], _mClearColor[2], _mClearColor[3]);
-    glClearDepth(_mClearDepth);
-    glClear(GL_COLOR_BUFFER_BIT);
+    Gl::ClearColor(_mClearColor[0], _mClearColor[1], _mClearColor[2], _mClearColor[3]);
+    Gl::ClearDepth(_mClearDepth);
+    Gl::Clear(GL_COLOR_BUFFER_BIT);
     
     WindowSize sz = _window.getWindowSize();
-    
+
     glViewport(0,0,sz.first,sz.second);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
@@ -425,7 +525,7 @@ void OpenGlRenderer::renderExample ()
     glVertex2i(x1,y1);
     glVertex2i(x2,y2);
     glEnd();
-    glFlush();
+    Gl::Flush();
 }
 
 HardwareVertexBuffer OpenGlRenderer::createVertexBuffer()
@@ -455,6 +555,13 @@ Texture OpenGlRenderer::createTexture(const std::string& name, const std::string
     
     std::string texname = ResourceManager::Get().getNameGenerator().generateName(name);
     Texture texture = Texture(ResourceManager::Get().addResource(Resource::Type::Texture, texname, std::make_shared<OpenGlTexture>(texname, img)));
+    return texture;
+}
+
+Texture OpenGlRenderer::createTexture(const std::string& name) const
+{
+    std::string texName = ResourceManager::Get().getNameGenerator().generateName(name);
+    Texture texture = Texture(ResourceManager::Get().addResource(Resource::Type::Texture, texName, std::make_shared<OpenGlTexture>(texName)));
     return texture;
 }
 

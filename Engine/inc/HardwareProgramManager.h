@@ -108,6 +108,9 @@ public:
     //////////////////////////////////////////////////////////////////////
     HardwareProgram createHardwareProgram(const std::string& name, const HardwareShader &vertexShader, const HardwareShader &fragmentShader);
     
+    /// @brief The Null HdwProgramManager.
+    static HardwareProgramManager Null;
+    
 private:
     
     /// @brief A weak ptr to the direct type.

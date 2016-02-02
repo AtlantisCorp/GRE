@@ -31,4 +31,9 @@ Material& Material::operator=(const Material &rhs)
     return *this;
 }
 
+bool Material::hasTexture() const
+{
+    return !texture.expired();
+}
+
 GRE_END_NAMESPACE

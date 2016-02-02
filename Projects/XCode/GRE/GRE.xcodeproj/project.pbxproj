@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		4109C3CB1C58819100DF1DFF /* khrglext.h in Headers */ = {isa = PBXBuildFile; fileRef = 4109C3CA1C58819100DF1DFF /* khrglext.h */; };
 		410C1C2B1C03598A00937366 /* Key.h in Headers */ = {isa = PBXBuildFile; fileRef = 410C1C2A1C03598A00937366 /* Key.h */; };
 		410C1C2D1C0359EF00937366 /* Event.h in Headers */ = {isa = PBXBuildFile; fileRef = 410C1C2C1C0359EF00937366 /* Event.h */; };
 		410C1C2F1C035C8100937366 /* Event.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 410C1C2E1C035C8100937366 /* Event.cpp */; };
@@ -149,6 +150,9 @@
 		418D201B1C19F30B005E00AE /* OSXImage.h in Headers */ = {isa = PBXBuildFile; fileRef = 418D201A1C19F30B005E00AE /* OSXImage.h */; };
 		418D201D1C19F37A005E00AE /* OSXWindowClass.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 418D201C1C19F37A005E00AE /* OSXWindowClass.cpp */; };
 		418D411D1C0647B100D623AF /* Color.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 418D411C1C0647B100D623AF /* Color.cpp */; };
+		41A3440A1C55DD1E00C2EC5C /* Variant.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41A344091C55DD1E00C2EC5C /* Variant.cpp */; };
+		41A3440D1C56543D00C2EC5C /* FrameBuffer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41A3440C1C56543D00C2EC5C /* FrameBuffer.cpp */; };
+		41A344101C57D66A00C2EC5C /* OpenGlFrameBuffer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41A3440F1C57D66A00C2EC5C /* OpenGlFrameBuffer.cpp */; };
 		41B59B5D1BF9148B008655A1 /* WindowResource.h in Headers */ = {isa = PBXBuildFile; fileRef = 41B59B5C1BF9148B008655A1 /* WindowResource.h */; };
 		41B59B5E1BF9148B008655A1 /* WindowResource.h in Headers */ = {isa = PBXBuildFile; fileRef = 41B59B5C1BF9148B008655A1 /* WindowResource.h */; };
 		41B59B5F1BF9148B008655A1 /* WindowResource.h in Headers */ = {isa = PBXBuildFile; fileRef = 41B59B5C1BF9148B008655A1 /* WindowResource.h */; };
@@ -204,6 +208,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		4109C3CA1C58819100DF1DFF /* khrglext.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = khrglext.h; path = ../../../Plugins/OpenGlRenderer/khrglext.h; sourceTree = "<group>"; };
 		410C1C271C03483200937366 /* Version.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Version.h; path = ../../../Engine/inc/Version.h; sourceTree = "<group>"; };
 		410C1C281C034DF800937366 /* Clonable.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Clonable.h; path = ../../../Engine/inc/Clonable.h; sourceTree = "<group>"; };
 		410C1C291C03591800937366 /* Color.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Color.h; path = ../../../Engine/inc/Color.h; sourceTree = "<group>"; };
@@ -243,6 +248,7 @@
 		414BC02F1BFD63B400EA4A76 /* example2.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = example2.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		414BC0321BFD63B400EA4A76 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		414BC04F1BFD640100EA4A76 /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; lineEnding = 0; name = main.cpp; path = ../../../../Example/main.cpp; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
+		414DD1CA1C51577800569E45 /* ThirdParty.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = ThirdParty.h; path = ../../../Engine/inc/ThirdParty.h; sourceTree = "<group>"; };
 		41867EF51C1B75850096F198 /* OpenGlIncludes.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = OpenGlIncludes.h; path = ../../../Plugins/OpenGlRenderer/OpenGlIncludes.h; sourceTree = "<group>"; };
 		41867EF71C1B75BE0096F198 /* OpenGlIncludes.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = OpenGlIncludes.cpp; path = ../../../Plugins/OpenGlRenderer/OpenGlIncludes.cpp; sourceTree = "<group>"; };
 		41867EF91C1B78EB0096F198 /* OpenGlVertexBuffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = OpenGlVertexBuffer.h; path = ../../../Plugins/OpenGlRenderer/OpenGlVertexBuffer.h; sourceTree = "<group>"; };
@@ -308,6 +314,12 @@
 		418D201A1C19F30B005E00AE /* OSXImage.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = OSXImage.h; path = ../../../Plugins/OsXWindow/OSXImage.h; sourceTree = "<group>"; };
 		418D201C1C19F37A005E00AE /* OSXWindowClass.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = OSXWindowClass.cpp; path = ../../../Plugins/OsXWindow/OSXWindowClass.cpp; sourceTree = "<group>"; };
 		418D411C1C0647B100D623AF /* Color.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Color.cpp; path = ../../../Engine/src/Color.cpp; sourceTree = "<group>"; };
+		41A344081C55DB2C00C2EC5C /* Variant.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Variant.h; path = ../../../Engine/inc/Variant.h; sourceTree = "<group>"; };
+		41A344091C55DD1E00C2EC5C /* Variant.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Variant.cpp; path = ../../../Engine/src/Variant.cpp; sourceTree = "<group>"; };
+		41A3440B1C56527900C2EC5C /* FrameBuffer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = FrameBuffer.h; path = ../../../Engine/inc/FrameBuffer.h; sourceTree = "<group>"; };
+		41A3440C1C56543D00C2EC5C /* FrameBuffer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = FrameBuffer.cpp; path = ../../../Engine/src/FrameBuffer.cpp; sourceTree = "<group>"; };
+		41A3440E1C57D5B700C2EC5C /* OpenGlFrameBuffer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = OpenGlFrameBuffer.h; path = ../../../Plugins/OpenGlRenderer/OpenGlFrameBuffer.h; sourceTree = "<group>"; };
+		41A3440F1C57D66A00C2EC5C /* OpenGlFrameBuffer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = OpenGlFrameBuffer.cpp; path = ../../../Plugins/OpenGlRenderer/OpenGlFrameBuffer.cpp; sourceTree = "<group>"; };
 		41B59B5C1BF9148B008655A1 /* WindowResource.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = WindowResource.h; path = ../../../Engine/inc/WindowResource.h; sourceTree = "<group>"; };
 		41B8C81B1C1C5F71000084F2 /* libObjLoader.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libObjLoader.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		41B8C8211C1C5F71000084F2 /* ObjLoader.cp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; lineEnding = 0; path = ObjLoader.cp; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
@@ -480,6 +492,7 @@
 				418D411C1C0647B100D623AF /* Color.cpp */,
 				410C1C281C034DF800937366 /* Clonable.h */,
 				410C1C271C03483200937366 /* Version.h */,
+				414DD1CA1C51577800569E45 /* ThirdParty.h */,
 				41877B7A1BEFAED10024B643 /* Renderer.h */,
 				4131D53E1C41E87B00AB376A /* HardwareProgramManager.h */,
 				4131D53F1C41ED4900AB376A /* HardwareProgramManager.cpp */,
@@ -492,6 +505,8 @@
 				418C1AB71C2743AC005FF276 /* BinaryTreeScene.h */,
 				418C1AB91C2786BB005FF276 /* BinaryTreeScene.cpp */,
 				41877B7B1BEFAED10024B643 /* Resource.h */,
+				41A344081C55DB2C00C2EC5C /* Variant.h */,
+				41A344091C55DD1E00C2EC5C /* Variant.cpp */,
 				41877B7C1BEFAED10024B643 /* ResourceManager.h */,
 				41877B7D1BEFAED10024B643 /* TextResource.h */,
 				41877B7E1BEFAED10024B643 /* Window.h */,
@@ -507,6 +522,8 @@
 				41877B661BEFAE8D0024B643 /* Plugin.cpp */,
 				41877B671BEFAE8D0024B643 /* Pools.cpp */,
 				41877B681BEFAE8D0024B643 /* Renderer.cpp */,
+				41A3440B1C56527900C2EC5C /* FrameBuffer.h */,
+				41A3440C1C56543D00C2EC5C /* FrameBuffer.cpp */,
 				4120041B1C3DBB0E0010739D /* Pass.h */,
 				4120041E1C3DC39C0010739D /* HardwareProgram.h */,
 				412004221C3DE2E30010739D /* HardwareProgramVariables.h */,
@@ -550,6 +567,8 @@
 			isa = PBXGroup;
 			children = (
 				41877BEA1BEFB60D0024B643 /* OpenGL.framework */,
+				41A3440E1C57D5B700C2EC5C /* OpenGlFrameBuffer.h */,
+				41A3440F1C57D66A00C2EC5C /* OpenGlFrameBuffer.cpp */,
 				41877BE71BEFB5FC0024B643 /* openglrenderer.cpp */,
 				41867F051C1B7B5D0096F198 /* OpenGlRenderer.h */,
 				41867F071C1B7BA50096F198 /* OpenGlRendererClass.cpp */,
@@ -569,6 +588,7 @@
 				41867EFF1C1B79C50096F198 /* OpenGlIndexBuffer.cpp */,
 				41867EF51C1B75850096F198 /* OpenGlIncludes.h */,
 				41867EF71C1B75BE0096F198 /* OpenGlIncludes.cpp */,
+				4109C3CA1C58819100DF1DFF /* khrglext.h */,
 			);
 			name = openglrenderer;
 			sourceTree = "<group>";
@@ -708,6 +728,7 @@
 				41867F021C1B7A7D0096F198 /* OpenGlTexture.h in Headers */,
 				4131D5481C43EBD900AB376A /* OpenGlHardwareShader.h in Headers */,
 				41877BF01BEFB6150024B643 /* Resource.h in Headers */,
+				4109C3CB1C58819100DF1DFF /* khrglext.h in Headers */,
 				41877BF11BEFB6150024B643 /* ResourceManager.h in Headers */,
 				41867EF61C1B75850096F198 /* OpenGlIncludes.h in Headers */,
 				41867EFA1C1B78EB0096F198 /* OpenGlVertexBuffer.h in Headers */,
@@ -1006,8 +1027,10 @@
 				418A925B1C07953500806BA3 /* Vertex.cpp in Sources */,
 				41877B701BEFAE8D0024B643 /* Renderer.cpp in Sources */,
 				41877B711BEFAE8D0024B643 /* Resource.cpp in Sources */,
+				41A3440A1C55DD1E00C2EC5C /* Variant.cpp in Sources */,
 				418A925D1C079D3500806BA3 /* Face.cpp in Sources */,
 				410C1C331C03616800937366 /* Emitter.cpp in Sources */,
+				41A3440D1C56543D00C2EC5C /* FrameBuffer.cpp in Sources */,
 				41877B721BEFAE8D0024B643 /* ResourceManager.cpp in Sources */,
 				412004201C3DC4330010739D /* HardwareProgram.cpp in Sources */,
 				412427F41C3C9492006478BD /* NodePrivate.cpp in Sources */,
@@ -1049,6 +1072,7 @@
 				4131D54A1C43ECB500AB376A /* OpenGlHardwareShader.cpp in Sources */,
 				41D121711C447681009E5B0F /* OpenGlHardwareVariable.cpp in Sources */,
 				41867EF81C1B75BE0096F198 /* OpenGlIncludes.cpp in Sources */,
+				41A344101C57D66A00C2EC5C /* OpenGlFrameBuffer.cpp in Sources */,
 				41867F041C1B7AA60096F198 /* OpenGlTexture.cpp in Sources */,
 				4131D5461C43DCE300AB376A /* OpenGlHardwareProgram.cpp in Sources */,
 				4131D5431C43506900AB376A /* OpenGlHardwareProgramManager.cpp in Sources */,

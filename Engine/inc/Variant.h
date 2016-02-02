@@ -1,0 +1,91 @@
+//
+//  Variant.h
+//  GRE
+//
+//  Created by Jacques Tronconi on 25/01/2016.
+//
+//
+
+#ifndef GRE_Variant_h
+#define GRE_Variant_h
+
+#include "Pools.h"
+
+GRE_BEGIN_NAMESPACE
+
+//////////////////////////////////////////////////////////////////////
+/// @brief A basic Variant object, which can contains one subobject
+/// supported by this class.
+//////////////////////////////////////////////////////////////////////
+class DLL_PUBLIC Variant
+{
+public:
+    
+    enum class Policy
+    {
+        None    = 0, ///< @brief Nothing is stored.
+        Integer = 1  ///< @brief Stores an Integer.
+    };
+    
+    Variant(Policy policy = Policy::None, void* object = nullptr);
+    Variant(int object);
+    Variant(const Variant& rhs);
+    
+    ~Variant();
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Sets a new Object.
+    //////////////////////////////////////////////////////////////////////
+    void reset(Policy policy, void* object);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Sets a new Object.
+    //////////////////////////////////////////////////////////////////////
+    void reset(int object);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Clears the Variant and set it to Policy::None.
+    //////////////////////////////////////////////////////////////////////
+    void clear();
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the Variant object as an Integer, if one.
+    //////////////////////////////////////////////////////////////////////
+    int& toInteger();
+    const int& toInteger() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns true if policy is Policy::None or Object is nullptr.
+    //////////////////////////////////////////////////////////////////////
+    bool isNull() const;
+    
+    /// @brief A Null Variant object.
+    static Variant Null;
+    
+private:
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Copy an object depending on its policy and returns its
+    /// pointer.
+    //////////////////////////////////////////////////////////////////////
+    static void* CopyFromPolicy(Policy policy, void* object);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Deletes an object depending on its policy.
+    //////////////////////////////////////////////////////////////////////
+    static void DeleteFromPolicy(Policy policy, void* object);
+    
+private:
+    
+    /// @brief The Policy to be applied to this Variant.
+    Policy _mPolicy;
+    
+    /// @brief The internal object holded by this Variant.
+    void*  _mObject;
+};
+
+typedef GreExceptionWithText VariantBadCast;
+
+GRE_END_NAMESPACE
+
+#endif

@@ -50,6 +50,15 @@ std::string GetShaderFileText(const std::string& filepath)
 
 HardwareShader OpenGlHardwareProgramManager::loadShader(const ShaderType& stype, const std::string& name, const std::string& filepath)
 {
+    // We must verify that the Resource has not already been loaded !
+    ResourceUser tmpShader = ResourceManager::Get().findResourceByName(name);
+    if(!tmpShader.expired())
+    {
+        // The shader has already been loaded. We can directly return
+        // it to the user.
+        return HardwareShader(tmpShader);
+    }
+    
     std::string shaderText = GetShaderFileText(filepath);
     if(shaderText.empty())
     {

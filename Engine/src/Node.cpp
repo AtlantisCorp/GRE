@@ -184,7 +184,7 @@ void Node::setParent(const Node &node)
         ptr->setParent(node);
 }
 
-Matrix4& Node::getNodeMatrix()
+Matrix4 Node::getNodeMatrix()
 {
     auto ptr = _mNode.lock();
     if(ptr)
@@ -192,7 +192,7 @@ Matrix4& Node::getNodeMatrix()
     return MatrixUtils::Identity;
 }
 
-const Matrix4& Node::getNodeMatrix() const
+const Matrix4 Node::getNodeMatrix() const
 {
     auto ptr = _mNode.lock();
     if(ptr)

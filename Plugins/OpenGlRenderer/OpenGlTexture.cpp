@@ -8,6 +8,23 @@
 
 #include "OpenGlTexture.h"
 
+typedef GreExceptionWithText OpenGlGenTexture;
+
+OpenGlTexture::OpenGlTexture(const std::string& name)
+: TexturePrivate(name)
+{
+    _mTextureId = 0;
+    glGenTextures(1, &_mTextureId);
+    
+#ifdef GreIsDebugMode
+    if(!_mTextureId)
+    {
+        GreDebugPretty() << "Can't create texture '" << name << "'." << std::endl;
+        throw OpenGlGenTexture(name + " (glGenTextures)");
+    }
+#endif
+}
+
 OpenGlTexture::OpenGlTexture (const std::string& name, const Image& img)
 : TexturePrivate(name, img), _mTextureId(0)
 {
@@ -35,6 +52,14 @@ OpenGlTexture::OpenGlTexture (const std::string& name, const Image& img)
                          GL_UNSIGNED_BYTE,
                          img.getPixelBatch().pixels);
         }
+        
+        // Filling properties
+        _mTexType = Type::TwoDimension;
+        _mMipmapLevel = 0;
+        _mStoreType = StorageType::UnsignedByte;
+        _mWidth = image.getWidth();
+        _mHeight = image.getHeight();
+        _mComponentsNumber = pbatch.samplesPerPixel;
         
         glBindTexture(GL_TEXTURE_2D, 0);
         image.unloadCache();

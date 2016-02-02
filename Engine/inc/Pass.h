@@ -12,6 +12,7 @@
 #include "Pools.h"
 #include "Resource.h"
 #include "HardwareProgram.h"
+#include "FrameBuffer.h"
 
 GRE_BEGIN_NAMESPACE
 
@@ -92,6 +93,24 @@ public:
     //////////////////////////////////////////////////////////////////////
     bool autoCreateProgram() const;
     
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the FrameBuffer object currently used by this Pass.
+    /// @note If the Pass had never been used, this property has good chances
+    /// to be FrameBuffer::Null.
+    //////////////////////////////////////////////////////////////////////
+    FrameBuffer& getFrameBuffer();
+    const FrameBuffer& getFrameBuffer() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Sets if this Pass should be draw using Fbo method.
+    //////////////////////////////////////////////////////////////////////
+    void setFrameBufferedRendering(bool fborender);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns true if _mFrameBufferedRendering is true.
+    //////////////////////////////////////////////////////////////////////
+    bool isFrameBufferedRendering() const;
+    
 protected:
     
     /// @brief The actual number of this Pass.
@@ -106,6 +125,15 @@ protected:
     
     /// @brief If true, it creates a HardwareProgram passthrough using the Renderer.
     bool _mAutoCreateProgram;
+    
+    /// @brief A FrameBuffer object. This object is created by the Renderer.
+    FrameBuffer _mFbo;
+    
+    /// @brief True if FrameBuffered rendering is desired.
+    /// When _mNumber is 0 (default Pass), this value is false by
+    /// default. When _mNumber is not 0 (custom Pass), this value
+    /// is true.
+    bool _mFrameBufferedRendering;
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -166,6 +194,24 @@ public:
     /// shader.
     //////////////////////////////////////////////////////////////////////
     bool autoCreateProgram() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the FrameBuffer object currently used by this Pass.
+    /// @note If the Pass had never been used, this property has good chances
+    /// to be FrameBuffer::Null.
+    //////////////////////////////////////////////////////////////////////
+    FrameBuffer& getFrameBuffer();
+    const FrameBuffer& getFrameBuffer() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Sets if this Pass should be draw using Fbo method.
+    //////////////////////////////////////////////////////////////////////
+    void setFrameBufferedRendering(bool fborender);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns true if _mFrameBufferedRendering is true.
+    //////////////////////////////////////////////////////////////////////
+    bool isFrameBufferedRendering() const;
     
     /// @brief A Null Pass.
     static Pass Null;

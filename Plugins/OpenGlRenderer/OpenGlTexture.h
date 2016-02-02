@@ -15,7 +15,8 @@ class OpenGlTexture : public TexturePrivate
 {
 public:
     
-    OpenGlTexture (const std::string& name, const Image& img);
+    OpenGlTexture(const std::string& name);
+    OpenGlTexture(const std::string& name, const Image& img);
     ~OpenGlTexture();
     
     void bind() const;

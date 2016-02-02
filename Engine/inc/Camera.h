@@ -170,6 +170,9 @@ public:
     float getMoveSpeed() const;
     void setMoveSpeed(float speed);
     
+    /// @brief Returns true if null.
+    bool isNull() const { return _camera.expired(); }
+    
     /// @brief A Null Camera object.
     static Camera Null;
     

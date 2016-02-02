@@ -12,9 +12,12 @@
 GRE_BEGIN_NAMESPACE
 
 PassPrivate::PassPrivate(const std::string& name, const PassNumber& passNumber)
-: Resource(name), _mNumber(passNumber), _mIsActivated(true), _mLinkedProgram(HardwareProgram::Null), _mAutoCreateProgram(true)
+: Resource(name), _mNumber(passNumber), _mIsActivated(true), _mLinkedProgram(HardwareProgram::Null), _mAutoCreateProgram(true), _mFbo()
 {
-    
+    if((uint32_t) passNumber > (uint32_t) PassPurpose::First)
+        _mFrameBufferedRendering = true;
+    else
+        _mFrameBufferedRendering = false;
 }
 
 PassPrivate::~PassPrivate()
@@ -28,7 +31,7 @@ void PassPrivate::renderWith(RendererResource *renderer)
     {
         // We tell the Renderer to create the passthrough Program,
         // then we compile it, finalize it and set it.
-        HardwareProgram ptprogram = renderer->createHardwareProgram(getName() + "-program-passthrough", HardwareShader::VertexPassThrough, HardwareShader::FragmentPassThrough);
+        HardwareProgram ptprogram = renderer->createHardwareProgram("shader-program-passthrough", HardwareShader::VertexPassThrough, HardwareShader::FragmentPassThrough);
         if(!ptprogram.expired())
         {
             if(ptprogram.isReady())
@@ -46,7 +49,10 @@ void PassPrivate::renderWith(RendererResource *renderer)
     
     if(renderer && !getHardwareProgram().expired() && isActivated())
     {
-        // First of all, we set the Shader on !
+        // We tell the Renderer to prepare the Pass.
+        renderer->prepare(this);
+        
+        // We set the Shader on !
         _mLinkedProgram.bind();
         
         // Currently, the function RendererResource::drawPass() has the
@@ -112,6 +118,26 @@ void PassPrivate::setAutoCreateProgram(bool enabled)
 bool PassPrivate::autoCreateProgram() const
 {
     return _mAutoCreateProgram;
+}
+
+FrameBuffer& PassPrivate::getFrameBuffer()
+{
+    return _mFbo;
+}
+
+const FrameBuffer& PassPrivate::getFrameBuffer() const
+{
+    return _mFbo;
+}
+
+void PassPrivate::setFrameBufferedRendering(bool fborender)
+{
+    _mFrameBufferedRendering = fborender;
+}
+
+bool PassPrivate::isFrameBufferedRendering() const
+{
+    return _mFrameBufferedRendering;
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -209,6 +235,37 @@ bool Pass::autoCreateProgram() const
     auto ptr = _mPass.lock();
     if(ptr)
         return ptr->autoCreateProgram();
+    return false;
+}
+
+FrameBuffer& Pass::getFrameBuffer()
+{
+    auto ptr = _mPass.lock();
+    if(ptr)
+        return ptr->getFrameBuffer();
+    return FrameBuffer::Null;
+}
+
+const FrameBuffer& Pass::getFrameBuffer() const
+{
+    auto ptr = _mPass.lock();
+    if(ptr)
+        return ptr->getFrameBuffer();
+    return FrameBuffer::Null;
+}
+
+void Pass::setFrameBufferedRendering(bool fborender)
+{
+    auto ptr = _mPass.lock();
+    if(ptr)
+        return ptr->setFrameBufferedRendering(fborender);
+}
+
+bool Pass::isFrameBufferedRendering() const
+{
+    auto ptr = _mPass.lock();
+    if(ptr)
+        return ptr->isFrameBufferedRendering();
     return false;
 }
 

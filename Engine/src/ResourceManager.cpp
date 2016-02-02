@@ -74,8 +74,10 @@ ResourceManager::~ResourceManager ()
     _sceneLoaders.clear();
     _shaderLoaders.clear();
     _progManLoaders.clear();
+    _fboLoaders.clear();
     
     _resourcesbyname.clear();
+    _resourcesbytype[Resource::Type::FrameBuff].clear();
     _resourcesbytype[Resource::Type::HdwShader].clear();
     _resourcesbytype[Resource::Type::HwdProgManager].clear();
     _resourcesbytype[Resource::Type::Scene].clear();
@@ -108,6 +110,14 @@ ResourceUser ResourceManager::loadResource(Resource::Type type, const std::strin
     }
     
     return ResourceUser(_resourcesbyname[name]);
+}
+
+ResourceUser ResourceManager::findResourceByName(const std::string &name)
+{
+    auto it = _resourcesbyname.find(name);
+    if(it != _resourcesbyname.end())
+        return ResourceUser((*it).second);
+    return ResourceUser();
 }
 
 void ResourceManager::unloadResource(const std::string& name) {
@@ -171,6 +181,11 @@ HardwareShaderLoaderFactory& ResourceManager::getHardwareShaderLoaderFactory()
 HardwareProgramManagerLoaderFactory& ResourceManager::getHardwareProgramManagerLoaderFactory()
 {
     return _progManLoaders;
+}
+
+FrameBufferLoaderFactory& ResourceManager::getFrameBufferLoaderFactory()
+{
+    return _fboLoaders;
 }
 
 void ResourceManager::setVerbose(bool flag)

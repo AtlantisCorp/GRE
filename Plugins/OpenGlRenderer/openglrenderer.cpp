@@ -13,6 +13,7 @@
 #include "OpenGlRenderer.h"
 #include "OpenGlHardwareShader.h"
 #include "OpenGlHardwareProgramManager.h"
+#include "OpenGlFrameBuffer.h"
 
 class OpenGlRendererLoader : public RendererLoader
 {
@@ -41,9 +42,14 @@ extern "C" DLL_PUBLIC void* GetPluginName (void)
 
 extern "C" DLL_PUBLIC void StartPlugin (void)
 {
+#ifdef GreIsDebugMode
+    GreDebugPretty() << "Loading Plugin Factories (OpenGlLoader, OpenGlHdwShaderLoader, OpenGlHdwProgramManagerLoader, OpenGlFrameBufferLoader)." << std::endl;
+#endif
+    
     ResourceManager::Get().getRendererLoaderFactory().registers("OpenGlLoader", new OpenGlRendererLoader);
     ResourceManager::Get().getHardwareShaderLoaderFactory().registers("OpenGlHdwShaderLoader", new OpenGlHardwareShaderLoader);
     ResourceManager::Get().getHardwareProgramManagerLoaderFactory().registers("OpenGlHdwProgramManagerLoader", new OpenGlHardwareProgramManagerLoader);
+    ResourceManager::Get().getFrameBufferLoaderFactory().registers("OpenGlFrameBufferLoader", new OpenGlFrameBufferLoader);
 }
 
 extern "C" DLL_PUBLIC void StopPlugin (void)

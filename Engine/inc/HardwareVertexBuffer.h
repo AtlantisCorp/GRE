@@ -52,11 +52,25 @@ public:
     /// @brief Returns true if color buffer is activated.
     bool isColorActivated() const;
     
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Activates or Deactivates the Texture Coordinates in this
+    /// Vertex Buffer.
+    /// If Activated, Texture Coordinates will be sent to Shader under
+    /// the location 'TexCoord'.
+    //////////////////////////////////////////////////////////////////////
+    void activateTexCoord(bool activate);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns true if Texture Coordinate has been activated.
+    //////////////////////////////////////////////////////////////////////
+    bool isTexCoordActivated() const;
+    
 protected:
     
     std::vector<Vertex> _mVertexs;  ///< @brief The Vertexs holded by this buffer.
     bool _mAllowDuplicates;         ///< @brief True if duplicates are allowed.
     bool _mColorActivated;          ///< @brief True if colors are enabled.
+    bool _mTexCoordActivated;       ///< @brief True if Texture Coordinates are activated.
 };
 
 /// @brief Proxy to the HardwareVertexBufferPrivate object.
@@ -110,6 +124,19 @@ public:
     void activateColor(bool activate);
     /// @brief Returns true if color buffer is activated.
     bool isColorActivated() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Activates or Deactivates the Texture Coordinates in this
+    /// Vertex Buffer.
+    /// If Activated, Texture Coordinates will be sent to Shader under
+    /// the location 'TexCoord'.
+    //////////////////////////////////////////////////////////////////////
+    void activateTexCoord(bool activate);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns true if Texture Coordinate has been activated.
+    //////////////////////////////////////////////////////////////////////
+    bool isTexCoordActivated() const;
     
     /// @brief A Null HardwareVertexBuffer.
     static HardwareVertexBuffer Null;

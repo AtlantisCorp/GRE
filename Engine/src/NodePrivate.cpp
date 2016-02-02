@@ -118,13 +118,17 @@ Node NodePrivate::toNode() const
     return Node(_mThisNode);
 }
 
-Matrix4& NodePrivate::getNodeMatrix()
+Matrix4 NodePrivate::getNodeMatrix()
 {
+    if(!getCamera().isNull())
+        return glm::translate(glm::mat4(), getCamera().getPosition());
     return _mMatrix;
 }
 
-const Matrix4& NodePrivate::getNodeMatrix() const
+const Matrix4 NodePrivate::getNodeMatrix() const
 {
+    if(!getCamera().isNull())
+        return glm::translate(glm::mat4(), getCamera().getPosition());
     return _mMatrix;
 }
 
