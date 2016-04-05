@@ -10,24 +10,28 @@
 #define GRE_OpenGlIncludes_h
 
 #include "ResourceManager.h"
+#include <sstream>
 
-#ifdef GRE_OSX
+#ifdef GrePlatformDarwin
 
 #   include <OpenGl/gltypes.h>
+// 'khrglext.h' is an updated version of 'glext.h', given by Khronos Website.
 #   include "khrglext.h"
 
-#   include <OpenGl/gl.h>
 #   include <OpenGl/gl3.h>
 #   include <OpenGl/glu.h>
 
-#elif defined( GRE_WINDOWS )
+// <OpenGl/OpenGl.h> includes only the CGL framework.
+#   include <OpenGl/OpenGL.h>
+
+#elif defined( GrePlatformWindows )
 
 #   include <GL/gl.h>
 #   include <GL/glext.h>
 #   include <GL/wglext.h>
 #   include <GL/glu.h>
 
-#elif defined( GRE_UNIX )
+#elif defined( GrePlatformUnix )
 
 #   include <GL/gl.h>
 #   include <GL/glext.h>
@@ -43,8 +47,6 @@
 
 #endif
 
-#include <sstream>
-
 using namespace Gre;
 
 std::vector<std::string>& split(const std::string &s, char delim, std::vector<std::string> &elems);
@@ -58,20 +60,19 @@ public:
     static GLenum StorageTypeToGl (StorageType stype);
 };
 
-#ifdef GRE_OSX
+#ifdef GrePlatformDarwin
 
-#   include <mach-o/dyld.h>
 #   include <stdlib.h>
 #   include <string.h>
 void * MyNSGLGetProcAddress (const char *name);
 
 #   define GlGetProcAddress(name) MyNSGLGetProcAddress( name )
 
-#elif defined( GRE_WINDOWS )
+#elif defined( GrePlatformWindows )
 
 #   define GlGetProcAddress(name) wglGetProcAddress( name )
 
-#elif defined( GRE_UNIX )
+#elif defined( GrePlatformUnix )
 
 #   define GlGetProcAddress(name) glXGetProcAddress( name )
 
@@ -86,74 +87,176 @@ void * MyNSGLGetProcAddress (const char *name);
 // on every platforms, we will do it. And we must use it to know if ARB, EXT, APPLE or others
 // should be used.
 
-namespace Gl
+class Gl
 {
+public:
+    
+    Gl();
+    ~Gl();
+    
+    /// @brief Converts Gre::TexturePrivate::Type to OpenGl Enum.
+    static GLenum TextureTypeToGlType(const TexturePrivate::Type& textureType);
+    
+    // As some functions prototypes are not defined, deinfe it here.
+    typedef void (* PFNGLGENTEXTURESPROC) (GLsizei n, GLuint *textures);
+    typedef void (* PFNGLBINDTEXTUREPROC) (GLenum target, GLuint texture);
+    typedef void (* PFNGLDELETETEXTURESPROC) (GLsizei n, const GLuint *textures);
+    typedef void (* PFNGLTEXSUBIMAGE2DPROC) (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const void *pixels);
+    
     /// @brief Find the first occurence of given character in given string.
-    int FindFirstOccurence(const std::string& in, char what);
+    static int FindFirstOccurence(const std::string& in, char what);
+    
+    void GreOpenGlVersionInit();
+    void GreOpenGl3ExtensionInit();
+    
     /// @brief Init the function pointers needed by the Gre Engine.
     void GreOpenGlInit();
     
-    extern GLint VersionMajor;
-    extern GLint VersionMinor;
-    extern std::string Vendor;
-    extern std::string Renderer;
+     GLint VersionMajor;
+     GLint VersionMinor;
+     std::string Vendor;
+     std::string Renderer;
     
-    extern std::vector<std::string> Extensions;
+     std::vector<std::string> Extensions;
     bool IsExtensionSupported(const std::string& extension);
     
     template <typename T>
     bool IsFunctionSupported(T func) { return func != nullptr; }
     
-    extern bool Initialized;
+     bool Initialized;
     
-    extern PFNGLGETINTEGERVPROC GetIntegerv;
-    extern PFNGLGETSTRINGPROC GetString;
-    extern PFNGLGETSTRINGIPROC GetStringi;
-    extern PFNGLCLEARCOLORPROC ClearColor;
-    extern PFNGLCLEARDEPTHPROC ClearDepth;
-    extern PFNGLVIEWPORTPROC Viewport;
-    extern PFNGLCLEARPROC Clear;
-    extern PFNGLENABLEPROC Enable;
-    extern PFNGLDISABLEPROC Disable;
-    extern PFNGLFLUSHPROC Flush;
-    extern PFNGLDEPTHFUNCPROC DepthFunc;
+     PFNGLGETINTEGERVPROC GetIntegerv;
+     PFNGLGETSTRINGPROC GetString;
+     PFNGLGETSTRINGIPROC GetStringi;
+     PFNGLCLEARCOLORPROC ClearColor;
+     PFNGLCLEARDEPTHPROC ClearDepth;
+     PFNGLVIEWPORTPROC Viewport;
+     PFNGLCLEARPROC Clear;
+     PFNGLENABLEPROC Enable;
+     PFNGLDISABLEPROC Disable;
+     PFNGLFLUSHPROC Flush;
+     PFNGLDEPTHFUNCPROC DepthFunc;
     
-    extern PFNGLGENFRAMEBUFFERSPROC GenFramebuffers;
-    extern PFNGLDELETEFRAMEBUFFERSPROC DeleteFramebuffers;
-    extern PFNGLBINDFRAMEBUFFERPROC BindFramebuffer;
-    extern PFNGLFRAMEBUFFERTEXTUREPROC FramebufferTexture;
+     PFNGLGENFRAMEBUFFERSPROC GenFramebuffers;
+     PFNGLDELETEFRAMEBUFFERSPROC DeleteFramebuffers;
+     PFNGLBINDFRAMEBUFFERPROC BindFramebuffer;
+     PFNGLFRAMEBUFFERTEXTUREPROC FramebufferTexture;
     
-    extern PFNGLGENVERTEXARRAYSPROC GenVertexArrays;
-    extern PFNGLDELETEVERTEXARRAYSPROC DeleteVertexArrays;
-    extern PFNGLBINDVERTEXARRAYPROC BindVertexArray;
+     PFNGLGENVERTEXARRAYSPROC GenVertexArrays;
+     PFNGLDELETEVERTEXARRAYSPROC DeleteVertexArrays;
+     PFNGLBINDVERTEXARRAYPROC BindVertexArray;
     
-    extern PFNGLVERTEXATTRIBPOINTERPROC VertexAttribPointer;
-    extern PFNGLENABLEVERTEXATTRIBARRAYPROC EnableVertexAttribArray;
-    extern PFNGLDISABLEVERTEXATTRIBARRAYPROC DisableVertexAttribArray;
+     PFNGLVERTEXATTRIBPOINTERPROC VertexAttribPointer;
+     PFNGLENABLEVERTEXATTRIBARRAYPROC EnableVertexAttribArray;
+     PFNGLDISABLEVERTEXATTRIBARRAYPROC DisableVertexAttribArray;
     
     // GL_ARB_multitexture || GL_VERSION_1_3
-    extern PFNGLACTIVETEXTUREPROC ActiveTexture;
+     PFNGLACTIVETEXTUREPROC ActiveTexture;
     
     // VersionMajor >= 2.0
-    extern PFNGLUNIFORM4FVPROC Uniform4fv;
-    extern PFNGLCREATESHADERPROC CreateShader;
-    extern PFNGLSHADERSOURCEPROC ShaderSource;
-    extern PFNGLCOMPILESHADERPROC CompileShader;
-    extern PFNGLUNIFORMMATRIX4FVPROC UniformMatrix4fv;
-    extern PFNGLGETSHADERIVPROC GetShaderiv;
-    extern PFNGLGETPROGRAMINFOLOGPROC GetProgramInfoLog;
-    extern PFNGLDELETESHADERPROC DeleteShader;
-    extern PFNGLCREATEPROGRAMPROC CreateProgram;
-    extern PFNGLATTACHSHADERPROC AttachShader;
-    extern PFNGLLINKPROGRAMPROC LinkProgram;
-    extern PFNGLGETPROGRAMIVPROC GetProgramiv;
-    extern PFNGLDETACHSHADERPROC DetachShader;
-    extern PFNGLDELETEPROGRAMPROC DeleteProgram;
-    extern PFNGLUSEPROGRAMPROC UseProgram;
-    extern PFNGLGETUNIFORMLOCATIONPROC GetUniformLocation;
-    extern PFNGLGETATTRIBLOCATIONPROC GetAttribLocation;
+     PFNGLUNIFORM4FVPROC Uniform4fv;
+     PFNGLCREATESHADERPROC CreateShader;
+     PFNGLSHADERSOURCEPROC ShaderSource;
+     PFNGLCOMPILESHADERPROC CompileShader;
+     PFNGLUNIFORMMATRIX4FVPROC UniformMatrix4fv;
+     PFNGLGETSHADERIVPROC GetShaderiv;
+     PFNGLGETPROGRAMINFOLOGPROC GetProgramInfoLog;
+     PFNGLDELETESHADERPROC DeleteShader;
+     PFNGLCREATEPROGRAMPROC CreateProgram;
+     PFNGLATTACHSHADERPROC AttachShader;
+     PFNGLLINKPROGRAMPROC LinkProgram;
+     PFNGLGETPROGRAMIVPROC GetProgramiv;
+     PFNGLDETACHSHADERPROC DetachShader;
+     PFNGLDELETEPROGRAMPROC DeleteProgram;
+     PFNGLUSEPROGRAMPROC UseProgram;
+     PFNGLGETUNIFORMLOCATIONPROC GetUniformLocation;
+     PFNGLGETATTRIBLOCATIONPROC GetAttribLocation;
+     PFNGLGENTEXTURESPROC GenTextures;
+     PFNGLPIXELSTOREIPROC PixelStorei;
+     PFNGLBINDTEXTUREPROC BindTexture;
+     PFNGLTEXPARAMETERIPROC TexParameteri;
+     PFNGLTEXIMAGE2DPROC TexImage2D;
+     PFNGLDELETETEXTURESPROC DeleteTextures;
+     PFNGLGENBUFFERSPROC GenBuffers;
+     PFNGLBINDBUFFERPROC BindBuffer;
+     PFNGLDELETEBUFFERSPROC DeleteBuffers;
+     PFNGLBUFFERDATAPROC BufferData;
+     PFNGLBUFFERSUBDATAPROC BufferSubData;
+     PFNGLTEXSUBIMAGE2DPROC TexSubImage2D;
     
     // [...] TODO !
-}
+};
+
+class OpenGlRenderContext;
+extern std::shared_ptr<OpenGlRenderContext> glGlobalContext;
+
+/// @brief A class to allow simple managing of Multi-Context Ids. Those can be GLuint or GLint.
+/// This allow an OpenGl class to be ready and usable for any Contexts.
+template<typename uint>
+class MultiContextId
+{
+public:
+    
+    MultiContextId() {
+        
+    }
+    
+    ~MultiContextId() {
+    
+    }
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief This function should construct the Gl Object when it is time, i.e. when
+    /// the correct RenderContext object is binded.
+    //////////////////////////////////////////////////////////////////////
+    virtual void construct() = 0;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief This function should destroy the Gl Object when it is time, i.e. when
+    /// the correct RenderContext object is binded.
+    //////////////////////////////////////////////////////////////////////
+    virtual void destroy() = 0;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns true if the Id has been constructed for given context.
+    //////////////////////////////////////////////////////////////////////
+    bool hasConstructedForContext(uintptr_t ctxtId) const {
+        return _mMappedId.find(ctxtId) != _mMappedId.end();
+    }
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the id for given Context.
+    //////////////////////////////////////////////////////////////////////
+    uint getId(uintptr_t ctxtId) const {
+        auto it = _mMappedId.find(ctxtId);
+        if(it != _mMappedId.end()) {
+            return it->second;
+        }
+        else {
+            return 0;
+        }
+    }
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Adds a new Id for given context.
+    //////////////////////////////////////////////////////////////////////
+    void addId(uintptr_t ctxtId, uint glId) {
+        _mMappedId[ctxtId] = glId;
+    }
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Removes id for given context.
+    //////////////////////////////////////////////////////////////////////
+    void removeId(uintptr_t ctxtId) {
+        auto it = _mMappedId.find(ctxtId);
+        if(it != _mMappedId.end())
+            _mMappedId.erase(it);
+    }
+    
+private:
+    
+    /// @brief Holds one id per Context.
+    std::map<uintptr_t, uint> _mMappedId;
+};
 
 #endif // GRE_OpenGlIncludes_h

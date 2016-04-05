@@ -12,7 +12,7 @@
 #include "HardwareBuffer.h"
 #include "Vertex.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 /// @brief Defines a HardwareBuffer used to hold Vertexs.
 class DLL_PUBLIC HardwareVertexBufferPrivate : public HardwareBufferPrivate
@@ -148,6 +148,6 @@ private:
     std::weak_ptr<HardwareVertexBufferPrivate> _mBuffer;
 };
 
-GRE_END_NAMESPACE
+GreEndNamespace
 
 #endif

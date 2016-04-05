@@ -9,7 +9,7 @@
 #include "Scene.h"
 #include "ResourceManager.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 ScenePrivate::ScenePrivate(const std::string& name)
 : Resource(name)
@@ -231,6 +231,11 @@ PassList ScenePrivate::getActivePasses() const
     return retPass;
 }
 
+bool ScenePrivate::isDirty() const
+{
+    return _dirty;
+}
+
 // ---------------------------------------------------------------------------------------------------
 
 Scene::Scene()
@@ -267,6 +272,16 @@ Scene& Scene::operator = (const Scene& rhs)
     ResourceUser::operator=(rhs);
     _mScene = rhs._mScene;
     return *this;
+}
+
+bool Scene::operator==(const Scene &rhs) const
+{
+    return _mScene.lock() == rhs._mScene.lock();
+}
+
+bool Scene::operator!=(const Scene &rhs) const
+{
+    return !(*this == rhs);
 }
 
 Node& Scene::getRoot()
@@ -405,6 +420,14 @@ PassList Scene::getActivePasses() const
     return PassList();
 }
 
+bool Scene::isDirty() const
+{
+    auto ptr = _mScene.lock();
+    if(ptr)
+        return ptr->isDirty();
+    return false;
+}
+
 // ---------------------------------------------------------------------------------------------------
 
 SceneLoader::SceneLoader()
@@ -430,4 +453,4 @@ Resource* SceneLoader::load(Resource::Type type, const std::string& name) const
 
 Scene Scene::Null = Scene();
 
-GRE_END_NAMESPACE
+GreEndNamespace

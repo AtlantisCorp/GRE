@@ -8,34 +8,34 @@
 
 #include "Node.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 Node::Node()
-: ResourceUser(), Transmitter(std::string()), _mNode()
+: ResourceUser(), _mNode()
 {
     
 }
 
 Node::Node(Node&& rhs)
-: ResourceUser(rhs), Transmitter(rhs.Listener::getName()), _mNode(rhs._mNode)
+: ResourceUser(rhs), _mNode(rhs._mNode)
 {
     
 }
 
 Node::Node(const Node& rhs)
-: ResourceUser(rhs), Transmitter(rhs.Listener::getName()), _mNode(rhs._mNode)
+: ResourceUser(rhs), _mNode(rhs._mNode)
 {
     
 }
 
 Node::Node(const ResourceUser& rhs)
-: ResourceUser(rhs), Transmitter(std::string()), _mNode(std::dynamic_pointer_cast<NodePrivate>(rhs.lock()))
+: ResourceUser(rhs), _mNode(std::dynamic_pointer_cast<NodePrivate>(rhs.lock()))
 {
     
 }
 
 Node::Node(std::weak_ptr<NodePrivate> rhs)
-: ResourceUser(rhs), Transmitter(std::string()), _mNode(rhs)
+: ResourceUser(rhs), _mNode(rhs)
 {
     
 }
@@ -209,4 +209,4 @@ void Node::setNodeMatrix(const Matrix4 &mat4)
 
 Node Node::Null = Node();
 
-GRE_END_NAMESPACE
+GreEndNamespace

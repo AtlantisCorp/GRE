@@ -8,7 +8,7 @@
 
 #include "HardwareShader.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 HardwareShaderPrivate::HardwareShaderPrivate(const std::string& name, const ShaderType& type, const std::string& text)
 : Resource(name), _mType(type)
@@ -109,4 +109,4 @@ HardwareShader HardwareShader::Null = HardwareShader();
 HardwareShader HardwareShader::VertexPassThrough = HardwareShader();
 HardwareShader HardwareShader::FragmentPassThrough = HardwareShader();
 
-GRE_END_NAMESPACE
+GreEndNamespace

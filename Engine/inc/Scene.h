@@ -14,7 +14,7 @@
 #include "Camera.h"
 #include "Pass.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 //////////////////////////////////////////////////////////////////////
 /// @brief A Generic Base Scene object.
@@ -136,6 +136,11 @@ public:
     //////////////////////////////////////////////////////////////////////
     PassList getActivePasses() const;
     
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns true if something happened since the last render.
+    //////////////////////////////////////////////////////////////////////
+    bool isDirty() const;
+    
 protected:
     
     /// @brief Holds every Pass in the Scene.
@@ -143,6 +148,9 @@ protected:
     
     /// @brief Catalog to Pass objects by name.
     std::map<PassNumber, std::weak_ptr<PassPrivate> > _mPassesByNumber;
+    
+    /// @brief Holds true if this Scene has changed.
+    bool _dirty;
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -168,6 +176,8 @@ public:
     ~Scene();
     
     Scene& operator = (const Scene& rhs);
+    bool operator == (const Scene& rhs) const;
+    bool operator != (const Scene& rhs) const;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the Root node from the node tree, or Node::Null if
@@ -266,6 +276,11 @@ public:
     //////////////////////////////////////////////////////////////////////
     PassList getActivePasses() const;
     
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns true if something happened since the last render.
+    //////////////////////////////////////////////////////////////////////
+    bool isDirty() const;
+    
     /// @brief A Null Scene User.
     static Scene Null;
     
@@ -301,6 +316,6 @@ public:
 
 typedef ResourceLoaderFactory<SceneLoader> SceneLoaderFactory;
 
-GRE_END_NAMESPACE
+GreEndNamespace
 
 #endif

@@ -7,11 +7,11 @@
 //
 
 #include "Pools.h"
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 Version GetLibVersion ()
 {
-    return { GRE_VERSION_MAJOR, GRE_VERSION_MINOR, GRE_VERSION_BUILD };
+    return { GreVersionMajor, GreVersionMinor, GreVersionBuild };
 }
 
 std::string computeMethodName(const std::string& function, const std::string& prettyFunction) {
@@ -33,4 +33,4 @@ std::ostream& GreDebug(const std::string& func)
 Matrix4 MatrixUtils::Zero4 = Matrix4();
 Matrix4 MatrixUtils::Identity = glm::mat4();
 
-GRE_END_NAMESPACE
+GreEndNamespace

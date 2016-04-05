@@ -12,7 +12,7 @@
 #include "HardwareBuffer.h"
 #include "Face.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 /// @brief Defines a HardwareBuffer used to hold Indexes (faces).
 class DLL_PUBLIC HardwareIndexBufferPrivate : public HardwareBufferPrivate
@@ -120,6 +120,6 @@ private:
     std::weak_ptr<HardwareIndexBufferPrivate> _mBuffer;
 };
 
-GRE_END_NAMESPACE
+GreEndNamespace
 
 #endif

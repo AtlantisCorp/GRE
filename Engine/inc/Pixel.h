@@ -11,7 +11,7 @@
 
 #include "Pools.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 /// @brief Resumes every Pixel Format supported by the Engine.
 /// Every Pixel Format is templated. We cannot use a dynamic system, because time wasted to
@@ -244,6 +244,6 @@ public:
     
 };
 
-GRE_END_NAMESPACE
+GreEndNamespace
 
 #endif

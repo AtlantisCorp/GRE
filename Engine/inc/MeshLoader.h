@@ -12,7 +12,7 @@
 #include "Mesh.h"
 #include "Renderer.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 class DLL_PUBLIC MeshLoader : public ResourceLoader
 {
@@ -41,6 +41,6 @@ public:
 
 typedef ResourceLoaderFactory<MeshLoader> MeshLoaderFactory;
 
-GRE_END_NAMESPACE
+GreEndNamespace
 
 #endif

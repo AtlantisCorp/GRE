@@ -11,7 +11,7 @@
 
 #include "Color.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 /// @brief Defines a simple Vertex object.
 struct DLL_PUBLIC Vertex
@@ -28,6 +28,6 @@ typedef std::vector<Vertex> VertexBatch;
 
 VertexBatch DLL_PUBLIC VertexBatchFromRaw(float* data, size_t sz);
 
-GRE_END_NAMESPACE
+GreEndNamespace
 
 #endif

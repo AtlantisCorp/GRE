@@ -11,7 +11,7 @@
 
 #include "OpenGlIncludes.h"
 
-class OpenGlFrameBuffer : public FrameBufferPrivate
+class OpenGlFrameBuffer : public FrameBufferPrivate, public MultiContextId<GLuint>
 {
 public:
     
@@ -36,6 +36,18 @@ public:
     /// The Texture object loading is managed by the FrameBuffer.
     //////////////////////////////////////////////////////////////////////
     void attachTexture(Attachement attachement, const Texture& texture);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief This function should construct the Gl Object when it is time, i.e. when
+    /// the correct RenderContext object is binded.
+    //////////////////////////////////////////////////////////////////////
+    void construct();
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief This function should destroy the Gl Object when it is time, i.e. when
+    /// the correct RenderContext object is binded.
+    //////////////////////////////////////////////////////////////////////
+    void destroy();
     
 private:
     

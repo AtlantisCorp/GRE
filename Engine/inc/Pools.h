@@ -12,7 +12,7 @@
 #include "Version.h"
 #include "Clonable.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 /// @brief Enumerate every Pools available in the Engine.
 enum class DLL_PUBLIC Pools
@@ -115,5 +115,5 @@ private:
     unsigned                _maxsz;
 };
 
-GRE_END_NAMESPACE
+GreEndNamespace
 #endif

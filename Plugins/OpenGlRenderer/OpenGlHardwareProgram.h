@@ -12,7 +12,7 @@
 #include "OpenGlIncludes.h"
 #include "HardwareProgram.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 class OpenGlHardwareProgram : public HardwareProgramPrivate
 {
@@ -66,6 +66,6 @@ private:
     bool   _mLinked;
 };
 
-GRE_END_NAMESPACE
+GreEndNamespace
 
 #endif

@@ -13,7 +13,7 @@
 #include "Face.h"
 #include "Resource.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 /// @brief Defines the real Hardware Buffer interface.
 /// A Hardware Buffer is a collection of data stored generally by the
@@ -85,6 +85,6 @@ public:
     virtual bool isExpired() const = 0;
 };
 
-GRE_END_NAMESPACE
+GreEndNamespace
 
 #endif

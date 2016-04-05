@@ -8,7 +8,7 @@
 
 #include "HardwareProgramVariables.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 HardwareProgramVariables::HardwareProgramVariables()
 {
@@ -60,4 +60,4 @@ HardwareProgramVariables::VariableHolder HardwareProgramVariables::findUniform(c
 
 HardwareProgramVariables HardwareProgramVariables::Empty = HardwareProgramVariables();
 
-GRE_END_NAMESPACE
+GreEndNamespace

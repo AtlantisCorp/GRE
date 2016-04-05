@@ -12,7 +12,7 @@
 #include "Vertex.h"
 #include "Material.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 /// @brief Defines a Face, with its material if it exists.
 struct DLL_PUBLIC Face
@@ -52,6 +52,6 @@ public:
 
 typedef std::vector<MaterialIndexedFace> MaterialIndexedFaceBatch;
 
-GRE_END_NAMESPACE
+GreEndNamespace
 
 #endif

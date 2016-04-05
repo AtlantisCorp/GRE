@@ -14,7 +14,7 @@
 #include "HardwareProgram.h"
 #include "FrameBuffer.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 class DLL_PUBLIC RendererResource;
 
@@ -228,6 +228,6 @@ typedef std::vector<Pass> PassList;
 /// @brief Defines a list of shared PassPrivate objects. (For managers)
 typedef std::vector<std::shared_ptr<PassPrivate> > PassPrivateOwnedList;
 
-GRE_END_NAMESPACE
+GreEndNamespace
 
 #endif

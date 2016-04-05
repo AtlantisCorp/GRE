@@ -9,13 +9,16 @@
 #include "Renderer.h"
 #include "ResourceManager.h"
 #include "Pass.h"
+#include "RenderContext.h"
 
-GRE_BEGIN_NAMESPACE
+#include "Window.h"
+
+GreBeginNamespace
 
 typedef std::chrono::high_resolution_clock Clock;
 
 RendererResource::RendererResource (const std::string& name)
-: Resource(name), Transmitter(name)
+: Resource(name), _mCurrentViewport("none"), _mDrawThread()
 {
     _sum_frames = 0;
     _wantedFps  = 0.0f;
@@ -24,10 +27,19 @@ RendererResource::RendererResource (const std::string& name)
     _mIsImmediateMode = false;
     _mMaxFps = 0.0f;
     _mMinFps = 0.0f;
+    _mMustStopThread = false;
+    _mCurrentContext = nullptr;
     
     _mClockReset              = Clock::now();
     _mClockAtPreviousFrameEnd = Clock::now();
     _mClockElapsedSinceReset  = Clock::duration::zero();
+}
+
+RendererResource::~RendererResource()
+{
+    _mIsActive = false;
+    _mMustStopThread = true;
+    _mDrawThread.join();
 }
 
 void RendererResource::beginRender()
@@ -82,33 +94,27 @@ bool RendererResource::isActive() const
     return _mIsActive;
 }
 
-void RendererResource::render()
-{
-    if(isActive())
-    {
-        _preRender();
-        
-        if(!isImmediate()) {
-            _render();
-        } else {
-            _renderImmediate();
-        }
-
-        _postRender();
-    }
-}
-
-void RendererResource::_preRender()
+void RendererResource::_renderFramebuffers(std::queue<FrameBuffer> &fboQueue)
 {
     GreDebugFunctionNotImplemented();
 }
 
-void RendererResource::_render()
+void RendererResource::_setCurrentViewport(const Viewport& viewport)
+{
+    _mCurrentViewport = viewport;
+}
+
+void RendererResource::_preRenderCurrentScene()
+{
+    GreDebugFunctionNotImplemented();
+}
+
+void RendererResource::_renderCurrentScene()
 {
     // ScenePrivate::getActivPasses should returns the
     // list of Pass objects, currently activated, and by
     // order of draw.
-    PassList passes = _mScene.getActivePasses();
+    PassList passes = _mCurrentScene.getActivePasses();
     
     // This Queue contains the FrameBuffer objects that will have to
     // be blended at the end of the process.
@@ -167,6 +173,106 @@ void RendererResource::_render()
     renderFrameBuffers(framebufQueue);
 }
 
+void RendererResource::_postRenderCurrentScene()
+{
+    GreDebugFunctionNotImplemented();
+}
+
+void RendererResource::_renderViewport(const Viewport& viewport)
+{
+    if(viewport.isActivated())
+    {
+        if(!viewport.hasScene())
+        {
+            pushCurrentScene();
+            selectScene(getDefaultScene());
+        }
+        
+        else
+        {
+            pushCurrentScene();
+            selectScene(viewport.getScene());
+        }
+        
+        _setCurrentViewport(viewport);
+        _preRenderCurrentScene();
+        _renderCurrentScene();
+        _postRenderCurrentScene();
+        
+        popCurrentScene();
+    }
+}
+
+void RendererResource::_renderRenderTargetWithCurrentContext(RenderTarget& renderTarget)
+{
+    if(getCurrentContext().expired())
+    {
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "Error : renderTarget can't be drawed without a RenderContext binded." << std::endl;
+#endif
+        return;
+    }
+    
+    // We must check every Viewports.
+    
+    auto viewports = getCurrentContext().getViewports();
+    if(viewports.size())
+    {
+        for(auto viewport : viewports)
+        {
+            _renderViewport(viewport);
+        }
+    }
+    
+    renderTarget.onRenderFinished();
+}
+
+void RendererResource::_renderRenderTargetWithContext(RenderTarget& renderTarget)
+{
+#ifdef GreIsDebugMode
+    if(!renderTarget.holdsRenderContext())
+    {
+        GreDebugPretty() << "Error : renderTarget has no RenderContext !" << std::endl;
+        return;
+    }
+#endif
+    
+    renderTarget.bind();
+    
+    {
+        _renderRenderTargetWithCurrentContext(renderTarget);
+    }
+    
+    renderTarget.unbind();
+}
+
+void RendererResource::render()
+{
+    
+    if(isActive())
+    {
+        if(_mRenderTargets.size())
+        {
+            for(auto renderTarget : _mRenderTargets)
+            {
+                // We must draw on each RenderTarget. To do this, we have 2 types of RenderTarget :
+                //  - Those with a RenderContext. This one must be binded.
+                //  - Those without. Those one (generally Framebuffers) uses the current RenderContext.
+                //
+                // When drawing, we only draw RenderTarget that have a RenderContext. Those which haven't one
+                // must be drawed in the Pass used to draw the RenderTarget which have a RenderContext (like a
+                // Window).
+                // Or you can also use LoopBehaviour at the end of the Window Rendering in order to do that.
+                
+                if(renderTarget.holdsRenderContext())
+                {
+                    _renderRenderTargetWithContext(renderTarget);
+                }
+            }
+        }
+    }
+}
+
 void RendererResource::prepare(PassPrivate* privPass)
 {
     GreDebugFunctionNotImplemented();
@@ -191,11 +297,6 @@ void RendererResource::finish(const FrameBuffer& fbo)
 }
 
 void RendererResource::renderFrameBuffers(std::queue<FrameBuffer> &fboQueue)
-{
-    GreDebugFunctionNotImplemented();
-}
-
-void RendererResource::_postRender()
 {
     GreDebugFunctionNotImplemented();
 }
@@ -240,15 +341,11 @@ Scene RendererResource::loadSceneByName(const std::string& name, const std::stri
 
 Scene RendererResource::loadSceneByResource(Scene scene)
 {
-    if(!_mScene.expired()) {
-        Emitter::removeListener(_mScene.getName());
-        _mScene.clear();
-    }
-    
-    _mScene = scene;
-    if(!_mScene.expired())
-        _mScene.getRoot().listen(*this);
-    return _mScene;
+    /*
+    if(!scene.expired())
+        scene.getRoot().listen(*this);
+     */
+    return scene;
 }
 
 void RendererResource::pushMatrix(MatrixType matrix)
@@ -263,12 +360,12 @@ void RendererResource::popMatrix(MatrixType matrix)
 
 Scene& RendererResource::getScene()
 {
-    return _mScene;
+    return _mCurrentScene;
 }
 
 const Scene& RendererResource::getScene() const
 {
-    return _mScene;
+    return _mCurrentScene;
 }
 
 HardwareVertexBuffer RendererResource::createVertexBuffer()
@@ -303,7 +400,7 @@ Texture RendererResource::createTexture(const std::string &name, const std::stri
 
 Camera RendererResource::createCamera(const std::string& name)
 {
-    return Camera(name);
+    return Camera::Create(name);
 }
 
 void RendererResource::draw(const Mesh &mesh, const HardwareProgram& activProgram)
@@ -371,7 +468,205 @@ Texture RendererResource::createTexture(const std::string &name) const
     return Texture::Null;
 }
 
+RenderContext RendererResource::createRenderContext(const std::string&, const RenderContextInfo&, Renderer)
+{
+    GreDebugFunctionNotImplemented();
+    return RenderContext::Null;
+}
+
+void RendererResource::onCurrentContextChanged(RenderContextPrivate *renderCtxt)
+{
+    if(_mCurrentContext && renderCtxt)
+    {
+        // We already have a Context, so there is another context binding without the
+        // previous context unbinding.
+        // For security, you should always unbind the Current Context before binding the
+        // new one.
+        
+        GreDebugPretty() << "Old Context ('" << _mCurrentContext->getName() << "') has not been unbinded before binding Context '" << renderCtxt->getName() << "'." << std::endl;
+    }
+    
+    if(_mCurrentContext)
+    {
+        delete _mCurrentContext;
+        _mCurrentContext = nullptr;
+    }
+    
+    if(renderCtxt)
+    {
+        RenderContext check = findRenderContextFromPrivate(renderCtxt);
+        if(check.expired())
+        {
+#ifdef GreIsDebugMode
+            GreDebugPretty() << "Sorry, RenderContext '" << renderCtxt->getName() << "' is not in database." << std::endl;
+#endif
+            _mCurrentContext = nullptr;
+        }
+        
+        else
+        {
+            _mCurrentContext = new RenderContext(check);
+            
+            if(_mContextDatas.find(_mCurrentContext) != _mContextDatas.end())
+            {
+                // If the Key already exists, this context has already been binded once.
+            }
+            
+            else
+            {
+                // If not, we should create Context Data.
+                RenderContextData ctxtData;
+                initializeRenderContextDataPrivate(ctxtData);
+                
+                _mContextDatas[_mCurrentContext] = ctxtData;
+            }
+        }
+    }
+}
+
+RenderContext RendererResource::getCurrentContext()
+{
+    if(_mCurrentContext)
+    {
+        return *_mCurrentContext;
+    }
+    
+    else
+    {
+        return RenderContext::Null;
+    }
+}
+
+void RendererResource::addRenderTarget(const RenderTarget& renderTarget)
+{
+    _mRenderTargets.push_back(renderTarget);
+}
+
+void RendererResource::addRenderTarget(Window& window, Renderer caller, bool autoCreateContext)
+{
+    if(!window.expired())
+    {
+        RenderContext ctxt = window.getRenderContext();
+        if(ctxt.expired())
+        {
+            GreDebugPretty() << "Window '" << window.getName() << "' doesn't have any RenderContext." << std::endl;
+            
+            if(autoCreateContext)
+            {
+                GreDebugPretty() << "Trying to create " << "one." << std::endl;
+                
+                RenderContextInfo infos;
+                infos.add("AutoBest", true);
+                
+                ctxt = createRenderContext(window.getName()+"-rcontext", infos, caller);
+                
+                if(ctxt.expired())
+                {
+                    GreDebugPretty() << "Unabled to create RenderContext for Window '" << window.getName() << "'." << std::endl;
+                    return;
+                }
+                
+                window.setRenderContext(ctxt);
+            }
+            
+            else
+            {
+#ifdef GreIsDebugMode
+                GreDebugPretty() << "Parameter 'autoCreateContext' is false, so no RenderContext can be created "
+                "using this function." << std::endl;
+#endif
+                
+                return;
+            }
+            
+        }
+        
+        addRenderTarget((const RenderTarget&) window);
+    }
+    
+#ifdef GreIsDebugMode
+    else
+    {
+        GreDebugPretty() << "Tried to add an Expired Window object." << std::endl;
+    }
+#endif
+}
+
+void RendererResource::selectDefaultScene(const Scene &defScene)
+{
+    _mDefaultScene = defScene;
+}
+
+Scene RendererResource::getDefaultScene()
+{
+    return _mDefaultScene;
+}
+
+void RendererResource::render(RenderTarget &rtarget)
+{
+    rtarget.bindFramebuffer();
+    
+    Scene willBeScene = rtarget.getSelectedScene();
+    if(willBeScene == Scene::Null)
+        willBeScene = getDefaultScene();
+    
+    selectScene(willBeScene);
+    render();
+    
+    rtarget.unbindFramebuffer();
+}
+
+void RendererResource::selectScene(const Scene& rhs)
+{
+    _mCurrentScene = rhs;
+}
+
+void RendererResource::initializeRenderContextDataPrivate(RenderContextData &renderCtxtData)
+{
+    
+}
+
+void RendererResource::pushCurrentScene()
+{
+    _mSavedScenes.push_back(_mCurrentScene);
+}
+
+void RendererResource::popCurrentScene()
+{
+    if(_mSavedScenes.size() > 0)
+    {
+        _mCurrentScene = _mSavedScenes.back();
+        _mSavedScenes.pop_back();
+    }
+}
+
+void RendererResource::launchDrawingThread()
+{
+    resetElapsedTime();
+    _setActive(true);
+    _mDrawThread = std::thread(&RendererResource::threadedLoop, this);
+}
+
+void RendererResource::threadedLoop()
+{
+    while(!_mMustStopThread)
+    {
+        render();
+    }
+}
+
+void RendererResource::_setActive(bool activ)
+{
+    _mIsActive = activ;
+}
+
 // ---------------------------------------------------------------------------------------------------
+
+Renderer::Renderer()
+: ResourceUser(), _mRenderer()
+{
+    
+}
 
 Renderer::Renderer(Renderer&& movref)
 : ResourceUser(movref), _mRenderer(std::move(movref._mRenderer))
@@ -415,20 +710,6 @@ void Renderer::render()
     auto ptr = _mRenderer.lock();
     if(ptr)
         ptr->render();
-}
-
-void Renderer::renderExample()
-{
-    auto ptr = _mRenderer.lock();
-    if(ptr)
-        ptr->renderExample();
-}
-
-void Renderer::associateWindow(Window &window)
-{
-    auto ptr = _mRenderer.lock();
-    if(ptr)
-        ptr->associateWindow(window);
 }
 
 void Renderer::setFramerate(float fps)
@@ -705,6 +986,66 @@ void Renderer::renderFrameBuffers(std::queue<FrameBuffer> &fboQueue)
         ptr->renderFrameBuffers(fboQueue);
 }
 
+RenderContext Renderer::createRenderContext(const std::string& name, const RenderContextInfo& info)
+{
+    auto ptr = _mRenderer.lock();
+    if(ptr)
+        return ptr->createRenderContext(name, info, *this);
+    return RenderContext::Null;
+}
+
+void Renderer::onCurrentContextChanged(Gre::RenderContextPrivate *renderCtxt)
+{
+    auto ptr = _mRenderer.lock();
+    if(ptr)
+        ptr->onCurrentContextChanged(renderCtxt);
+}
+
+void Renderer::addRenderTarget(const RenderTarget &renderTarget)
+{
+    auto ptr = _mRenderer.lock();
+    if(ptr)
+        ptr->addRenderTarget(renderTarget);
+}
+
+void Renderer::addRenderTarget(Gre::Window &window, bool autoCreateContext)
+{
+    auto ptr = _mRenderer.lock();
+    if(ptr)
+        ptr->addRenderTarget(window, *this, autoCreateContext);
+}
+
+void Renderer::selectDefaultScene(const Gre::Scene &defScene)
+{
+    auto ptr = _mRenderer.lock();
+    if(ptr)
+        ptr->selectDefaultScene(defScene);
+}
+
+Scene Renderer::getDefaultScene()
+{
+    auto ptr = _mRenderer.lock();
+    if(ptr)
+        return ptr->getDefaultScene();
+    return Scene::Null;
+}
+
+void Renderer::render(Gre::RenderTarget &rtarget)
+{
+    auto ptr = _mRenderer.lock();
+    if(ptr)
+        ptr->render(rtarget);
+}
+
+void Renderer::launchDrawingThread()
+{
+    auto ptr = _mRenderer.lock();
+    if(ptr)
+        ptr->launchDrawingThread();
+}
+
+Renderer Renderer::Null = Renderer();
+
 // ---------------------------------------------------------------------------------------------------
 
 RendererLoader::RendererLoader()
@@ -732,4 +1073,16 @@ ResourceLoader* RendererLoader::clone() const
     return new RendererLoader();
 }
 
-GRE_END_NAMESPACE
+// ---------------------------------------------------------------------------------------------------
+
+RendererLoaderFactory::RendererLoaderFactory()
+{
+    
+}
+
+RendererLoaderFactory::~RendererLoaderFactory()
+{
+    
+}
+
+GreEndNamespace

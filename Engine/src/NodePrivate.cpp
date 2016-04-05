@@ -11,7 +11,7 @@
 #include "Node.h"
 #include "Scene.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 NodePrivate::NodePrivate(const std::string& name)
 : Resource(name), _mIsVisible(false), _mThisNode()
@@ -137,4 +137,4 @@ void NodePrivate::setNodeMatrix(const Matrix4 &mat4)
     _mMatrix = mat4;
 }
 
-GRE_END_NAMESPACE
+GreEndNamespace

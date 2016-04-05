@@ -11,7 +11,7 @@
 
 #include "OpenGlIncludes.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 class OpenGlHardwareShader : public HardwareShaderPrivate
 {
@@ -55,6 +55,6 @@ public:
     
 };
 
-GRE_END_NAMESPACE
+GreEndNamespace
 
 #endif

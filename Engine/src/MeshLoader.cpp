@@ -8,7 +8,7 @@
 
 #include "MeshLoader.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 MeshLoader::MeshLoader()
 {
@@ -60,4 +60,4 @@ ResourceLoader* MeshLoader::clone() const
     return new MeshLoader();
 }
 
-GRE_END_NAMESPACE
+GreEndNamespace

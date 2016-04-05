@@ -9,6 +9,8 @@
 #include "OSXWindow.h"
 #include "OSXImage.h"
 
+WindowBufEntry nsWindowBufs [WINDOW_MAX];
+
 extern "C" DLL_PUBLIC void* GetPluginName (void)
 {
     return (void*) "OS X Window System";
@@ -16,12 +18,13 @@ extern "C" DLL_PUBLIC void* GetPluginName (void)
 
 extern "C" DLL_PUBLIC void StartPlugin (void)
 {
-    GLoad();
+    NsLoadPluginApp();
+    
     ResourceManager::Get().getWindowLoaderFactory().registers("OsXWindow", new OsXWindowLoader);
     ResourceManager::Get().getImageLoaderFactory().registers("OSXImage", new OSXImageLoader);
 }
 
 extern "C" DLL_PUBLIC void StopPlugin (void)
 {
-    //GUnload();
+    
 }

@@ -8,18 +8,18 @@
 
 #include "Texture.h"
 
-GRE_BEGIN_NAMESPACE
-
-TexturePrivate::TexturePrivate()
-: Resource(""), image(Image::Null), _isBinded(false)
-{
-    
-}
+GreBeginNamespace
 
 TexturePrivate::TexturePrivate(const std::string& name)
 : Resource(name), image(Image::Null), _isBinded(false)
 {
-    
+    _mTexType = Type::TwoDimension;
+    _mComponentsNumber = 0;
+    _mMipmapLevel = 0;
+    _mWidth = 0;
+    _mHeight = 0;
+    _mStoreType = StorageType::UnsignedByte;
+    _mLoaded = false;
 }
 
 TexturePrivate::TexturePrivate(const std::string& name, const Image& img)
@@ -31,6 +31,46 @@ TexturePrivate::TexturePrivate(const std::string& name, const Image& img)
 TexturePrivate::~TexturePrivate()
 {
     
+}
+
+void TexturePrivate::setComponentsNumber(int componentsNumber)
+{
+    _mComponentsNumber = componentsNumber;
+}
+
+void TexturePrivate::setHeight(size_t height)
+{
+    _mHeight = height;
+}
+
+void TexturePrivate::setLoaded(bool loaded)
+{
+    _mLoaded = loaded;
+}
+
+void TexturePrivate::setMipmapLevel(int mipmapLevel)
+{
+    _mMipmapLevel = mipmapLevel;
+}
+
+void TexturePrivate::setStorageType(Gre::StorageType storageType)
+{
+    _mStoreType = storageType;
+}
+
+void TexturePrivate::setTextureType(const Gre::TexturePrivate::Type &textureType)
+{
+    _mTexType = textureType;
+}
+
+void TexturePrivate::setWidth(size_t width)
+{
+    _mWidth = width;
+}
+
+bool TexturePrivate::isLoaded() const
+{
+    return _mLoaded;
 }
 
 bool TexturePrivate::isInvalid() const
@@ -58,6 +98,30 @@ void TexturePrivate::setBinded(bool b) const
 {
     _isBinded = b;
 }
+
+void TexturePrivate::load()
+{
+    GreDebugFunctionNotImplemented();
+}
+
+void TexturePrivate::setData(unsigned char *data)
+{
+    GreDebugFunctionNotImplemented();
+}
+
+void TexturePrivate::reset()
+{
+    _mTexType = Type::TwoDimension;
+    _mComponentsNumber = 0;
+    _mMipmapLevel = 0;
+    _mWidth = 0;
+    _mHeight = 0;
+    _mStoreType = StorageType::UnsignedByte;
+    _mLoaded = false;
+    image = Image::Null;
+}
+
+// ---------------------------------------------------------------------------------------------------
 
 Texture::Texture()
 {
@@ -125,4 +189,4 @@ void Texture::unbind() const
 
 Texture Texture::Null = Texture();
 
-GRE_END_NAMESPACE
+GreEndNamespace

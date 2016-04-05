@@ -8,7 +8,7 @@
 
 #include "Event.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 Event::Event(const EventType& etype)
 : _mType(etype)
@@ -59,4 +59,15 @@ UpdateEvent::~UpdateEvent()
     
 }
 
-GRE_END_NAMESPACE
+WindowSizedEvent::WindowSizedEvent()
+: Event(EventType::WindowSized)
+{
+    
+}
+
+WindowSizedEvent::~WindowSizedEvent()
+{
+    
+}
+
+GreEndNamespace

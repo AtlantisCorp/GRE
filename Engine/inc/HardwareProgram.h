@@ -14,7 +14,7 @@
 #include "HardwareShader.h"
 #include "HardwareProgramVariables.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 //////////////////////////////////////////////////////////////////////
 /// @brief A Generic Shader Program.
@@ -155,6 +155,6 @@ private:
     std::weak_ptr<HardwareProgramPrivate> _mHwdProgram;
 };
 
-GRE_END_NAMESPACE
+GreEndNamespace
 
 #endif

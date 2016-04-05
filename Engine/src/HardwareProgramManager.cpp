@@ -9,7 +9,7 @@
 #include "HardwareProgramManager.h"
 #include "ResourceManager.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 HardwareProgramManagerPrivate::HardwareProgramManagerPrivate(const std::string& name)
 : Resource(name)
@@ -180,4 +180,4 @@ Resource* HardwareProgramManagerLoader::load(Resource::Type type, const std::str
     return nullptr;
 }
 
-GRE_END_NAMESPACE
+GreEndNamespace

@@ -9,69 +9,28 @@
 #include "Window.h"
 #include "WindowResource.h"
 
-GRE_BEGIN_NAMESPACE
-
-WindowResource::WindowResource (const std::string& name, const WindowPrivate& winData)
-: Resource(name), _associatedRenderer(ResourceUser::Null)
-{
-    _lastUpdate = _lastUpdate.min();
-}
-
-WindowResource::~WindowResource()
-{
-    
-}
-
-void WindowResource::beginUpdate()
-{
-    pollEvent();
-    
-    // Here we send an update event to listeners.
-    if(_lastUpdate != _lastUpdate.min())
-    {
-        UpdateTime now = UpdateChrono::now();
-        UpdateEvent ue;
-        ue.elapsedTime = std::chrono::duration_cast<std::chrono::nanoseconds>(now - _lastUpdate);
-        sendEvent(ue);
-        _lastUpdate = now;
-    }
-    else
-    {
-        _lastUpdate = UpdateChrono::now();
-    }
-    
-    if(_associatedRenderer.expired() == false)
-        _associatedRenderer.beginRender();
-}
-
-void WindowResource::endUpdate()
-{
-    if(_associatedRenderer.expired() == false)
-        _associatedRenderer.endRender();
-    
-    swapBuffers();
-}
+GreBeginNamespace
 
 Window::Window()
-: ResourceUser(), _mWindow()
+: ResourceUser(), RenderTarget(), _mWindow()
 {
     
 }
 
 Window::Window (Window&& rmove)
-: ResourceUser(rmove), _mWindow(std::move(rmove._mWindow))
+: ResourceUser(rmove), RenderTarget(rmove), _mWindow(std::move(rmove._mWindow))
 {
     
 }
 
 Window::Window (const Window& window)
-: ResourceUser(window.lock()), _mWindow(window._mWindow)
+: ResourceUser(window.lock()), RenderTarget(window), _mWindow(window._mWindow)
 {
     
 }
 
 Window::Window(const ResourceUser& ruser)
-: ResourceUser(ruser.lock()), _mWindow(std::dynamic_pointer_cast<WindowResource>(ruser.lock()))
+: ResourceUser(ruser.lock()), RenderTarget(ruser), _mWindow(std::dynamic_pointer_cast<WindowResource>(ruser.lock()))
 {
     
 }
@@ -122,25 +81,6 @@ const std::string Window::recommendedRenderer() const
     return "";
 }
 
-void Window::associate(Renderer& renderer)
-{
-    auto ptr = _mWindow.lock();
-    if(ptr)
-    {
-        ptr->associate(renderer);
-        renderer.associateWindow(*this);
-    }
-}
-
-Renderer Window::getAssociatedRenderer()
-{
-    auto ptr = _mWindow.lock();
-    if(ptr)
-        return ptr->getAssociatedRenderer();
-    
-    return Renderer(ResourceUser::Null);
-}
-
 void Window::setTitle(const std::string &title)
 {
     auto ptr = _mWindow.lock();
@@ -148,75 +88,20 @@ void Window::setTitle(const std::string &title)
         ptr->setTitle(title);
 }
 
-void Window::swapBuffers()
+Surface Window::getSurface() const
 {
     auto ptr = _mWindow.lock();
     if(ptr)
-        ptr->swapBuffers();
-}
-
-WindowSize Window::getWindowSize() const
-{
-    auto ptr = _mWindow.lock();
-    if(ptr)
-        return ptr->getWindowSize();
+        return ptr->getSurface();
     
-    return std::make_pair(0, 0);
+    return { 0, 0, 0, 0 };
 }
 
-void Window::setVerticalSync(bool vsync)
+void Window::update()
 {
     auto ptr = _mWindow.lock();
     if(ptr)
-        ptr->setVerticalSync(vsync);
-}
-
-bool Window::hasVerticalSync() const
-{
-    auto ptr = _mWindow.lock();
-    if(ptr)
-        return ptr->hasVerticalSync();
-    
-    return false;
-}
-
-Listener& Window::addListener(const std::string& name)
-{
-    auto ptr = _mWindow.lock();
-    if(ptr)
-        return ptr->addListener(name);
-    
-    return Listener::Null;
-}
-
-Listener Window::getListener(const std::string& name)
-{
-    auto ptr = _mWindow.lock();
-    if(ptr)
-        return ptr->getListener(name);
-    
-    return Listener::Null;
-}
-
-void Window::removeListener(const std::string& name)
-{
-    auto ptr = _mWindow.lock();
-    if(ptr)
-        return ptr->removeListener(name);
-}
-
-void Window::beginUpdate()
-{
-    auto ptr = _mWindow.lock();
-    if(ptr)
-        ptr->beginUpdate();
-}
-
-void Window::endUpdate()
-{
-    auto ptr = _mWindow.lock();
-    if(ptr)
-        ptr->endUpdate();
+        ptr->update();
 }
 
 bool Window::isExposed() const
@@ -227,15 +112,56 @@ bool Window::isExposed() const
     return false;
 }
 
-Window::operator Emitter &()
+bool Window::hasRenderContext() const
 {
-    return *(dynamic_cast<Emitter*>(_mWindow.lock().get()));
+    auto ptr = _mWindow.lock();
+    if(ptr)
+        return ptr->hasRenderContext();
+    return false;
 }
 
-Window::operator const Emitter &() const
+void Window::setRenderContext(const Gre::RenderContext &renderCtxt)
 {
-    return *(dynamic_cast<const Emitter*>(_mWindow.lock().get()));
+    auto ptr = _mWindow.lock();
+    if(ptr)
+        ptr->setRenderContext(renderCtxt);
 }
+
+RenderContext& Window::getRenderContext()
+{
+    auto ptr = _mWindow.lock();
+    if(ptr)
+        return ptr->getRenderContext();
+    return RenderContext::Null;
+}
+
+
+
+void Window::addLoopBehaviour(LoopBehaviour behaviour)
+{
+    auto ptr = _mWindow.lock();
+    if(ptr)
+        ptr->addLoopBehaviour(behaviour);
+}
+
+void Window::clearLoopBehaviour()
+{
+    auto ptr = _mWindow.lock();
+    if(ptr)
+        ptr->clearLoopBehaviour();
+}
+
+bool Window::hasBeenClosed() const
+{
+    auto ptr = _mWindow.lock();
+    if(ptr)
+        return ptr->hasBeenClosed();
+    return true;
+}
+
+Window Window::Null = Window();
+
+// ---------------------------------------------------------------------------------------------------
 
 WindowLoader::WindowLoader()
 {
@@ -262,5 +188,5 @@ ResourceLoader* WindowLoader::clone() const
     return new WindowLoader();
 }
 
-GRE_END_NAMESPACE
+GreEndNamespace
 

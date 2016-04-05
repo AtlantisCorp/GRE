@@ -9,15 +9,14 @@
 #ifndef GRE_Keyboard_h
 #define GRE_Keyboard_h
 
-#include "Listener.h"
-#include "Emitter.h"
+#include "Resource.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
-/// @brief A ListenerPrivate object that listen to keys and then distribute it to other
-/// listeners.
-class DLL_PUBLIC KeyboardPrivate : public ListenerPrivate,
-                                   public Emitter
+//////////////////////////////////////////////////////////////////////
+/// @brief A Basic Resource to handle more easily Key Events.
+//////////////////////////////////////////////////////////////////////
+class DLL_PUBLIC KeyboardPrivate : public Resource
 {
 public:
     
@@ -26,38 +25,91 @@ public:
     KeyboardPrivate(const std::string& name);
     ~KeyboardPrivate();
     
-    /// @brief Calls every methods registered in the Listener.
-    /// Also distribute the Key events to registered listeners.
-    void onEvent (const Event& e);
-    
+    //////////////////////////////////////////////////////////////////////
     /// @brief Returns true if given key is down.
+    //////////////////////////////////////////////////////////////////////
+    bool isKeyDown(Key k) const;
+    
+protected:
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Called when a Key is up.
+    //////////////////////////////////////////////////////////////////////
+    virtual void onKeyUpEvent(const KeyUpEvent& e);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Called when a Key is down.
+    //////////////////////////////////////////////////////////////////////
+    virtual void onKeyDownEvent(const KeyDownEvent& e);
+    
+private:
+    
+    /// @brief Helper to store Key currently down.
+    std::map<Key, bool> _keyDown;
+};
+
+//////////////////////////////////////////////////////////////////////
+/// @brief ResourceUser to manipulate the KeyboardPrivate class.
+//////////////////////////////////////////////////////////////////////
+class DLL_PUBLIC Keyboard : public ResourceUser
+{
+public:
+    
+#ifndef GreExtraMacros
+    
+    POOLED(Pools::Event)
+    
+    Keyboard();
+    Keyboard(const Keyboard& rhs);
+    Keyboard(Keyboard&& rhs);
+    explicit Keyboard(const ResourceUser& rhs);
+    Keyboard& operator = (const Keyboard& rhs);
+    bool operator == (const Keyboard& rhs) const;
+    bool operator != (const Keyboard& rhs) const;
+    
+    ~Keyboard();
+    
+#else
+    
+    GreResourceUserMakeConstructorsPooled(Keyboard, Event);
+    
+#endif
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns true if given key is down.
+    //////////////////////////////////////////////////////////////////////
     bool isKeyDown(Key k) const;
     
 private:
     
-    std::map<Key, bool> _keyDown;
+    /// @brief Holds a pointer to the Keyboard.
+    std::weak_ptr<KeyboardPrivate> _kbd;
 };
 
-/// @brief This proxy is here to ensure that you can listen to the KeyboardPrivate object.
-class DLL_PUBLIC Keyboard : public Listener
+//////////////////////////////////////////////////////////////////////
+/// @brief A simple ResourceLoader to permit to the ResourceManager
+/// to load a Keyboard Object.
+//////////////////////////////////////////////////////////////////////
+class DLL_PUBLIC KeyboardLoader : public ResourceLoader
 {
 public:
     
     POOLED(Pools::Event)
     
-    Keyboard(const std::string& name);
-    Keyboard (const Keyboard& rhs);
-    explicit Keyboard (ListenerPrivate* lpriv = nullptr);
+    KeyboardLoader();
+    ~KeyboardLoader();
     
-    ~Keyboard();
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns true if Resource::Type is ::Keyboard.
+    //////////////////////////////////////////////////////////////////////
+    bool isTypeSupported(Resource::Type type) const;
     
-    operator Emitter& ();
-    operator const Emitter& () const;
-    
-    /// @brief Returns true if given key is down.
-    bool isKeyDown(Key k) const;
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Loads a Keyboard.
+    //////////////////////////////////////////////////////////////////////
+    Resource* load(Resource::Type type, const std::string& name) const;
 };
 
-GRE_END_NAMESPACE
+GreEndNamespace
 
 #endif

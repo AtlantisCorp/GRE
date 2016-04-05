@@ -11,7 +11,7 @@
 
 #include "Version.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 /// @brief Enumerate every supported Color Format.
 /// @note When adding more formats, please take in account that every
@@ -258,5 +258,5 @@ GenColor<T,F> GenColor<T,F>::Black = GenColor<T,F>(0, 0, 0, 1);
 
 typedef GenColor<float, ColorFormat::RGBA> Color;
 
-GRE_END_NAMESPACE
+GreEndNamespace
 #endif

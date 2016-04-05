@@ -8,7 +8,7 @@
 
 #include "Mesh.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 MeshPrivate::MeshPrivate(const std::string& name, const BufferedMesh& bufmesh)
 : Resource(name), _mType(MeshPrivate::Type::Buffered), _mBufMesh(bufmesh)
@@ -166,4 +166,4 @@ MeshPrivate::Type Mesh::getType() const
 HardwareIndexBufferBatch HardwareIndexBufferBatch::Null = HardwareIndexBufferBatch();
 Mesh Mesh::Null = Mesh();
 
-GRE_END_NAMESPACE
+GreEndNamespace

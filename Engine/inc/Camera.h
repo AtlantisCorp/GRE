@@ -9,17 +9,19 @@
 #ifndef GRE_Camera_h
 #define GRE_Camera_h
 
-#include "Listener.h"
+#include "Resource.h"
 #include "Keyboard.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 /// @brief Represents a Camera object.
 /// Based on an idea from :
 /// https://github.com/tomdalling/opengl-series/blob/master/source/04_camera/source/tdogl/Camera.h
-class DLL_PUBLIC CameraPrivate : public ListenerPrivate
+class DLL_PUBLIC CameraPrivate : public Resource
 {
 public:
+    
+    POOLED(Pools::Resource)
     
     CameraPrivate(const std::string& name);
     ~CameraPrivate();
@@ -101,14 +103,18 @@ private:
 };
 
 /// @brief Listener proxy to Camera object.
-class DLL_PUBLIC Camera : public Listener
+class DLL_PUBLIC Camera : public ResourceUser
 {
 public:
     
+    POOLED(Pools::Resource)
+    
     Camera();
-    Camera(const std::string& name);
     Camera(const Camera& rhs);
-    explicit Camera(ListenerPrivate* rhs);
+    explicit Camera(const ResourceUser& rhs);
+    Camera& operator = (const Camera& rhs);
+    bool operator == (const Camera& rhs) const;
+    bool operator != (const Camera& rhs) const;
     
     ~Camera();
     
@@ -176,11 +182,16 @@ public:
     /// @brief A Null Camera object.
     static Camera Null;
     
+    ////////////////////////////////////////////////////////////////////////
+    /// @brief Creates a persistent Camera Resource.
+    ////////////////////////////////////////////////////////////////////////
+    static Camera Create(const std::string& name);
+    
 private:
     
     std::weak_ptr<CameraPrivate> _camera;
 };
 
-GRE_END_NAMESPACE
+GreEndNamespace
 
 #endif

@@ -14,7 +14,7 @@
 #include "Mesh.h"
 #include "Camera.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 class DLL_PUBLIC Node;
 class DLL_PUBLIC Scene;
@@ -173,6 +173,6 @@ protected:
     std::weak_ptr<NodePrivate> _mThisNode;
 };
 
-GRE_END_NAMESPACE
+GreEndNamespace
 
 #endif

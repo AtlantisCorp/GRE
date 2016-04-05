@@ -11,17 +11,16 @@
 
 #include "NodePrivate.h"
 
-#include "Listener.h"
-#include "Emitter.h"
+#include "Resource.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 //////////////////////////////////////////////////////////////////////
 /// @brief Proxy object to use a Node.
 /// The Node User object can also be a Listener. It permits the Node to
 /// be updated by the Scene object, and by the Renderer.
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC Node : public ResourceUser, public Transmitter
+class DLL_PUBLIC Node : public ResourceUser
 {
 public:
     
@@ -150,6 +149,6 @@ private:
     std::weak_ptr<NodePrivate> _mNode;
 };
 
-GRE_END_NAMESPACE
+GreEndNamespace
 
 #endif

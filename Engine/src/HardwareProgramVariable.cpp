@@ -8,7 +8,7 @@
 
 #include "HardwareProgramVariable.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 HardwareProgramVariable::HardwareProgramVariable(const std::string& name, const VariableUsage& usage, const Matrix4& mat4)
 : _mName(name), _mType(VariableType::Mat4), _mMat4(mat4), _mUsage(usage), _mIsDirty(true)
@@ -39,4 +39,4 @@ const std::string& HardwareProgramVariable::getName() const
     return _mName;
 }
 
-GRE_END_NAMESPACE
+GreEndNamespace

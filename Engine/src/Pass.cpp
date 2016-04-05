@@ -9,7 +9,7 @@
 #include "Pass.h"
 #include "Renderer.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 PassPrivate::PassPrivate(const std::string& name, const PassNumber& passNumber)
 : Resource(name), _mNumber(passNumber), _mIsActivated(true), _mLinkedProgram(HardwareProgram::Null), _mAutoCreateProgram(true), _mFbo()
@@ -271,4 +271,4 @@ bool Pass::isFrameBufferedRendering() const
 
 Pass Pass::Null = Pass();
 
-GRE_END_NAMESPACE
+GreEndNamespace

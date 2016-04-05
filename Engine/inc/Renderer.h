@@ -10,18 +10,24 @@
 #define GResource_Renderer_h
 
 #include "Resource.h"
-#include "Window.h"
 #include "Color.h"
 #include "HardwareVertexBuffer.h"
 #include "HardwareIndexBuffer.h"
 #include "Mesh.h"
 #include "Camera.h"
 #include "Scene.h"
-#include "Emitter.h"
 #include "HardwareProgram.h"
 #include "HardwareProgramManager.h"
+#include "RenderContextInfo.h"
+#include "RenderTarget.h"
+#include "Viewport.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
+
+class RenderContextPrivate;
+class RenderContext;
+class Window;
+class Renderer;
 
 typedef std::chrono::milliseconds ElapsedTime;
 
@@ -32,7 +38,13 @@ enum class MatrixType
     ModelView
 };
 
-class DLL_PUBLIC RendererResource : public Resource, public Transmitter
+/// @brief Holds some data the Renderer may need during Context changing.
+typedef struct
+{
+    
+} RenderContextData;
+
+class DLL_PUBLIC RendererResource : public Resource
 {
 public:
     
@@ -40,21 +52,11 @@ public:
     
     RendererResource (const std::string& name);
     
-    virtual ~RendererResource () { }
-    
-    virtual void associateWindow (Window& window) { _window = window; }
+    virtual ~RendererResource ();
     
     virtual void render();
     
-protected:
-    
-    virtual void _preRender();
-    virtual void _render();
-    virtual void _postRender();
-    
 public:
-    
-    virtual void renderExample () { }
     
     void setFramerate(float fps) { _wantedFps = fps; }
     
@@ -109,7 +111,7 @@ public:
     Scene& getScene();
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Scene object.
+    /// @brief Returns the Scene object currently binded.
     //////////////////////////////////////////////////////////////////////
     const Scene& getScene() const;
     
@@ -205,15 +207,191 @@ public:
     //////////////////////////////////////////////////////////////////////
     virtual Texture createTexture(const std::string& name) const;
     
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Creates a RenderContext using given Info.
+    /// The RendererResource should keep a copy of this RenderContext, in
+    /// order to destroy it.
+    //////////////////////////////////////////////////////////////////////
+    virtual RenderContext createRenderContext(const std::string& name, const RenderContextInfo& info, Renderer caller);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Notifiates the Renderer that the RenderContext currently
+    /// binded has changed.
+    ///
+    /// This method is called by RenderContext::bind() and renderCtxt points
+    /// to the RenderContextPrivate* structure currently binded, or this
+    /// method is called by RenderContext::unbind() and renderCtxt is null.
+    ///
+    /// You should use this method to proceed to Context internal resource
+    /// changes.
+    //////////////////////////////////////////////////////////////////////
+    virtual void onCurrentContextChanged(RenderContextPrivate* renderCtxt);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the currently binded RenderContext object.
+    /// This can be RenderContext::Null if you are not between Renderer::_preRender()
+    /// and Renderer::_postRender().
+    //////////////////////////////////////////////////////////////////////
+    RenderContext getCurrentContext();
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Adds a new RenderTarget to the Renderer.
+    /// The RenderTarget may be a Window, a Framebuffer, or any object where
+    /// the Renderer should draw into.
+    ///
+    /// In the case of a Window object, the Renderer will bind the Window
+    /// (for the RenderContext to be binded), and will draw each Pass in
+    /// a separate Framebuffer which will be blended into the final Pass.
+    ///
+    /// To draw in a Framebuffer using a RenderTarget, the Renderer has
+    /// to call RenderTarget::bindFramebuffer(). This function also has the
+    /// purpose to let the RenderTarget sets its own Framebuffer, even for
+    /// a Window.
+    //////////////////////////////////////////////////////////////////////
+    void addRenderTarget(const RenderTarget& renderTarget);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Specifically adds a Window as a RenderTarget.
+    ///
+    /// @param caller
+    /// This param is filled by the user who call this function. This permit
+    /// to set a Renderer parent for the RenderContext object.
+    ///
+    /// @param autoCreateContext
+    ///  If the Window does not already have a setted RenderContext, the
+    /// Renderer automatically creates a RenderContext and set it to this
+    /// Window object. The parameters of this RenderContext are unbehavioured,
+    /// but generally this should be the best one.
+    //////////////////////////////////////////////////////////////////////
+    void addRenderTarget(Window& window, Renderer caller, bool autoCreateContext = true);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Select the default Scene to draw a RenderTarget object if this
+    /// one does not already have one.
+    //////////////////////////////////////////////////////////////////////
+    void selectDefaultScene(const Scene& defScene);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the Default Scene set by ::selectDefaultScene().
+    //////////////////////////////////////////////////////////////////////
+    Scene getDefaultScene();
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Render given RenderTarget.
+    /// @note If this RenderTarget implies a Context change, you should have
+    /// called RenderTarget::bind() before this call.
+    /// If this does not imply a Context change, RenderTarget::bindFramebuffer()
+    /// is always called in this function.
+    //////////////////////////////////////////////////////////////////////
+    void render(RenderTarget& rtarget);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Select the Scene that will be used during rendering.
+    /// Normally this is set by ::render(). The Scene is either the Scene
+    /// selected in the RenderTarget either the default Scene.
+    //////////////////////////////////////////////////////////////////////
+    void selectScene(const Scene& rhs);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Saves the Current Scene object into a private std::deque.
+    //////////////////////////////////////////////////////////////////////
+    void pushCurrentScene();
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Restores the Current Scene from previously saved ones.
+    /// If no Scene can be restore, this function has no effect.
+    //////////////////////////////////////////////////////////////////////
+    void popCurrentScene();
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Launches the Drawing Loop Thread.
+    /// This means that the Renderer begins to draw every RenderTarget it
+    /// has to, and update to every RenderContext.
+    //////////////////////////////////////////////////////////////////////
+    void launchDrawingThread();
+    
 protected:
     
-    Window _window;
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the RenderContext object that points to the given
+    /// RenderContextPrivate object.
+    //////////////////////////////////////////////////////////////////////
+    virtual RenderContext findRenderContextFromPrivate(RenderContextPrivate* renderCtxtPriv) = 0;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Initializes the RenderContextData structure.
+    /// @note As of today, this function has no use.
+    //////////////////////////////////////////////////////////////////////
+    virtual void initializeRenderContextDataPrivate(RenderContextData& renderCtxtData);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief The inifinite threaded drawing loop.
+    //////////////////////////////////////////////////////////////////////
+    void threadedLoop();
+    
+protected:
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Renders the Queue of Framebuffer objects to the RenderContext
+    /// surface, depending on the Viewport currently active.
+    //////////////////////////////////////////////////////////////////////
+    virtual void _renderFramebuffers(std::queue<FrameBuffer> &fboQueue);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Sets the current Viewport active.
+    //////////////////////////////////////////////////////////////////////
+    virtual void _setCurrentViewport(const Viewport& viewport);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Pre-render the Current Scene.
+    /// This means in this function, you can do whatever you want BEFORE
+    /// rendering the Scene. Default behaviour does nothing.
+    //////////////////////////////////////////////////////////////////////
+    virtual void _preRenderCurrentScene();
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Render the Currently active Scene.
+    //////////////////////////////////////////////////////////////////////
+    virtual void _renderCurrentScene();
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Post-render the Current Scene.
+    /// Here you can do whatever you want AFTER rendering the Scene. 
+    //////////////////////////////////////////////////////////////////////
+    virtual void _postRenderCurrentScene();
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Render a Viewport object.
+    /// Here the Renderer bind the selected Scene, then render the Scene
+    /// in the Viewport.
+    //////////////////////////////////////////////////////////////////////
+    virtual void _renderViewport(const Viewport& viewport);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Render a RenderTarget, but using the Current Context.
+    /// This is the process for every RenderTarget.
+    //////////////////////////////////////////////////////////////////////
+    virtual void _renderRenderTargetWithCurrentContext(RenderTarget& renderTarget);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Render a RenderTarget which has a RenderContext object.
+    /// This function only ensure binding and unbinding of the context,
+    /// then calls ::_renderRenderTargetWithCurrentContext().
+    //////////////////////////////////////////////////////////////////////
+    virtual void _renderRenderTargetWithContext(RenderTarget& renderTarget);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Simply sets if the Renderer is active or not.
+    //////////////////////////////////////////////////////////////////////
+    virtual void _setActive(bool activ);
+    
+protected:
+
     float  _wantedFps; ///< @brief Hold the desired framerate.
     float  _currentFps; ///< @brief Hold the current fps.
     bool   _mIsActive;
     bool   _mIsImmediateMode; ///< @brief True if renderer is in immediate mode.
     std::vector<std::function<void(void)> > _mImmediateFunctions; ///< @brief Vector of functions to be called in immediate mode.
-    Scene  _mScene; ///< @brief THE Scene object :) .
     HardwareProgramManager _mProgramManager; ///< @brief The Shader Program Manager.
     
     /// @brief FBO data : Holds a Mesh to draw FrameBuffers on screen.
@@ -221,6 +399,43 @@ protected:
     
     /// @brief FBO data : Holds the shader to draw the FrameBuffers on screen.
     HardwareProgram _mfboHdwProgram;
+    
+    /// @brief List of RenderTarget's objects.
+    std::vector<RenderTarget> _mRenderTargets;
+    
+    /// @brief The default Scene used by this Renderer to draw on RenderTarget.
+    Scene _mDefaultScene;
+    
+    /// @brief Current Scene used to render.
+    /// You can modify this Scene using Renderer::selectScene() but this is used
+    /// also by the RenderTarget. You should set a Scene to a RenderTarget using
+    /// RenderTarget::selectScene().
+    Scene _mCurrentScene;
+    
+    /// @brief Holds the Scene objects saved by push/pop method.
+    /// This is used currently to save the Context's Scene when changing to a
+    /// Viewport's Scene. it follows the pattern first-in/last-out.
+    std::deque<Scene> _mSavedScenes;
+    
+    /// @brief Current Context Binded.
+    /// This RenderContext can be RenderContext::Null (in this case nothing is rendered
+    /// to the screen). RenderContext::bind() should notifiate the Renderer with
+    /// Renderer::onCurrentContextChanged(this) in order to modify this value.
+    RenderContext* _mCurrentContext;
+    
+    /// @brief Holds RenderContextData stored by RenderContext objects.
+    std::map<RenderContext*, RenderContextData> _mContextDatas;
+    
+    /// @brief Holds the Current Viewport.
+    /// This value is correct in the ::render() function.
+    Viewport _mCurrentViewport;
+    
+    /// @brief Holds the Drawing Loop Thread.
+    /// The Drawing Loop Thread has in charge the infinite drawing of all the Rendering Targets.
+    std::thread _mDrawThread;
+    
+    /// @brief A special bool that must be set to true when terminating the draw thread.
+    bool _mMustStopThread;
     
 private:
     
@@ -236,6 +451,7 @@ class DLL_PUBLIC Renderer : public ResourceUser
 {
 public:
     
+    Renderer ();
     Renderer (Renderer&& movref);
     Renderer (const Renderer& renderer);
     explicit Renderer (const ResourceUser& ruser);
@@ -246,9 +462,6 @@ public:
     Renderer& operator = (const Renderer& ruser);
     
     void render();
-    void renderExample();
-    
-    void associateWindow (Window& window);
     
     void setFramerate (float fps);
     
@@ -379,12 +592,61 @@ public:
     //////////////////////////////////////////////////////////////////////
     Texture createTexture(const std::string& name) const;
     
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Creates a RenderContext using given Info.
+    /// The RendererResource should keep a copy of this RenderContext, in
+    /// order to destroy it.
+    //////////////////////////////////////////////////////////////////////
+    RenderContext createRenderContext(const std::string& name, const RenderContextInfo& info);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Notifiates the Renderer that the RenderContext currently
+    /// binded has changed.
+    //////////////////////////////////////////////////////////////////////
+    void onCurrentContextChanged(RenderContextPrivate* renderCtxt);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Adds a new RenderTarget to the Renderer.
+    /// The RenderTarget may be a Window, a Framebuffer, or any object where
+    /// the Renderer should draw into.
+    //////////////////////////////////////////////////////////////////////
+    void addRenderTarget(const RenderTarget& renderTarget);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Specifically adds a Window as a RenderTarget.
+    //////////////////////////////////////////////////////////////////////
+    void addRenderTarget(Window& window, bool autoCreateContext = true);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Select the default Scene to draw a RenderTarget object if this
+    /// one does not already have one.
+    //////////////////////////////////////////////////////////////////////
+    void selectDefaultScene(const Scene& defScene);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the Default Scene set by ::selectDefaultScene().
+    //////////////////////////////////////////////////////////////////////
+    Scene getDefaultScene();
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Render given RenderTarget.
+    //////////////////////////////////////////////////////////////////////
+    void render(RenderTarget& rtarget);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Launches the Drawing Loop Thread.
+    //////////////////////////////////////////////////////////////////////
+    void launchDrawingThread();
+    
+    /// @brief Holds the Null Renderer User.
+    static Renderer Null;
+    
 private:
     
     std::weak_ptr<RendererResource> _mRenderer;
 };
 
-class DLL_PUBLIC DLL_PUBLIC RendererLoader : public ResourceLoader
+class DLL_PUBLIC RendererLoader : public ResourceLoader
 {
 public:
     
@@ -402,11 +664,21 @@ protected:
     
 };
 
-typedef ResourceLoaderFactory<RendererLoader> RendererLoaderFactory;
+//////////////////////////////////////////////////////////////////////
+/// @brief A factory that stores every Renderer Loaders.
+//////////////////////////////////////////////////////////////////////
+class DLL_PUBLIC RendererLoaderFactory : public ResourceLoaderFactory<RendererLoader>
+{
+public:
+    
+    RendererLoaderFactory();
+    ~RendererLoaderFactory();
+};
+
 typedef GreException                          RendererInvalidVersion;
 typedef GreException                          RendererInvalidApi;
 typedef GreExceptionWithText                  RendererNoProgramManagerException;
 typedef GreExceptionWithText                  RendererNoCapacityException;
 
-GRE_END_NAMESPACE
+GreEndNamespace
 #endif

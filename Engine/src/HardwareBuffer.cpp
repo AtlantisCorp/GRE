@@ -8,7 +8,7 @@
 
 #include "HardwareBuffer.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 HardwareBufferPrivate::HardwareBufferPrivate()
 : Resource("")
@@ -74,4 +74,4 @@ HardwareBuffer::~HardwareBuffer()
     
 }
 
-GRE_END_NAMESPACE
+GreEndNamespace

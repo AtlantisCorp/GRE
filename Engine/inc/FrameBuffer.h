@@ -12,7 +12,7 @@
 #include "Resource.h"
 #include "Texture.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 //////////////////////////////////////////////////////////////////////
 /// @brief A FrameBuffer Object.
@@ -159,6 +159,6 @@ public:
 
 typedef ResourceLoaderFactory<FrameBufferLoader> FrameBufferLoaderFactory;
 
-GRE_END_NAMESPACE
+GreEndNamespace
 
 #endif

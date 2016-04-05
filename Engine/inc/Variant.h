@@ -11,7 +11,7 @@
 
 #include "Pools.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 //////////////////////////////////////////////////////////////////////
 /// @brief A basic Variant object, which can contains one subobject
@@ -23,25 +23,40 @@ public:
     
     enum class Policy
     {
-        None    = 0, ///< @brief Nothing is stored.
-        Integer = 1  ///< @brief Stores an Integer.
+        None    = 0,    ///< @brief Nothing is stored.
+        Integer = 1,    ///< @brief Stores an Integer.
+        Version = 2,    ///< @brief Stores a Version.
+        Boolean = 3     ///< @brief Type 'bool'.
     };
     
     Variant(Policy policy = Policy::None, void* object = nullptr);
-    Variant(int object);
     Variant(const Variant& rhs);
+    
+    Variant(int object);
+    Variant(const Version& object);
+    Variant(bool object);
     
     ~Variant();
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Sets a new Object.
     //////////////////////////////////////////////////////////////////////
-    void reset(Policy policy, void* object);
+    void reset(Policy policy, const void* object);
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Sets a new Object.
     //////////////////////////////////////////////////////////////////////
     void reset(int object);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Sets a new Object.
+    //////////////////////////////////////////////////////////////////////
+    void reset(const Version& object);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Sets a new Object.
+    //////////////////////////////////////////////////////////////////////
+    void reset(bool object);
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Clears the Variant and set it to Policy::None.
@@ -53,6 +68,18 @@ public:
     //////////////////////////////////////////////////////////////////////
     int& toInteger();
     const int& toInteger() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the Variant object as a Version, if one.
+    //////////////////////////////////////////////////////////////////////
+    Version& toVersion();
+    const Version& toVersion() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the Variant object as a bool, if one.
+    //////////////////////////////////////////////////////////////////////
+    bool& toBool();
+    const bool& toBool() const;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns true if policy is Policy::None or Object is nullptr.
@@ -68,7 +95,7 @@ private:
     /// @brief Copy an object depending on its policy and returns its
     /// pointer.
     //////////////////////////////////////////////////////////////////////
-    static void* CopyFromPolicy(Policy policy, void* object);
+    static void* CopyFromPolicy(Policy policy, const void* object);
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Deletes an object depending on its policy.
@@ -86,6 +113,6 @@ private:
 
 typedef GreExceptionWithText VariantBadCast;
 
-GRE_END_NAMESPACE
+GreEndNamespace
 
 #endif

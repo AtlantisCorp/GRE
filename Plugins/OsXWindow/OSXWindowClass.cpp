@@ -8,89 +8,150 @@
 
 #include "OSXWindow.h"
 
-keybuf_t keybuf [KEYBUF_MAX];
-int      keybuf_sz = 0;
-
-OsXWindow::OsXWindow (const std::string & name, const WindowPrivate& data)
-: WindowResource(name, data)
+OsXWindow::OsXWindow(const std::string & name, int x0, int y0, int wid, int hei)
+: WindowResource(name)
 {
-    _isclosed = false;
+    _nsWindow = NULL;
+    _mClosed = false;
+    _hasBeenClosed = false;
+    NsCreateWindow(&_nsWindow, x0, y0, wid, hei);
+    
+    if(_nsWindow == NULL)
+    {
+        GreDebugPretty() << "Impossible to create Window (Os X Plugin)." << std::endl;
+    }
 }
 
 OsXWindow::~OsXWindow ()
 {
-    
+    NsDestroyWindow(&_nsWindow);
+    _nsWindow = NULL;
 }
 
 bool OsXWindow::pollEvent()
 {
-    _isclosed = GIsWindowClosed();
-    bool ret = GPollEvent();
-    
-    // Send key events
-    while(keybuf_sz)
+    if(!_mClosed)
     {
-        if(keybuf[0].pressed > 0) {
-            KeyDownEvent e(Key(keybuf[0].key));
-            sendEvent(e);
-            keybuf_sz--;
-        } else {
-            KeyUpEvent e(Key(keybuf[0].key));
-            sendEvent(e);
-            keybuf_sz--;
+        bool ret = NsPollEvent();
+        WindowBufEntry* nsWindowEntry = NsGetWindowBufEntry(&_nsWindow);
+        
+        if(nsWindowEntry)
+        {
+            while(nsWindowEntry->keybuf_sz)
+            {
+                if(nsWindowEntry->keybufs[0].pressed > 0) {
+                    KeyDownEvent e(Key(nsWindowEntry->keybufs[0].key));
+                    sendEvent(e);
+                    nsWindowEntry->keybuf_sz--;
+                } else {
+                    KeyUpEvent e(Key(nsWindowEntry->keybufs[0].key));
+                    sendEvent(e);
+                    nsWindowEntry->keybuf_sz--;
+                }
+            }
+            
+            if(nsWindowEntry->sizeChanged)
+            {
+                _mSurface.width = nsWindowEntry->newWidth;
+                _mSurface.height = nsWindowEntry->newHeight;
+                _mSurface.left = nsWindowEntry->newX;
+                _mSurface.top = nsWindowEntry->newY;
+                nsWindowEntry->sizeChanged = false;
+                
+                WindowSizedEvent e;
+                e.surface = _mSurface;
+                sendEvent(e);
+            }
+            
+            _hasBeenClosed = _mExposed && nsWindowEntry->closed;
+            _mClosed = nsWindowEntry->closed;
+            _mExposed = nsWindowEntry->exposed;
+            
+            // We must double-check visibility because i don't find any notification
+            // to indicate Exposure.
+            if(!_mExposed)
+                _mExposed = NsWindowIsVisible(&_nsWindow);
         }
+        
+        return ret;
     }
     
-    return ret;
+    return true;
 }
 
-bool OsXWindow::isClosed() const
+bool OsXWindow::hasBeenClosed() const
 {
-    return _isclosed;
+    return _hasBeenClosed;
 }
 
 const std::string OsXWindow::recommendedRenderer() const
 {
+    // This is not just an information. For now, the RenderContext must
+    // have an CGlId field in order for this Window to draw something
+    // on screen.
+    // In other words, i don't know any other method to draw on screen ^^...
     return "OpenGl";
-}
-
-void OsXWindow::associate (Renderer& renderer)
-{
-    WindowResource::associate(renderer);
-    GInitRendererContext();
 }
 
 void OsXWindow::setTitle(const std::string& title)
 {
-    GWSetTitle(title.c_str());
+    NsSetWindowTitle(&_nsWindow, title.c_str());
 }
 
 void OsXWindow::swapBuffers ()
 {
-    GSwapBuffers();
-}
-
-WindowSize OsXWindow::getWindowSize() const
-{
-    int wid, height;
-    GGetWindowSize(&wid, &height);
-    return std::make_pair(wid, height);
+    NsWindowSwapBuffers(&_nsWindow);
 }
 
 void OsXWindow::setVerticalSync (bool vsync)
 {
-    GSetVSync(vsync?1:0);
+    NsWindowSetVertSync(&_nsWindow, vsync);
 }
 
 bool OsXWindow::hasVerticalSync () const
 {
-    return GHasVSync()>0?true:false;
+    return NsWindowIsVertSync(&_nsWindow);
 }
 
-bool OsXWindow::isExposed () const
+void OsXWindow::bind()
 {
-    return windowExposed;
+    if(!getRenderContext().expired())
+    {
+        getRenderContext().bind();
+    }
 }
+
+void OsXWindow::bindFramebuffer()
+{
+    
+}
+
+void OsXWindow::unbind()
+{
+    if(!getRenderContext().expired())
+    {
+        getRenderContext().flush();
+        getRenderContext().unbind();
+    }
+}
+
+void OsXWindow::unbindFramebuffer()
+{
+    
+}
+
+void OsXWindow::onRenderContextChanged()
+{
+    if(!getRenderContext().expired())
+    {
+        uintptr_t* _mContext = (uintptr_t*) ((const CGLContextObj*)getRenderContext().getCustomData("CGLContext"));
+        // When RenderContext is changed, we must notifiate the CustomWindow
+        // for it to change the OpenGlCustomView.
+        NsWindowSetRenderContext(&_nsWindow, *((CGLContextObj*)_mContext));
+    }
+}
+
+// ---------------------------------------------------------------------------------------------------
 
 OsXWindowLoader::OsXWindowLoader ()
 {
@@ -109,8 +170,5 @@ ResourceLoader* OsXWindowLoader::clone() const
 
 Resource* OsXWindowLoader::load (Resource::Type type, const std::string& name, int x0, int y0, int wid, int height) const
 {
-    WindowPrivate data;
-    GCreateWindow(x0, y0, wid, height);
-    
-    return (Resource*) new OsXWindow (name, data);
+    return (Resource*) new OsXWindow (name, x0, y0, wid, height);
 }

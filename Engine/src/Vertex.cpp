@@ -8,7 +8,7 @@
 
 #include "Vertex.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 bool Vertex::operator==(const Vertex &rhs) const
 {
@@ -48,4 +48,4 @@ VertexBatch VertexBatchFromRaw(float* data, size_t sz)
     return std::move(batch);
 }
 
-GRE_END_NAMESPACE
+GreEndNamespace

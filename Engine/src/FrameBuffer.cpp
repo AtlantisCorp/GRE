@@ -8,7 +8,7 @@
 
 #include "FrameBuffer.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 FrameBufferPrivate::FrameBufferPrivate(const std::string& name)
 : Resource(name)
@@ -166,4 +166,4 @@ Resource* FrameBufferLoader::load(Resource::Type type, const std::string &name) 
     return nullptr;
 }
 
-GRE_END_NAMESPACE
+GreEndNamespace

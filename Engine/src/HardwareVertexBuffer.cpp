@@ -8,12 +8,13 @@
 
 #include "HardwareVertexBuffer.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 HardwareVertexBufferPrivate::HardwareVertexBufferPrivate()
 {
     _mAllowDuplicates = false;
     _mColorActivated  = false;
+    _mTexCoordActivated = false;
 }
 
 HardwareVertexBufferPrivate::~HardwareVertexBufferPrivate()
@@ -254,4 +255,4 @@ HardwareVertexBuffer& HardwareVertexBuffer::operator=(const HardwareVertexBuffer
 
 HardwareVertexBuffer HardwareVertexBuffer::Null = HardwareVertexBuffer();
 
-GRE_END_NAMESPACE
+GreEndNamespace

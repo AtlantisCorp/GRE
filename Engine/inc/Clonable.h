@@ -11,7 +11,7 @@
 
 #include "Version.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 /// @brief A class that defines a basic Clonable object.
 /// Clonable objects should overwrite the clone() method in order
@@ -25,5 +25,5 @@ public:
     virtual T* clone () const = 0;
 };
 
-GRE_END_NAMESPACE
+GreEndNamespace
 #endif

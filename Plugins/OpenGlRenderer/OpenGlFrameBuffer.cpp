@@ -7,132 +7,171 @@
 //
 
 #include "OpenGlFrameBuffer.h"
+#include "OpenGlRenderContext.h"
 
 typedef GreExceptionWithText OpenGlGenFrameBuffer;
 typedef GreExceptionWithText OpenGlDeleteFrameBuffer;
 typedef GreExceptionWithText OpenGlBindFrameBuffer;
 typedef GreExceptionWithText OpenGlMaxColorAttachement;
 typedef GreExceptionWithText OpenGlGreAttachementToGl;
+typedef GreExceptionWithText OpenGlNoFramebuffer;
 
 OpenGlFrameBuffer::OpenGlFrameBuffer(const std::string& name)
 : FrameBufferPrivate(name), _mfboid(0)
 {
-#if GL_ARB_framebuffer_object
-    // Collecting Maximum Properties.
-    Gl::GetIntegerv(GL_MAX_COLOR_ATTACHMENTS, &_mMaxColorAttachement);
+    // The Gl id should be generated when using the Framebuffer, in order to support
+    // multi-context id generation.
     
-#   if GL_ARB_framebuffer_no_attachements
-    Gl::GetIntegerv(GL_MAX_FRAMEBUFFER_WIDTH, &_mMaxWidth);
-    Gl::GetIntegerv(GL_MAX_FRAMEBUFFER_HEIGHT, &_mMaxHeight);
-    Gl::GetIntegerv(GL_MAX_FRAMEBUFFER_SAMPLES, &_mMaxSamples);
-#   endif
-    
-    Gl::GenFramebuffers(1, &_mfboid);
-    
-#   ifdef GreIsDebugMode
-    if(!_mfboid)
-    {
-        GreDebugPretty() << "Oh no, the OpenGlFrameBuffer object '" << name << "' could not be generated..." << std::endl;
-        throw OpenGlGenFrameBuffer(name + " (glGenFrameBuffers)");
-    }
-#   endif
-    
-#elif GL_EXT_framebuffer_object
-    // This is the other way to create Framebuffer's, using the EXT functions if the ARB's are
-    // not available.
-    
-    // Collecting Maximum Properties.
-    Gl::GetIntegerv(GL_MAX_COLOR_ATTACHMENTS_EXT, &_mMaxColorAttachement);
-    GL::GenFramebuffers(1, &_mfboid);
-    
-#   ifdef GreIsDebugMode
-    if(!_mfboid)
-    {
-        GreDebugPretty() << "Oh no, the OpenGlFrameBuffer object '" << name << "' could not be generated..." << std::endl;
-        throw OpenGlGenFrameBuffer(name + " (glGenFrameBuffersEXT)");
-    }
-#   endif
-    
-#endif // GL_ARB_framebuffer_object
+    //construct();
 }
 
 OpenGlFrameBuffer::~OpenGlFrameBuffer()
 {
-#if GL_ARB_framebuffer_object
-    if(_mfboid)
-    {
-        Gl::DeleteFramebuffers(1, &_mfboid);
-        _mfboid = 0;
-    }
-#   ifdef GreIsDebugMode
-    else
-    {
-        GreDebugPretty() << "_mfboid is not initialized but we are in debug mode. UNREACHABLE normally. ('" << getName() << "')." << std::endl;
-        throw OpenGlDeleteFrameBuffer(getName() + " (glDeleteFrameBuffers)");
-    }
-#   endif
     
-#elif GL_EXT_framebuffer_object
-    
-    if(_mfboid)
-    {
-        Gl::DeleteFramebuffers(1, &_mfboid);
-        _mfboid = 0;
-    }
-#   ifdef GreIsDebugMode
-    else
-    {
-        GreDebugPretty() << "_mfboid is not initialized but we are in debug mode. UNREACHABLE normally. ('" << getName() << "')." << std::endl;
-        throw OpenGlDeleteFrameBuffer(getName() + " (glDeleteFrameBuffersEXT)");
-    }
-#   endif
+}
 
-#endif // GL_ARB_framebuffer_object
+void OpenGlFrameBuffer::construct()
+{
+    if(glGlobalContext)
+    {
+        if(glGlobalContext->getGl().IsFunctionSupported(glGlobalContext->getGl().GenFramebuffers))
+        {
+            // Collecting Maximum Properties.
+            glGlobalContext->getGl().GetIntegerv(GL_MAX_COLOR_ATTACHMENTS, &_mMaxColorAttachement);
+            
+#ifdef GL_MAX_FRAMEBUFFER_WIDTH
+            glGlobalContext->getGl().GetIntegerv(GL_MAX_FRAMEBUFFER_WIDTH, &_mMaxWidth);
+#endif
+#ifdef GL_MAX_FRAMEBUFFER_HEIGHT
+            glGlobalContext->getGl().GetIntegerv(GL_MAX_FRAMEBUFFER_HEIGHT, &_mMaxHeight);
+#endif
+#ifdef GL_MAX_FRAMEBUFFER_SAMPLES
+            glGlobalContext->getGl().GetIntegerv(GL_MAX_FRAMEBUFFER_SAMPLES, &_mMaxSamples);
+#endif
+            
+            GLuint newfbo = 0;
+            glGlobalContext->getGl().GenFramebuffers(1, &newfbo);
+            
+#ifdef GreIsDebugMode
+            if(!_mfboid)
+            {
+                GreDebugPretty() << "Oh no, the OpenGlFrameBuffer object '" << getName() << "' could not be generated..." << std::endl;
+                throw OpenGlGenFrameBuffer(getName() + " (glGenFrameBuffers)");
+            }
+#endif
+            
+            addId(glGlobalContext->getId(), newfbo);
+        }
+        
+#ifdef GreIsDebugMode
+        else
+        {
+            GreDebugPretty() << "No Framebuffer supported in this OpenGl implementation..." << std::endl;
+            throw OpenGlNoFramebuffer(getName() + " (No Framebuffer)");
+        }
+#endif
+    }
+}
+
+void OpenGlFrameBuffer::destroy()
+{
+    if(glGlobalContext)
+    {
+        if(glGlobalContext->getGl().IsFunctionSupported(glGlobalContext->getGl().DeleteFramebuffers))
+        {
+            if(hasConstructedForContext(glGlobalContext->getId()))
+            {
+                GLuint fboid = getId(glGlobalContext->getId());
+                glGlobalContext->getGl().DeleteFramebuffers(1, &fboid);
+                removeId(glGlobalContext->getId());
+            }
+#ifdef GreIsDebugMode
+            else
+            {
+                GreDebugPretty() << "_mfboid is not initialized but we are in debug mode. UNREACHABLE normally. ('" << getName() << "')." << std::endl;
+                throw OpenGlDeleteFrameBuffer(getName() + " (glDeleteFrameBuffers)");
+            }
+#endif
+        }
+        
+#ifdef GreIsDebugMode
+        else
+        {
+            GreDebugPretty() << "No Framebuffer supported in this OpenGl implementation..." << std::endl;
+            throw OpenGlNoFramebuffer(getName() + " (No Framebuffer)");
+        }
+#endif
+    }
 }
 
 void OpenGlFrameBuffer::bind() const
 {
-#if GL_ARB_framebuffer_object
-    if(_mfboid)
+    if(glGlobalContext)
     {
-        Gl::BindFramebuffer(GL_DRAW_BUFFER, _mfboid);
-    }
-#   ifdef GreIsDebugMode
-    else
-    {
-        GreDebugPretty() << "('" << getName() << "') _mfboid is not initialized but tried to bind it anyway !" << std::endl;
-        throw OpenGlBindFrameBuffer(getName() + " (glBindFrameBuffer)");
-    }
-#   endif
-    
-#elif GL_EXT_framebuffer_object
-    
-    if(_mfboid)
-    {
-        Gl::BindFramebuffer(GL_DRAW_BUFFER, _mfboid);
-    }
-#   ifdef GreIsDebugMode
-    else
-    {
-        GreDebugPretty() << "('" << getName() << "') _mfboid is not initialized but tried to bind it anyway !" << std::endl;
-        throw OpenGlBindFrameBuffer(getName() + " (glBindFrameBufferEXT)");
-    }
-#   endif
-    
+        if(glGlobalContext->getGl().IsFunctionSupported(glGlobalContext->getGl().BindFramebuffer))
+        {
+            if(hasConstructedForContext(glGlobalContext->getId()))
+            {
+                glGlobalContext->getGl().BindFramebuffer(GL_DRAW_BUFFER, getId(glGlobalContext->getId()));
+            }
+            
+            else
+            {
+                // When binding, if not generated, we construct the Gl id and relaunch the function.
+                //construct();
+            }
+            
+        }
+        
+#ifdef GreIsDebugMode
+        else
+        {
+            GreDebugPretty() << "No Framebuffer supported in this OpenGl implementation..." << std::endl;
+            throw OpenGlNoFramebuffer(getName() + " (No Framebuffer)");
+        }
 #endif
+    }
 }
 
 void OpenGlFrameBuffer::unbind() const
 {
-    Gl::BindFramebuffer(GL_DRAW_BUFFER, 0);
+    if(glGlobalContext)
+    {
+        if(glGlobalContext->getGl().IsFunctionSupported(glGlobalContext->getGl().BindFramebuffer))
+        {
+            glGlobalContext->getGl().BindFramebuffer(GL_DRAW_BUFFER, 0);
+        }
+        
+#ifdef GreIsDebugMode
+        else
+        {
+            GreDebugPretty() << "No Framebuffer supported in this OpenGl implementation..." << std::endl;
+            throw OpenGlNoFramebuffer(getName() + " (No Framebuffer)");
+        }
+#endif
+    }
 }
 
 GLuint GreAttachementToOpenGlAttachement(FrameBufferPrivate::Attachement attachement)
 {
-#if GL_ARB_framebuffer_object
+#ifndef GL_MAX_COLOR_ATTACHMENTS
+#   ifdef GL_MAX_COLOR_ATTACHMENTS_EXT
+#       define GL_MAX_COLOR_ATTACHMENTS GL_MAX_COLOR_ATTACHMENTS_EXT
+#       define GL_DEPTH_ATTACHMENT GL_DEPTH_ATTACHMENT_EXT
+#       define GL_STENCIL_ATTACHMENT GL_STENCIL_ATTACHMENT_EXT
+#       define GL_COLOR_ATTACHMENT0 GL_COLOR_ATTACHMENT0_EXT
+#   endif
+#endif
+    
+#ifndef GL_MAX_COLOR_ATTACHMENTS
+#   ifdef GreIsDebugMode
+    throw OpenGlNoFramebuffer("GreAttachementToOpenGlAttachement");
+#   endif
+    return 0;
+#endif
     
     GLint glMaxColorAttachement;
-    Gl::GetIntegerv(GL_MAX_COLOR_ATTACHMENTS, &glMaxColorAttachement);
+    glGlobalContext->getGl().GetIntegerv(GL_MAX_COLOR_ATTACHMENTS, &glMaxColorAttachement);
     
     if(attachement == FrameBufferPrivate::Attachement::Depth)
         return GL_DEPTH_ATTACHMENT;
@@ -144,37 +183,12 @@ GLuint GreAttachementToOpenGlAttachement(FrameBufferPrivate::Attachement attache
        (uint32_t) attachement < glMaxColorAttachement)
         return GL_COLOR_ATTACHMENT0 + (uint32_t) attachement;
     
-#   ifdef GreIsDebugMode
+#ifdef GreIsDebugMode
     if((uint32_t) attachement >= glMaxColorAttachement)
     {
         GreDebugPretty() << "Sorry, Color attachement " << (uint32_t) attachement << " not present on this Machine." << std::endl;
         throw OpenGlMaxColorAttachement(std::string("Max Color Attachement reached (") + std::to_string(glMaxColorAttachement) + ").");
     }
-#   endif
-    
-#elif GL_EXT_framebuffer_object
-    
-    GLint glMaxColorAttachement;
-    Gl::GetIntegerv(GL_MAX_COLOR_ATTACHMENTS_EXT, &glMaxColorAttachement);
-    
-    if(attachement == FrameBufferPrivate::Attachement::Depth)
-        return GL_DEPTH_ATTACHMENT_EXT;
-    if(attachement == FrameBufferPrivate::Attachement::Stencil)
-        return GL_STENCIL_ATTACHMENT_EXT;
-    
-    if(attachement < FrameBufferPrivate::Attachement::Depth &&
-       (uint32_t) attachement > 0 &&
-       (uint32_t) attachement < glMaxColorAttachement)
-        return GL_COLOR_ATTACHMENT0_EXT + (uint32_t) attachement;
-    
-#   ifdef GreIsDebugMode
-    if((uint32_t) attachement >= glMaxColorAttachement)
-    {
-        GreDebugPretty() << "Sorry, Color attachement " << (uint32_t) attachement << " not present on this Machine." << std::endl;
-        throw OpenGlMaxColorAttachement(std::string("Max Color Attachement reached (") + std::to_string(glMaxColorAttachement) + ").");
-    }
-#   endif
-    
 #endif
     
     return 0;
@@ -182,25 +196,51 @@ GLuint GreAttachementToOpenGlAttachement(FrameBufferPrivate::Attachement attache
 
 void OpenGlFrameBuffer::attachTexture(FrameBufferPrivate::Attachement attachement, const Texture &texture)
 {
-    GLuint glAttach = GreAttachementToOpenGlAttachement(attachement);
+    if(glGlobalContext->getGl().IsFunctionSupported(glGlobalContext->getGl().FramebufferTexture))
+    {
+        GLuint glAttach = GreAttachementToOpenGlAttachement(attachement);
 #ifdef GreIsDebugMode
-    if(glAttach == 0)
-    {
-        GreDebugPretty() << "Sorry, bad attachement given : " << (uint32_t) attachement << "." << std::endl;
-        throw OpenGlGreAttachementToGl(getName() + " (GreAttachementToOpenGlAttachement)");
-    }
+        if(glAttach == 0)
+        {
+            GreDebugPretty() << "Sorry, bad attachement given : " << (uint32_t) attachement << "." << std::endl;
+            throw OpenGlGreAttachementToGl(getName() + " (GreAttachementToOpenGlAttachement)");
+        }
 #endif
-    
-    if(_mfboid)
-    {
-        Gl::BindFramebuffer(GL_DRAW_BUFFER, _mfboid);
-        Gl::FramebufferTexture(GL_DRAW_BUFFER, glAttach,*((GLuint*) texture.getCustomData("OpenGlId")), 0);
+        
+        if(_mfboid)
+        {
+#ifndef GreIsDebugMode
+            glGlobalContext->getGl().BindFramebuffer(GL_DRAW_BUFFER, _mfboid);
+            glGlobalContext->getGl().FramebufferTexture(GL_DRAW_BUFFER, glAttach, *((GLuint*) texture.getCustomData("OpenGlId")), 0);
+#else
+            GLuint glTextureId = *((GLuint*) texture.getCustomData("OpenGlId"));
+            if(glTextureId == 0)
+            {
+                GreDebugPretty() << "('" << getName() << "') glTextureId is invalid !" << std::endl;
+                throw OpenGlBindFrameBuffer(getName() + " (glFrameBufferTexture)");
+            }
+            
+            else
+            {
+                glGlobalContext->getGl().BindFramebuffer(GL_DRAW_BUFFER, _mfboid);
+                glGlobalContext->getGl().FramebufferTexture(GL_DRAW_BUFFER, glAttach, glTextureId, 0);
+            }
+#endif
+        }
+#ifdef GreIsDebugMode
+        else
+        {
+            GreDebugPretty() << "('" << getName() << "') _mfboid is not initialized but tried to bind it anyway !" << std::endl;
+            throw OpenGlBindFrameBuffer(getName() + " (glFrameBufferTexture)");
+        }
+#endif
     }
+    
 #ifdef GreIsDebugMode
     else
     {
-        GreDebugPretty() << "('" << getName() << "') _mfboid is not initialized but tried to bind it anyway !" << std::endl;
-        throw OpenGlBindFrameBuffer(getName() + " (glFrameBufferTexture)");
+        GreDebugPretty() << "No Framebuffer supported in this OpenGl implementation..." << std::endl;
+        throw OpenGlNoFramebuffer(getName() + " (No Framebuffer)");
     }
 #endif
 }

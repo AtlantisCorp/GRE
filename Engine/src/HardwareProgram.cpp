@@ -8,7 +8,7 @@
 
 #include "HardwareProgram.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 HardwareProgramPrivate::HardwareProgramPrivate(const std::string& name, const HardwareShader& vertexShader, const HardwareShader& fragmentShader)
 : Resource(name), _mVertexShader(vertexShader), _mFragmentShader(fragmentShader)
@@ -167,4 +167,4 @@ int HardwareProgram::getAttribLocation(const std::string& name) const
 
 HardwareProgram HardwareProgram::Null = HardwareProgram();
 
-GRE_END_NAMESPACE
+GreEndNamespace

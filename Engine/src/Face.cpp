@@ -8,7 +8,7 @@
 
 #include "Face.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 IndexedFaceBatch IndexedFaceBatchFromRaw(unsigned* indices, unsigned facenum, unsigned faceelem)
 {
@@ -43,4 +43,4 @@ MaterialIndexedFace::~MaterialIndexedFace()
     
 }
 
-GRE_END_NAMESPACE
+GreEndNamespace

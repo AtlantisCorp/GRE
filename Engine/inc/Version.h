@@ -39,14 +39,21 @@
 #    endif
 #endif
 
-#define GRE_BEGIN_NAMESPACE namespace Gre {
-#define GRE_END_NAMESPACE   }
+#define GreBeginNamespace namespace Gre {
+#define GreEndNamespace   }
 
 /// @brief Defines if Gre is in Debug mode.
 /// Debug mode enables many warnings, that slows the engine. You should
 /// always undef it (comment this line) when you are developping in Release
 /// mode.
 #define GreIsDebugMode
+
+/// @brief If enabled, use of Extra Macros to define Class attributes are
+/// allowed.
+#define GreExtraMacros
+
+/// @brief Defines this Macro if you do not want any deprecated features.
+// #define GreWithoutDeprecatedFunctions
 
 // Platforms headers
 
@@ -60,28 +67,30 @@
 #   include <chrono>
 #   include <exception>
 #   include <queue>
+#   include <deque>
+#   include <thread>
 
 #if defined _WIN32
 //  Windows 32 bits
-#   define GRE_WINDOWS
-#   define GRE_32BITS
+#   define GrePlatformWindows
+#   define GrePlatformBits32
 #
 #   include <Windows.h>
 #
 #elif defined _WIN64
 //  Windows 64 bits
-#   define GRE_WINDOWS
-#   define GRE_64BITS
+#   define GrePlatformWindows
+#   define GrePlatformBits64
 #
 #   include <Windows.h>
 #
 #elif defined __APPLE__ 
 //  Mac Os X
-#   define GRE_OSX
+#   define GrePlatformDarwin
 #   if defined __GNUC__ && defined __x86_64__
-#       define GRE_64BITS
+#       define GrePlatformBits64
 #   else   
-#       define GRE_32BITS
+#       define GrePlatformBits32
 #   endif
 #
 #   include <unistd.h>
@@ -90,11 +99,11 @@
 #
 #else
 //  Assume Unix platform
-#   define GRE_UNIX
+#   define GrePlatformUnix
 #   if defined __GNUC__ && defined __x86_64__
-#       define GRE_64BITS
+#       define GrePlatformBits64
 #   else
-#       define GRE_32BITS
+#       define GrePlatformBits32
 #   endif
 #
 #   include <unistd.h>
@@ -111,13 +120,13 @@
 // This file is here to includes some third-party code help.
 #include "ThirdParty.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 // Version Profiles
 
-#define GRE_VERSION_MAJOR 0             ///< @brief GRE Major version.
-#define GRE_VERSION_MINOR 0             ///< @brief GRE Minor version.
-#define GRE_VERSION_BUILD 14            ///< @brief GRE Build number.
+#define GreVersionMajor 0             ///< @brief GRE Major version.
+#define GreVersionMinor 0             ///< @brief GRE Minor version.
+#define GreVersionBuild 15            ///< @brief GRE Build number.
 
 /// @brief Defines the Version structure.
 typedef struct Version
@@ -127,7 +136,7 @@ typedef struct Version
     unsigned build;
 } Version;
 
-#define localVersion (Version({ GRE_VERSION_MAJOR , GRE_VERSION_MINOR , GRE_VERSION_BUILD }))
+#define localVersion (Version({ GreVersionMajor , GreVersionMinor , GreVersionBuild }))
 DLL_PUBLIC Version GetLibVersion ();
 
 /// @brief Debug using an intro (should use __COMPACT_PRETTY_FUNCTION__ macro) and the body message.
@@ -168,6 +177,31 @@ enum class StorageType
     UnsignedInt     = 0x03
 };
 
+//////////////////////////////////////////////////////////////////////
+/// @brief Briefly describes a surface with Top, Left, Width, and
+/// Height.
+//////////////////////////////////////////////////////////////////////
+typedef struct
+{
+    int top;
+    int left;
+    int width;
+    int height;
+    
+} Surface;
+
+//////////////////////////////////////////////////////////////////////
+/// @brief Describe when the ResourceManager should stop the Main Loop.
+//////////////////////////////////////////////////////////////////////
+enum class CloseBehaviour
+{
+    /// @brief Close only when user decides it.
+    Manual,
+    
+    /// @brief Closes when every Window has closed.
+    AllWindowClosed
+};
+
 typedef std::exception GreException;
 
 class GreExceptionWithText : public GreException
@@ -186,6 +220,7 @@ private:
 
 typedef GreExceptionWithText GreUnsupportedOperation;
 
+typedef std::vector<std::string> StringList;
 typedef glm::vec2 Vector2;
 typedef glm::vec3 Vector3;
 typedef glm::vec4 Vector4;
@@ -198,6 +233,11 @@ public:
     static Matrix4 Identity;
 };
 
+/// @brief Prints a numeroted list in a string.
+std::string DebugListNumeroted(const StringList& list);
 
-GRE_END_NAMESPACE
+/// @brief Gets a number inserted by the user using std::cin.
+int DebugGetNumber();
+
+GreEndNamespace
 #endif

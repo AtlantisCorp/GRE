@@ -13,7 +13,7 @@
 #include "HardwareProgram.h"
 #include "Resource.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 //////////////////////////////////////////////////////////////////////
 /// @brief A Manager to collect and organize every HardwareProgram
@@ -143,6 +143,6 @@ public:
 
 typedef ResourceLoaderFactory<HardwareProgramManagerLoader> HardwareProgramManagerLoaderFactory;
 
-GRE_END_NAMESPACE
+GreEndNamespace
 
 #endif

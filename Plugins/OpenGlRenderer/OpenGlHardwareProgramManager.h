@@ -13,7 +13,7 @@
 
 #include "HardwareProgramManager.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 class OpenGlHardwareProgramManager : public HardwareProgramManagerPrivate
 {
@@ -58,6 +58,6 @@ public:
     
 };
 
-GRE_END_NAMESPACE
+GreEndNamespace
 
 #endif

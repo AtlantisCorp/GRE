@@ -11,7 +11,7 @@
 
 #include "Resource.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 /// @brief A Generic Loader for files.
 /// It determines the function to load files.
@@ -33,6 +33,6 @@ public:
 
 typedef ResourceLoaderFactory<FileLoader> FileLoaderFactory;
 
-GRE_END_NAMESPACE
+GreEndNamespace
 
 #endif

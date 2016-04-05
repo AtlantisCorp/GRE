@@ -8,7 +8,7 @@
 
 #include "HardwareIndexBuffer.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 HardwareIndexBufferPrivate::HardwareIndexBufferPrivate()
 : _mPrimitiveType(PrimitiveType::Triangles), _mStorageType(StorageType::UnsignedInt)
@@ -83,6 +83,8 @@ size_t HardwareIndexBufferPrivate::getElementCount() const
 {
     return 0;
 }
+
+// ---------------------------------------------------------------------------------------------------
 
 HardwareIndexBuffer::HardwareIndexBuffer()
 : _mBuffer()
@@ -246,6 +248,6 @@ size_t HardwareIndexBuffer::getElementCount() const
 
 HardwareIndexBuffer HardwareIndexBuffer::Null = HardwareIndexBuffer();
 
-GRE_END_NAMESPACE
+GreEndNamespace
 
 

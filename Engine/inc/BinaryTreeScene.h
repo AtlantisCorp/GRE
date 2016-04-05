@@ -12,7 +12,7 @@
 #include "Scene.h"
 #include "Node.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 class DLL_PUBLIC BinaryTreeNodePrivate : public NodePrivate
 {
@@ -218,6 +218,6 @@ public:
     ResourceLoader* clone() const;
 };
 
-GRE_END_NAMESPACE
+GreEndNamespace
 
 #endif

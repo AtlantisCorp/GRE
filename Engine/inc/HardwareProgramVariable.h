@@ -11,7 +11,7 @@
 
 #include "Pools.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 enum class VariableType
 {
@@ -73,6 +73,6 @@ protected:
     };
 };
 
-GRE_END_NAMESPACE
+GreEndNamespace
 
 #endif

@@ -12,7 +12,7 @@
 #include "OpenGlIncludes.h"
 #include "HardwareProgramVariable.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 class OpenGlHardwareVariable : public HardwareProgramVariable
 {
@@ -33,6 +33,6 @@ public:
     GLint _mCachedAttribLoc;
 };
 
-GRE_END_NAMESPACE
+GreEndNamespace
 
 #endif

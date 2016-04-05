@@ -60,7 +60,7 @@ static const char *dlerror(void)
 
 #endif
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 typedef void  (*PluginStartFunction)   (void);
 typedef void  (*PluginStopFunction)    (void);
@@ -180,6 +180,6 @@ public:
     ResourceLoader* clone() const;
 };
 
-GRE_END_NAMESPACE
+GreEndNamespace
 
 #endif

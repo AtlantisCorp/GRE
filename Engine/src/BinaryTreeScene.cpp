@@ -8,7 +8,7 @@
 
 #include "BinaryTreeScene.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 BinaryTreeNodePrivate::BinaryTreeNodePrivate(const std::string& name)
 : NodePrivate(name), _mMesh(Mesh::Null), _mCamera(Camera::Null), _mScene(), _mNodeParent(), _mNodeLeft(), _mNodeRight()
@@ -353,4 +353,4 @@ ResourceLoader* BinaryTreeSceneLoader::clone() const
     return (ResourceLoader*) new BinaryTreeSceneLoader;
 }
 
-GRE_END_NAMESPACE
+GreEndNamespace

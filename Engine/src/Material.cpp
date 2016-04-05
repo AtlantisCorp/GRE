@@ -8,7 +8,7 @@
 
 #include "Material.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 Material Material::Null = Material();
 
@@ -36,4 +36,4 @@ bool Material::hasTexture() const
     return !texture.expired();
 }
 
-GRE_END_NAMESPACE
+GreEndNamespace

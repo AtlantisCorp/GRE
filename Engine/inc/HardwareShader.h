@@ -12,7 +12,7 @@
 #include "Pools.h"
 #include "Resource.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 //////////////////////////////////////////////////////////////////////
 /// @brief Defines the Shader type that can be constructed.
@@ -109,6 +109,6 @@ public:
 
 typedef ResourceLoaderFactory<HardwareShaderLoader> HardwareShaderLoaderFactory;
 
-GRE_END_NAMESPACE
+GreEndNamespace
 
 #endif

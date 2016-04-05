@@ -12,7 +12,7 @@
 #include "Color.h"
 #include "Texture.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 enum class FaceType
 {
@@ -47,6 +47,6 @@ public:
     
 };
 
-GRE_END_NAMESPACE
+GreEndNamespace
 
 #endif

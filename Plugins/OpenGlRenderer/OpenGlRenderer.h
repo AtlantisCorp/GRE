@@ -13,6 +13,7 @@
 #include "OpenGlVertexBuffer.h"
 #include "OpenGlIndexBuffer.h"
 #include "OpenGlTexture.h"
+#include "OpenGlRenderContext.h"
 
 class OpenGlRenderer : public RendererResource
 {
@@ -24,10 +25,6 @@ public:
     bool hasExtension(const std::string& ext) const;
     void setClearColor (const Color& color);
     void setClearDepth (float depth);
-    
-protected:
-    void _preRender();
-    void _postRender();
     
 public:
     
@@ -45,7 +42,6 @@ public:
     
     void prepareMaterial(const Material& mat);
     void prepare(const Camera& camera);
-    void renderExample ();
     
     HardwareVertexBuffer createVertexBuffer();
     HardwareIndexBuffer createIndexBuffer(PrimitiveType ptype, StorageType stype);
@@ -82,18 +78,59 @@ public:
     //////////////////////////////////////////////////////////////////////
     Texture createTexture(const std::string& name) const;
     
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Creates a RenderContext using given Info.
+    /// The RendererResource should keep a copy of this RenderContext, in
+    /// order to destroy it.
+    //////////////////////////////////////////////////////////////////////
+    RenderContext createRenderContext(const std::string& name, const RenderContextInfo& info, Renderer caller);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Notifiates the Renderer that the RenderContext currently
+    /// binded has changed.
+    ///
+    /// This method is called by RenderContext::bind() and renderCtxt points
+    /// to the RenderContextPrivate* structure currently binded, or this
+    /// method is called by RenderContext::unbind() and renderCtxt is null.
+    ///
+    /// You should use this method to proceed to Context internal resource
+    /// changes.
+    //////////////////////////////////////////////////////////////////////
+    virtual void onCurrentContextChanged(RenderContextPrivate* renderCtxt);
+    
+protected:
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the RenderContext object that points to the given
+    /// RenderContextPrivate object.
+    //////////////////////////////////////////////////////////////////////
+    RenderContext findRenderContextFromPrivate(RenderContextPrivate* renderCtxtPriv);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Pre-render the Current Scene.
+    //////////////////////////////////////////////////////////////////////
+    virtual void _preRenderCurrentScene();
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Render the Currently active Scene.
+    //////////////////////////////////////////////////////////////////////
+    virtual void _renderCurrentScene();
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Post-render the Current Scene.
+    //////////////////////////////////////////////////////////////////////
+    virtual void _postRenderCurrentScene();
+    
 private:
     
     GLfloat _mClearColor [4];
     GLfloat _mClearDepth;
     
-    bool _suportVbo;
-    
     /// @brief Global Vertex Array Object used by the Engine.
     GLuint _mVao;
     
-    void setGlVersion();
-    void initExtensions();
+    /// @brief Holds every RenderContext, by name.
+    std::map<std::string, std::shared_ptr<OpenGlRenderContext> > _mRenderContextsByName;
 };
 
 #endif

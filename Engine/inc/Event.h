@@ -13,7 +13,7 @@
 #include "Pools.h"
 #include "Key.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 /// @brief Determines an Event Type.
 /// Also list every events available in the Engine.
@@ -21,7 +21,10 @@ enum class EventType
 {
     KeyDown,
     KeyUp,
-    Update
+    Update,
+    
+    /// @brief Window has been resized.
+    WindowSized
 };
 
 /// @brief Defines a basic event.
@@ -93,5 +96,20 @@ public:
     UpdateClock elapsedTime;
 };
 
-GRE_END_NAMESPACE
+//////////////////////////////////////////////////////////////////////
+/// @brief An event sent by a Window when it has been resized.
+//////////////////////////////////////////////////////////////////////
+class WindowSizedEvent : public Event
+{
+public:
+    
+    POOLED(Pools::Event)
+    
+    WindowSizedEvent();
+    ~WindowSizedEvent();
+    
+    Surface surface;
+};
+
+GreEndNamespace
 #endif

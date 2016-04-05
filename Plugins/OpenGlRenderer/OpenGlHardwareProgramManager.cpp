@@ -9,7 +9,7 @@
 #include "OpenGlHardwareProgramManager.h"
 #include "OpenGlHardwareProgram.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 OpenGlHardwareProgramManager::OpenGlHardwareProgramManager(const std::string& name)
 : HardwareProgramManagerPrivate(name)
@@ -30,7 +30,7 @@ std::string GetShaderFileText(const std::string& filepath)
     }
     
     filestream.seekg(0, filestream.end);
-    int sz = filestream.tellg();
+    int sz = (int) filestream.tellg();
     filestream.seekg(0, filestream.beg);
     
     if(sz > 0)
@@ -119,4 +119,4 @@ Resource* OpenGlHardwareProgramManagerLoader::load(Resource::Type type, const st
     return new OpenGlHardwareProgramManager(name);
 }
 
-GRE_END_NAMESPACE
+GreEndNamespace

@@ -15,7 +15,7 @@
 #include "FileLoader.h"
 #include "Pixel.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 
 
@@ -71,6 +71,7 @@ public:
     
     ~Image();
     
+    Image& operator = (const Image& rhs);
     Image& operator = (const ResourceUser& rhs);
     
     bool isEmpty() const;
@@ -117,6 +118,6 @@ public:
     ImageLoader* findBestLoader(const std::string& name) const;
 };
 
-GRE_END_NAMESPACE
+GreEndNamespace
 
 #endif

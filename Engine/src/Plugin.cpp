@@ -8,7 +8,7 @@
 
 #include "Plugin.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 PluginResource::PluginResource (const std::string& name, const std::string& file)
 : Resource(name), _file (file)
@@ -185,4 +185,4 @@ ResourceLoader* PluginLoader::clone() const
     return new PluginLoader();
 }
 
-GRE_END_NAMESPACE
+GreEndNamespace

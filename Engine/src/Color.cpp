@@ -8,7 +8,7 @@
 
 #include "Color.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 
-GRE_END_NAMESPACE
+GreEndNamespace

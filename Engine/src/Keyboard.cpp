@@ -8,37 +8,17 @@
 
 #include "Keyboard.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 KeyboardPrivate::KeyboardPrivate(const std::string& name)
-: ListenerPrivate(name)
+: Resource(name)
 {
-    
+    setShouldTransmitEvents(true);
 }
 
 KeyboardPrivate::~KeyboardPrivate()
 {
     
-}
-
-void KeyboardPrivate::onEvent(const Event &e)
-{
-    if(e.getType() == EventType::KeyDown)
-    {
-        const KeyDownEvent& kde = e.to<KeyDownEvent>();
-        _keyDown[kde.key] = true;
-    }
-    
-    else if(e.getType() == EventType::KeyUp)
-    {
-        const KeyUpEvent& kue = e.to<KeyUpEvent>();
-        _keyDown[kue.key] = false;
-    }
-    
-    if(e.getType() == EventType::KeyDown || e.getType() == EventType::KeyUp || e.getType() == EventType::Update)
-        sendEvent(e);
-    
-    ListenerPrivate::onEvent(e);
 }
 
 bool KeyboardPrivate::isKeyDown(Key k) const
@@ -48,22 +28,65 @@ bool KeyboardPrivate::isKeyDown(Key k) const
     return false;
 }
 
-Keyboard::Keyboard(const std::string& name)
-: Listener(new KeyboardPrivate(name))
+void KeyboardPrivate::onKeyUpEvent(const Gre::KeyUpEvent &e)
+{
+    _keyDown[e.key] = false;
+}
+
+void KeyboardPrivate::onKeyDownEvent(const Gre::KeyDownEvent &e)
+{
+    _keyDown[e.key] = true;
+}
+
+// ---------------------------------------------------------------------------------------------------
+
+Keyboard::Keyboard()
+: ResourceUser(), _kbd()
 {
     
 }
 
 Keyboard::Keyboard(const Keyboard& rhs)
-: Listener(rhs)
+: ResourceUser(rhs), _kbd(rhs._kbd)
 {
     
 }
 
-Keyboard::Keyboard(ListenerPrivate* rhs)
-: Listener(rhs)
+Keyboard::Keyboard(Keyboard&& rhs)
+: ResourceUser(rhs), _kbd(std::move(rhs._kbd))
 {
     
+}
+
+Keyboard::Keyboard(const ResourceUser& rhs)
+: ResourceUser(rhs), _kbd(std::dynamic_pointer_cast<KeyboardPrivate>(rhs.lock()))
+{
+    
+}
+
+Keyboard& Keyboard::operator=(const Keyboard &rhs)
+{
+    ResourceUser::operator=(rhs);
+    _kbd = rhs._kbd;
+    return *this;
+}
+
+bool Keyboard::operator==(const Gre::Keyboard &rhs) const
+{
+    return _kbd.lock() == rhs._kbd.lock();
+}
+
+bool Keyboard::operator!=(const Gre::Keyboard &rhs) const
+{
+    return !(*this == rhs);
+}
+
+bool Keyboard::isKeyDown(Key k) const
+{
+    auto ptr = _kbd.lock();
+    if(ptr)
+        return ptr->isKeyDown(k);
+    return false;
 }
 
 Keyboard::~Keyboard()
@@ -71,22 +94,34 @@ Keyboard::~Keyboard()
     
 }
 
-Keyboard::operator Emitter &()
+// ---------------------------------------------------------------------------------------------------
+
+KeyboardLoader::KeyboardLoader()
 {
-    return *(dynamic_cast<Emitter*>(_mListener.get()));
+    
 }
 
-Keyboard::operator const Emitter &() const
+KeyboardLoader::~KeyboardLoader()
 {
-    return *(dynamic_cast<const Emitter*>(_mListener.get()));
+    
 }
 
-bool Keyboard::isKeyDown(Key k) const
+bool KeyboardLoader::isTypeSupported(Resource::Type type) const
 {
-    auto ptr = std::dynamic_pointer_cast<KeyboardPrivate>(_mListener);
-    if(ptr)
-        return ptr->isKeyDown(k);
-    return false;
+    return type == Resource::Type::Keyboard;
 }
 
-GRE_END_NAMESPACE
+Resource* KeyboardLoader::load(Resource::Type type, const std::string &name) const
+{
+    if(isTypeSupported(type))
+    {
+        return new KeyboardPrivate(name);
+    }
+    
+    else
+    {
+        return nullptr;
+    }
+}
+
+GreEndNamespace

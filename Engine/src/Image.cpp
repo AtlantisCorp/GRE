@@ -8,7 +8,7 @@
 
 #include "Image.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 ImageResource::ImageResource(const std::string& name)
 : Resource(name), _pixelBatch()
@@ -56,6 +56,8 @@ void ImageResource::unloadCache()
     }
 }
 
+// ---------------------------------------------------------------------------------------------------
+
 Image::Image()
 : ResourceUser(), _mImage()
 {
@@ -83,6 +85,12 @@ Image::Image(const ResourceUser& rhs)
 Image::~Image()
 {
     
+}
+
+Image& Image::operator=(const Image& rhs)
+{
+    _mImage = rhs._mImage;
+    return *this;
 }
 
 Image& Image::operator=(const ResourceUser &rhs)
@@ -182,4 +190,4 @@ ImageLoader* ImageLoaderFactory::findBestLoader(const std::string &name) const
 PixelBatch PixelBatch::Empty = PixelBatch();
 Image Image::Null = Image();
 
-GRE_END_NAMESPACE
+GreEndNamespace

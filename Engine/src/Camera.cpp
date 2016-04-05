@@ -11,13 +11,13 @@
 #include "Camera.h"
 #include <glm/gtc/matrix_transform.hpp>
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 static const float MaxVerticalAngle = 85.0f; //must be less than 90 to avoid gimbal lock
 static const Vector3 Zero = Vector3(0,0,0);
 
 CameraPrivate::CameraPrivate(const std::string& name)
-: ListenerPrivate(name), _position(0.0f, 0.0f, 1.0f), _horizontalAngle(0.0f), _verticalAngle(0.0f), _fieldOfView(50.0f), _nearPlane(0.01f), _farPlane(100.0f), _viewportAspectRatio(4.0f/3.0f), _moveSpeed(1.0f)
+: Resource(name), _position(0.0f, 0.0f, 1.0f), _horizontalAngle(0.0f), _verticalAngle(0.0f), _fieldOfView(50.0f), _nearPlane(0.01f), _farPlane(100.0f), _viewportAspectRatio(4.0f/3.0f), _moveSpeed(1.0f)
 {
     
 }
@@ -164,6 +164,8 @@ void CameraPrivate::onEvent(const Event &e)
             offsetPosition(right() * etime * _moveSpeed);
         }
     }
+    
+    Resource::onEvent(e);
 }
 
 void CameraPrivate::setKeyboardListened(Gre::Keyboard &keyboard)
@@ -181,28 +183,41 @@ void CameraPrivate::setMoveSpeed(float speed)
     _moveSpeed = speed;
 }
 
+// ---------------------------------------------------------------------------------------------------
+
 Camera::Camera()
-: Listener(), _camera()
+: ResourceUser(), _camera()
 {
     
 }
 
-Camera::Camera(const std::string& name)
-: Listener(new CameraPrivate(name)), _camera()
-{
-    _camera = std::dynamic_pointer_cast<CameraPrivate>(_mListener);
-}
-
 Camera::Camera(const Camera& rhs)
-: Listener(rhs)
+: ResourceUser(rhs), _camera(rhs._camera)
 {
-    _camera = std::dynamic_pointer_cast<CameraPrivate>(_mListener);
+    
 }
 
-Camera::Camera(ListenerPrivate* rhs)
-: Listener(rhs)
+Camera::Camera(const ResourceUser& rhs)
+: ResourceUser(rhs), _camera(std::dynamic_pointer_cast<CameraPrivate>(rhs.lock()))
 {
-    _camera = std::dynamic_pointer_cast<CameraPrivate>(_mListener);
+    
+}
+
+Camera& Camera::operator=(const Camera& rhs)
+{
+    ResourceUser::operator=(rhs);
+    _camera = rhs._camera;
+    return *this;
+}
+
+bool Camera::operator==(const Camera& rhs) const
+{
+    return _camera.lock() == rhs._camera.lock();
+}
+
+bool Camera::operator!=(const Gre::Camera &rhs) const
+{
+    return !(*this == rhs);
 }
 
 Camera::~Camera()
@@ -212,7 +227,7 @@ Camera::~Camera()
 
 void Camera::listen(Keyboard& keyboard)
 {
-    Listener::listen(keyboard);
+    ResourceUser::listen(keyboard);
     auto ptr = _camera.lock();
     if(ptr)
         ptr->setKeyboardListened(keyboard);
@@ -378,6 +393,16 @@ void Camera::setMoveSpeed(float speed)
         ptr->setMoveSpeed(speed);
 }
 
+Camera Camera::Create(const std::string &name)
+{
+    std::shared_ptr<CameraPrivate> base(std::make_shared<CameraPrivate>(name));
+    GreDebugPretty() << base.use_count() << std::endl;
+    Camera test = Camera(ResourceUser(base, true));
+    GreDebugPretty() << base.use_count() << std::endl;
+    
+    return test;
+}
+
 Camera Camera::Null = Camera();
 
-GRE_END_NAMESPACE
+GreEndNamespace

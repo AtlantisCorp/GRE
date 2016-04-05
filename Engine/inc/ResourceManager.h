@@ -17,8 +17,9 @@
 #include "MeshLoader.h"
 #include "Scene.h"
 #include "FrameBuffer.h"
+#include "LoopBehaviours.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 ////////////////////////////////////////////////////////////////////////
 /// @class ResourceManager
@@ -86,7 +87,24 @@ private:
     HardwareProgramManagerLoaderFactory             _progManLoaders;  ///< @brief Creates HardwareProgramManagerLoader objects.
     FrameBufferLoaderFactory                        _fboLoaders;      ///< @brief Creates FrameBufferLoader objects.
     NameGenerator                                   _nameGenerator;   ///< @brief Utility class to create Names.
+    KeyboardLoader                                  _keyboardLoader;  ///< @brief A simple Keyboard Loader.
+    
     bool                                            _verbose;         ///< @brief Set to true to print more informations.
+    
+    /// @brief Determines when the ResourceManager should stop the Loop.
+    CloseBehaviour _mCloseBehaviour;
+    
+    /// @brief Holds LoopBehaviour's functions.
+    LoopBehaviours _mLoopBehaviours;
+    
+    /// @brief Holds LoopBehaviour's functions for PerWindow loop.
+    LoopBehaviours _mPerWindowBehaviours;
+    
+    /// @brief A property that take effect only when the Loop has started.
+    /// When the Loop starts, this property is set to false. When the User
+    /// or any other events calls ResourceManager::stop(), this property is
+    /// set to true.
+    bool _mMustStopLoop;
     
 public:
     
@@ -142,11 +160,11 @@ public:
     {
         std::shared_ptr<Resource> resptr(loader.load(type, name, std::forward<Args>(args)...));
         if(resptr) {
+            resptr->_type = type;
             _resourcesbytype[type].push_back(resptr);
             _resourcesbyname[name] = resptr;
             GreDebugPretty() << " Loaded Resource " << name << "." << std::endl;
         }
-        
         return std::move(ResourceUser(_resourcesbyname[name]));
     }
     
@@ -162,6 +180,7 @@ public:
     {
         std::shared_ptr<Resource> resptr(loader->load(type, name, std::forward<Args>(args)...));
         if(resptr) {
+            resptr->_type = type;
             _resourcesbytype[type].push_back(resptr);
             _resourcesbyname[name] = resptr;
             GreDebugPretty() << "Loaded Resource " << name << "." << std::endl;
@@ -207,6 +226,8 @@ public:
     HardwareProgramManagerLoaderFactory& getHardwareProgramManagerLoaderFactory();
     /// @brief Returns the FrameBufferLoader Factory.
     FrameBufferLoaderFactory& getFrameBufferLoaderFactory();
+    /// @brief Returns the Keyboard Loader.
+    KeyboardLoader& getKeyboardLoader();
     
     /// @brief Set to true if you want verbose mode.
     void setVerbose(bool flag);
@@ -218,7 +239,82 @@ public:
     ///
     /// @note The directory must be different from the Working Directory.
     int loadPluginsIn(const std::string& dirname);
+    
+    ////////////////////////////////////////////////////////////////////////
+    /// @brief Set the CloseBehaviour.
+    ////////////////////////////////////////////////////////////////////////
+    void setCloseBehaviour(const CloseBehaviour& behaviour);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Adds a loop behaviour function.
+    //////////////////////////////////////////////////////////////////////
+    void addLoopBehaviour(LoopBehaviour behaviour);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Erases every Loop Behaviours.
+    //////////////////////////////////////////////////////////////////////
+    void clearLoopBehaviour();
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Stops the current loop processing.
+    /// This is done by simply setting the property _mMustStopLoop to true.
+    //////////////////////////////////////////////////////////////////////
+    void stop();
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Updates the Window objects. 
+    //////////////////////////////////////////////////////////////////////
+    void loop();
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Creates a Resource that should be used only for Event handling/
+    /// sending.
+    //////////////////////////////////////////////////////////////////////
+    ResourceUser createPureListener(const std::string& name);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Creates a simple Keyboard Resource.
+    //////////////////////////////////////////////////////////////////////
+    Keyboard createKeyboard(const std::string& name);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Unites some Utilities function to help the user do some
+    /// basics things.
+    //////////////////////////////////////////////////////////////////////
+    class DLL_PUBLIC Helper
+    {
+    public:
+        
+        //////////////////////////////////////////////////////////////////////
+        /// @brief Let the final user choose a RendererLoader using Console
+        /// prompting.
+        ///
+        /// It returns the name of the Chosen Renderer.
+        //////////////////////////////////////////////////////////////////////
+        static std::string ChooseRenderer(RendererLoaderFactory& rFactory);
+        
+        //////////////////////////////////////////////////////////////////////
+        /// @brief Load a Renderer object using Renderer Name, Loader Name
+        /// and the RendererLoaderFactory.
+        //////////////////////////////////////////////////////////////////////
+        static Renderer LoadRenderer(const std::string& rname, const std::string& lname, RendererLoaderFactory& rFactory);
+        
+        //////////////////////////////////////////////////////////////////////
+        /// @brief Let the final user choose a WindowLoader using Console
+        /// prompting.
+        ///
+        /// It returns the name of the Chosen Window.
+        //////////////////////////////////////////////////////////////////////
+        static std::string ChooseWindowLoader(WindowLoaderFactory& wFactory);
+        
+        //////////////////////////////////////////////////////////////////////
+        /// @brief Load a Window Object using its Name, Loader Name, Window
+        /// Loader Factory, and a Surface that corresponds to the future size
+        /// of the Window.
+        //////////////////////////////////////////////////////////////////////
+        static Window LoadWindow(const std::string& wname, const std::string& lname, WindowLoaderFactory& wFactory, const Surface& param);
+    };
 };
 
-GRE_END_NAMESPACE
+GreEndNamespace
 #endif

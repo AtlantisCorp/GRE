@@ -12,7 +12,7 @@
 #include "Pools.h"
 #include "HardwareProgramVariable.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 //////////////////////////////////////////////////////////////////////
 /// @brief A set of HardwareProgram Variables.
@@ -70,6 +70,6 @@ private:
     std::vector<VariableHolder> _mUniforms;
 };
 
-GRE_END_NAMESPACE
+GreEndNamespace
 
 #endif

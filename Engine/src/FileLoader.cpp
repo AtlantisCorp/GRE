@@ -8,7 +8,7 @@
 
 #include "FileLoader.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 FileLoader::FileLoader()
 {
@@ -36,4 +36,4 @@ ResourceLoader* FileLoader::clone() const
     return nullptr;
 }
 
-GRE_END_NAMESPACE
+GreEndNamespace

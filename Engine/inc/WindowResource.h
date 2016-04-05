@@ -10,60 +10,142 @@
 #define GRE_WindowResource_h
 
 #include "Resource.h"
-#include "Renderer.h"
-#include "Window.h"
-#include "Emitter.h"
+#include "RenderContext.h"
+#include "LoopBehaviours.h"
+#include "RenderTarget.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
-struct WindowPrivate
-{
-    
-};
-
-class DLL_PUBLIC WindowResource : public Resource,
-                                  public Emitter
+//////////////////////////////////////////////////////////////////////
+/// @brief A Window brief Object.
+///
+/// A Window should be a RenderTarget, but should also send Key Event,
+/// Mouse Event, and take care about every Hardware or OS specific
+/// related Events.
+///
+//////////////////////////////////////////////////////////////////////
+class DLL_PUBLIC WindowResource : public Resource, public RenderTargetPrivate
 {
 public:
     
     POOLED(Pools::Resource)
     
-    WindowResource (const std::string& name, const WindowPrivate& winData);
-    
+    WindowResource (const std::string& name);
     virtual ~WindowResource();
     
-    virtual bool pollEvent() { return false; }
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Treat Event in the Event Queue, if it has one.
+    /// @return True if an Event has been treated. The return value of this
+    /// function is not an Error check.
+    //////////////////////////////////////////////////////////////////////
+    virtual bool pollEvent();
     
-    virtual bool isClosed() const { return true; }
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Return True if Window is not opened.
+    //////////////////////////////////////////////////////////////////////
+    bool isClosed() const;
     
-    virtual const std::string recommendedRenderer() const { return ""; }
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the Recommended Renderer name for this Object.
+    ///
+    /// @note This function is deprecated, because now it is the Renderer
+    /// Object which create the RenderContext, and then link it to the Window
+    /// Object. If the RenderContext Object is not compatible with the Window
+    /// system, the function Window::setRenderContext() will throw an
+    /// exception.
+    //////////////////////////////////////////////////////////////////////
+    virtual const std::string recommendedRenderer() const;
     
-    virtual void associate(Renderer& renderer) { _associatedRenderer = renderer; }
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Set a new title for this Window.
+    //////////////////////////////////////////////////////////////////////
+    virtual void setTitle(const std::string& title);
     
-    Renderer& getAssociatedRenderer() { return _associatedRenderer; }
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns a description of the Surface this Window covers.
+    //////////////////////////////////////////////////////////////////////
+    virtual Surface getSurface() const;
     
-    virtual void setTitle(const std::string& title) { }
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Called after pollEvent.
+    //////////////////////////////////////////////////////////////////////
+    virtual void update();
     
-    virtual void swapBuffers() { }
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns true if the Window is visible by the User.
+    /// @note Window::isExposed() and Window::isClosed() can return the same
+    /// value (false) if Window is minimized.
+    //////////////////////////////////////////////////////////////////////
+    bool isExposed() const;
     
-    virtual WindowSize getWindowSize() const { return std::make_pair(0, 0); }
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Return true if a RenderContext is linked with this Window.
+    //////////////////////////////////////////////////////////////////////
+    bool hasRenderContext() const;
     
-    virtual void setVerticalSync (bool vsync) { }
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Change the RenderContext used by this Window.
+    //////////////////////////////////////////////////////////////////////
+    virtual void setRenderContext(const RenderContext& renderCtxt);
     
-    virtual bool hasVerticalSync () const { return false; }
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the RenderContext used by this Window.
+    //////////////////////////////////////////////////////////////////////
+    RenderContext& getRenderContext();
+    const RenderContext& getRenderContext() const;
     
-    virtual void beginUpdate ();
-    virtual void endUpdate ();
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Adds a loop behaviour function.
+    //////////////////////////////////////////////////////////////////////
+    void addLoopBehaviour(LoopBehaviour behaviour);
     
-    virtual bool isExposed() const { return false; }
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Erases every Loop Behaviours.
+    //////////////////////////////////////////////////////////////////////
+    void clearLoopBehaviour();
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns true if the Window has been exposed, then closed.
+    //////////////////////////////////////////////////////////////////////
+    virtual bool hasBeenClosed() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns true if this RenderTarget contains a RenderContext
+    /// and should be drawed by the Renderer during the first phase.
+    //////////////////////////////////////////////////////////////////////
+    bool holdsRenderContext() const;
     
 protected:
     
-    WindowPrivate _data;
-    Renderer      _associatedRenderer;
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Called by Window::setRenderContext() when a new RenderContext
+    /// is linked to the Window.
+    /// The object hold by _mRenderContext is the NEW RenderContext.
+    //////////////////////////////////////////////////////////////////////
+    virtual void onRenderContextChanged();
+    
+protected:
+    
+    /// @brief Window's title.
+    std::string _mTitle;
+    
+    /// @brief Surface used by the Window.
+    Surface _mSurface;
+    
+    /// @brief True if Window is exposed.
+    bool _mExposed;
+    
+    /// @brief True if Window is closed.
+    bool _mClosed;
+    
+    /// @brief Holds the RenderContext linked to this Window.
+    RenderContext _mRenderContext;
+    
+    /// @brief Helper object to hold LoopBehaviour functions.
+    LoopBehaviours _mLoopBehaviours;
     
     UpdateTime    _lastUpdate;
 };
 
-GRE_END_NAMESPACE
+GreEndNamespace
 #endif

@@ -11,7 +11,7 @@
 
 #include "Version.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 /// @brief An enumeration of every keys in the Engine available to the
 /// user.
@@ -19,17 +19,18 @@ GRE_BEGIN_NAMESPACE
 /// platform and reported here. Those values can be errored.
 enum class Key
 {
-#ifdef GRE_OSX
+#ifdef GrePlatformDarwin
     A         = 0,
     S         = 1,
     D         = 2,
     V         = 9,
     W         = 13,
     T         = 17,
+    Esc       = 53,
     ArrowUp   = 126,
     ArrowDown = 125
 #endif
 };
 
-GRE_END_NAMESPACE
+GreEndNamespace
 #endif

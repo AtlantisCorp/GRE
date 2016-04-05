@@ -11,36 +11,73 @@
 
 #include "OSXFunctions.h"
 
-#define KEYBUF_MAX 256
-
-struct keybuf_t
-{
-    int key;
-    int pressed;
-};
-
 class DLL_PUBLIC OsXWindow : public WindowResource
 {
 public:
     
-    OsXWindow (const std::string & name, const WindowPrivate& data);
+    /// @brief This contructor is the real one.
+    /// WindowPrivateData is deprecated, as it does not contain any data and
+    /// is not used by anything.
+    /// Currently creates the Window with given parameter and show it on the screen.
+    OsXWindow (const std::string & name, int x0, int y0, int wid, int height);
     
+    /// @brief Destroys the Window.
     ~OsXWindow ();
     
     bool pollEvent();
-    bool isClosed() const;
     const std::string recommendedRenderer() const;
-    void associate (Renderer& renderer);
     void setTitle(const std::string& title);
     void swapBuffers ();
-    WindowSize getWindowSize() const;
     void setVerticalSync (bool vsync);
     bool hasVerticalSync () const;
-    bool isExposed () const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Bind the RenderTarget.
+    /// In case this RenderTarget has a RenderContext object, this function
+    /// may change the current RenderContext.
+    //////////////////////////////////////////////////////////////////////
+    void bind();
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Unbind the RenderTarget.
+    //////////////////////////////////////////////////////////////////////
+    void unbind();
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief If has one, should bind the internal Framebuffer.
+    /// This method is used by the Renderer in order to be able to draw the
+    /// result of the blended Pass'es objects in a custom Framebuffer.
+    //////////////////////////////////////////////////////////////////////
+    void bindFramebuffer();
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief If has one, unbind the internal Framebuffer.
+    //////////////////////////////////////////////////////////////////////
+    void unbindFramebuffer();
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns true if the Window has been exposed, then closed.
+    //////////////////////////////////////////////////////////////////////
+    bool hasBeenClosed() const;
+    
+protected:
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Called by Window::setRenderContext() when a new RenderContext
+    /// is linked to the Window.
+    /// The object hold by _mRenderContext is the NEW RenderContext.
+    //////////////////////////////////////////////////////////////////////
+    void onRenderContextChanged();
     
 private:
     
-    bool _isclosed;
+    /// @brief True if the Window object has been closed, after being exposed.
+    bool _hasBeenClosed;
+    
+    /// @brief A reference to the Obj-C NsWindow object.
+    CFTypeRef _nsWindow;
+    
+    
 };
 
 class DLL_PUBLIC OsXWindowLoader : public WindowLoader

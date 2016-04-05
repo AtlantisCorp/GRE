@@ -10,7 +10,7 @@
 
 #include "BinaryTreeScene.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 ResourceManager* _manager = nullptr;
 
@@ -77,6 +77,8 @@ ResourceManager::~ResourceManager ()
     _fboLoaders.clear();
     
     _resourcesbyname.clear();
+    _resourcesbytype[Resource::Type::PureListener].clear();
+    _resourcesbytype[Resource::Type::Keyboard].clear();
     _resourcesbytype[Resource::Type::FrameBuff].clear();
     _resourcesbytype[Resource::Type::HdwShader].clear();
     _resourcesbytype[Resource::Type::HwdProgManager].clear();
@@ -121,6 +123,17 @@ ResourceUser ResourceManager::findResourceByName(const std::string &name)
 }
 
 void ResourceManager::unloadResource(const std::string& name) {
+    std::weak_ptr<Resource>& untypedResource = _resourcesbyname[name];
+    if(!untypedResource.expired())
+    {
+        std::vector<std::shared_ptr<Resource> >& typedResources = _resourcesbytype[untypedResource.lock()->getType()];
+        auto it = std::find(typedResources.begin(), typedResources.end(), untypedResource.lock());
+        if(it != typedResources.end())
+        {
+            typedResources.erase(it);
+        }
+    }
+    
     _resourcesbyname.erase(name);
     
     if(_verbose) {
@@ -220,5 +233,164 @@ int ResourceManager::loadPluginsIn(const std::string &dirname)
     return res;
 }
 
-GRE_END_NAMESPACE
+void ResourceManager::setCloseBehaviour(const CloseBehaviour &behaviour)
+{
+    _mCloseBehaviour = behaviour;
+}
+
+void ResourceManager::addLoopBehaviour(LoopBehaviour behaviour)
+{
+    _mLoopBehaviours.add(behaviour);
+}
+
+void ResourceManager::clearLoopBehaviour()
+{
+    _mLoopBehaviours.clear();
+}
+
+void ResourceManager::stop()
+{
+    _mMustStopLoop = true;
+}
+
+void ResourceManager::loop()
+{
+    _mMustStopLoop = false;
+    
+    while( !_mMustStopLoop )
+    {
+        std::vector<std::shared_ptr<Resource> >& windowsResources = _resourcesbytype[Resource::Type::Window];
+        if(windowsResources.empty() && _mCloseBehaviour == CloseBehaviour::AllWindowClosed)
+        {
+            _mMustStopLoop = true;
+        }
+        
+        else
+        {
+            if( !windowsResources.empty() )
+            {
+                // We must loop through every Window objects to update them.
+                for(auto windowSharedResource : windowsResources)
+                {
+                    Window windowUser((std::weak_ptr<Resource>(windowSharedResource)));
+                    if(!windowUser.expired())
+                    {
+                        windowUser.pollEvent();
+                        windowUser.update();
+                        
+                        if(windowUser.hasBeenClosed())
+                        {
+                            // Window has been closed, we can destroy it.
+                            unloadResource(windowUser.getName());
+                        }
+                        
+                        /* This should be done by the renderer. 
+                         The Renderer should draw every Window object as RenderTarget.
+                         
+                        // We begin updating the Window.
+                        // This permits pollEvent, and Context binding.
+                        // The Context should notifiate the Renderer that the Current Context
+                        // has changed.
+                        windowUser.beginUpdate();
+                        
+                        // Then we use the Window's Context to render the Scene defined for
+                        // the renderer. Renderer object renders the Window as a normal RenderTarget.
+#ifndef GreIsDebugMode
+                        windowUser.getRenderContext().getRenderer().render(windowUser);
+#else
+                        RenderContext ctxt = windowUser.getRenderContext();
+                        Renderer renderer = ctxt.getRenderer();
+                        renderer.render(windowUser);
+#endif
+                        
+                        // Finally we end the Window's update.
+                        windowUser.endUpdate();
+                         
+                         */
+                        
+                        _mPerWindowBehaviours.call();
+                    }
+                    
+                    
+                }
+            }
+            
+            _mLoopBehaviours.call();
+        }
+    }
+}
+
+ResourceUser ResourceManager::createPureListener(const std::string& name)
+{
+    std::shared_ptr<Resource> listener = std::make_shared<Resource>(name);
+    listener->_type = Resource::Type::PureListener;
+    _resourcesbytype[Resource::Type::PureListener].push_back(listener);
+    _resourcesbyname[name] = listener;
+    return ResourceUser(listener);
+}
+
+KeyboardLoader& ResourceManager::getKeyboardLoader()
+{
+    return _keyboardLoader;
+}
+
+Keyboard ResourceManager::createKeyboard(const std::string &name)
+{
+    return Keyboard(loadResourceWith(getKeyboardLoader(), Resource::Type::Keyboard, name));
+}
+
+// ---------------------------------------------------------------------------------------------------
+
+std::string ResourceManager::Helper::ChooseRenderer(RendererLoaderFactory& rFactory)
+{
+    // First of all, you should create the Renderer which will render your Scene.
+    StringList renderers = rFactory.getLoadersName();
+    GreDebugPretty() << "Please choose a Renderer in the List : " << std::endl;
+    GreDebugPretty() << Gre::DebugListNumeroted(renderers) << std::endl;
+    GreDebugPretty() << ":> ";
+    
+    int rNum = Gre::DebugGetNumber();
+    return renderers[rNum-1];
+}
+
+Renderer ResourceManager::Helper::LoadRenderer(const std::string& rname, const std::string& lname, RendererLoaderFactory& rFactory)
+{
+    RendererLoader* rLoader = rFactory.get(lname);
+    if(rLoader)
+    {
+        return Renderer(ResourceManager::Get().loadResourceWith(rLoader, Resource::Type::Renderer, rname));
+    }
+    
+    else
+    {
+        return Renderer::Null;
+    }
+}
+
+std::string ResourceManager::Helper::ChooseWindowLoader(WindowLoaderFactory& wFactory)
+{
+    StringList windowloaders = wFactory.getLoadersName();
+    GreDebugPretty() << "Please choose a Window Loader in the List : " << std::endl;
+    GreDebugPretty() << Gre::DebugListNumeroted(windowloaders) << std::endl;
+    GreDebugPretty() << ":> ";
+    
+    int wNum = Gre::DebugGetNumber();
+    return windowloaders[wNum-1];
+}
+
+Window ResourceManager::Helper::LoadWindow(const std::string& wname, const std::string& lname, WindowLoaderFactory& wFactory, const Surface& param)
+{
+    WindowLoader* wLoader = wFactory.get(lname);
+    if(wLoader)
+    {
+        return Window(ResourceManager::Get().loadResourceWith(wLoader, Resource::Type::Window, wname, param.left, param.top, param.width, param.height));
+    }
+    
+    else
+    {
+        return Window::Null;
+    }
+}
+
+GreEndNamespace
 

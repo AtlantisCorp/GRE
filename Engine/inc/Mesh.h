@@ -15,7 +15,7 @@
 #include "HardwareVertexBuffer.h"
 #include "HardwareIndexBuffer.h"
 
-GRE_BEGIN_NAMESPACE
+GreBeginNamespace
 
 /// @brief A simple representation of a Mesh.
 /* DRAWING
@@ -88,18 +88,39 @@ struct DLL_PUBLIC BufferedMesh
     HardwareIndexBufferBatch indexBuffers;
 };
 
+//////////////////////////////////////////////////////////////////////
+/// @brief Defines a Mesh Resource Object.
+///
+/// The Mesh Object is responsible for its own drawing. You can subclass
+/// the Mesh::onUpdateEvent() method or the Mesh::onRenderEvent() in order
+/// to customize the Mesh.
+//////////////////////////////////////////////////////////////////////
 class DLL_PUBLIC MeshPrivate : public Resource
 {
 public:
     
     POOLED(Pools::Resource)
     
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Relates on how the data is stored.
+    //////////////////////////////////////////////////////////////////////
     enum class Type
     {
-        Buffered            = 0x0,
-        MaterialIndexed     = 0x1,
-        Indexed             = 0x2,
-        Raw                 = 0x3
+        /// @brief Significates the presence of Index and Vertex Buffers. The
+        /// Index buffers are categorized by Material objects. The HardwareBuffer
+        /// objects are stored on the GPU Memory.
+        Buffered = 0x0,
+        
+        /// @brief Significates there are a Vertex Buffer and Index Buffers
+        /// but in the CPU RAM.
+        MaterialIndexed = 0x1,
+        
+        /// @brief Significates Vertex and Indexes are grouped by Materials, on
+        /// CPU Memory.
+        Indexed = 0x2,
+        
+        /// @brief The Mesh stores only Vertexes, and Materials for each Face.
+        Raw = 0x3
     };
     
     explicit MeshPrivate(const std::string& name, const BufferedMesh& bufmesh);
@@ -168,6 +189,6 @@ private:
     std::weak_ptr<MeshPrivate> _mMesh;
 };
 
-GRE_END_NAMESPACE
+GreEndNamespace
 
 #endif
