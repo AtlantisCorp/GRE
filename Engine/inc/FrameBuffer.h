@@ -43,11 +43,15 @@ GreBeginNamespace
 /// the Texture object to a Material to use this Texture in the Engine.
 enum class RenderFramebufferAttachement
 {
-    Color = 0,
-    //      [...] Normally this value is up to Renderer::getCapacity(Capacity::MaxFrameBufferColorAttachement) .
-    //      We support up to 32 Color Attachement. Default value for OpenGl is 4.
+    Color = 0, 
+    // [...] Normally this value is up to Renderer::getCapacity(Capacity::MaxFrameBufferColorAttachement) .
+    // We support up to 32 Color Attachement. Default value for OpenGl is 4.
+  
     Depth = 32,
-    Stencil = 33
+    Stencil = 33, 
+    
+    // Invalid value.
+    Null
 };
 
 /// @brief Type of surface used for the Framebuffer in a particular
@@ -152,6 +156,14 @@ protected:
         //////////////////////////////////////////////////////////////////////
         //////////////////////////////////////////////////////////////////////
         Attachement();
+      
+        //////////////////////////////////////////////////////////////////////
+        //////////////////////////////////////////////////////////////////////
+        void reset();
+      
+        //////////////////////////////////////////////////////////////////////
+        //////////////////////////////////////////////////////////////////////
+        bool isValid() const;
     };
     
     /// @brief std::map<> for Attachement.

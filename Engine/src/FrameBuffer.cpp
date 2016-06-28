@@ -33,6 +33,32 @@
 #include "FrameBuffer.h"
 
 GreBeginNamespace
+  
+RenderFramebufferPrivate::Attachement::Attachement()
+  : texture(nullptr)
+{
+  
+}
+
+void RenderFramebufferPrivate::Attachement::reset()
+{
+    attachement = RenderFramebufferAttachement::Null;
+    attachType = RenderFramebufferAttachementType::Texture;
+    surface = Surface ({0, 0, 0, 0});
+    texture = TextureHolder(nullptr);
+}
+
+bool RenderFramebufferPrivate::Attachement::isValid() const
+{
+    if( attachType == RenderFramebufferAttachementType::Texture )
+    {
+        return ! texture.isExpired();
+    }
+  
+    return false;
+}
+  
+// ---------------------------------------------------------------------------------------------------
 
 RenderFramebufferPrivate::RenderFramebufferPrivate(const std::string& name)
 : Resource(name)
@@ -55,30 +81,209 @@ void RenderFramebufferPrivate::unbind() const
     
 }
 
+Texture RenderFramebufferPrivate::getTextureAttachement(const RenderFramebufferAttachement& attachement)
+{
+    auto it = iAttachements.find(attachement);
+    if(it != iAttachements.end())
+    {
+#ifdef GreIsDebugMode
+        if(it.second.attachType != RenderFramebufferAttachementType::Texture)
+        {
+            GreDebugPretty() << "Looking for texture attachement '" << (int) attachement << "' but is not Texture." << std::endl;
+        }
+#endif
+        return Texture(it.second.texture);
+    }
+  
+#ifdef GreIsDebugMode
+    GreDebugPretty() << "Can't found attachement '" << (int) attachement << "'." << std::endl;
+#endif
+    return Texture::Null;
+}
 
+const Texture RenderFramebufferPrivate::getTextureAttachement(const RenderFramebufferAttachement& attachement) const
+{
+    auto it = iAttachements.find(attachement);
+    if(it != iAttachements.end())
+    {
+#ifdef GreIsDebugMode
+        if(it.second.attachType != RenderFramebufferAttachementType::Texture)
+        {
+            GreDebugPretty() << "Looking for texture attachement '" << (int) attachement << "' but is not Texture." << std::endl;
+        }
+#endif
+        return Texture(it.second.texture);
+    }
+  
+#ifdef GreIsDebugMode
+    GreDebugPretty() << "Can't found attachement '" << (int) attachement << "'." << std::endl;
+#endif
+    return Texture::Null;
+}
+
+Surface RenderFramebufferPrivate::getAttachementSurface(const RenderFramebufferAttachement& attachement) const
+{
+    auto it = iAttachements.find(attachement);
+    if(it != iAttachements.end())
+	 {
+        return it.second.surface;
+    }
+  
+#ifdef GreIsDebugMode
+    GreDebugPretty() << "Can't found attachement '" << (int) attachement << "'." << std::endl;
+#endif
+  return { 0, 0, 0, 0 };
+}
+
+void RenderFramebufferPrivate::setAttachement(const RenderFramebufferAttachement& attachement, TextureHolder& holder)
+{
+    auto attach = iAttachements[attachement];
+  
+    if(attach.isValid())
+    {
+        // We should reset the Attachement before to set it.
+        attach.reset();
+      
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "Reseting Attachement '" << (int) attachement << "'." << std::endl;
+#endif
+    }
+  
+    attach.attachement = attachement;
+    attach.attachType = RenderFramebufferAttachementType::Texture;
+    attach.texture = holder;
+    attach.surface = holder->getSurface();
+  
+    iAttachements[attachement] = attach;
+}
+
+int RenderFramebufferPrivate::getMaximumWidth() const
+{
+    return 0; 
+}
+
+int RenderFramebufferPrivate::getMaximumHeight() const
+{
+    return 0;
+}
+
+int RenderFramebufferPrivate::getMaximumColorAttachementCount() const
+{
+    return 0;
+}
 
 // ---------------------------------------------------------------------------------------------------
 
-
-
-// ---------------------------------------------------------------------------------------------------
-
-FrameBufferLoader::FrameBufferLoader()
+RenderFramebuffer::RenderFramebuffer(const RenderFramebufferPrivate* pointer)
+: SpecializedResourceUser<RenderFramebufferPrivate>(pointer)
 {
     
 }
 
-FrameBufferLoader::~FrameBufferLoader()
+RenderFramebuffer::RenderFramebuffer(const RenderFramebufferHolder& holder)
+: SpecializedResourceUser<RenderFramebufferPrivate>(holder)
 {
     
 }
 
-bool FrameBufferLoader::isTypeSupported(Resource::Type type) const
+RenderFramebuffer::RenderFramebuffer(const RenderFramebuffer& user)
+: SpecializedResourceUser<RenderFramebufferPrivate>(user)
+{
+    
+}
+
+RenderFramebuffer::~RenderFramebuffer()
+{
+  
+}
+
+void RenderFramebuffer::bind() const
+{
+    auto ptr = lock();
+    if( ptr )
+        ptr->bind();
+}
+
+void RenderFramebuffer::unbind() const
+{
+    auto ptr = lock();
+    if( ptr )
+        ptr->unbind();
+}
+
+Texture RenderFramebuffer::getTextureAttachement(const RenderFramebufferAttachement& attachement)
+{
+    auto ptr = lock();
+    if( ptr )
+      return ptr->getTextureAttachement(attachement);
+    return Texture::Null;
+}
+
+const Texture RenderFramebuffer::getTextureAttachement(const RenderFramebufferAttachement& attachement) const
+{
+    auto ptr = lock();
+    if( ptr )
+      return ptr->getTextureAttachement(attachement);
+    return Texture::Null;
+}
+
+Surface RenderFramebuffer::getAttachementSurface(const RenderFramebufferAttachement& attachement) const
+{
+    auto ptr = lock();
+    if( ptr )
+      return ptr->getAttachementSurface(attachement);
+    return { 0, 0, 0, 0 };
+}
+
+void RenderFramebuffer::setAttachement(const RenderFramebufferAttachement& attachement, TextureHolder& holder)
+{
+    auto ptr = lock();
+    if( ptr )
+      ptr->setAttachement(attachement, holder);
+}
+
+int RenderFramebuffer::getMaximumWidth() const
+{
+    auto ptr = lock();
+    if( ptr )
+      return ptr->getMaximumWidth();
+    return 0;
+}
+
+int RenderFramebuffer::getMaximumHeight() const
+{
+    auto ptr = lock();
+    if( ptr )
+      return ptr->getMaximumHeight();
+    return 0;
+}
+
+int RenderFramebuffer::getMaximumColorAttachementCount() const
+{
+    auto ptr = lock();
+    if( ptr )
+      return ptr->getMaximumColorAttachementCount();
+    return 0;
+}
+
+// ---------------------------------------------------------------------------------------------------
+
+RenderFramebufferLoader::RenderFramebufferLoader()
+{
+    
+}
+
+RenderFramebufferLoader::~RenderFramebufferLoader()
+{
+    
+}
+
+bool RenderFramebufferLoader::isTypeSupported(Resource::Type type) const
 {
     return type == Resource::Type::FrameBuff;
 }
 
-Resource* FrameBufferLoader::load(Resource::Type type, const std::string &name) const
+Resource* RenderFramebufferLoader::load(Resource::Type type, const std::string &name) const
 {
     return nullptr;
 }
