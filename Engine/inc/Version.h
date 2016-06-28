@@ -69,6 +69,9 @@
 #   include <queue>
 #   include <deque>
 #   include <thread>
+#   include <atomic>
+#   include <mutex>
+#   include <list>
 
 #if defined _WIN32
 //  Windows 32 bits
@@ -225,6 +228,7 @@ typedef glm::vec2 Vector2;
 typedef glm::vec3 Vector3;
 typedef glm::vec4 Vector4;
 typedef glm::mat4 Matrix4;
+typedef glm::quat Quaternion;
 
 class MatrixUtils
 {
@@ -238,6 +242,29 @@ std::string DebugListNumeroted(const StringList& list);
 
 /// @brief Gets a number inserted by the user using std::cin.
 int DebugGetNumber();
+
+/// @brief Holds a volume in 3D.
+struct Volume
+{
+    union
+    {
+        struct
+        {
+            float width;
+            float height;
+            float depth;
+        };
+        
+        struct
+        {
+            float x;
+            float y;
+            float z;
+        };
+        
+        Vector3 vec3;
+    };
+};
 
 GreEndNamespace
 #endif

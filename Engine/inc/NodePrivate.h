@@ -9,6 +9,7 @@
 #ifndef GRE_NodePrivate_h
 #define GRE_NodePrivate_h
 
+/*
 #include "Pools.h"
 #include "Resource.h"
 #include "Mesh.h"
@@ -174,5 +175,7 @@ protected:
 };
 
 GreEndNamespace
+*/
 
 #endif
+ 

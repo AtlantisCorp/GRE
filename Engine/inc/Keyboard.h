@@ -1,10 +1,34 @@
+//////////////////////////////////////////////////////////////////////
 //
 //  Keyboard.h
-//  GRE
+//  This source file is part of Gre
+//		(Gang's Resource Engine)
 //
-//  Created by Jacques Tronconi on 11/12/2015.
+//  Copyright (c) 2015 - 2016 Luk2010
+//  Created on 11/12/2015.
 //
-//
+//////////////////////////////////////////////////////////////////////
+/*
+ -----------------------------------------------------------------------------
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal
+ in the Software without restriction, including without limitation the rights
+ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
+ 
+ The above copyright notice and this permission notice shall be included in
+ all copies or substantial portions of the Software.
+ 
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ THE SOFTWARE.
+ -----------------------------------------------------------------------------
+ */
 
 #ifndef GRE_Keyboard_h
 #define GRE_Keyboard_h
@@ -45,45 +69,48 @@ protected:
 private:
     
     /// @brief Helper to store Key currently down.
-    std::map<Key, bool> _keyDown;
+    std::map<Key, bool> ikeyDown;
 };
+
+/// @brief SpecializedResourceHolder for KeyboardPrivate.
+typedef SpecializedResourceHolder<KeyboardPrivate> KeyboardHolder;
+
+/// @brief SpecializedResourceHolderList for KeyboardPrivate.
+typedef SpecializedResourceHolderList<KeyboardPrivate> KeyboardHolderList;
 
 //////////////////////////////////////////////////////////////////////
 /// @brief ResourceUser to manipulate the KeyboardPrivate class.
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC Keyboard : public ResourceUser
+class DLL_PUBLIC Keyboard : public SpecializedResourceUser<KeyboardPrivate>
 {
 public:
     
-#ifndef GreExtraMacros
-    
     POOLED(Pools::Event)
     
-    Keyboard();
-    Keyboard(const Keyboard& rhs);
-    Keyboard(Keyboard&& rhs);
-    explicit Keyboard(const ResourceUser& rhs);
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    Keyboard(Resource* resource = nullptr);
+    
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    Keyboard(const ResourceUser& user);
+    
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    Keyboard(const Keyboard& user);
+    
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
     Keyboard& operator = (const Keyboard& rhs);
-    bool operator == (const Keyboard& rhs) const;
-    bool operator != (const Keyboard& rhs) const;
     
-    ~Keyboard();
-    
-#else
-    
-    GreResourceUserMakeConstructorsPooled(Keyboard, Event);
-    
-#endif
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    virtual ~Keyboard();
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns true if given key is down.
     //////////////////////////////////////////////////////////////////////
     bool isKeyDown(Key k) const;
-    
-private:
-    
-    /// @brief Holds a pointer to the Keyboard.
-    std::weak_ptr<KeyboardPrivate> _kbd;
 };
 
 //////////////////////////////////////////////////////////////////////

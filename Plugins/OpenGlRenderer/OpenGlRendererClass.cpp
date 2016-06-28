@@ -9,7 +9,7 @@
 #include "OpenGlRenderer.h"
 
 OpenGlRenderer::OpenGlRenderer (const std::string& name)
-: RendererResource(name)
+: RendererPrivate(name)
 {
     _mClearColor[0] = 1.0f;
     _mClearColor[1] = 1.0f;
@@ -146,7 +146,7 @@ void OpenGlRenderer::_preRenderCurrentScene()
 
 void OpenGlRenderer::_renderCurrentScene()
 {
-    RendererResource::_renderCurrentScene();
+    RendererPrivate::_renderCurrentScene();
 }
 
 void OpenGlRenderer::_postRenderCurrentScene()
@@ -434,7 +434,7 @@ void OpenGlRenderer::renderFrameBuffers(std::queue<FrameBuffer> &fboQueue)
         if(_mfboHdwProgram.expired())
         {
             // Create the fboHdwProgram
-            _mfboHdwProgram = RendererResource::createHardwareProgram("shader-program-passthrough-fbo", "shaders/ogl-vertex-fbo.vs", "shaders/ogl-fragment-fbo.fs");
+            _mfboHdwProgram = RendererPrivate::createHardwareProgram("shader-program-passthrough-fbo", "shaders/ogl-vertex-fbo.vs", "shaders/ogl-fragment-fbo.fs");
         }
         
         // Now we can render the Mesh.
@@ -649,7 +649,7 @@ RenderContext OpenGlRenderer::findRenderContextFromPrivate(RenderContextPrivate 
 
 void OpenGlRenderer::onCurrentContextChanged(Gre::RenderContextPrivate *renderCtxt)
 {
-    RendererResource::onCurrentContextChanged(renderCtxt);
+    RendererPrivate::onCurrentContextChanged(renderCtxt);
     if(!getCurrentContext().expired())
     {
         glGlobalContext = (_mRenderContextsByName[renderCtxt->getName()]);

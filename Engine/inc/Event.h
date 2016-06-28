@@ -23,6 +23,9 @@ enum class EventType
     KeyUp,
     Update,
     
+    /// @brief A General Window event.
+    Window,
+    
     /// @brief Window has been resized.
     WindowSized
 };
@@ -37,7 +40,7 @@ public:
     POOLED(Pools::Event)
     
     Event (const EventType& etype);
-    virtual ~Event();
+    virtual ~Event() noexcept(false);
     
     /// @brief Returns the event's type.
     const EventType& getType() const;
@@ -94,21 +97,6 @@ public:
     ~UpdateEvent();
     
     UpdateClock elapsedTime;
-};
-
-//////////////////////////////////////////////////////////////////////
-/// @brief An event sent by a Window when it has been resized.
-//////////////////////////////////////////////////////////////////////
-class WindowSizedEvent : public Event
-{
-public:
-    
-    POOLED(Pools::Event)
-    
-    WindowSizedEvent();
-    ~WindowSizedEvent();
-    
-    Surface surface;
 };
 
 GreEndNamespace

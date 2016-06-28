@@ -1,10 +1,34 @@
+//////////////////////////////////////////////////////////////////////
 //
 //  HardwareProgramVariable.h
-//  GRE
+//  This source file is part of Gre
+//		(Gang's Resource Engine)
 //
-//  Created by Jacques Tronconi on 11/01/2016.
+//  Copyright (c) 2015 - 2016 Luk2010
+//  Created on 11/01/2016.
 //
-//
+//////////////////////////////////////////////////////////////////////
+/*
+ -----------------------------------------------------------------------------
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal
+ in the Software without restriction, including without limitation the rights
+ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
+ 
+ The above copyright notice and this permission notice shall be included in
+ all copies or substantial portions of the Software.
+ 
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ THE SOFTWARE.
+ -----------------------------------------------------------------------------
+ */
 
 #ifndef GRE_HardwareProgramVariable_h
 #define GRE_HardwareProgramVariable_h
@@ -13,64 +37,51 @@
 
 GreBeginNamespace
 
-enum class VariableType
+/// @brief Describes HardwareProgramVariable Types used in the Engine.
+/// Those types are taken from GLSL types.
+enum class HdwProgVarType
 {
-    Mat4
-};
-
-enum class VariableUsage
-{
-    Attrib,
-    Uniform
+    None, ///< @brief Reserved for invalid Variables.
+    Vec2, ///< @brief vec2 GLSL type.
+    Vec3, ///< @brief vec3 GLSL type.
+    Vec4, ///< @brief vec4 GLSL type.
+    Mat4  ///< @brief mat4 GLSL type.
 };
 
 //////////////////////////////////////////////////////////////////////
 /// @brief Holds a simple Program Variable.
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC HardwareProgramVariable
+struct HardwareProgramVariable
 {
-public:
+    /// @brief Constructs a default variable with type 'none'.
+    HardwareProgramVariable();
     
-    HardwareProgramVariable(const std::string& name, const VariableUsage& usage, const Matrix4& mat4);
-    virtual ~HardwareProgramVariable();
+    /// @brief Name of the Variable. This should be the same as the one
+    /// in the shader file, or you can set a location.
+    std::string name;
     
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns true if this Variable must be (re)binded.
-    //////////////////////////////////////////////////////////////////////
-    bool isDirty() const;
+    /// @brief [Optional] Location of the variable in the shader. This can
+    /// be default value ( -1 ) and will be ignored. If this value is set,
+    /// this is prioritary on variable's name.
+    int location;
     
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Binds the current Variable to the currently used Program.
-    //////////////////////////////////////////////////////////////////////
-    virtual void bind() const = 0;
+    /// @brief Type of the Variable.
+    HdwProgVarType type;
     
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Sets the value of this Variable. Type must be correct.
-    //////////////////////////////////////////////////////////////////////
-    void set(const Matrix4& mat4);
+    /// @brief Should be self-explainatory.
+    union _u
+    {
+        Vector2 vec2;
+        Vector3 vec3;
+        Vector4 vec4;
+        Matrix4 mat4;
+        
+        _u() { memset(this, 0, sizeof(_u)); }
+        
+    } value;
     
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the name of the Variable.
-    //////////////////////////////////////////////////////////////////////
-    const std::string& getName() const;
-    
-protected:
-    
-    /// @brief Holds the name of this Variable.
-    std::string _mName;
-    
-    /// @brief Holds the type of this Variable.
-    VariableType _mType;
-    
-    /// @brief Holds the usage of this Variable.
-    VariableUsage _mUsage;
-    
-    /// @brief True if the variable must be (re)binded.
-    mutable bool _mIsDirty;
-    
-    union {
-        Matrix4 _mMat4;
-    };
+    /// @brief A Null HardwareProgramVariable.
+    static HardwareProgramVariable Null;
 };
 
 GreEndNamespace

@@ -1,195 +1,188 @@
+////////////////////////////////////////////////////
+//  File    : Camera.h
+//  Project : GRE
 //
-//  Camera.h
-//  GRE
+//  Created by Jacques Tronconi on 07/05/2016.
+//  Copyright @Luk2010, 2016
 //
-//  Created by Jacques Tronconi on 11/12/2015.
-//
-//
+////////////////////////////////////////////////////
 
 #ifndef GRE_Camera_h
 #define GRE_Camera_h
 
 #include "Resource.h"
-#include "Keyboard.h"
 
 GreBeginNamespace
 
-/// @brief Represents a Camera object.
-/// Based on an idea from :
-/// https://github.com/tomdalling/opengl-series/blob/master/source/04_camera/source/tdogl/Camera.h
+////////////////////////////////////////////////////
+/// @brief Base class for Camera objects.
+///
+/// The Camera should reacts with Events. Also, it should
+/// inform the Renderer about certains parameters.
+/// Those parameters are managed by the Camera object.
+////////////////////////////////////////////////////
 class DLL_PUBLIC CameraPrivate : public Resource
 {
 public:
     
     POOLED(Pools::Resource)
     
+    ////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////
     CameraPrivate(const std::string& name);
-    ~CameraPrivate();
     
+    ////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////
+    virtual ~CameraPrivate();
+    
+    ////////////////////////////////////////////////////
     /// @brief Return the position of the camera.
+    ////////////////////////////////////////////////////
     const Vector3& getPosition() const;
+    
+    ////////////////////////////////////////////////////
     /// @brief Set a new position to the camera.
+    ////////////////////////////////////////////////////
     void setPosition(const Vector3& position);
     void offsetPosition(const Vector3& offset);
     
-    /// @brief Returns the vertical viewing angle of the camera, in degrees.
+    ////////////////////////////////////////////////////
+    /// @brief Returns the vertical viewing angle of the
+    /// camera, in degrees.
+    ////////////////////////////////////////////////////
     float getFieldOfView() const;
     void setFieldOfView(float fov);
     
-    /// @brief Returns the closest visible distance from the camera.
+    ////////////////////////////////////////////////////
+    /// @brief Returns the closest visible distance from
+    /// the camera.
+    ////////////////////////////////////////////////////
     float getNearPlane() const;
-    /// @brief Returns the farthest visible distance from the camera.
+    
+    ////////////////////////////////////////////////////
+    /// @brief Returns the farthest visible distance from
+    /// the camera.
+    ////////////////////////////////////////////////////
     float getFarPlane() const;
     
+    ////////////////////////////////////////////////////
     /// @brief Set the near and far distance planes.
+    ////////////////////////////////////////////////////
     void setNearAndFarPlanes(float near, float far);
     
-    /// @brief Returns a rotation matrix that determines the direction the camera is looking.
+    ////////////////////////////////////////////////////
+    /// @brief Returns a rotation matrix that determines
+    /// the direction the camera is looking.
+    ////////////////////////////////////////////////////
     Matrix4 getOrientation() const;
     
+    ////////////////////////////////////////////////////
     /// @brief Offsets the cameras orientation.
     /// The verticle angle is constrained between 85deg and -85deg to avoid gimbal lock.
     /// @param upAngle     the angle (in degrees) to offset upwards. Negative values are downwards.
     /// @param rightAngle  the angle (in degrees) to offset rightwards. Negative values are leftwards.
+    ////////////////////////////////////////////////////
     void offsetOrientation(float upAngle, float rightAngle);
     
+    ////////////////////////////////////////////////////
     /// @brief Orients the camera so it is directly facing 'position'.
+    ////////////////////////////////////////////////////
     void lookAt(const Vector3& position);
     
-    /// @brief The width divided by the height of the screen/window/viewport
+    ////////////////////////////////////////////////////
+    /// @brief The width divided by the height of the
+    /// screen/window/viewport
+    ////////////////////////////////////////////////////
     float getViewportAspectRatio() const;
     void setViewportAspectRatio(float ratio);
     
-    /// @brief A unit vector representing the direction the camera is facing.
+    ////////////////////////////////////////////////////
+    /// @brief A unit vector representing the direction the
+    /// camera is facing.
+    ////////////////////////////////////////////////////
     Vector3 forward() const;
     
-    /// @brief A unit vector representing the direction to the right of the camera.
+    ////////////////////////////////////////////////////
+    /// @brief A unit vector representing the direction to
+    /// the right of the camera.
+    ////////////////////////////////////////////////////
     Vector3 right() const;
-
-    /// @brief A unit vector representing the direction out of the top of the camera.
+    
+    ////////////////////////////////////////////////////
+    /// @brief A unit vector representing the direction out
+    /// of the top of the camera.
+    ////////////////////////////////////////////////////
     Vector3 up() const;
     
+    ////////////////////////////////////////////////////
     /// @brief A combined matrix including perspective projection.
+    ////////////////////////////////////////////////////
     Matrix4 getMatrix() const;
     
+    ////////////////////////////////////////////////////
     /// @brief The perspective projection transformation matrix.
+    ////////////////////////////////////////////////////
     Matrix4 getProjection() const;
+    
+    ////////////////////////////////////////////////////
     /// @brief The translation and rotation matrix of the camera.
+    ////////////////////////////////////////////////////
     Matrix4 getView() const;
     
-    /// @brief Updates the Camera depending on the event.
-    void onEvent (const Event& e);
+protected:
     
-    /// @brief Set the keyboard listened actually.
-    void setKeyboardListened(Keyboard& keyboard);
-    
-    /// @brief Returns the speed of the camera.
-    float getMoveSpeed() const;
-    void setMoveSpeed(float speed);
+    ////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////
+    void _normalizeAngles();
     
 private:
     
-    Vector3  _position;
-    float    _horizontalAngle;
-    float    _verticalAngle;
-    float    _fieldOfView;
-    float    _nearPlane;
-    float    _farPlane;
-    float    _viewportAspectRatio;
-    Keyboard _keyboard;
-    float    _moveSpeed;
+    Vector3 iPosition;
+    float iHorizontalAngle;
+    float iVerticalAngle;
+    float iFieldOfView;
+    float iNearPlane;
+    float iFarPlane;
+    float iViewportRatio;
+    float iMaxVerticalAngle;
     
-    void normalizeAngles();
+    //float    iMoveSpeed;
 };
 
-/// @brief Listener proxy to Camera object.
-class DLL_PUBLIC Camera : public ResourceUser
+/// @brief SpecializedResourceHolder for CameraPrivate.
+typedef SpecializedResourceHolder<CameraPrivate> CameraHolder;
+
+/// @brief SpecializedResourceHolderList for CameraHolder's list.
+typedef SpecializedResourceHolderList<CameraPrivate> CameraHolderList;
+
+////////////////////////////////////////////////////
+/// @brief SpecializedResourceUser for CameraPrivate.
+////////////////////////////////////////////////////
+class Camera : public SpecializedResourceUser<CameraPrivate>
 {
 public:
     
     POOLED(Pools::Resource)
     
-    Camera();
-    Camera(const Camera& rhs);
-    explicit Camera(const ResourceUser& rhs);
-    Camera& operator = (const Camera& rhs);
-    bool operator == (const Camera& rhs) const;
-    bool operator != (const Camera& rhs) const;
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Constructs a Camera from pointer.
+    //////////////////////////////////////////////////////////////////////
+    Camera(CameraPrivate* node);
     
-    ~Camera();
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Constructs a Camera from a holder.
+    //////////////////////////////////////////////////////////////////////
+    Camera(const CameraHolder& holder);
     
-    /// @brief Custom listening function.
-    void listen(Keyboard& keyboard);
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Constructs a Camera from another Camera.
+    //////////////////////////////////////////////////////////////////////
+    Camera(const Camera& user);
     
-    /// @brief Return the position of the camera.
-    const Vector3& getPosition() const;
-    /// @brief Set a new position to the camera.
-    void setPosition(const Vector3& position);
-    void offsetPosition(const Vector3& offset);
-    
-    /// @brief Returns the vertical viewing angle of the camera, in degrees.
-    float getFieldOfView() const;
-    void setFieldOfView(float fov);
-    
-    /// @brief Returns the closest visible distance from the camera.
-    float getNearPlane() const;
-    /// @brief Returns the farthest visible distance from the camera.
-    float getFarPlane() const;
-    
-    /// @brief Set the near and far distance planes.
-    void setNearAndFarPlanes(float near, float far);
-    
-    /// @brief Returns a rotation matrix that determines the direction the camera is looking.
-    Matrix4 getOrientation() const;
-    
-    /// @brief Offsets the cameras orientation.
-    /// The verticle angle is constrained between 85deg and -85deg to avoid gimbal lock.
-    /// @param upAngle     the angle (in degrees) to offset upwards. Negative values are downwards.
-    /// @param rightAngle  the angle (in degrees) to offset rightwards. Negative values are leftwards.
-    void offsetOrientation(float upAngle, float rightAngle);
-    
-    /// @brief Orients the camera so it is directly facing 'position'.
-    void lookAt(const Vector3& position);
-    
-    /// @brief The width divided by the height of the screen/window/viewport
-    float getViewportAspectRatio() const;
-    void setViewportAspectRatio(float ratio);
-    
-    /// @brief A unit vector representing the direction the camera is facing.
-    Vector3 forward() const;
-    
-    /// @brief A unit vector representing the direction to the right of the camera.
-    Vector3 right() const;
-    
-    /// @brief A unit vector representing the direction out of the top of the camera.
-    Vector3 up() const;
-    
-    /// @brief A combined matrix including perspective projection.
-    Matrix4 getMatrix() const;
-    
-    /// @brief The perspective projection transformation matrix.
-    Matrix4 getProjection() const;
-    /// @brief The translation and rotation matrix of the camera.
-    Matrix4 getView() const;
-    
-    /// @brief Returns the speed of the camera.
-    float getMoveSpeed() const;
-    void setMoveSpeed(float speed);
-    
-    /// @brief Returns true if null.
-    bool isNull() const { return _camera.expired(); }
-    
-    /// @brief A Null Camera object.
-    static Camera Null;
-    
-    ////////////////////////////////////////////////////////////////////////
-    /// @brief Creates a persistent Camera Resource.
-    ////////////////////////////////////////////////////////////////////////
-    static Camera Create(const std::string& name);
-    
-private:
-    
-    std::weak_ptr<CameraPrivate> _camera;
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Destructs a Camera.
+    //////////////////////////////////////////////////////////////////////
+    virtual ~Camera();
 };
 
 GreEndNamespace

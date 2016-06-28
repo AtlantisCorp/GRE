@@ -33,7 +33,7 @@ Material& Material::operator=(const Material &rhs)
 
 bool Material::hasTexture() const
 {
-    return !texture.expired();
+    return !texture.isExpired();
 }
 
 GreEndNamespace

@@ -1,10 +1,34 @@
+//////////////////////////////////////////////////////////////////////
 //
 //  HardwareProgramVariables.h
-//  GRE
+//  This source file is part of Gre
+//		(Gang's Resource Engine)
 //
-//  Created by Jacques Tronconi on 07/01/2016.
+//  Copyright (c) 2015 - 2016 Luk2010
+//  Created on 07/01/2016.
 //
-//
+//////////////////////////////////////////////////////////////////////
+/*
+ -----------------------------------------------------------------------------
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal
+ in the Software without restriction, including without limitation the rights
+ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
+ 
+ The above copyright notice and this permission notice shall be included in
+ all copies or substantial portions of the Software.
+ 
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ THE SOFTWARE.
+ -----------------------------------------------------------------------------
+ */
 
 #ifndef GRE_HardwareProgramVariables_h
 #define GRE_HardwareProgramVariables_h
@@ -15,59 +39,42 @@
 GreBeginNamespace
 
 //////////////////////////////////////////////////////////////////////
-/// @brief A set of HardwareProgram Variables.
+/// @brief List of HardwareProgramVariable.
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC HardwareProgramVariables
+class DLL_PUBLIC HardwareProgramVariables : public std::list<HardwareProgramVariable>
 {
 public:
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Helper to hold and release the Variables object.
     //////////////////////////////////////////////////////////////////////
-    typedef std::shared_ptr<HardwareProgramVariable> VariableHolder;
-    
     HardwareProgramVariables();
-    ~HardwareProgramVariables();
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Add a new HardwareProgramVariable to the set.
     //////////////////////////////////////////////////////////////////////
-    void addUniform(HardwareProgramVariable* hdwVariable);
+    virtual ~HardwareProgramVariables();
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Attribs of this Program.
+    /// @brief Adds a HardwareProgramVariable to the list.
     //////////////////////////////////////////////////////////////////////
-    std::vector<VariableHolder>& getAttribs();
+    virtual void add(const HardwareProgramVariable& var);
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Attribs of this Program.
+    /// @brief Returns a HardwareProgramVariable from the list.
     //////////////////////////////////////////////////////////////////////
-    const std::vector<VariableHolder>& getAttribs() const;
+    virtual HardwareProgramVariable& get(const std::string& name);
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Uniforms of this Program.
+    /// @brief Returns a HardwareProgramVariable from the list.
     //////////////////////////////////////////////////////////////////////
-    std::vector<VariableHolder>& getUniforms();
+    virtual const HardwareProgramVariable& get(const std::string& name) const;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Uniforms of this Program.
+    /// @brief Removes a HardwareProgramVariable from the list.
     //////////////////////////////////////////////////////////////////////
-    const std::vector<VariableHolder>& getUniforms() const;
+    virtual void remove(const std::string& name);
     
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Finds a Uniform using its name.
-    //////////////////////////////////////////////////////////////////////
-    VariableHolder findUniform(const std::string& name);
-    
+    /// @brief An Empty List.
     static HardwareProgramVariables Empty;
-    
-private:
-    
-    /// @brief Holds the attrib / in variables.
-    std::vector<VariableHolder> _mAttribs;
-    
-    /// @brief Holds the uniforms.
-    std::vector<VariableHolder> _mUniforms;
 };
 
 GreEndNamespace

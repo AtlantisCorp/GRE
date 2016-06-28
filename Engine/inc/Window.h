@@ -1,15 +1,38 @@
+//////////////////////////////////////////////////////////////////////
 //
 //  Window.h
-//  GResource
+//  This source file is part of Gre
+//		(Gang's Resource Engine)
 //
-//  Created by Jacques Tronconi on 07/11/2015.
-//  Copyright (c) 2015 Atlanti's Corporation. All rights reserved.
+//  Copyright (c) 2015 - 2016 Luk2010
+//  Created on 07/11/2015.
 //
+//////////////////////////////////////////////////////////////////////
+/*
+ -----------------------------------------------------------------------------
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal
+ in the Software without restriction, including without limitation the rights
+ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
+ 
+ The above copyright notice and this permission notice shall be included in
+ all copies or substantial portions of the Software.
+ 
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ THE SOFTWARE.
+ -----------------------------------------------------------------------------
+ */
 
 #ifndef __GResource__Window__
 #define __GResource__Window__
 
-#include "Resource.h"
 #include "WindowResource.h"
 
 GreBeginNamespace
@@ -19,21 +42,43 @@ class Renderer;
 typedef std::pair<int, int> WindowSize;
 
 //////////////////////////////////////////////////////////////////////
-/// @brief Host for a WindowResource object.
+/// @brief SpecializedResourceUser for WindowPrivate.
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC Window : public ResourceUser, public RenderTarget
+class DLL_PUBLIC Window : public RenderTarget, public SpecializedResourceUser<WindowPrivate>
 {
 public:
     
-    Window ();
-    Window (Window&& rmove);
-    Window (const Window& window);
-    explicit Window (const ResourceUser& ruser);
+    POOLED(Pools::Resource)
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Constructs a Window from pointer.
+    //////////////////////////////////////////////////////////////////////
+    Window (const WindowPrivate* pointer);
     
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Constructs a Window from holder.
+    //////////////////////////////////////////////////////////////////////
+    Window (const WindowHolder& holder);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Constructs a Window from user.
+    //////////////////////////////////////////////////////////////////////
+    Window (const Window& user);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Destructs the Window.
+    //////////////////////////////////////////////////////////////////////
     virtual ~Window();
     
-    Window& operator = (const ResourceUser& ruser);
-    Window& operator = (const Window& wuser);
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Creates a new ResourceHolder in order to use the Resource.
+    //////////////////////////////////////////////////////////////////////
+    SpecializedResourceHolder<WindowPrivate> lock();
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Creates a new ResourceHolder in order to use the Resource.
+    //////////////////////////////////////////////////////////////////////
+    const SpecializedResourceHolder<WindowPrivate> lock() const;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Treat Event in the Event Queue, if it has one.
@@ -94,6 +139,10 @@ public:
     /// @brief Returns the RenderContext used by this Window.
     //////////////////////////////////////////////////////////////////////
     RenderContext& getRenderContext();
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the RenderContext used by this Window.
+    //////////////////////////////////////////////////////////////////////
     const RenderContext& getRenderContext() const;
     
     //////////////////////////////////////////////////////////////////////
@@ -113,12 +162,11 @@ public:
     
     /// @brief A Null Window object.
     static Window Null;
-    
-private:
-    
-    std::weak_ptr<WindowResource> _mWindow;
 };
 
+//////////////////////////////////////////////////////////////////////
+/// @brief ResourceLoader for WindowPrivate.
+//////////////////////////////////////////////////////////////////////
 class DLL_PUBLIC WindowLoader : public ResourceLoader
 {
 public:
@@ -138,6 +186,9 @@ protected:
 };
 
 typedef ResourceLoaderFactory<WindowLoader> WindowLoaderFactory;
+
+/// @brief SpecializedResourceManager for WindowPrivate.
+typedef SpecializedResourceManager<WindowPrivate> WindowManager;
 
 GreEndNamespace
 #endif /* defined(__GResource__Window__) */

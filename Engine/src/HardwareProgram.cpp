@@ -1,17 +1,41 @@
+//////////////////////////////////////////////////////////////////////
 //
 //  HardwareProgram.cpp
-//  GRE
+//  This source file is part of Gre
+//		(Gang's Resource Engine)
 //
-//  Created by Jacques Tronconi on 06/01/2016.
+//  Copyright (c) 2015 - 2016 Luk2010
+//  Created on 06/01/2016.
 //
-//
+//////////////////////////////////////////////////////////////////////
+/*
+ -----------------------------------------------------------------------------
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal
+ in the Software without restriction, including without limitation the rights
+ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
+ 
+ The above copyright notice and this permission notice shall be included in
+ all copies or substantial portions of the Software.
+ 
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ THE SOFTWARE.
+ -----------------------------------------------------------------------------
+ */
 
 #include "HardwareProgram.h"
 
 GreBeginNamespace
 
 HardwareProgramPrivate::HardwareProgramPrivate(const std::string& name, const HardwareShader& vertexShader, const HardwareShader& fragmentShader)
-: Resource(name), _mVertexShader(vertexShader), _mFragmentShader(fragmentShader)
+: Resource(name), iVertexShader(vertexShader), iFragmentShader(fragmentShader), iVariables(), iNeedsCompilation(true), iNeedsVarUpdate(false)
 {
     
 }
@@ -23,87 +47,124 @@ HardwareProgramPrivate::~HardwareProgramPrivate()
 
 void HardwareProgramPrivate::bind() const
 {
-    GreDebugFunctionNotImplemented();
+#ifdef GreIsDebugMode
+    if(!isCompiled())
+    {
+        GreDebugPretty() << "Can't bind HardwareProgram '" << getName() << "' because not compiled." << std::endl;
+    }
+#endif
 }
 
 void HardwareProgramPrivate::unbind() const
 {
-    GreDebugFunctionNotImplemented();
+    
 }
 
 void HardwareProgramPrivate::attachShader(const HardwareShader& hwdShader)
 {
-    GreDebugFunctionNotImplemented();
+    if(isCompiled())
+    {
+        // If program is already ready, we can't change it so we must clear it.
+        // We store the Current Shader in order not to loose them.
+        
+        HardwareShader tmpVertex = iVertexShader;
+        HardwareShader tmpFragment = iFragmentShader;
+        
+        reset();
+        
+        iVertexShader = tmpVertex;
+        iFragmentShader = tmpFragment;
+    }
+    
+    if(hwdShader.getType() == ShaderType::Vertex)
+    {
+        iVertexShader = hwdShader;
+    }
+    
+    if(hwdShader.getType() == ShaderType::Fragment)
+    {
+        iFragmentShader = hwdShader;
+    }
 }
 
 void HardwareProgramPrivate::finalize()
 {
-    GreDebugFunctionNotImplemented();
+    iNeedsCompilation = true;
 }
 
 bool HardwareProgramPrivate::isReady() const
 {
-    GreDebugFunctionNotImplemented();
-    return false;
+    return isCompiled();
 }
 
 HardwareProgramVariables HardwareProgramPrivate::getVariables()
 {
-    return _mVariables;
+    return iVariables;
 }
 
 void HardwareProgramPrivate::setUniformMat4(const std::string &name, const Matrix4 &mat4)
 {
-    GreDebugFunctionNotImplemented();
+    HardwareProgramVariable var;
+    var.name = name;
+    var.type = HdwProgVarType::Mat4;
+    var.value.mat4 = mat4;
+    iVariables.add(var);
+    iNeedsVarUpdate = true;
+}
+
+void HardwareProgramPrivate::setUniform(const Gre::HardwareProgramVariable &var)
+{
+    iVariables.add(var);
+    iNeedsVarUpdate = true;
+}
+
+void HardwareProgramPrivate::unsetUniform(const std::string &name)
+{
+    iVariables.remove(name);
 }
 
 int HardwareProgramPrivate::getAttribLocation(const std::string& name) const
 {
-    GreDebugFunctionNotImplemented();
     return -1;
+}
+
+bool HardwareProgramPrivate::isCompiled() const
+{
+    return iNeedsCompilation;
+}
+
+void HardwareProgramPrivate::reset()
+{
+    iVertexShader.reset();
+    iFragmentShader.reset();
+    iVariables.clear();
+    iNeedsCompilation = true;
+    iNeedsVarUpdate = false;
+}
+
+void HardwareProgramPrivate::setCompiled(bool flag)
+{
+    iNeedsCompilation = flag;
 }
 
 // ---------------------------------------------------------------------------------------------------
 
-HardwareProgram::HardwareProgram()
-: ResourceUser(), _mHwdProgram()
+HardwareProgram::HardwareProgram(const HardwareProgramPrivate* pointer)
+: SpecializedResourceUser<HardwareProgramPrivate>(pointer)
 {
     
 }
 
-HardwareProgram::HardwareProgram(const HardwareProgram& rhs)
-: ResourceUser(rhs), _mHwdProgram(rhs._mHwdProgram)
+HardwareProgram::HardwareProgram(const HardwareProgramHolder& holder)
+: SpecializedResourceUser<HardwareProgramPrivate>(holder)
 {
     
 }
 
-HardwareProgram::HardwareProgram(HardwareProgram&& rhs)
-: ResourceUser(rhs), _mHwdProgram(std::move(rhs._mHwdProgram))
+HardwareProgram::HardwareProgram(const HardwareProgram& user)
+: SpecializedResourceUser<HardwareProgramPrivate>(user)
 {
     
-}
-
-HardwareProgram::HardwareProgram(const ResourceUser& rhs)
-: ResourceUser(rhs), _mHwdProgram(std::dynamic_pointer_cast<HardwareProgramPrivate>(rhs.lock()))
-{
-    
-}
-
-HardwareProgram& HardwareProgram::operator = (const HardwareProgram& rhs)
-{
-    ResourceUser::operator=(rhs);
-    _mHwdProgram = rhs._mHwdProgram;
-    return *this;
-}
-
-bool HardwareProgram::operator==(const HardwareProgram &rhs) const
-{
-    return _mHwdProgram.lock().get() == rhs._mHwdProgram.lock().get();
-}
-
-bool HardwareProgram::operator!=(const HardwareProgram &rhs) const
-{
-    return _mHwdProgram.lock().get() != rhs._mHwdProgram.lock().get();
 }
 
 HardwareProgram::~HardwareProgram()
@@ -113,7 +174,7 @@ HardwareProgram::~HardwareProgram()
 
 void HardwareProgram::bind() const
 {
-    auto ptr = _mHwdProgram.lock();
+    auto ptr = lock();
     
     if(ptr)
         ptr->bind();
@@ -121,7 +182,7 @@ void HardwareProgram::bind() const
 
 void HardwareProgram::unbind() const
 {
-    auto ptr = _mHwdProgram.lock();
+    auto ptr = lock();
     
     if(ptr)
         ptr->unbind();
@@ -129,14 +190,14 @@ void HardwareProgram::unbind() const
 
 void HardwareProgram::finalize()
 {
-    auto ptr = _mHwdProgram.lock();
+    auto ptr = lock();
     if(ptr)
         ptr->finalize();
 }
 
 bool HardwareProgram::isReady() const
 {
-    auto ptr = _mHwdProgram.lock();
+    auto ptr = lock();
     if(ptr)
         return ptr->isReady();
     return false;
@@ -144,7 +205,7 @@ bool HardwareProgram::isReady() const
 
 HardwareProgramVariables HardwareProgram::getVariables()
 {
-    auto ptr = _mHwdProgram.lock();
+    auto ptr = lock();
     if(ptr)
         return ptr->getVariables();
     return HardwareProgramVariables::Empty;
@@ -152,19 +213,53 @@ HardwareProgramVariables HardwareProgram::getVariables()
 
 void HardwareProgram::setUniformMat4(const std::string &name, const Matrix4 &mat4)
 {
-    auto ptr = _mHwdProgram.lock();
+    auto ptr = lock();
     if(ptr)
         ptr->setUniformMat4(name, mat4);
 }
 
+void HardwareProgram::setUniform(const Gre::HardwareProgramVariable &var)
+{
+    auto ptr = lock();
+    if(ptr)
+        ptr->setUniform(var);
+}
+
+void HardwareProgram::unsetUniform(const std::string& name)
+{
+    auto ptr = lock();
+    if(ptr)
+        ptr->unsetUniform(name);
+}
+
 int HardwareProgram::getAttribLocation(const std::string& name) const
 {
-    auto ptr = _mHwdProgram.lock();
+    auto ptr = lock();
     if(ptr)
         return ptr->getAttribLocation(name);
     return -1;
 }
 
-HardwareProgram HardwareProgram::Null = HardwareProgram();
+bool HardwareProgram::isCompiled() const
+{
+    auto ptr = lock();
+    if(ptr)
+    {
+        return ptr->isCompiled();
+    }
+    
+    return false;
+}
+
+void HardwareProgram::reset()
+{
+    auto ptr = lock();
+    if(ptr)
+    {
+        ptr->reset();
+    }
+}
+
+HardwareProgram HardwareProgram::Null = HardwareProgram(nullptr);
 
 GreEndNamespace

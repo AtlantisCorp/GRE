@@ -1,16 +1,39 @@
+//////////////////////////////////////////////////////////////////////
 //
 //  Scene.h
-//  GRE
+//  This source file is part of Gre 
+//		(Gang's Resource Engine)
 //
-//  Created by Jacques Tronconi on 12/12/2015.
+//  Copyright (c) 2015 - 2016 Luk2010
+//  Created on 12/12/2015.
 //
-//
+//////////////////////////////////////////////////////////////////////
+/*
+-----------------------------------------------------------------------------
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+-----------------------------------------------------------------------------
+*/
 
 #ifndef GRE_Scene_h
 #define GRE_Scene_h
 
-#include "Mesh.h"
-#include "Node.h"
+#include "SceneNode.h"
 #include "Camera.h"
 #include "Pass.h"
 
@@ -20,68 +43,110 @@ GreBeginNamespace
 /// @brief A Generic Base Scene object.
 ///
 /// The default implementation does nothing. You should create
-/// or use a plugin that register a correct ScenePrivate object,
+/// or use a plugin that register a correct SceneManagerPrivate object,
 /// and load it to your Renderer object.
 ///
-/// Pass Management : The Scene object automaticly creates a Default
+/// Pass Management : The Scene object automaticaly creates a Default
 /// PassPurpose::First Pass object. This Pass normally should only draws
 /// every objects in the Scene, according to the active Camera, with a
 /// pass-through HardwareProgram. But this behaviour is not guaranteed.
 ///
+/// Nodes Management : The Scene should be able to create Nodes. Those
+/// Nodes may have different purpose. Normally, each Nodes has a Parent, 
+/// but this is not guaranteed and obviously implementation-dependent.
+/// 
+/// Nodes should be created using `SceneManager::createNode(Type, Name, Other args).`
+/// Then they should be added to the Scene or directly to a Node object
+/// using SceneManager::addChild() after setting every informations required (like
+/// positions and others).
+///
+/// Nodes Update : Nodes are updated by the SceneManager. The SceneManager
+/// only updates Nodes with flag 'iNeedsUpdate' set to true. A Node should
+/// be updated when one of its parameters has changed.
+///
+/// Rendering Notes : Render is done by giving the Renderer the list of Pass
+/// the Renderer should render. Those Pass have all required informations 
+/// for the Renderer to render the Scene. A Node can customize its Rendering,
+/// overriding the function SceneNode::onSettingPass().
+///
+/// Camera Management : Cameras can be created as freestanding objects. You
+/// can register your own Camera using SceneManager::addCamera(). You can attach
+/// a Camera to a SceneNode using SceneNode::addCamera().
+///
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC ScenePrivate : public Resource
+class DLL_PUBLIC SceneManagerPrivate : public Resource
 {
-    
 public:
     
-    POOLED(Pools::Resource)
+    POOLED(Pools::Scene)
     
-    ScenePrivate(const std::string& name);
-    virtual ~ScenePrivate();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Root node from the node tree.
-    /// Dependent of the implementation. The default implementation
-    /// returns Node::Null.
-    //////////////////////////////////////////////////////////////////////
-    virtual Node& getRoot();
+    SceneManagerPrivate(const std::string& name);
+    virtual ~SceneManagerPrivate();
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the Root node from the node tree.
-    /// Dependent of the implementation. The default implementation
-    /// returns Node::Null.
     //////////////////////////////////////////////////////////////////////
-    virtual const Node& getRoot() const;
+	virtual SceneNode& getRoot();
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Creates a new node.
-    /// Dependent of the implementation. The default implementation
-    /// returns Node::Null.
-    /// @param mesh     A Mesh to initialize the Node with.
+    /// @brief Returns the Root node from the node tree.
     //////////////////////////////////////////////////////////////////////
-    virtual NodePrivate* createNode(const Mesh& mesh);
+	virtual const SceneNode& getRoot() const;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Creates a new Node with a camera in it.
-    /// The Node will return a Camera with Node::getCamera() and Mesh::Null
-    /// with Node::getMesh() if it does not contain any Mesh.
+    /// @brief Creates a new unnamed SceneNode.
     //////////////////////////////////////////////////////////////////////
-    virtual NodePrivate* createNode(const Camera& camera);
+    virtual SceneNode createNode();
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Creates a new named SceneNode.
+    //////////////////////////////////////////////////////////////////////
+    virtual SceneNode createNode(const std::string& name);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Destroys a SceneNode using its name.
+    //////////////////////////////////////////////////////////////////////
+    virtual void destroyNode(const std::string& name);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Destroys a SceneNode.
+    //////////////////////////////////////////////////////////////////////
+    virtual void destroyNode(SceneNode& node);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Destroys every SceneNode.
+    //////////////////////////////////////////////////////////////////////
+	virtual void destroyEveryNode();
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Empty the Scene and destroy every Node objects.
     //////////////////////////////////////////////////////////////////////
-    virtual void clear();
+	virtual void clear();
+	
+	//////////////////////////////////////////////////////////////////////
+    /// @brief Adds a Camera.
+    //////////////////////////////////////////////////////////////////////
+    virtual Camera& addCamera(const Camera& camera);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Creates a default Camera and adds it to the SceneManager.
+    //////////////////////////////////////////////////////////////////////
+    virtual Camera& addCamera(const std::string& name);
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the currently active camera.
     //////////////////////////////////////////////////////////////////////
-    virtual Camera& getCamera();
+    virtual Camera& getCurrentCamera();
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the currently active camera.
     //////////////////////////////////////////////////////////////////////
-    virtual const Camera& getCamera() const;
+    virtual const Camera& getCurrentCamera() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Sets the active Camera given its Node.
+    //////////////////////////////////////////////////////////////////////
+    virtual void setActiveCamera(const Camera& camera);
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns a list of the Nodes, sorted by given filter.
@@ -90,216 +155,253 @@ public:
     /// used as a fallback generally, but this behaviour can be undefined.
     /// @note By default, not implemented function return an empty vector.
     //////////////////////////////////////////////////////////////////////
-    virtual std::vector<const Node> getNodesByFilter(Node::Filter filter) const;
+    virtual std::vector<const Node> getNodesByFilter(NodePrivate::Filter filter) const;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Sets the active Camera given its Node.
+    /// @brief Returns a list of SceneNode, that can be directly passed to
+    /// a Pass object for rendering. The Nodes can be sorted if necessary,
+    /// and the PassPurpose is to know the Pass we should point.
+    ///
+    /// @note
+    /// If the given filter is not available, Node::Filter::None is always 
+    /// used.
     //////////////////////////////////////////////////////////////////////
-    virtual void setActiveCamera(const Node& cameraNode);
+    virtual std::vector<const SceneNode> getNodesForPass(Gre::PassPurpose pass, NodePrivate::Filter filter = NodePrivate::Filter::None) const;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Create a Default Pass given its name and number.
     /// If passNumber is already taken, return Pass::Null.
     //////////////////////////////////////////////////////////////////////
-    Pass createAndAddPass(const std::string& name, const PassNumber& passNumber);
+    virtual Pass createAndAddPass(const std::string& name, const PassNumber& passNumber);
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Adds given custom created pass.
-    /// This function takes ownership of the Pointer. Also, it may return
-    /// Pass::Null if an error occured.
+    /// It may return Pass::Null if an error occured.
     //////////////////////////////////////////////////////////////////////
-    Pass addPass(PassPrivate* customPass);
+    virtual Pass addPass(PassHolder& customPass);
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the first Pass with given name.
     //////////////////////////////////////////////////////////////////////
-    Pass getPassByName(const std::string& name);
+    virtual Pass getPassByName(const std::string& name);
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the pass at given number.
     //////////////////////////////////////////////////////////////////////
-    Pass getPassByNumber(const PassNumber& passNumber);
+    virtual Pass getPassByNumber(const PassNumber& passNumber);
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Removes the first Pass with given name.
     //////////////////////////////////////////////////////////////////////
-    void removePassByName(const std::string& name);
+    virtual void removePassByName(const std::string& name);
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Removes the Pass with given number.
     //////////////////////////////////////////////////////////////////////
-    void removePassByNumber(const PassNumber& passNumber);
+    virtual void removePassByNumber(const PassNumber& passNumber);
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns every active Pass, sorted by PassNumber from first
     /// to last.
     //////////////////////////////////////////////////////////////////////
-    PassList getActivePasses() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns true if something happened since the last render.
-    //////////////////////////////////////////////////////////////////////
-    bool isDirty() const;
+    virtual PassList getActivePasses() const;
     
 protected:
     
     /// @brief Holds every Pass in the Scene.
-    PassPrivateOwnedList _mPasses;
+    PassHolderList iPasses;
+    
+    typedef std::map<Gre::PassNumber, Gre::Pass> PassesByPurpose;
     
     /// @brief Catalog to Pass objects by name.
-    std::map<PassNumber, std::weak_ptr<PassPrivate> > _mPassesByNumber;
+    PassesByPurpose iPassesByNumber;
     
-    /// @brief Holds true if this Scene has changed.
-    bool _dirty;
+    /// @brief The Root SceneNode.
+    SceneNode iRootNode;
+    
+    /// @brief SceneNode's List.
+    SceneNodeHolderList iSceneNodes;
+    
+    /// @brief Holds a List of Camera.
+    CameraHolderList iCameras;
+    
+    /// @brief Hold the Current Camera.
+    Camera iCurrentCamera;
 };
 
+/// @brief Common typedef to Specialize ResourceHolder.
+typedef SpecializedResourceHolder<SceneManagerPrivate> SceneManagerHolder;
+
+/// @brief Common typedef to make SceneManagerHolder List.
+typedef SpecializedResourceHolderList<SceneManagerPrivate> SceneManagerHolderList;
+
 //////////////////////////////////////////////////////////////////////
-/// @brief A Generic Scene object user.
-///
-/// Always use this object to access the ScenePrivate Resource. You can
-/// obtain an object of this type using the ResourceManager Resource
-/// loading system, or using Renderer::loadSceneByName(), which use also
-/// the ResourceManager Resource loading system, but also call directly
-/// Renderer::loadSceneByResource().
-///
+/// @brief ResourceUser specialized for SceneManager.
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC Scene : public ResourceUser
+class DLL_PUBLIC SceneManager : public SpecializedResourceUser<SceneManagerPrivate>
 {
-    
 public:
     
-    Scene();
-    Scene(const Scene& rhs);
-    Scene(Scene&& rhs);
-    explicit Scene(const ResourceUser& rhs);
-    
-    ~Scene();
-    
-    Scene& operator = (const Scene& rhs);
-    bool operator == (const Scene& rhs) const;
-    bool operator != (const Scene& rhs) const;
+    POOLED(Pools::Scene)
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Root node from the node tree, or Node::Null if
-    /// ScenePrivate is not valid.
-    //////////////////////////////////////////////////////////////////////
-    Node& getRoot();
+	/// @brief Constructs a SceneManager from raw pointer.
+	//////////////////////////////////////////////////////////////////////
+    SceneManager(SceneManagerPrivate* scene);
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Root node from the node tree, or Node::Null if
-    /// ScenePrivate is not valid.
+	/// @brief Constructs a SceneManager from Holder.
+	//////////////////////////////////////////////////////////////////////
+	SceneManager(const SceneManagerHolder& holder);
+	
+	//////////////////////////////////////////////////////////////////////
+	/// @brief Constructs a SceneManager from User.
+	//////////////////////////////////////////////////////////////////////
+	SceneManager(const SceneManager& user);
+	
+	//////////////////////////////////////////////////////////////////////
+	/// @brief Destroys the SceneManager.
+	//////////////////////////////////////////////////////////////////////
+	~SceneManager();
+	
+	//////////////////////////////////////////////////////////////////////
+    /// @brief Returns the Root node from the node tree.
     //////////////////////////////////////////////////////////////////////
-    const Node& getRoot() const;
+	SceneNode& getRoot();
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Creates a new Node, or Node::Null if ScenePrivate is not
-    /// valid.
-    /// @param mesh     A Mesh to initialize the Node with.
+    /// @brief Returns the Root node from the node tree.
     //////////////////////////////////////////////////////////////////////
-    NodePrivate* createNode(const Mesh& mesh);
+	const SceneNode& getRoot() const;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Creates a new Node with a camera in it.
+    /// @brief Creates a new unnamed SceneNode.
     //////////////////////////////////////////////////////////////////////
-    NodePrivate* createNode(const Camera& camera);
+	SceneNode createNode();
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Creates a new named SceneNode.
+    //////////////////////////////////////////////////////////////////////
+	SceneNode createNode(const std::string& name);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Destroys a SceneNode using its name.
+    //////////////////////////////////////////////////////////////////////
+	void destroyNode(const std::string& name);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Destroys a SceneNode.
+    //////////////////////////////////////////////////////////////////////
+	void destroyNode(SceneNode& node);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Destroys every SceneNode.
+    //////////////////////////////////////////////////////////////////////
+	void destroyEveryNode();
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Empty the Scene and destroy every Node objects.
     //////////////////////////////////////////////////////////////////////
-    void clear();
+	void clear();
+	
+	//////////////////////////////////////////////////////////////////////
+    /// @brief Adds a Camera.
+    //////////////////////////////////////////////////////////////////////
+	Camera& addCamera(const Camera& camera);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Creates a default Camera and adds it to the SceneManager.
+    //////////////////////////////////////////////////////////////////////
+	Camera& addCamera(const std::string& name);
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the currently active camera.
     //////////////////////////////////////////////////////////////////////
-    Camera& getCamera();
+	Camera& getCurrentCamera();
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the currently active camera.
     //////////////////////////////////////////////////////////////////////
-    const Camera& getCamera() const;
+	const Camera& getCurrentCamera() const;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns a list of the Nodes.
-    /// It is a convenient function to call for ::getNodesByFilter(Node::Filter::Default) .
+    /// @brief Sets the active Camera given its Node.
     //////////////////////////////////////////////////////////////////////
-    std::vector<const Node> getNodes() const;
+	void setActiveCamera(const Camera& camera);
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns a list of the Nodes, sorted by given filter.
     /// @param filter   A filter defined by the Node to sort them.
     /// If the filter given is not implemented, Node::Filter::Default is
     /// used as a fallback generally, but this behaviour can be undefined.
+    /// @note By default, not implemented function return an empty vector.
     //////////////////////////////////////////////////////////////////////
-    std::vector<const Node> getNodesByFilter(Node::Filter filter) const;
+	std::vector<const Node> getNodesByFilter(NodePrivate::Filter filter) const;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Sets the active Camera given its Node.
+    /// @brief Returns a list of SceneNode, that can be directly passed to
+    /// a Pass object for rendering. The Nodes can be sorted if necessary,
+    /// and the PassPurpose is to know the Pass we should point.
+    ///
+    /// @note
+    /// If the given filter is not available, Node::Filter::None is always 
+    /// used.
     //////////////////////////////////////////////////////////////////////
-    void setActiveCamera(const Node& cameraNode);
+	std::vector<const SceneNode> getNodesForPass(Gre::PassPurpose pass, NodePrivate::Filter filter = NodePrivate::Filter::None) const;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Create a Default Pass given its name and number.
     /// If passNumber is already taken, return Pass::Null.
     //////////////////////////////////////////////////////////////////////
-    Pass createAndAddPass(const std::string& name, const PassNumber& passNumber);
+	Pass createAndAddPass(const std::string& name, const PassNumber& passNumber);
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Adds given custom created pass.
-    /// This function takes ownership of the Pointer. Also, it may return
-    /// Pass::Null if an error occured.
+    /// It may return Pass::Null if an error occured.
     //////////////////////////////////////////////////////////////////////
-    Pass addPass(PassPrivate* customPass);
+	Pass addPass(PassHolder& customPass);
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the first Pass with given name.
     //////////////////////////////////////////////////////////////////////
-    Pass getPassByName(const std::string& name);
+	Pass getPassByName(const std::string& name);
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the pass at given number.
     //////////////////////////////////////////////////////////////////////
-    Pass getPassByNumber(const PassNumber& passNumber);
+	Pass getPassByNumber(const PassNumber& passNumber);
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Removes the first Pass with given name.
     //////////////////////////////////////////////////////////////////////
-    void removePassByName(const std::string& name);
+	void removePassByName(const std::string& name);
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Removes the Pass with given number.
     //////////////////////////////////////////////////////////////////////
-    void removePassByNumber(const PassNumber& passNumber);
+	void removePassByNumber(const PassNumber& passNumber);
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns every active Pass, sorted by PassNumber from first
     /// to last.
     //////////////////////////////////////////////////////////////////////
-    PassList getActivePasses() const;
+	PassList getActivePasses() const;
     
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns true if something happened since the last render.
-    //////////////////////////////////////////////////////////////////////
-    bool isDirty() const;
-    
-    /// @brief A Null Scene User.
-    static Scene Null;
-    
-private:
-    
-    std::weak_ptr<ScenePrivate> _mScene;
+    /// @brief Null Object.
+    static SceneManager Null;
 };
 
 //////////////////////////////////////////////////////////////////////
-/// @brief A basic loader to load Scene Objects.
+/// @brief A basic loader to load SceneManager Objects.
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC SceneLoader : public ResourceLoader
+class DLL_PUBLIC SceneManagerLoader : public ResourceLoader
 {
 public:
     
     POOLED(Pools::Loader)
     
-    SceneLoader();
-    virtual ~SceneLoader();
+    SceneManagerLoader();
+    virtual ~SceneManagerLoader();
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns true if Resource::Type is ::Scene.
@@ -314,7 +416,10 @@ public:
     
 };
 
-typedef ResourceLoaderFactory<SceneLoader> SceneLoaderFactory;
+typedef ResourceLoaderFactory<SceneManagerLoader> SceneManagerLoaderFactory;
+
+/// @brief SpecializedResourceManager for SceneManagerPrivate.
+typedef SpecializedResourceManager<SceneManagerPrivate> SceneManagerManager;
 
 GreEndNamespace
 

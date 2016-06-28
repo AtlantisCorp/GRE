@@ -144,7 +144,7 @@
 }
 
 /// @brief When a Key is down, we add it to the Entry key queue.
-/// This is the Gre::WindowResource object (here OsXWindow) who will
+/// This is the Gre::WindowPrivate object (here OsXWindow) who will
 /// treat this Event.
 - (void) keyDown:(NSEvent *)theEvent
 {

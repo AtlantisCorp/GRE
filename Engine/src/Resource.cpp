@@ -1,86 +1,59 @@
+////////////////////////////////////////////////////
+//  File    : Resource.cpp
+//  Project : GRE
 //
-//  Resource.cpp
-//  GResource
+//  Created by Jacques Tronconi on 06/05/2016.
+//  
 //
-//  Created by Jacques Tronconi on 05/11/2015.
-//  Copyright (c) 2015 Atlanti's Corporation. All rights reserved.
-//
+////////////////////////////////////////////////////
 
 #include "Resource.h"
 #include "ResourceManager.h"
 
 GreBeginNamespace
 
-Resource::Resource (const std::string& name) :
-_name (name), _type(Resource::Type::Null)
+Resource::Resource(const std::string& name)
 {
-    VariantDescriptor nulldescriptor;
-    nulldescriptor.variant = Variant();
-    _mVariantDatas[-1] = nulldescriptor;
-    _shouldTransmit = false;
-    
-#ifdef GreIsDebugMode
-    GreDebugPretty() << name << " : Constructed." << std::endl;
-#endif
+    iName = name;
+    iType = Resource::Type::Null;
+    iShouldTransmit = false;
+    iCounter = nullptr;
+    iCounterInitialized = false;
 }
 
-Resource::~Resource ()
+Resource::~Resource() noexcept(false)
 {
-#ifdef GreIsDebugMode
-    GreDebugPretty() << _name << " : Destroyed." << std::endl;
-#endif
+    if(iCounterInitialized)
+    {
+        iCounter->unuse();
+        
+        if(iCounter->getUserCount() == 0)
+        {
+            delete iCounter;
+            iCounter = nullptr;
+            iCounterInitialized = false;
+        }
+    }
 }
 
 const std::string& Resource::getName() const
 {
-    return _name;
+    return iName;
 }
 
-const void* Resource::_getData() const
+const Resource::Type& Resource::getType() const
 {
-    return nullptr;
+    return iType;
 }
 
-const void* Resource::getCustomData(const std::string &dataname) const
+void Resource::addAction(Gre::EventType etype, std::function<void (const Event &)> eaction)
 {
-    return nullptr;
-}
-
-void Resource::storeVariantData(int index, const Variant &data)
-{
-    if(index >= 0)
-        _mVariantDatas[index].variant = data;
-}
-
-Variant& Resource::getVariantData(int index)
-{
-    if(index >= 0)
-        return _mVariantDatas[index].variant;
-    else
-        return _mVariantDatas[-1].variant;
-}
-
-const Variant& Resource::getVariantData(int index) const
-{
-    if(index >= 0)
-        return _mVariantDatas.at(index).variant;
-    else
-        return _mVariantDatas.at(-1).variant;
-}
-
-Resource::Type Resource::getType() const
-{
-    return _type;
-}
-
-void Resource::addAction(EventType etype, std::function<void (const Event&)> eaction)
-{
-    _actions[etype].push_back(eaction);
+    iActions[etype].push_back(eaction);
 }
 
 void Resource::resetActions()
 {
-    _actions.clear();
+    iActions.clear();
 }
 
 void Resource::onEvent(const Event &e)
@@ -97,7 +70,7 @@ void Resource::onEvent(const Event &e)
         onKeyDownEvent(e.to<KeyDownEvent>());
     }
     
-    auto actions = _actions[e.getType()];
+    auto actions = iActions[e.getType()];
     if(!actions.empty())
     {
         for(auto itr = actions.begin(); itr != actions.end(); itr++)
@@ -135,27 +108,27 @@ ResourceUser& Resource::addListener(const std::string& name)
 
 ResourceUser& Resource::addListener(const ResourceUser& listener)
 {
-    _mListeners.insert(std::pair<std::string, ResourceUser>(listener.getName(), listener));
-    return _mListeners.at(listener.getName());
+    iListeners.insert(std::pair<std::string, ResourceUser>(listener.getName(), listener));
+    return iListeners.at(listener.getName());
 }
 
 ResourceUser Resource::getListener(const std::string &name)
 {
-    return _mListeners.at(name);
+    return iListeners.at(name);
 }
 
 void Resource::removeListener(const std::string &name)
 {
-    auto it = _mListeners.find(name);
-    if(it != _mListeners.end())
+    auto it = iListeners.find(name);
+    if(it != iListeners.end())
     {
-        _mListeners.erase(it);
+        iListeners.erase(it);
     }
 }
 
 void Resource::sendEvent(const Event &e)
 {
-    for(auto itr = _mListeners.begin(); itr != _mListeners.end(); itr++)
+    for(auto itr = iListeners.begin(); itr != iListeners.end(); itr++)
     {
         itr->second.onEvent(e);
     }
@@ -163,217 +136,62 @@ void Resource::sendEvent(const Event &e)
 
 void Resource::setShouldTransmitEvents(bool p)
 {
-    _shouldTransmit = p;
+    iShouldTransmit = p;
 }
 
 bool Resource::shouldTransmitEvents() const
 {
-    return _shouldTransmit;
+    return iShouldTransmit;
 }
 
-// ---------------------------------------------------------------------------------------------------
-
-ResourceUser ResourceUser::Null = ResourceUser(std::weak_ptr<Resource>());
-
-ResourceUser::ResourceUser (bool persistent)
-: _resource(), _isPersistent(persistent)
+void Resource::acquire()
 {
-
-}
-
-ResourceUser::ResourceUser (ResourceUser&& movref)
-: _resource(std::move(movref._resource)), _isPersistent(movref._isPersistent)
-{
-    if(isPersistent())
+    if(!iCounterInitialized)
     {
-        _persistentResource = _resource.lock();
-        _resource = _persistentResource;
+        iCounter = new ReferenceCounter;
+        iCounter->use();
+        iCounterInitialized = true;
     }
-}
-
-
-ResourceUser::ResourceUser (const ResourceUser& rhs)
-: _resource(rhs._resource), _isPersistent(rhs._isPersistent)
-{
-    if(isPersistent())
-    {
-        _persistentResource = std::dynamic_pointer_cast<Resource>(_resource.lock());
-        _resource = _persistentResource;
-    }
-}
-
-ResourceUser::ResourceUser (std::weak_ptr<Resource> r, bool persistent) :
-_resource ( r ), _isPersistent(persistent)
-{
-    if(isPersistent())
-    {
-        _persistentResource = std::dynamic_pointer_cast<Resource>(_resource.lock());
-        _resource = _persistentResource;
-    }
-}
-
-ResourceUser::~ResourceUser ()
-{
     
+    iCounter->hold();
 }
 
-bool ResourceUser::expired () const
+void Resource::release()
 {
-    return _resource.expired();
+    if(iCounterInitialized)
+    {
+        iCounter->unhold();
+        
+        if(iCounter->getHolderCount() == 0)
+        {
+            delete this;
+        }
+    }
 }
 
-const std::string& ResourceUser::getName() const
+int Resource::getCounterValue() const
 {
-    auto ptr = _resource.lock();
-    return ptr->getName();
+    return iCounter->getHolderCount();
 }
 
-
-std::shared_ptr<Resource> ResourceUser::lock()
+ReferenceCounter* Resource::getReferenceCounter()
 {
-    return _resource.lock();
-}
-const std::shared_ptr<Resource> ResourceUser::lock() const
-{
-    return _resource.lock();
+    return iCounter;
 }
 
-const void* ResourceUser::getCustomData(const std::string &dataname) const
+Variant& Resource::getCustomData(const std::string &entry)
 {
-    auto ptr = _resource.lock();
-    if(ptr)
-        return ptr->getCustomData(dataname);
-    return nullptr;
+    return iCustomData[entry];
 }
 
-void ResourceUser::storeVariantData(int index, const Gre::Variant &data)
+const Variant& Resource::getCustomData(const std::string &entry) const
 {
-    auto ptr = _resource.lock();
-    if(ptr)
-        ptr->storeVariantData(index, data);
+    return iCustomData[entry];
 }
 
-Variant& ResourceUser::getVariantData(int index)
+void Resource::setCustomData(const std::string &entry, const Gre::Variant &data)
 {
-    auto ptr = _resource.lock();
-    if(ptr)
-        return ptr->getVariantData(index);
-    return Variant::Null;
-}
-
-const Variant& ResourceUser::getVariantData(int index) const
-{
-    auto ptr = _resource.lock();
-    if(ptr)
-        return ptr->getVariantData(index);
-    return Variant::Null;
-}
-
-void ResourceUser::addAction(EventType etype, std::function<void (const Event&)> eaction)
-{
-    auto ptr = _resource.lock();
-    if(ptr)
-        ptr->addAction(etype, eaction);
-}
-
-void ResourceUser::resetActions()
-{
-    auto ptr = _resource.lock();
-    if(ptr)
-        ptr->resetActions();
-}
-
-void ResourceUser::onEvent(const Event &e)
-{
-    auto ptr = _resource.lock();
-    if(ptr)
-        ptr->onEvent(e);
-}
-
-void ResourceUser::listen(ResourceUser &emitter)
-{
-    emitter.addListener(*this);
-}
-
-ResourceUser& ResourceUser::addListener(const std::string &name)
-{
-    auto ptr = _resource.lock();
-    if(ptr)
-        return ptr->addListener(name);
-    return ResourceUser::Null;
-}
-
-ResourceUser& ResourceUser::addListener(const ResourceUser &listener)
-{
-    auto ptr = _resource.lock();
-    if(ptr)
-        return ptr->addListener(listener);
-    return ResourceUser::Null;
-}
-
-ResourceUser ResourceUser::getListener(const std::string &name)
-{
-    auto ptr = _resource.lock();
-    if(ptr)
-        return ptr->getListener(name);
-    return ResourceUser::Null;
-}
-
-void ResourceUser::removeListener(const std::string &name)
-{
-    auto ptr = _resource.lock();
-    if(ptr)
-        ptr->removeListener(name);
-}
-
-void ResourceUser::sendEvent(const Event &e)
-{
-    auto ptr = _resource.lock();
-    if(ptr)
-        ptr->sendEvent(e);
-}
-
-void ResourceUser::setShouldTransmitEvents(bool p)
-{
-    auto ptr = _resource.lock();
-    if(ptr)
-        ptr->setShouldTransmitEvents(p);
-}
-
-bool ResourceUser::shouldTransmitEvents() const
-{
-    auto ptr = _resource.lock();
-    if(ptr)
-        return ptr->shouldTransmitEvents();
-    return false;
-}
-
-bool ResourceUser::isPersistent() const
-{
-    return _isPersistent;
-}
-
-// ---------------------------------------------------------------------------------------------------
-
-ResourceLoader::ResourceLoader()
-{
-}
-ResourceLoader::ResourceLoader(const ResourceLoader&)
-{
-}
-
-ResourceLoader::~ResourceLoader()
-{
-}
-
-bool ResourceLoader::isTypeSupported (Resource::Type type) const
-{
-    return false;
-}
-
-ResourceLoader* ResourceLoader::clone() const
-{
-    return nullptr;
+    iCustomData[entry] = data;
 }
 
 GreEndNamespace

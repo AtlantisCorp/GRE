@@ -1,16 +1,40 @@
+//////////////////////////////////////////////////////////////////////
 //
 //  Plugin.cpp
-//  GResource
+//  This source file is part of Gre
+//		(Gang's Resource Engine)
 //
-//  Created by Jacques Tronconi on 01/11/2015.
-//  Copyright (c) 2015 Atlanti's Corporation. All rights reserved.
+//  Copyright (c) 2015 - 2016 Luk2010
+//  Created on 01/11/2015.
 //
+//////////////////////////////////////////////////////////////////////
+/*
+ -----------------------------------------------------------------------------
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal
+ in the Software without restriction, including without limitation the rights
+ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
+ 
+ The above copyright notice and this permission notice shall be included in
+ all copies or substantial portions of the Software.
+ 
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ THE SOFTWARE.
+ -----------------------------------------------------------------------------
+ */
 
 #include "Plugin.h"
 
 GreBeginNamespace
 
-PluginResource::PluginResource (const std::string& name, const std::string& file)
+PluginPrivate::PluginPrivate (const std::string& name, const std::string& file)
 : Resource(name), _file (file)
 {
     // We check the extension of the file.
@@ -56,7 +80,7 @@ PluginResource::PluginResource (const std::string& name, const std::string& file
     _mIsStarted = false;
 }
 
-PluginResource::~PluginResource()
+PluginPrivate::~PluginPrivate()
 {
     if(_mStop && _mStart && _mHandle)
     {
@@ -69,7 +93,7 @@ PluginResource::~PluginResource()
     }
 }
 
-bool PluginResource::start ()
+bool PluginPrivate::start ()
 {
     
     if(_mStart && !_mIsStarted) {
@@ -84,7 +108,7 @@ bool PluginResource::start ()
     return false;
 }
 
-void PluginResource::stop ()
+void PluginPrivate::stop ()
 {
     if(_mStop && _mHandle && _mIsStarted) {
         _mStop();
@@ -95,31 +119,32 @@ void PluginResource::stop ()
     }
 }
 
-const void* PluginResource::_getData() const
+const void* PluginPrivate::_getData() const
 {
     return &_mHandle;
 }
 
-const std::string& PluginResource::getName() const
+const std::string& PluginPrivate::getName() const
 {
     return _mName;
 }
 
+// ---------------------------------------------------------------------------------------------------
 
-Plugin::Plugin(Plugin&& movref)
-: ResourceUser(movref), _mPlugin(std::move(movref._mPlugin))
+Plugin::Plugin(const PluginPrivate* pointer)
+: SpecializedResourceUser<Gre::PluginPrivate>(pointer)
 {
     
 }
 
-Plugin::Plugin (const Plugin& plugin)
-: ResourceUser(plugin.lock()), _mPlugin(plugin._mPlugin)
+Plugin::Plugin(const PluginHolder& holder)
+: SpecializedResourceUser<Gre::PluginPrivate>(holder)
 {
     
 }
 
-Plugin::Plugin (const ResourceUser& ruser)
-: ResourceUser(ruser.lock()), _mPlugin(std::dynamic_pointer_cast<PluginResource>(ruser.lock()))
+Plugin::Plugin(const Plugin& user)
+: SpecializedResourceUser<Gre::PluginPrivate>(user)
 {
     
 }
@@ -133,7 +158,7 @@ std::string _tmp;
 
 const std::string& Plugin::getName() const
 {
-    auto ptr = _mPlugin.lock();
+    auto ptr = lock();
     if(ptr)
         return ptr->getName();
     return _tmp;
@@ -141,7 +166,7 @@ const std::string& Plugin::getName() const
 
 bool Plugin::start()
 {
-    auto ptr = _mPlugin.lock();
+    auto ptr = lock();
     if(ptr)
         return ptr->start();
     return false;
@@ -149,10 +174,12 @@ bool Plugin::start()
 
 void Plugin::stop()
 {
-    auto ptr = _mPlugin.lock();
+    auto ptr = lock();
     if(ptr)
         ptr->stop();
 }
+
+// ---------------------------------------------------------------------------------------------------
 
 PluginLoader::PluginLoader ()
 {
@@ -169,7 +196,7 @@ Resource* PluginLoader::load(Resource::Type type, const std::string& name, const
     if(!isTypeSupported(type))
         return nullptr;
     
-    PluginResource* plugres = new PluginResource(name, file);
+    PluginPrivate* plugres = new PluginPrivate(name, file);
     if(!plugres) return nullptr;
     
     if(!plugres->start()) {

@@ -5,7 +5,7 @@
 //  Created by Jacques Tronconi on 21/12/2015.
 //
 //
-
+/*
 #include "BinaryTreeScene.h"
 
 GreBeginNamespace
@@ -354,3 +354,4 @@ ResourceLoader* BinaryTreeSceneLoader::clone() const
 }
 
 GreEndNamespace
+ */

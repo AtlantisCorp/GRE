@@ -16,7 +16,7 @@ Event::Event(const EventType& etype)
     
 }
 
-Event::~Event()
+Event::~Event() noexcept(false)
 {
     
 }
@@ -55,17 +55,6 @@ UpdateEvent::UpdateEvent()
 }
 
 UpdateEvent::~UpdateEvent()
-{
-    
-}
-
-WindowSizedEvent::WindowSizedEvent()
-: Event(EventType::WindowSized)
-{
-    
-}
-
-WindowSizedEvent::~WindowSizedEvent()
 {
     
 }

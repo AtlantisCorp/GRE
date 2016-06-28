@@ -1,15 +1,40 @@
+//////////////////////////////////////////////////////////////////////
 //
 //  RenderTarget.h
-//  GRE
+//  This source file is part of Gre
+//		(Gang's Resource Engine)
 //
-//  Created by Jacques Tronconi on 15/02/2016.
+//  Copyright (c) 2015 - 2016 Luk2010
+//  Created on 15/02/2016.
 //
-//
+//////////////////////////////////////////////////////////////////////
+/*
+ -----------------------------------------------------------------------------
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal
+ in the Software without restriction, including without limitation the rights
+ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
+ 
+ The above copyright notice and this permission notice shall be included in
+ all copies or substantial portions of the Software.
+ 
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ THE SOFTWARE.
+ -----------------------------------------------------------------------------
+ */
 
 #ifndef GRE_RenderTarget_h
 #define GRE_RenderTarget_h
 
 #include "Pools.h"
+#include "Resource.h"
 #include "Scene.h"
 
 GreBeginNamespace
@@ -17,11 +42,20 @@ GreBeginNamespace
 //////////////////////////////////////////////////////////////////////
 /// @brief An Object where the Renderer can render a Scene on it.
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC RenderTargetPrivate
+class DLL_PUBLIC RenderTargetPrivate : public Resource
 {
 public:
     
-    RenderTargetPrivate();
+    POOLED(Pools::Render)
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Constructs a RenderTarget.
+    //////////////////////////////////////////////////////////////////////
+    RenderTargetPrivate(const std::string& name);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Destructs the RenderTarget.
+    //////////////////////////////////////////////////////////////////////
     virtual ~RenderTargetPrivate();
     
     //////////////////////////////////////////////////////////////////////
@@ -29,41 +63,41 @@ public:
     /// In case this RenderTarget has a RenderContext object, this function
     /// may change the current RenderContext.
     //////////////////////////////////////////////////////////////////////
-    virtual void bind() = 0;
+    virtual void bind();
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Unbind the RenderTarget.
     //////////////////////////////////////////////////////////////////////
-    virtual void unbind() = 0;
+    virtual void unbind();
     
     //////////////////////////////////////////////////////////////////////
     /// @brief If has one, should bind the internal Framebuffer.
     /// This method is used by the Renderer in order to be able to draw the
     /// result of the blended Pass'es objects in a custom Framebuffer.
     //////////////////////////////////////////////////////////////////////
-    virtual void bindFramebuffer() = 0;
+    virtual void bindFramebuffer();
     
     //////////////////////////////////////////////////////////////////////
     /// @brief If has one, unbind the internal Framebuffer.
     //////////////////////////////////////////////////////////////////////
-    virtual void unbindFramebuffer() = 0;
+    virtual void unbindFramebuffer();
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Select a Scene to be rendered when rendering on this
+    /// @brief Select a SceneManager to be rendered when rendering on this
     /// RenderTarget.
     //////////////////////////////////////////////////////////////////////
-    void selectScene(const Scene& scene);
+    void selectScene(const SceneManager& scene);
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Selected Scene to be rendered on this Target.
+    /// @brief Returns the Selected SceneManager to be rendered on this Target.
     //////////////////////////////////////////////////////////////////////
-    Scene getSelectedScene();
+    SceneManager getSelectedScene();
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns true if this RenderTarget contains a RenderContext
     /// and should be drawed by the Renderer during the first phase.
     //////////////////////////////////////////////////////////////////////
-    virtual bool holdsRenderContext() const = 0;
+    virtual bool holdsRenderContext();
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns true if this RenderTarget needs to be drawed, either
@@ -85,32 +119,46 @@ public:
 private:
     
     /// @brief The Selected Scene to render on this RenderTarget.
-    Scene _mSelectedScene;
+    SceneManager iSelectedScene;
     
     /// @brief Must this RenderTarget be rendered ?
-    mutable bool _mNeedsDrawing;
+    mutable bool iNeedsDrawing;
 };
 
+/// @brief SpecializedResourceHolder for RenderTargetPrivate.
+typedef SpecializedResourceHolder<RenderTargetPrivate> RenderTargetHolder;
+
+/// @brief SpecializedResourceHolderList for RenderTargetPrivate.
+typedef SpecializedResourceHolderList<RenderTargetPrivate> RenderTargetHolderList;
+
 //////////////////////////////////////////////////////////////////////
-/// @brief A custom User Object that can be used to hold a RenderTarget
-/// Object.
+/// @brief SpecializedResourceUser for RenderTargetPrivate.
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC RenderTarget
+class DLL_PUBLIC RenderTarget : public SpecializedResourceUser<RenderTargetPrivate>
 {
 public:
     
-    RenderTarget();
+    POOLED(Pools::Render)
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Constructs a RenderTarget User Object with an object that
-    /// should be a RenderTarget.
+    /// @brief Constructs a RenderTarget from pointer.
     //////////////////////////////////////////////////////////////////////
-    template<typename T>
-    RenderTarget(const T& ObjectUser) {
-        _mRenderTarget = std::dynamic_pointer_cast<RenderTargetPrivate>(ObjectUser.lock());
-    }
+    RenderTarget(const RenderTargetPrivate* pointer);
     
-    ~RenderTarget();
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Constructs a RenderTarget from holder.
+    //////////////////////////////////////////////////////////////////////
+    RenderTarget(const RenderTargetHolder& holder);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Constructs a RenderTarget from user.
+    //////////////////////////////////////////////////////////////////////
+    RenderTarget(const RenderTarget& user);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Destructs the RenderTarget user.
+    //////////////////////////////////////////////////////////////////////
+    virtual ~RenderTarget();
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Bind the RenderTarget.
@@ -140,12 +188,12 @@ public:
     /// @brief Select a Scene to be rendered when rendering on this
     /// RenderTarget.
     //////////////////////////////////////////////////////////////////////
-    void selectScene(const Scene& scene);
+    void selectScene(const SceneManager& scene);
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the Selected Scene to be rendered on this Target.
     //////////////////////////////////////////////////////////////////////
-    Scene getSelectedScene();
+    SceneManager getSelectedScene();
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns true if this RenderTarget contains a RenderContext
@@ -169,11 +217,6 @@ public:
     /// been drawed.
     //////////////////////////////////////////////////////////////////////
     void onRenderFinished() const;
-    
-private:
-    
-    /// @brief Holds a pointer to the RenderTarget Object.
-    std::weak_ptr<RenderTargetPrivate> _mRenderTarget;
 };
 
 GreEndNamespace

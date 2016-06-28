@@ -60,7 +60,7 @@ bool OsXWindow::pollEvent()
                 
                 WindowSizedEvent e;
                 e.surface = _mSurface;
-                sendEvent(e);
+                onEvent(e);
             }
             
             _hasBeenClosed = _mExposed && nsWindowEntry->closed;

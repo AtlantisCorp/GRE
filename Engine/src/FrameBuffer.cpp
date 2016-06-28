@@ -1,148 +1,65 @@
+//////////////////////////////////////////////////////////////////////
 //
 //  FrameBuffer.cpp
-//  GRE
+//  This source file is part of Gre
+//		(Gang's Resource Engine)
 //
-//  Created by Jacques Tronconi on 25/01/2016.
+//  Copyright (c) 2015 - 2016 Luk2010
+//  Created on 25/01/2016.
 //
-//
+//////////////////////////////////////////////////////////////////////
+/*
+ -----------------------------------------------------------------------------
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal
+ in the Software without restriction, including without limitation the rights
+ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
+ 
+ The above copyright notice and this permission notice shall be included in
+ all copies or substantial portions of the Software.
+ 
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ THE SOFTWARE.
+ -----------------------------------------------------------------------------
+ */
 
 #include "FrameBuffer.h"
 
 GreBeginNamespace
 
-FrameBufferPrivate::FrameBufferPrivate(const std::string& name)
+RenderFramebufferPrivate::RenderFramebufferPrivate(const std::string& name)
 : Resource(name)
 {
-    _mMaxWidth = 0;
-    _mMaxHeight = 0;
-    _mMaxSamples = 0;
-    _mMaxColorAttachement = 0;
+    
 }
 
-FrameBufferPrivate::~FrameBufferPrivate()
+RenderFramebufferPrivate::~RenderFramebufferPrivate()
 {
     
 }
 
-void FrameBufferPrivate::bind() const
+void RenderFramebufferPrivate::bind() const
 {
-    GreDebugFunctionNotImplemented();
-}
-
-void FrameBufferPrivate::unbind() const
-{
-    GreDebugFunctionNotImplemented();
-}
-
-Texture& FrameBufferPrivate::getDefaultTextureAccessible()
-{
-    auto it = _mHdwFboTextures.find(Attachement::Color);
-    if(it != _mHdwFboTextures.end())
-        return (*it).second;
     
-    return Texture::Null;
 }
 
-const Texture& FrameBufferPrivate::getDefaultTextureAccessible() const
+void RenderFramebufferPrivate::unbind() const
 {
-    auto it = _mHdwFboTextures.find(Attachement::Color);
-    if(it != _mHdwFboTextures.end())
-        return (*it).second;
     
-    return Texture::Null;
 }
 
-void FrameBufferPrivate::attachTexture(FrameBufferPrivate::Attachement attachement, const Texture &texture)
-{
-    GreDebugFunctionNotImplemented();
-}
+
 
 // ---------------------------------------------------------------------------------------------------
 
-FrameBuffer::FrameBuffer()
-: ResourceUser(), _mfbo()
-{
-    
-}
 
-FrameBuffer::FrameBuffer(const FrameBuffer& rhs)
-: ResourceUser(rhs), _mfbo(rhs._mfbo)
-{
-    
-}
-
-FrameBuffer::FrameBuffer(FrameBuffer&& rhs)
-: ResourceUser(rhs), _mfbo(std::move(rhs._mfbo))
-{
-    
-}
-
-FrameBuffer::FrameBuffer(const ResourceUser& rhs)
-: ResourceUser(rhs), _mfbo(std::dynamic_pointer_cast<FrameBufferPrivate>(rhs.lock()))
-{
-    
-}
-
-FrameBuffer& FrameBuffer::operator=(const FrameBuffer &rhs)
-{
-    ResourceUser::operator=(rhs);
-    _mfbo = rhs._mfbo;
-    return *this;
-}
-
-bool FrameBuffer::operator==(const FrameBuffer &rhs) const
-{
-    return _mfbo.lock() == rhs._mfbo.lock();
-}
-
-bool FrameBuffer::operator!=(const FrameBuffer &rhs) const
-{
-    return !(*this == rhs);
-}
-
-FrameBuffer::~FrameBuffer()
-{
-    
-}
-
-void FrameBuffer::bind() const
-{
-    auto ptr = _mfbo.lock();
-    if(ptr)
-        ptr->bind();
-}
-
-void FrameBuffer::unbind() const
-{
-    auto ptr = _mfbo.lock();
-    if(ptr)
-        ptr->unbind();
-}
-
-Texture& FrameBuffer::getDefaultTextureAccessible()
-{
-    auto ptr = _mfbo.lock();
-    if(ptr)
-        return ptr->getDefaultTextureAccessible();
-    return Texture::Null;
-}
-
-const Texture& FrameBuffer::getDefaultTextureAccessible() const
-{
-    auto ptr = _mfbo.lock();
-    if(ptr)
-        return ptr->getDefaultTextureAccessible();
-    return Texture::Null;
-}
-
-void FrameBuffer::attachTexture(FrameBuffer::Attachement attachement, const Texture &texture)
-{
-    auto ptr = _mfbo.lock();
-    if(ptr)
-        ptr->attachTexture(attachement, texture);
-}
-
-FrameBuffer FrameBuffer::Null = FrameBuffer();
 
 // ---------------------------------------------------------------------------------------------------
 

@@ -17,21 +17,31 @@
 GreBeginNamespace
 
 //////////////////////////////////////////////////////////////////////
-/// @brief A Window brief Object.
+/// @brief A Window Object.
 ///
-/// A Window should be a RenderTarget, but should also send Key Event,
-/// Mouse Event, and take care about every Hardware or OS specific
-/// related Events.
+/// A Window is a specific RenderTarget, which should also contains
+/// a RenderContext. The Window should also provides handling of the
+/// Hardware Keyboard when focused, and Hardware Mouse.
+///
+/// The Window object is highly platform-dependent, and should be
+/// different for each platforms.
 ///
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC WindowResource : public Resource, public RenderTargetPrivate
+class DLL_PUBLIC WindowPrivate : public RenderTargetPrivate
 {
 public:
     
     POOLED(Pools::Resource)
     
-    WindowResource (const std::string& name);
-    virtual ~WindowResource();
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Constructs a WindowPrivate object.
+    //////////////////////////////////////////////////////////////////////
+    WindowPrivate (const std::string& name);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Destructs the WindowPrivate.
+    //////////////////////////////////////////////////////////////////////
+    virtual ~WindowPrivate() noexcept;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Treat Event in the Event Queue, if it has one.
@@ -43,7 +53,7 @@ public:
     //////////////////////////////////////////////////////////////////////
     /// @brief Return True if Window is not opened.
     //////////////////////////////////////////////////////////////////////
-    bool isClosed() const;
+    virtual bool isClosed() const;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the Recommended Renderer name for this Object.
@@ -76,12 +86,12 @@ public:
     /// @note Window::isExposed() and Window::isClosed() can return the same
     /// value (false) if Window is minimized.
     //////////////////////////////////////////////////////////////////////
-    bool isExposed() const;
+    virtual bool isExposed() const;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Return true if a RenderContext is linked with this Window.
     //////////////////////////////////////////////////////////////////////
-    bool hasRenderContext() const;
+    virtual bool hasRenderContext() const;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Change the RenderContext used by this Window.
@@ -91,18 +101,22 @@ public:
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the RenderContext used by this Window.
     //////////////////////////////////////////////////////////////////////
-    RenderContext& getRenderContext();
-    const RenderContext& getRenderContext() const;
+    virtual RenderContext& getRenderContext();
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the RenderContext used by this Window.
+    //////////////////////////////////////////////////////////////////////
+    virtual const RenderContext& getRenderContext() const;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Adds a loop behaviour function.
     //////////////////////////////////////////////////////////////////////
-    void addLoopBehaviour(LoopBehaviour behaviour);
+    virtual void addLoopBehaviour(LoopBehaviour behaviour);
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Erases every Loop Behaviours.
     //////////////////////////////////////////////////////////////////////
-    void clearLoopBehaviour();
+    virtual void clearLoopBehaviour();
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns true if the Window has been exposed, then closed.
@@ -113,7 +127,7 @@ public:
     /// @brief Returns true if this RenderTarget contains a RenderContext
     /// and should be drawed by the Renderer during the first phase.
     //////////////////////////////////////////////////////////////////////
-    bool holdsRenderContext() const;
+    virtual bool holdsRenderContext() const;
     
 protected:
     
@@ -124,28 +138,40 @@ protected:
     //////////////////////////////////////////////////////////////////////
     virtual void onRenderContextChanged();
     
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Called when this window's size changed.
+    //////////////////////////////////////////////////////////////////////
+    //virtual void onWindowSizeChangedEvent(const WindowSizeChangedEvent& e);
+    
 protected:
     
     /// @brief Window's title.
-    std::string _mTitle;
+    std::string iTitle;
     
     /// @brief Surface used by the Window.
-    Surface _mSurface;
+    Surface iSurface;
     
     /// @brief True if Window is exposed.
-    bool _mExposed;
+    bool iExposed;
     
     /// @brief True if Window is closed.
-    bool _mClosed;
+    bool iClosed;
     
     /// @brief Holds the RenderContext linked to this Window.
-    RenderContext _mRenderContext;
+    RenderContext iRenderContext;
     
     /// @brief Helper object to hold LoopBehaviour functions.
-    LoopBehaviours _mLoopBehaviours;
+    LoopBehaviours iLoopBehaviours;
     
-    UpdateTime    _lastUpdate;
+    /// @brief Last Update time.
+    UpdateTime    iLastUpdate;
 };
+
+/// @brief SpecializedResourceHolder for WindowPrivate.
+typedef SpecializedResourceHolder<WindowPrivate> WindowHolder;
+
+/// @brief SpecializedResourceHolderList for WindowPrivate.
+typedef SpecializedResourceHolderList<WindowPrivate> WindowHolderList;
 
 GreEndNamespace
 #endif

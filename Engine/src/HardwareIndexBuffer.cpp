@@ -1,25 +1,53 @@
+//////////////////////////////////////////////////////////////////////
 //
 //  HardwareIndexBuffer.cpp
-//  GRE
+//  This source file is part of Gre
+//		(Gang's Resource Engine)
 //
-//  Created by Jacques Tronconi on 26/11/2015.
+//  Copyright (c) 2015 - 2016 Luk2010
+//  Created on 26/11/2015.
 //
-//
+//////////////////////////////////////////////////////////////////////
+/*
+ -----------------------------------------------------------------------------
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal
+ in the Software without restriction, including without limitation the rights
+ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
+ 
+ The above copyright notice and this permission notice shall be included in
+ all copies or substantial portions of the Software.
+ 
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ THE SOFTWARE.
+ -----------------------------------------------------------------------------
+ */
 
 #include "HardwareIndexBuffer.h"
 
 GreBeginNamespace
 
-HardwareIndexBufferPrivate::HardwareIndexBufferPrivate()
-: _mPrimitiveType(PrimitiveType::Triangles), _mStorageType(StorageType::UnsignedInt)
+HardwareIndexBufferPrivate::HardwareIndexBufferPrivate(const std::string& name)
+: Gre::HardwareBufferPrivate(name), iPrimitiveType(PrimitiveType::Triangles), iStorageType(StorageType::UnsignedInt)
 {
-    
+    iPrimitiveType = PrimitiveType::Triangles;
+    iStorageType = StorageType::UnsignedInt;
+    iFaces.indexedFaces.reserve(100);
 }
 
-HardwareIndexBufferPrivate::HardwareIndexBufferPrivate(PrimitiveType ptype, StorageType stype)
-: _mPrimitiveType(ptype), _mStorageType(stype)
+HardwareIndexBufferPrivate::HardwareIndexBufferPrivate(const std::string& name, PrimitiveType ptype, StorageType stype)
+: Gre::HardwareIndexBufferPrivate(name)
 {
-    
+    iPrimitiveType = ptype;
+    iStorageType = stype;
+    iFaces.indexedFaces.reserve(100);
 }
 
 HardwareIndexBufferPrivate::~HardwareIndexBufferPrivate()
@@ -36,7 +64,7 @@ size_t HardwareIndexBufferPrivate::count() const
 {
     unsigned ret = 0;
     
-    for(auto indexedFace : _mFaces.indexedFaces)
+    for(auto indexedFace : iFaces.indexedFaces)
         ret += indexedFace.indices.size();
     
     return ret;
@@ -44,7 +72,7 @@ size_t HardwareIndexBufferPrivate::count() const
 
 void HardwareIndexBufferPrivate::add(const IndexedFace &index)
 {
-    _mFaces.indexedFaces.push_back(index);
+    iFaces.indexedFaces.push_back(index);
     setDirty(true);
 }
 
@@ -56,62 +84,45 @@ void HardwareIndexBufferPrivate::add(const IndexedFaceBatch &batch)
 
 void HardwareIndexBufferPrivate::setMaterial(const Material &material)
 {
-    _mFaces.material = material;
+    iFaces.material = material;
 }
 
 Material& HardwareIndexBufferPrivate::getMaterial()
 {
-    return _mFaces.material;
+    return iFaces.material;
 }
 
 const Material& HardwareIndexBufferPrivate::getMaterial() const
 {
-    return _mFaces.material;
+    return iFaces.material;
 }
 
 PrimitiveType HardwareIndexBufferPrivate::getPrimitiveType() const
 {
-    return _mPrimitiveType;
+    return iPrimitiveType;
 }
 
 StorageType HardwareIndexBufferPrivate::getStorageType() const
 {
-    return _mStorageType;
-}
-
-size_t HardwareIndexBufferPrivate::getElementCount() const
-{
-    return 0;
+    return iStorageType;
 }
 
 // ---------------------------------------------------------------------------------------------------
 
-HardwareIndexBuffer::HardwareIndexBuffer()
-: _mBuffer()
+HardwareIndexBuffer::HardwareIndexBuffer(const HardwareIndexBufferPrivate* resource)
+: Gre::HardwareBuffer(resource), SpecializedResourceUser<Gre::HardwareIndexBufferPrivate>(resource)
 {
     
 }
 
-HardwareIndexBuffer::HardwareIndexBuffer(const HardwareIndexBuffer& buffer)
-: _mBuffer(buffer._mBuffer)
+HardwareIndexBuffer::HardwareIndexBuffer(const HardwareIndexBufferHolder& holder)
+: Gre::HardwareBuffer(holder.get()), SpecializedResourceUser<Gre::HardwareIndexBufferPrivate>(holder)
 {
     
 }
 
-HardwareIndexBuffer::HardwareIndexBuffer(HardwareIndexBuffer&& buffer)
-: _mBuffer(std::move(buffer._mBuffer))
-{
-    
-}
-
-HardwareIndexBuffer::HardwareIndexBuffer(std::weak_ptr<HardwareIndexBufferPrivate> bufferptr)
-: _mBuffer(bufferptr)
-{
-    
-}
-
-HardwareIndexBuffer::HardwareIndexBuffer(const ResourceUser& ruser)
-: _mBuffer(std::dynamic_pointer_cast<HardwareIndexBufferPrivate>(ruser.lock()))
+HardwareIndexBuffer::HardwareIndexBuffer(const HardwareIndexBuffer& user)
+: Gre::HardwareBuffer(user), SpecializedResourceUser<Gre::HardwareIndexBufferPrivate>(user)
 {
     
 }
@@ -121,94 +132,40 @@ HardwareIndexBuffer::~HardwareIndexBuffer()
     
 }
 
-void HardwareIndexBuffer::bind() const
+HardwareIndexBufferHolder HardwareIndexBuffer::lock()
 {
-    auto ptr = _mBuffer.lock();
-    if(ptr)
-        ptr->bind();
+    return SpecializedResourceUser<HardwareIndexBufferPrivate>::lock();
 }
 
-void HardwareIndexBuffer::unbind() const
+const HardwareIndexBufferHolder HardwareIndexBuffer::lock() const
 {
-    auto ptr = _mBuffer.lock();
-    if(ptr)
-        ptr->unbind();
-}
-
-void HardwareIndexBuffer::update() const
-{
-    auto ptr = _mBuffer.lock();
-    if(ptr)
-        ptr->update();
-}
-
-size_t HardwareIndexBuffer::getSize() const
-{
-    auto ptr = _mBuffer.lock();
-    if(ptr)
-        return ptr->getSize();
-    return 0;
-}
-
-size_t HardwareIndexBuffer::count() const
-{
-    auto ptr = _mBuffer.lock();
-    if(ptr)
-        return ptr->count();
-    return 0;
-}
-
-bool HardwareIndexBuffer::isDirty() const
-{
-    auto ptr = _mBuffer.lock();
-    if(ptr)
-        return ptr->isDirty();
-    return false;
-}
-
-bool HardwareIndexBuffer::isExpired() const
-{
-    return _mBuffer.expired();
+    return SpecializedResourceUser<HardwareIndexBufferPrivate>::lock();
 }
 
 void HardwareIndexBuffer::add(const IndexedFace &index)
 {
-    auto ptr = _mBuffer.lock();
+    auto ptr = lock();
     if(ptr)
         ptr->add(index);
 }
 
 void HardwareIndexBuffer::add(const IndexedFaceBatch &index)
 {
-    auto ptr = _mBuffer.lock();
+    auto ptr = lock();
     if(ptr)
         ptr->add(index);
 }
 
 void HardwareIndexBuffer::setMaterial(const Material &material)
 {
-    auto ptr = _mBuffer.lock();
+    auto ptr = lock();
     if(ptr)
         ptr->setMaterial(material);
 }
 
-bool HardwareIndexBuffer::isInvalid() const
-{
-    auto ptr = _mBuffer.lock();
-    if(ptr)
-        return ptr->isInvalid();
-    return true;
-}
-
-HardwareIndexBuffer& HardwareIndexBuffer::operator=(const HardwareIndexBuffer &rhs)
-{
-    _mBuffer = rhs._mBuffer;
-    return *this;
-}
-
 Material& HardwareIndexBuffer::getMaterial()
 {
-    auto ptr = _mBuffer.lock();
+    auto ptr = lock();
     if(ptr)
         return ptr->getMaterial();
     return Material::Null;
@@ -216,7 +173,7 @@ Material& HardwareIndexBuffer::getMaterial()
 
 const Material& HardwareIndexBuffer::getMaterial() const
 {
-    auto ptr = _mBuffer.lock();
+    auto ptr = lock();
     if(ptr)
         return ptr->getMaterial();
     return Material::Null;
@@ -224,7 +181,7 @@ const Material& HardwareIndexBuffer::getMaterial() const
 
 PrimitiveType HardwareIndexBuffer::getPrimitiveType() const
 {
-    auto ptr = _mBuffer.lock();
+    auto ptr = lock();
     if(ptr)
         return ptr->getPrimitiveType();
     return PrimitiveType::Triangles;
@@ -232,21 +189,13 @@ PrimitiveType HardwareIndexBuffer::getPrimitiveType() const
 
 StorageType HardwareIndexBuffer::getStorageType() const
 {
-    auto ptr = _mBuffer.lock();
+    auto ptr = lock();
     if(ptr)
         return ptr->getStorageType();
     return StorageType::UnsignedInt;
 }
 
-size_t HardwareIndexBuffer::getElementCount() const
-{
-    auto ptr = _mBuffer.lock();
-    if(ptr)
-        return ptr->getElementCount();
-    return 0;
-}
-
-HardwareIndexBuffer HardwareIndexBuffer::Null = HardwareIndexBuffer();
+HardwareIndexBuffer HardwareIndexBuffer::Null = HardwareIndexBuffer(nullptr);
 
 GreEndNamespace
 

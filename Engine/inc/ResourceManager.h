@@ -1,10 +1,34 @@
+//////////////////////////////////////////////////////////////////////
 //
 //  ResourceManager.h
-//  GResource
+//  This source file is part of Gre
+//		(Gang's Resource Engine)
 //
-//  Created by Jacques Tronconi on 28/10/2015.
-//  Copyright (c) 2015 Atlanti's Corporation. All rights reserved.
+//  Copyright (c) 2015 - 2016 Luk2010
+//  Created on 28/10/2015.
 //
+//////////////////////////////////////////////////////////////////////
+/*
+ -----------------------------------------------------------------------------
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal
+ in the Software without restriction, including without limitation the rights
+ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
+ 
+ The above copyright notice and this permission notice shall be included in
+ all copies or substantial portions of the Software.
+ 
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ THE SOFTWARE.
+ -----------------------------------------------------------------------------
+ */
 
 #ifndef GResource_ResourceManager_h
 #define GResource_ResourceManager_h
@@ -18,6 +42,7 @@
 #include "Scene.h"
 #include "FrameBuffer.h"
 #include "LoopBehaviours.h"
+#include "Keyboard.h"
 
 GreBeginNamespace
 
@@ -49,11 +74,46 @@ GreBeginNamespace
 /// have called ResourceManager::Create(), but that is not sure. You also
 /// can imbricate your calls in a try/catch block.
 ///
+/// # Uses to load Resources
+///
+/// You have ways to load Resource :
+///   - Use the appropriate Manager (like HardwareProgramManager for HardwareProgram
+/// objects) , using the function ::createSomething().
+///   - Use the ResourceManager loading system.
+///
+/// ## The ResourceManager loading system
+///
+/// For example, if you want to load a Mesh object. You can either use
+/// MeshManager::createFromFile() or use the ResourceManager. The big
+/// difference is that the ResourceManager loading system returns to you
+/// an object where you have the owning.
+///
+/// ```c++
+/// MeshHolder mymesh = ResourceManager::Get() .loadResourceWith(ResourceManager::Get().getMeshLoaderFactory()..., args...);
+/// Mesh mymeshuser = ResourceManager::Get().getMeshManager().add(mymesh);
+/// ```
+///
+/// The ::loadResourceWith() function can take a variable number of args. Those
+/// args are dependent of the Loader you will use. Some Loaders wants plenty of
+/// args (for options), some only wants the Resource's name.
+///
+/// Whenever possible, you should use the Manager's functions to load your
+/// Resource's, because they handle the ResourceHolder directly.
+///
+/// ## ResourceManager's holding
+///
+/// You can make the ResourceManager holds some Resource for some reasons. You
+/// can use add() and remove() function in order to register ResourceHolder objects.
+/// Those objects will be destroyed when applying a call to ::Destroy(), or ::clear(),
+/// or clearResources().
+///
 /// @see Resource, ResourceFactory
 ////////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC ResourceManager
+class DLL_PUBLIC ResourceManager : public Resource
 {
 public:
+    
+    POOLED(Pools::Manager)
     
     /// @brief An object that generate names for a resource.
     /// Example : You want to add 10 resources with name "MyName", it will generate
@@ -70,141 +130,219 @@ public:
         
     private:
         
-        std::map<std::string, unsigned> _mUsedNames;
+        std::map<std::string, unsigned> iUsedNames;
     };
     
-private:
+protected:
     
-    std::map<Resource::Type, std::vector<std::shared_ptr<Resource>>> _resourcesbytype; ///< @brief Stores every resources by type.
-    std::map<std::string, std::weak_ptr<Resource>>  _resourcesbyname; ///< @brief A Map storing every resources, by name.
-    FileLoaderFactory                               _fileloaders;     ///< @brief Factory to create FileLoaders.
-    WindowLoaderFactory                             _windowLoaders;   ///< @brief Factory to create WindowLoaders.
-    RendererLoaderFactory                           _rendererLoaders; ///< @brief Factory to create RendererLoaders.
-    MeshLoaderFactory                               _meshLoaders;     ///< @brief Factory to create MeshLoaders.
-    ImageLoaderFactory                              _imageLoaders;    ///< @brief Creates ImageLoader.
-    SceneLoaderFactory                              _sceneLoaders;    ///< @brief Creates SceneLoader objects.
-    HardwareShaderLoaderFactory                     _shaderLoaders;   ///< @brief Creates HardwareShaderLoader objects.
-    HardwareProgramManagerLoaderFactory             _progManLoaders;  ///< @brief Creates HardwareProgramManagerLoader objects.
-    FrameBufferLoaderFactory                        _fboLoaders;      ///< @brief Creates FrameBufferLoader objects.
-    NameGenerator                                   _nameGenerator;   ///< @brief Utility class to create Names.
-    KeyboardLoader                                  _keyboardLoader;  ///< @brief A simple Keyboard Loader.
+    /// @brief Factory to create FileLoaders.
+    FileLoaderFactory iFileloaders;
     
-    bool                                            _verbose;         ///< @brief Set to true to print more informations.
+    /// @brief Factory to create WindowLoaders.
+    WindowLoaderFactory iWindowLoaders;
+    
+    /// @brief Factory to create RendererLoaders.
+    RendererLoaderFactory iRendererLoaders;
+    
+    /// @brief Factory to create MeshLoaders.
+    MeshLoaderFactory iMeshLoaders;
+    
+    /// @brief Creates ImageLoader.
+    ImageLoaderFactory iImageLoaders;
+    
+    /// @brief Creates SceneLoader objects.
+    SceneManagerLoaderFactory iSceneLoaders;
+    
+    /// @brief Creates HardwareShaderLoader objects.
+    HardwareShaderLoaderFactory iShaderLoaders;
+    
+    /// @brief Creates HardwareProgramManagerLoader objects.
+    HardwareProgramManagerLoaderFactory iProgManLoaders;
+    
+    /// @brief Creates FrameBufferLoader objects.
+    FrameBufferLoaderFactory iFboLoaders;
+    
+    /// @brief Utility class to create Names.
+    NameGenerator iNameGenerator;
+    
+    /// @brief A simple Keyboard Loader.
+    KeyboardLoader iKeyboardLoader;
     
     /// @brief Determines when the ResourceManager should stop the Loop.
-    CloseBehaviour _mCloseBehaviour;
+    CloseBehaviour iCloseBehaviour;
     
     /// @brief Holds LoopBehaviour's functions.
-    LoopBehaviours _mLoopBehaviours;
+    LoopBehaviours iLoopBehaviours;
     
     /// @brief Holds LoopBehaviour's functions for PerWindow loop.
-    LoopBehaviours _mPerWindowBehaviours;
+    LoopBehaviours iPerWindowBehaviours;
     
     /// @brief A property that take effect only when the Loop has started.
     /// When the Loop starts, this property is set to false. When the User
     /// or any other events calls ResourceManager::stop(), this property is
     /// set to true.
-    bool _mMustStopLoop;
+    bool iMustStopLoop;
+    
+    /// @brief The Elapsed Time delta.
+    UpdateClock iElapsedTime;
+    
+    /// @brief The current Elapsed Time since app started.
+    UpdateTime iLastUpdate;
+    
+    /// @brief Holds Resource's owned by the ResourceManager.
+    std::list<ResourceHolder> iResources;
+    
+    /// @brief WindowManager.
+    WindowManager iWindowManager;
+    
+    /// @brief SceneManager's Manager.
+    SceneManagerManager iSceneManagerManager;
     
 public:
     
-    POOLED(Pools::Manager)
-    
+    ////////////////////////////////////////////////////////////////////////
     /// @brief Creates the ResourceManager singleton object.
     /// @note This function should be called only once per program. Behaviour
     /// is undefined when called more times.
+    ////////////////////////////////////////////////////////////////////////
     static void Create();
     
+    ////////////////////////////////////////////////////////////////////////
     /// @brief Destroys the ResourceManager object.
     /// @note This function should be called only once per program. Behaviour
     /// is undefined when called more times.
+    ////////////////////////////////////////////////////////////////////////
     static void Destroy();
     
+    ////////////////////////////////////////////////////////////////////////
     /// @brief Returns the ResourceManager singleton object.
     /// @note ResourceManager::Create() must have been called before using
     /// this function.
+    ////////////////////////////////////////////////////////////////////////
     static ResourceManager& Get();
     
 private:
     
+    ////////////////////////////////////////////////////////////////////////
     /// @brief Creates the ResourceManager.
     /// By default, the Constructor registers two FileLoader, the TextLoader
     /// (under name "TextLoader") and the PluginLoader (under name "PluginLoader").
     /// The PluginLoader is the only loader which is necessary to the Engine, to
     /// operate normally.
+    ////////////////////////////////////////////////////////////////////////
     ResourceManager();
     
+    ////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////
     ResourceManager(const ResourceManager& rhs) = delete;
     
 public:
     
-    /// @brief Destroys the ResourceManager and, using RAII, all the Resource objects.
-    ~ResourceManager ();
+    ////////////////////////////////////////////////////////////////////////
+    /// @brief Destroys the ResourceManager and, all the Resource objects.
+    ////////////////////////////////////////////////////////////////////////
+    virtual ~ResourceManager ();
     
+    ////////////////////////////////////////////////////////////////////////
     /// @brief Adds a new Resource, created by the user.
-    /// This resource is allocated by the user, but freed by the ResourceManager.
-    ResourceUser addResource(Resource::Type type, const std::string& name, std::shared_ptr<Resource> resource);
+    /// This resource is owned by the ResourceManager only.
+    ////////////////////////////////////////////////////////////////////////
+    virtual ResourceUser addResource(const ResourceHolder& holder);
     
-    /// @brief Loads a Resource giving its type, and its name.
-    /// @note This function is only here to give an example function. In fact, it does
-    /// nothing but creating an empty Resource with a name. You shouldn't use this function,
-    /// unless you want to create empty blank Resource object.
-    ResourceUser loadResource(Resource::Type type, const std::string& name);
+    ////////////////////////////////////////////////////////////////////////
+    /// @brief Creates a generic empty Resource.
+    /// This Resource can be, for example, used as a Listener.
+    ////////////////////////////////////////////////////////////////////////
+    virtual ResourceHolder loadEmptyResource(const std::string& name);
     
-    /// @brief Loads a Resource object using a Loader, the type of the Resource, and the Args used
-    /// by the Loader to load the Resource.
+    ////////////////////////////////////////////////////////////////////////
+    /// @brief Loads a Resource object using a Loader, the type of the Resource,
+    /// and the Args used by the Loader to load the Resource.
     /// @note The Arg awaited by this function are dependant to the Loader given.
     /// @see ResourceLoader
-    template <class RLoader, class... Args>
-    ResourceUser loadResourceWith(RLoader loader, Resource::Type type, const std::string& name, Args&&... args)
+    ////////////////////////////////////////////////////////////////////////
+    template <class RHolder, class RLoader, class... Args>
+    RHolder loadResourceWith(RLoader loader, Resource::Type type, const std::string& name, Args&&... args)
     {
-        std::shared_ptr<Resource> resptr(loader.load(type, name, std::forward<Args>(args)...));
-        if(resptr) {
-            resptr->_type = type;
-            _resourcesbytype[type].push_back(resptr);
-            _resourcesbyname[name] = resptr;
-            GreDebugPretty() << " Loaded Resource " << name << "." << std::endl;
-        }
-        return std::move(ResourceUser(_resourcesbyname[name]));
-    }
-    
-    /// @brief Loads a Resource object using a Loader pointer, the type of the Resource, and the Args used
-    /// by the Loader to load the Resource.
-    /// @note The Arg awaited by this function are dependant to the Loader given.
-    /// @note Usually, the loader pointer is given using one of the Factory registered in the Engine. The pointer
-    /// is ALWAYS destroyed in this function, because the Factory object allocate it. This function assume the
-    /// loader is created by either the user or the Factory, and it take responsability of the deleting.
-    /// @see ResourceLoader
-    template <class RLoader, class... Args>
-    ResourceUser loadResourceWith(RLoader* loader, Resource::Type type, const std::string& name, Args&&... args)
-    {
-        std::shared_ptr<Resource> resptr(loader->load(type, name, std::forward<Args>(args)...));
-        if(resptr) {
-            resptr->_type = type;
-            _resourcesbytype[type].push_back(resptr);
-            _resourcesbyname[name] = resptr;
+        RHolder resptr(loader.load(type, name, std::forward<Args>(args)...));
+        
+#ifdef GreIsDebugMode
+        if(resptr)
+        {
             GreDebugPretty() << "Loaded Resource " << name << "." << std::endl;
         }
+        else
+        {
+            GreDebugPretty() << "Error loading Resource " << name << "." << std::endl;
+        }
+#endif
         
-        delete loader;
-        return std::move(ResourceUser(_resourcesbyname[name]));
+        return resptr;
+    }
+    
+    ////////////////////////////////////////////////////////////////////////
+    /// @brief Loads a Resource object using a Loader pointer, the type of the
+    /// Resource, and the Args used by the Loader to load the Resource.
+    /// @note The Arg awaited by this function are dependant to the Loader given.
+    /// @note Usually, the loader pointer is given using one of the Factory registered
+    /// in the Engine. The pointer is ALWAYS destroyed in this function, because the
+    /// Factory object allocate it. This function assume the loader is created by either
+    /// the user or the Factory, and it take responsability of the deleting.
+    /// @see ResourceLoader
+    ////////////////////////////////////////////////////////////////////////
+    template <class RHolder, class RLoader, class... Args>
+    RHolder loadResourceWith(RLoader* loader, Resource::Type type, const std::string& name, Args&&... args)
+    {
+        if(loader)
+        {
+            RHolder resptr(loader->load(type, name, std::forward<Args>(args)...));
+            
+#ifdef GreIsDebugMode
+            if(resptr)
+            {
+                GreDebugPretty() << "Loaded Resource " << name << "." << std::endl;
+            }
+            else
+            {
+                GreDebugPretty() << "Error loading Resource " << name << "." << std::endl;
+            }
+#endif
+            
+            delete loader;
+            return resptr;
+        }
+        
+        else
+        {
+            
+#ifdef GreIsDebugMode
+            GreDebugPretty() << "Invalid loader given (resource='" << name << "')." << std::endl;
+#endif
+            
+            return RHolder(nullptr);
+        }
     }
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the first Resource that has given name.
     //////////////////////////////////////////////////////////////////////
-    ResourceUser findResourceByName(const std::string& name);
+    virtual ResourceUser findResourceByName(const std::string& name);
     
+    //////////////////////////////////////////////////////////////////////
     /// @brief Unload Resource giving its name.
-    /// @note This function does not destroy the ResourceUser objects, but
-    /// they will be invalidated (ResourceUser::isExpired() should return true).
-    void unloadResource(const std::string& name);
+    //////////////////////////////////////////////////////////////////////
+    virtual void unloadResource(const std::string& name);
     
+    //////////////////////////////////////////////////////////////////////
     /// @brief Unload every Resource objects.
-    void clear ();
+    //////////////////////////////////////////////////////////////////////
+    virtual void clear ();
     
-    /// @brief Returns the Memory used by every ResourceObject, using the Pool system.
-    unsigned getResourceUsage() const;
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the Memory used by every ResourceObject, using the
+    /// Pool system.
+    //////////////////////////////////////////////////////////////////////
+    virtual unsigned getResourceUsage() const;
     
     /// @brief Returns the FileLoader Factory.
     FileLoaderFactory& getFileLoaderFactory();
@@ -217,7 +355,7 @@ public:
     /// @brief Returns the ImageLoader Factory.
     ImageLoaderFactory& getImageLoaderFactory();
     /// @brief Returns the SceneLoader Factory.
-    SceneLoaderFactory& getSceneLoaderFactory();
+    SceneManagerLoaderFactory& getSceneManagerLoaderFactory();
     /// @brief Returns the NameGenerator object.
     NameGenerator& getNameGenerator();
     /// @brief Returns the HardwareShaderLoader Factory.
@@ -229,53 +367,73 @@ public:
     /// @brief Returns the Keyboard Loader.
     KeyboardLoader& getKeyboardLoader();
     
-    /// @brief Set to true if you want verbose mode.
-    void setVerbose(bool flag);
-    
+    //////////////////////////////////////////////////////////////////////
     /// @brief Loads every plugins in given directory name.
     ///
     /// Plugins loaded are every files finishing with '.so' for Linux,
     /// '.dylib' for OsX, or '.dll' for Windows' users.
     ///
     /// @note The directory must be different from the Working Directory.
-    int loadPluginsIn(const std::string& dirname);
+    //////////////////////////////////////////////////////////////////////
+    virtual int loadPluginsIn(const std::string& dirname);
     
     ////////////////////////////////////////////////////////////////////////
     /// @brief Set the CloseBehaviour.
     ////////////////////////////////////////////////////////////////////////
-    void setCloseBehaviour(const CloseBehaviour& behaviour);
+    virtual void setCloseBehaviour(const CloseBehaviour& behaviour);
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Adds a loop behaviour function.
     //////////////////////////////////////////////////////////////////////
-    void addLoopBehaviour(LoopBehaviour behaviour);
+    virtual void addLoopBehaviour(LoopBehaviour behaviour);
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Erases every Loop Behaviours.
     //////////////////////////////////////////////////////////////////////
-    void clearLoopBehaviour();
+    virtual void clearLoopBehaviour();
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Stops the current loop processing.
     /// This is done by simply setting the property _mMustStopLoop to true.
     //////////////////////////////////////////////////////////////////////
-    void stop();
+    virtual void stop();
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Updates the Window objects. 
     //////////////////////////////////////////////////////////////////////
-    void loop();
+    virtual void loop();
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Creates a Resource that should be used only for Event handling/
     /// sending.
+    /// @deprecated
+    /// This function is the same as ::loadEmptyResource().
     //////////////////////////////////////////////////////////////////////
-    ResourceUser createPureListener(const std::string& name);
+    virtual ResourceHolder createPureListener(const std::string& name);
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Creates a simple Keyboard Resource.
     //////////////////////////////////////////////////////////////////////
-    Keyboard createKeyboard(const std::string& name);
+    virtual KeyboardHolder createKeyboard(const std::string& name);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the Window Manager.
+    //////////////////////////////////////////////////////////////////////
+    virtual WindowManager& getWindowManager();
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the Window Manager.
+    //////////////////////////////////////////////////////////////////////
+    virtual const WindowManager& getWindowManager() const;
+    
+protected:
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Updates the Time elapsed between each turn in ::loop().
+    //////////////////////////////////////////////////////////////////////
+    void _updateElapsedTime();
+    
+public:
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Unites some Utilities function to help the user do some

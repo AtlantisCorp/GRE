@@ -23,13 +23,15 @@ enum class DLL_PUBLIC Pools
     Loader    = 0x4,    ///< @brief Reserved to Loader objects.
     Factory   = 0x5,    ///< @brief Reserved to Factory objects.
     Event     = 0x6,    ///< @brief Reserved to Event-related objects.
-    HwdBuffer = 0x7     ///< @brief Reserved to HardwareBuffer objects.
+    HwdBuffer = 0x7,    ///< @brief Reserved to HardwareBuffer objects.
+    Scene     = 0x8,    ///< @brief Reserved to Scene's related objects.
+    Render    = 0x9     ///< @brief Reserved to Render's related objects.
 };
 
 /// @brief Declares an object as part of the pool system.
 /// A Pooled object is created and destroyed using the Pool
 /// system. You can select the right pool using this macro.
-/// @note You should set every subclasses as Pooled too, in order
+/// @note You must set every subclasses as Pooled too, in order
 /// to correctly overwrite the new/delete operators.
 #define POOLED(pooltype) \
 void* operator new (size_t sz) { \

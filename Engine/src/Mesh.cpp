@@ -11,31 +11,31 @@
 GreBeginNamespace
 
 MeshPrivate::MeshPrivate(const std::string& name, const BufferedMesh& bufmesh)
-: Resource(name), _mType(MeshPrivate::Type::Buffered), _mBufMesh(bufmesh)
+: Resource(name), iType(MeshPrivate::Type::Buffered), iBufMesh(bufmesh)
 {
     
 }
 
 MeshPrivate::MeshPrivate(const std::string& name, const MaterialIndexedMesh& matinmesh)
-: Resource(name), _mType(MeshPrivate::Type::MaterialIndexed), _mMaterialIndexedMesh(matinmesh)
+: Resource(name), iType(MeshPrivate::Type::MaterialIndexed), iMaterialIndexedMesh(matinmesh)
 {
     
 }
 
 MeshPrivate::MeshPrivate(const std::string& name, const IndexedMesh& mesh)
-: Resource(name), _mType(MeshPrivate::Type::Indexed), _mIndexedMesh(mesh)
+: Resource(name), iType(MeshPrivate::Type::Indexed), iIndexedMesh(mesh)
 {
     
 }
 
 MeshPrivate::MeshPrivate(const std::string& name, const MeshRaw& mesh)
-: Resource(name), _mType(MeshPrivate::Type::Raw), _mRawMesh(mesh)
+: Resource(name), iType(MeshPrivate::Type::Raw), iRawMesh(mesh)
 {
     
 }
 
 MeshPrivate::MeshPrivate(const std::string& name)
-: Resource(name), _mType(MeshPrivate::Type::Raw), _mRawMesh()
+: Resource(name), iType(MeshPrivate::Type::Raw), iRawMesh()
 {
     
 }
@@ -48,8 +48,8 @@ MeshPrivate::~MeshPrivate()
 
 HardwareVertexBuffer& MeshPrivate::getVertexBuffer()
 {
-    if(_mType == Type::Buffered) {
-        return _mBufMesh.vertexBuffer;
+    if(iType == Type::Buffered) {
+        return iBufMesh.vertexBuffer;
     } else {
         return HardwareVertexBuffer::Null;
     }
@@ -57,8 +57,8 @@ HardwareVertexBuffer& MeshPrivate::getVertexBuffer()
 
 const HardwareVertexBuffer& MeshPrivate::getVertexBuffer() const
 {
-    if(_mType == Type::Buffered) {
-        return _mBufMesh.vertexBuffer;
+    if(iType == Type::Buffered) {
+        return iBufMesh.vertexBuffer;
     } else {
         return HardwareVertexBuffer::Null;
     }
@@ -66,8 +66,8 @@ const HardwareVertexBuffer& MeshPrivate::getVertexBuffer() const
 
 HardwareIndexBufferBatch& MeshPrivate::getIndexBufferBatch()
 {
-    if(_mType == Type::Buffered) {
-        return _mBufMesh.indexBuffers;
+    if(iType == Type::Buffered) {
+        return iBufMesh.indexBuffers;
     } else {
         return HardwareIndexBufferBatch::Null;
     }
@@ -75,8 +75,8 @@ HardwareIndexBufferBatch& MeshPrivate::getIndexBufferBatch()
 
 const HardwareIndexBufferBatch& MeshPrivate::getIndexBufferBatch() const
 {
-    if(_mType == Type::Buffered) {
-        return _mBufMesh.indexBuffers;
+    if(iType == Type::Buffered) {
+        return iBufMesh.indexBuffers;
     } else {
         return HardwareIndexBufferBatch::Null;
     }
@@ -84,31 +84,33 @@ const HardwareIndexBufferBatch& MeshPrivate::getIndexBufferBatch() const
 
 MeshPrivate::Type MeshPrivate::getType() const
 {
-    return _mType;
+    return iType;
 }
 
-Mesh::Mesh()
-: ResourceUser(), _mMesh()
+// ---------------------------------------------------------------------------------------------------
+
+Mesh::Mesh(Resource* resource)
+: SpecializedResourceUser<MeshPrivate>(resource)
 {
     
 }
 
-Mesh::Mesh(const Mesh& mesh)
-: ResourceUser(mesh.lock()), _mMesh(mesh._mMesh)
+Mesh::Mesh(const Mesh& user)
+: SpecializedResourceUser<MeshPrivate>(user)
 {
     
 }
 
-Mesh::Mesh(Mesh&& mesh)
-: ResourceUser(mesh), _mMesh(std::move(mesh._mMesh))
+Mesh::Mesh(const ResourceUser& user)
+: SpecializedResourceUser<Gre::MeshPrivate>(user)
 {
     
 }
 
-Mesh::Mesh(const ResourceUser& ruser)
-: ResourceUser(ruser.lock()), _mMesh(std::dynamic_pointer_cast<MeshPrivate>(ruser.lock()))
+Mesh& Mesh::operator=(const Gre::Mesh &mesh)
 {
-    
+    SpecializedResourceUser<MeshPrivate>::operator=(mesh);
+    return *this;
 }
 
 Mesh::~Mesh()
@@ -116,16 +118,9 @@ Mesh::~Mesh()
     
 }
 
-Mesh& Mesh::operator = (const Mesh& mesh)
-{
-    ResourceUser::operator=(mesh);
-    _mMesh = mesh._mMesh;
-    return *this;
-}
-
 HardwareVertexBuffer& Mesh::getVertexBuffer()
 {
-    auto ptr = _mMesh.lock();
+    auto ptr = lock();
     if(ptr)
         return ptr->getVertexBuffer();
     return HardwareVertexBuffer::Null;
@@ -133,7 +128,7 @@ HardwareVertexBuffer& Mesh::getVertexBuffer()
 
 const HardwareVertexBuffer& Mesh::getVertexBuffer() const
 {
-    auto ptr = _mMesh.lock();
+    auto ptr = lock();
     if(ptr)
         return ptr->getVertexBuffer();
     return HardwareVertexBuffer::Null;
@@ -141,7 +136,7 @@ const HardwareVertexBuffer& Mesh::getVertexBuffer() const
 
 HardwareIndexBufferBatch& Mesh::getIndexBufferBatch()
 {
-    auto ptr = _mMesh.lock();
+    auto ptr = lock();
     if(ptr)
         return ptr->getIndexBufferBatch();
     return HardwareIndexBufferBatch::Null;
@@ -149,7 +144,7 @@ HardwareIndexBufferBatch& Mesh::getIndexBufferBatch()
 
 const HardwareIndexBufferBatch& Mesh::getIndexBufferBatch() const
 {
-    auto ptr = _mMesh.lock();
+    auto ptr = lock();
     if(ptr)
         return ptr->getIndexBufferBatch();
     return HardwareIndexBufferBatch::Null;
@@ -157,7 +152,7 @@ const HardwareIndexBufferBatch& Mesh::getIndexBufferBatch() const
 
 MeshPrivate::Type Mesh::getType() const
 {
-    auto ptr = _mMesh.lock();
+    auto ptr = lock();
     if(ptr)
         return ptr->getType();
     return MeshPrivate::Type::Raw;

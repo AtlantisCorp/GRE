@@ -1,18 +1,40 @@
+//////////////////////////////////////////////////////////////////////
 //
 //  ResourceManager.cpp
-//  GResource
+//  This source file is part of Gre
+//		(Gang's Resource Engine)
 //
-//  Created by Jacques Tronconi on 01/11/2015.
-//  Copyright (c) 2015 Atlanti's Corporation. All rights reserved.
+//  Copyright (c) 2015 - 2016 Luk2010
+//  Created on 01/11/2015.
 //
+//////////////////////////////////////////////////////////////////////
+/*
+ -----------------------------------------------------------------------------
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal
+ in the Software without restriction, including without limitation the rights
+ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
+ 
+ The above copyright notice and this permission notice shall be included in
+ all copies or substantial portions of the Software.
+ 
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ THE SOFTWARE.
+ -----------------------------------------------------------------------------
+ */
 
 #include "ResourceManager.h"
 
-#include "BinaryTreeScene.h"
-
 GreBeginNamespace
 
-ResourceManager* _manager = nullptr;
+ResourceManager* iManager = nullptr;
 
 ResourceManager::NameGenerator::NameGenerator()
 {
@@ -26,124 +48,151 @@ ResourceManager::NameGenerator::~NameGenerator()
 
 std::string ResourceManager::NameGenerator::generateName(const std::string& base)
 {
-    if(_mUsedNames.find(base) == _mUsedNames.end()) {
-        _mUsedNames[base] = 1;
+    if(iUsedNames.find(base) == iUsedNames.end()) {
+        iUsedNames[base] = 1;
         return base;
     } else {
-        _mUsedNames[base]++;
-        return base + std::to_string(_mUsedNames[base] - 1);
+        iUsedNames[base]++;
+        return base + std::to_string(iUsedNames[base] - 1);
     }
 }
 
-void ResourceManager::Create() {
-    _manager = new ResourceManager;
+void ResourceManager::Create()
+{
+    iManager = new ResourceManager;
 }
 
-void ResourceManager::Destroy() {
-    delete _manager;
-}
+void ResourceManager::Destroy()
+{
+    if(iManager)
+    {
+        delete iManager;
+    }
     
-ResourceManager& ResourceManager::Get() {
-    return *_manager;
+#ifdef GreIsDebugMode
+    else
+    {
+        GreDebugPretty() << "Called ResourceManager::Destroy() more than once, or before ResourceManager::Create()." << std::endl;
+    }
+#endif
+}
+
+ResourceManager& ResourceManager::Get()
+{
+    return *iManager;
 }
 
 ResourceManager::ResourceManager()
 {
-    if(_verbose) {
-        GreDebugPretty() << "Constructing ResourceManager." << std::endl;
-    }
     
-    _fileloaders.registers("TextLoader", new TextLoader());
-    _fileloaders.registers("PluginLoader", new PluginLoader());
-    _meshLoaders.registers("DefaultLoader", new MeshLoader());
-    _sceneLoaders.registers("BinaryTreeScene", new BinaryTreeSceneLoader());
-    _verbose = false;
+#ifdef GreIsDebugMode
+    GreDebugPretty() << "Constructing ResourceManager." << std::endl;
+#endif
+    
+    iFileloaders.registers("TextLoader", new TextLoader());
+    iFileloaders.registers("PluginLoader", new PluginLoader());
+    iMeshLoaders.registers("DefaultLoader", new MeshLoader());
 }
 
 ResourceManager::~ResourceManager ()
 {
-    if(_verbose) {
+    
+#ifdef GreIsDebugMode
         GreDebugPretty() << "Destroying ResourceManager." << std::endl;
-    }
+#endif
     
-    _fileloaders.clear();
-    _windowLoaders.clear();
-    _rendererLoaders.clear();
-    _meshLoaders.clear();
-    _imageLoaders.clear();
-    _sceneLoaders.clear();
-    _shaderLoaders.clear();
-    _progManLoaders.clear();
-    _fboLoaders.clear();
+#ifdef GreIsDebugMode
+    GreDebugPretty() << "Clearing Loaders." << std::endl;
+#endif
     
-    _resourcesbyname.clear();
-    _resourcesbytype[Resource::Type::PureListener].clear();
-    _resourcesbytype[Resource::Type::Keyboard].clear();
-    _resourcesbytype[Resource::Type::FrameBuff].clear();
-    _resourcesbytype[Resource::Type::HdwShader].clear();
-    _resourcesbytype[Resource::Type::HwdProgManager].clear();
-    _resourcesbytype[Resource::Type::Scene].clear();
-    _resourcesbytype[Resource::Type::Image].clear();
-    _resourcesbytype[Resource::Type::Texture].clear();
-    _resourcesbytype[Resource::Type::Text].clear();
-    _resourcesbytype[Resource::Type::HwdBuffer].clear();
-    _resourcesbytype[Resource::Type::Mesh].clear();
-    _resourcesbytype[Resource::Type::Renderer].clear();
-    _resourcesbytype[Resource::Type::Window].clear();
-    _resourcesbytype[Resource::Type::Plugin].clear();
-    _resourcesbytype[Resource::Type::Null].clear();
+    iFileloaders.clear();
+    iWindowLoaders.clear();
+    iRendererLoaders.clear();
+    iMeshLoaders.clear();
+    iImageLoaders.clear();
+    iSceneLoaders.clear();
+    iShaderLoaders.clear();
+    iProgManLoaders.clear();
+    iFboLoaders.clear();
+    
+#ifdef GreIsDebugMode
+    GreDebugPretty() << "Clearing Managers." << std::endl;
+#endif
+    
+#ifdef GreIsDebugMode
+    GreDebugPretty() << "Clearing Owned Resources." << std::endl;
+#endif
+    
+    iResources.clear();
 }
 
-ResourceUser ResourceManager::addResource(Resource::Type type, const std::string& name, std::shared_ptr<Resource> resource)
+ResourceUser ResourceManager::addResource(const ResourceHolder& holder)
 {
-    if(!resource)
-        return ResourceUser::Null;
-    
-    _resourcesbytype[type].push_back(resource);
-    _resourcesbyname[name] = resource;
-    return ResourceUser(resource);
-}
-
-ResourceUser ResourceManager::loadResource(Resource::Type type, const std::string& name) {
-    _resourcesbyname[name] = std::shared_ptr<Resource>(new Resource (name));
-    
-    if(_verbose) {
-        GreDebugPretty() << "Loaded Resource '" << name << "'." << std::endl;
+    if(!holder)
+    {
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "Can't add an empty Resource." << std::endl;
+#endif
+        return ResourceUser(nullptr);
     }
     
-    return ResourceUser(_resourcesbyname[name]);
+    else
+    {
+        iResources.push_back(holder);
+        return holder;
+    }
+}
+
+ResourceHolder ResourceManager::loadEmptyResource(const std::string& name)
+{
+    ResourceHolder holder (new Resource(name));
+    
+#ifdef GreIsDebugMode
+    if(!holder)
+    {
+        GreDebugPretty() << "Error allocating new Resource." << std::endl;
+    }
+#endif
+    
+    return holder;
 }
 
 ResourceUser ResourceManager::findResourceByName(const std::string &name)
 {
-    auto it = _resourcesbyname.find(name);
-    if(it != _resourcesbyname.end())
-        return ResourceUser((*it).second);
-    return ResourceUser();
-}
-
-void ResourceManager::unloadResource(const std::string& name) {
-    std::weak_ptr<Resource>& untypedResource = _resourcesbyname[name];
-    if(!untypedResource.expired())
+    for(auto holder : iResources)
     {
-        std::vector<std::shared_ptr<Resource> >& typedResources = _resourcesbytype[untypedResource.lock()->getType()];
-        auto it = std::find(typedResources.begin(), typedResources.end(), untypedResource.lock());
-        if(it != typedResources.end())
+        if(holder->getName() == name)
         {
-            typedResources.erase(it);
+            return holder;
         }
     }
     
-    _resourcesbyname.erase(name);
+#ifdef GreIsDebugMode
+    GreDebugPretty() << "Resource '" << name << "' not found." << std::endl;
+#endif
     
-    if(_verbose) {
-        GreDebugPretty() << "Unloaded Resource '" << name << "'." << std::endl;
+    return ResourceUser(nullptr);
+}
+
+void ResourceManager::unloadResource(const std::string& name)
+{
+    for(auto it = iResources.begin(); it != iResources.end(); it++)
+    {
+        if((*it)->getName() == name)
+        {
+            iResources.erase(it);
+            return;
+        }
     }
+    
+#ifdef GreIsDebugMode
+    GreDebugPretty() << "Resource '" << name << "' not found." << std::endl;
+#endif
 }
 
 void ResourceManager::clear ()
 {
-    _resourcesbyname.clear();
+    iResources.clear();
 }
 
 unsigned ResourceManager::getResourceUsage() const
@@ -153,57 +202,52 @@ unsigned ResourceManager::getResourceUsage() const
 
 FileLoaderFactory& ResourceManager::getFileLoaderFactory()
 {
-    return _fileloaders;
+    return iFileloaders;
 }
 
 WindowLoaderFactory& ResourceManager::getWindowLoaderFactory()
 {
-    return _windowLoaders;
+    return iWindowLoaders;
 }
 
 RendererLoaderFactory& ResourceManager::getRendererLoaderFactory()
 {
-    return _rendererLoaders;
+    return iRendererLoaders;
 }
 
 MeshLoaderFactory& ResourceManager::getMeshLoaderFactory()
 {
-    return _meshLoaders;
+    return iMeshLoaders;
 }
 
 ImageLoaderFactory& ResourceManager::getImageLoaderFactory()
 {
-    return _imageLoaders;
+    return iImageLoaders;
 }
 
-SceneLoaderFactory& ResourceManager::getSceneLoaderFactory()
+SceneManagerLoaderFactory& ResourceManager::getSceneManagerLoaderFactory()
 {
-    return _sceneLoaders;
+    return iSceneLoaders;
 }
 
 ResourceManager::NameGenerator& ResourceManager::getNameGenerator()
 {
-    return _nameGenerator;
+    return iNameGenerator;
 }
 
 HardwareShaderLoaderFactory& ResourceManager::getHardwareShaderLoaderFactory()
 {
-    return _shaderLoaders;
+    return iShaderLoaders;
 }
 
 HardwareProgramManagerLoaderFactory& ResourceManager::getHardwareProgramManagerLoaderFactory()
 {
-    return _progManLoaders;
+    return iProgManLoaders;
 }
 
 FrameBufferLoaderFactory& ResourceManager::getFrameBufferLoaderFactory()
 {
-    return _fboLoaders;
-}
-
-void ResourceManager::setVerbose(bool flag)
-{
-    _verbose = flag;
+    return iFboLoaders;
 }
 
 int ResourceManager::loadPluginsIn(const std::string &dirname)
@@ -219,9 +263,21 @@ int ResourceManager::loadPluginsIn(const std::string &dirname)
             if (d_name == "." || d_name == "..")
                 continue;
             
-            Plugin newPlugin = std::move(Plugin(loadResourceWith(PluginLoader(), Resource::Type::Plugin, std::string(ent->d_name) + "-plugin", dirname + "/" + ent->d_name)));
-            if(newPlugin.lock())
+            PluginHolder holder = loadResourceWith<PluginHolder>(PluginLoader(), Resource::Type::Plugin, std::string(ent->d_name) + "-plugin", dirname + "/" + ent->d_name);
+            
+#ifdef GreIsDebugMode
+            if(!holder)
+            {
+                GreDebugPretty() << "Couldn't load plugin '" << ent->d_name << "'." << std::endl;
+                continue;
+            }
+#endif
+            
+            if(holder)
+            {
                 res++;
+                iPluginManager.add(holder);
+            }
         }
         closedir (dir);
     } else {
@@ -235,55 +291,90 @@ int ResourceManager::loadPluginsIn(const std::string &dirname)
 
 void ResourceManager::setCloseBehaviour(const CloseBehaviour &behaviour)
 {
-    _mCloseBehaviour = behaviour;
+    iCloseBehaviour = behaviour;
 }
 
 void ResourceManager::addLoopBehaviour(LoopBehaviour behaviour)
 {
-    _mLoopBehaviours.add(behaviour);
+    iLoopBehaviours.add(behaviour);
 }
 
 void ResourceManager::clearLoopBehaviour()
 {
-    _mLoopBehaviours.clear();
+    iLoopBehaviours.clear();
 }
 
 void ResourceManager::stop()
 {
-    _mMustStopLoop = true;
+    iMustStopLoop = true;
 }
 
 void ResourceManager::loop()
 {
-    _mMustStopLoop = false;
+    iMustStopLoop = false;
     
-    while( !_mMustStopLoop )
+    while( !iMustStopLoop )
     {
-        std::vector<std::shared_ptr<Resource> >& windowsResources = _resourcesbytype[Resource::Type::Window];
-        if(windowsResources.empty() && _mCloseBehaviour == CloseBehaviour::AllWindowClosed)
+        _updateElapsedTime();
+        
+        UpdateEvent updateEvent;
+        updateEvent.elapsedTime = iElapsedTime;
+        
+        // Normally, the ResourceManager's loop should take place in a different thread,
+        // in order to update the Windows and the Scenes objects separately.
+        
+        // Every object can be accepted as a Listener to listen for update event from this
+        // class, but take in mind that, for example, SceneManager will send this event to
+        // every SceneNode, Camera, etc... and Window object will send it to RenderContext
+        // which will send it to Renderer.
+        
+        // THEORY : The Render loop should be done in the main thread (i.e. this function). This
+        // is done by updating every Window objects. The update of its surface should update the
+        // Renderer object and thus re-draw the Scene.
+        //     The logical loop (which is, for now, only the SceneManager updating), should take
+        // place in another thread.
+        // NOTES : The Render loop's time should not excess 16,6 ms (60FPS).
+        
+        // First, we update every Windows objects.
+        WindowHolderList whlist = iWindowManager.getAll();
+        
+        if(whlist.empty() && iCloseBehaviour == CloseBehaviour::AllWindowClosed)
         {
-            _mMustStopLoop = true;
+            iMustStopLoop = true;
         }
         
         else
         {
-            if( !windowsResources.empty() )
+            if( !whlist.empty() )
             {
-                // We must loop through every Window objects to update them.
-                for(auto windowSharedResource : windowsResources)
+                for(auto wholder : whlist)
                 {
-                    Window windowUser((std::weak_ptr<Resource>(windowSharedResource)));
-                    if(!windowUser.expired())
+                    if(wholder)
                     {
-                        windowUser.pollEvent();
-                        windowUser.update();
+                        /*
+                         
+                         This should be done in WindowPrivate::onUpdateEvent()
+                         
+                        wholder->pollEvent();
+                        wholder->update();
                         
-                        if(windowUser.hasBeenClosed())
+                        if(wholder->hasBeenClosed())
                         {
                             // Window has been closed, we can destroy it.
-                            unloadResource(windowUser.getName());
+                            iWindowManager.remove(wholder.getName());
                         }
+                         */
                         
+                        wholder->onEvent(updateEvent);
+                        iPerWindowBehaviours.call();
+                    }
+                }
+            }
+            
+            iLoopBehaviours.call();
+        }
+        
+        
                         /* This should be done by the renderer. 
                          The Renderer should draw every Window object as RenderTarget.
                          
@@ -307,36 +398,53 @@ void ResourceManager::loop()
                         windowUser.endUpdate();
                          
                          */
-                        
-                        _mPerWindowBehaviours.call();
-                    }
-                    
-                    
+        
+        // Then, we update also the SceneManager's objects.
+        SceneManagerHolderList smhlist = iSceneManagerManager.getAll();
+        
+        if( !smhlist.empty() )
+        {
+            for(auto smholder : smhlist)
+            {
+                if( smholder )
+                {
+                    smholder->onEvent(updateEvent);
                 }
             }
-            
-            _mLoopBehaviours.call();
         }
+        
+        // Finally we send update event to every Listeners.
+        sendEvent(updateEvent);
     }
 }
 
-ResourceUser ResourceManager::createPureListener(const std::string& name)
+ResourceHolder ResourceManager::createPureListener(const std::string& name)
 {
-    std::shared_ptr<Resource> listener = std::make_shared<Resource>(name);
-    listener->_type = Resource::Type::PureListener;
-    _resourcesbytype[Resource::Type::PureListener].push_back(listener);
-    _resourcesbyname[name] = listener;
-    return ResourceUser(listener);
+    return loadEmptyResource(name);
 }
 
 KeyboardLoader& ResourceManager::getKeyboardLoader()
 {
-    return _keyboardLoader;
+    return iKeyboardLoader;
 }
 
-Keyboard ResourceManager::createKeyboard(const std::string &name)
+KeyboardHolder ResourceManager::createKeyboard(const std::string &name)
 {
-    return Keyboard(loadResourceWith(getKeyboardLoader(), Resource::Type::Keyboard, name));
+    return loadResourceWith<KeyboardHolder>(getKeyboardLoader(), Resource::Type::Keyboard, name);
+}
+
+void ResourceManager::_updateElapsedTime()
+{
+    if(iLastUpdate != iLastUpdate.min())
+    {
+        UpdateTime now = UpdateChrono::now();
+        iElapsedTime = std::chrono::duration_cast<std::chrono::nanoseconds>(now - iLastUpdate);
+        iLastUpdate = now;
+    }
+    else
+    {
+        iLastUpdate = UpdateChrono::now();
+    }
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -358,11 +466,30 @@ Renderer ResourceManager::Helper::LoadRenderer(const std::string& rname, const s
     RendererLoader* rLoader = rFactory.get(lname);
     if(rLoader)
     {
-        return Renderer(ResourceManager::Get().loadResourceWith(rLoader, Resource::Type::Renderer, rname));
+        RendererHolder holder = ResourceManager::Get().loadResourceWith<RendererHolder>(rLoader, Resource::Type::Renderer, rname);
+        
+#ifdef GreIsDebugMode
+        if(!holder)
+        {
+            GreDebugPretty() << "Couldn't load Renderer '" << rname << "'." << std::endl;
+        }
+#endif
+        
+        Renderer user(holder);
+        ResourceManager::Get().getRendererManager().add(holder);
+        
+        // Another method would have been :
+        // Renderer user = ResourceManager::Get().getRendererManager().create(rname, rLoader);
+        
+        return user;
     }
     
     else
     {
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "Loader '" << lname << "' not found." << std::endl;
+#endif
+        
         return Renderer::Null;
     }
 }
@@ -383,13 +510,38 @@ Window ResourceManager::Helper::LoadWindow(const std::string& wname, const std::
     WindowLoader* wLoader = wFactory.get(lname);
     if(wLoader)
     {
-        return Window(ResourceManager::Get().loadResourceWith(wLoader, Resource::Type::Window, wname, param.left, param.top, param.width, param.height));
+        WindowHolder holder = ResourceManager::Get().loadResourceWith<WindowHolder>(wLoader, Resource::Type::Window, wname, param.left, param.top, param.width, param.height);
+        
+#ifdef GreIsDebugMode
+        if(!holder)
+        {
+            GreDebugPretty() << "Couldn't load Window '" << wname << "'." << std::endl;
+        }
+#endif
+        
+        Window user(holder);
+        ResourceManager::Get().getWindowManager().add(holder);
+        
+        // Another method would have been :
+        // Window user = ResourceManager::Get().getWindowManager().create(wname, wLoader, param.left, param.top, param.width, param.height);
+        
+        return user;
     }
     
     else
     {
         return Window::Null;
     }
+}
+
+WindowManager& ResourceManager::getWindowManager()
+{
+    return iWindowManager;
+}
+
+const WindowManager& ResourceManager::getWindowManager() const
+{
+    return iWindowManager;
 }
 
 GreEndNamespace

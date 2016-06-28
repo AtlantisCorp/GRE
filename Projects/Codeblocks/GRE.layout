@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_layout_file>
+	<FileVersion major="1" minor="0" />
+	<ActiveTarget name="Debug" />
+	<File name="../../Engine/inc/Pass.h" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="0" topLine="101" />
+		</Cursor>
+	</File>
+	<File name="../../Engine/inc/ReferenceCounter.h" open="0" top="0" tabpos="8" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="707" topLine="57" />
+		</Cursor>
+	</File>
+	<File name="../../Engine/inc/Resource.h" open="1" top="0" tabpos="3" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="0" topLine="228" />
+		</Cursor>
+	</File>
+	<File name="../../Engine/src/ResourceUser.cpp" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="1562" topLine="66" />
+		</Cursor>
+	</File>
+	<File name="../../Engine/inc/ResourceUser.h" open="0" top="0" tabpos="6" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="11765" topLine="50" />
+		</Cursor>
+	</File>
+	<File name="../../Engine/inc/SceneNode.h" open="1" top="1" tabpos="6" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="3807" topLine="81" />
+		</Cursor>
+	</File>
+	<File name="../../Engine/src/Pass.cpp" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="0" topLine="45" />
+		</Cursor>
+	</File>
+	<File name="../../Engine/inc/Version.h" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="0" topLine="150" />
+		</Cursor>
+	</File>
+	<File name="../../Engine/src/Resource.cpp" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="0" topLine="141" />
+		</Cursor>
+	</File>
+	<File name="../../Engine/src/ResourceHolder.cpp" open="1" top="0" tabpos="5" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="1338" topLine="47" />
+		</Cursor>
+	</File>
+	<File name="../../Engine/inc/Scene.h" open="1" top="0" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="12625" topLine="211" />
+		</Cursor>
+	</File>
+	<File name="../../Engine/src/SceneNode.cpp" open="1" top="0" tabpos="7" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="2174" topLine="40" />
+		</Cursor>
+	</File>
+	<File name="../../Engine/src/BinaryTreeScene.cpp" open="0" top="0" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="337" topLine="18" />
+		</Cursor>
+	</File>
+	<File name="../../Engine/inc/Node.h" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="696" topLine="3" />
+		</Cursor>
+	</File>
+	<File name="../../Engine/inc/ResourceHolder.h" open="1" top="0" tabpos="4" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="2912" topLine="156" />
+		</Cursor>
+	</File>
+	<File name="../../Engine/src/Scene.cpp" open="1" top="0" tabpos="2" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="8675" topLine="345" />
+		</Cursor>
+	</File>
+	<File name="../../Engine/inc/Pools.h" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="835" topLine="21" />
+		</Cursor>
+	</File>
+	<File name="../../Engine/inc/ResourceLoader.h" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="1009" topLine="91" />
+		</Cursor>
+	</File>
+	<EditorTabsLayout layout="0d825860575b4802006897bc00000002=0;GRE:../../Engine/inc/Scene.h,1;GRE:../../Engine/src/Scene.cpp,2;GRE:../../Engine/inc/Resource.h,3;GRE:../../Engine/inc/ResourceHolder.h,4;GRE:../../Engine/src/ResourceHolder.cpp,*6;GRE:../../Engine/inc/SceneNode.h,5;GRE:../../Engine/src/SceneNode.cpp@layout2|name=dummy;caption=;state=2098174;dir=3;layer=0;row=0;pos=0;prop=100000;bestw=787;besth=358;minw=787;minh=358;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1|name=0d825860575b4802006897bc00000002;caption=;state=2098172;dir=5;layer=0;row=0;pos=0;prop=100000;bestw=200;besth=200;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1|dock_size(5,0,0)=202|" />
+</CodeBlocks_layout_file>

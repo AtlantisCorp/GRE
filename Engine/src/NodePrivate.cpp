@@ -5,7 +5,7 @@
 //  Created by Jacques Tronconi on 06/01/2016.
 //
 //
-
+/*
 #include "NodePrivate.h"
 
 #include "Node.h"
@@ -138,3 +138,4 @@ void NodePrivate::setNodeMatrix(const Matrix4 &mat4)
 }
 
 GreEndNamespace
+ */

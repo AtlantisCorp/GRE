@@ -1,41 +1,303 @@
+//////////////////////////////////////////////////////////////////////
 //
-//  Node.cpp
-//  GRE
+//  Node.h
+//  This source file is part of Gre
+//		(Gang's Resource Engine)
 //
-//  Created by Jacques Tronconi on 14/12/2015.
+//  Copyright (c) 2015 - 2016 Luk2010
+//  Created on 14/12/2015.
 //
-//
+//////////////////////////////////////////////////////////////////////
+/*
+ -----------------------------------------------------------------------------
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal
+ in the Software without restriction, including without limitation the rights
+ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
+ 
+ The above copyright notice and this permission notice shall be included in
+ all copies or substantial portions of the Software.
+ 
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ THE SOFTWARE.
+ -----------------------------------------------------------------------------
+ */
 
 #include "Node.h"
 
 GreBeginNamespace
 
-Node::Node()
-: ResourceUser(), _mNode()
+NodePrivate::NodePrivate(const std::string& name)
+: Resource(name)
+{
+    iParent = nullptr;
+    iType = Type::Root;
+    iParentingBehaviour = ParentingBehaviour::TakePlace;
+}
+
+NodePrivate::NodePrivate(const std::string& name, NodePrivate* parent)
+: Resource(name)
+{
+    iParentingBehaviour = ParentingBehaviour::TakePlace;
+    iParent = parent;
+    if(parent)
+    {
+        iType = Type::Leaf;
+        parent->onChildConstructed(this);
+    }
+    
+    else
+    {
+        iType = Type::Root;
+    }
+}
+
+NodePrivate::~NodePrivate()
+{
+    if(iParent)
+    {
+        iParent->onChildDestroyed(this);
+    }
+    
+    if(iChildren.size())
+    {
+        for(auto child : iChildren)
+        {
+            child->onParentDestroyed(this);
+        }
+    }
+}
+
+NodePrivate* NodePrivate::getParent()
+{
+    return iParent;
+}
+
+const NodePrivate* NodePrivate::getParent() const
+{
+    return iParent;
+}
+
+NodePrivate* NodePrivate::findChild(const std::string &name)
+{
+    for(auto child : iChildren)
+    {
+        Node childnode (child);
+        if(childnode.getName() == name)
+            return child;
+    }
+    
+    return nullptr;
+}
+
+const NodePrivate* NodePrivate::findChild(const std::string &name) const
+{
+    for(auto child : iChildren)
+    {
+        Node childnode (child);
+        if(childnode.getName() == name)
+            return child;
+    }
+    
+    return nullptr;
+}
+
+bool NodePrivate::isRoot() const
+{
+    return iType == Type::Root;
+}
+
+NodePrivate::Type NodePrivate::getType() const
+{
+    return iType;
+}
+
+void NodePrivate::setParent(Gre::NodePrivate *parent)
+{
+    if(iParent)
+    {
+        iParent->onChildRemoved(this);
+    }
+    
+    iParent = parent;
+    
+    if(iParent)
+    {
+        iParent->onChildAdded(this);
+    }
+}
+
+void NodePrivate::addChild(Gre::NodePrivate *node)
+{
+    if(node)
+    {
+        if(std::find(iChildren.begin(), iChildren.end(), node) == iChildren.end())
+        {
+            iChildren.push_back(node);
+            node->onParentAdded(this);
+        }
+    }
+}
+
+void NodePrivate::removeChild(const std::string &name)
+{
+    for(auto it = iChildren.begin(); it != iChildren.end(); it++)
+    {
+        NodePrivate* child = *it;
+        if(child->getName() == name)
+        {
+            iChildren.erase(it);
+            child->onParentRemoved(this);
+        }
+    }
+}
+
+void NodePrivate::removeChild(Gre::NodePrivate *node)
+{
+    for(auto it = iChildren.begin(); it != iChildren.end(); it++)
+    {
+        NodePrivate* child = *it;
+        if(child == node)
+        {
+            iChildren.erase(it);
+            child->onParentRemoved(this);
+            break;
+        }
+    }
+}
+
+void NodePrivate::removeAllChildren()
+{
+    while(!iChildren.empty())
+    {
+        NodePrivate* node = (*iChildren.begin());
+        iChildren.erase(iChildren.begin());
+        node->onParentRemoved(this);
+    }
+}
+
+void NodePrivate::onChildConstructed(Gre::NodePrivate *child)
+{
+    if(!child)
+        return;
+    
+    // Child has been constructed with argument us for parent.
+    // We can add it without much assertions. We must avoid using
+    // NodePrivate::addChild() because it would call onParentAdded(), which
+    // would call setParent() which would call onChildRemoved() then onChildAdded(),
+    // and this would call addChild()...
+    
+    if(child->getParent() == this)
+    {
+        iChildren.push_back(child);
+    }
+}
+
+void NodePrivate::onChildDestroyed(Gre::NodePrivate *child)
+{
+    if(!child)
+        return;
+    
+    for(auto it = iChildren.begin(); it != iChildren.end(); it++)
+    {
+        if((*it) == child)
+        {
+            iChildren.erase(it);
+            break;
+        }
+    }
+}
+
+void NodePrivate::onParentDestroyed(Gre::NodePrivate *parent)
+{
+    if(parent == iParent)
+    {
+        if(iParentingBehaviour == ParentingBehaviour::TakePlace)
+        {
+            iParent = parent->getParent();
+        }
+        
+        else if(iParentingBehaviour == ParentingBehaviour::BecomeRoot)
+        {
+            iParent = nullptr;
+        }
+        
+        if(iParent)
+        {
+            iParent->onChildAdded(this);
+        }
+        
+        else
+        {
+            iType = Type::Root;
+        }
+    }
+}
+
+void NodePrivate::onChildRemoved(Gre::NodePrivate *child)
+{
+    if(!child)
+        return;
+    
+    for(auto it = iChildren.begin(); it != iChildren.end(); it++)
+    {
+        if(*it == child)
+        {
+            iChildren.erase(it);
+            break;
+        }
+    }
+}
+
+void NodePrivate::onChildAdded(Gre::NodePrivate *child)
+{
+    if(!child)
+        return;
+    
+    if(std::find(iChildren.begin(), iChildren.end(), child) == iChildren.end() &&
+       child->getParent() == this)
+    {
+        iChildren.push_back(child);
+    }
+}
+
+void NodePrivate::onParentAdded(Gre::NodePrivate *parent)
+{
+    iParent = parent;
+}
+
+void NodePrivate::onParentRemoved(Gre::NodePrivate *parent)
+{
+    // We assume 'destroying' a Parent and 'removing' a parent from the
+    // Node's tree has, for a Child Node, the same meaning but subclass
+    // can act differently.
+    
+    onParentDestroyed(parent);
+}
+
+// ---------------------------------------------------------------------------------------------------
+
+Node::Node(const NodePrivate* node)
+: SpecializedResourceUser<Gre::NodePrivate>(node)
 {
     
 }
 
-Node::Node(Node&& rhs)
-: ResourceUser(rhs), _mNode(rhs._mNode)
+Node::Node(const NodeHolder& holder)
+: SpecializedResourceUser<Gre::NodePrivate>(holder)
 {
     
 }
 
-Node::Node(const Node& rhs)
-: ResourceUser(rhs), _mNode(rhs._mNode)
-{
-    
-}
-
-Node::Node(const ResourceUser& rhs)
-: ResourceUser(rhs), _mNode(std::dynamic_pointer_cast<NodePrivate>(rhs.lock()))
-{
-    
-}
-
-Node::Node(std::weak_ptr<NodePrivate> rhs)
-: ResourceUser(rhs), _mNode(rhs)
+Node::Node(const Node& user)
+: SpecializedResourceUser<Gre::NodePrivate>(user)
 {
     
 }
@@ -45,168 +307,117 @@ Node::~Node()
     
 }
 
-Node& Node::operator = (const Node& node)
+Node Node::getParent()
 {
-    ResourceUser::operator=(node);
-    _mNode = node._mNode;
-    return *this;
-}
-
-Node Node::addChild(const Node& child)
-{
-    auto ptr = _mNode.lock();
-    
-    if(ptr) {
-        if(ptr->addChild(child).expired()) {
-            return Node::Null;
-        }
-        else {
-            return child;
-        }
+    auto ptr = lock();
+    if(ptr)
+    {
+        return Node (ptr->getParent());
     }
     
     return Node::Null;
 }
 
-Node Node::addChild(NodePrivate *child)
+const Node Node::getParent() const
 {
-    auto ptr = _mNode.lock();
-    
+    auto ptr = lock();
     if(ptr)
-        return ptr->addChild(child);
+    {
+        return Node (ptr->getParent());
+    }
+    
     return Node::Null;
 }
 
-void Node::translate(const Vector3 &vector)
+Node Node::findChild(const std::string &name)
 {
-    auto ptr = _mNode.lock();
-    
+    auto ptr = lock();
     if(ptr)
-        ptr->translate(vector);
+    {
+        return Node (ptr->findChild(name));
+    }
+    
+    return Node::Null;
 }
 
-void Node::rotate(float angle, const Vector3 &axe)
+const Node Node::findChild(const std::string &name) const
 {
-    auto ptr = _mNode.lock();
-    
+    auto ptr = lock();
     if(ptr)
-        ptr->rotate(angle, axe);
+    {
+        return Node (ptr->findChild(name));
+    }
+    
+    return Node::Null;
 }
 
-void Node::setVisible(bool visible)
+bool Node::isRoot() const
 {
-    auto ptr = _mNode.lock();
-    
+    auto ptr = lock();
     if(ptr)
-        ptr->setVisible(visible);
+    {
+        return ptr->isRoot();
+    }
+    
+    return Node::Null;
 }
 
-bool Node::isVisible() const
+NodePrivate::Type Node::getType() const
 {
-    auto ptr = _mNode.lock();
-    
+    auto ptr = lock();
     if(ptr)
-        return ptr->isVisible();
-    return false;
+    {
+        return ptr->getType();
+    }
+    
+    return NodePrivate::Type::Root;
 }
 
-void Node::setMesh(const Mesh &mesh)
+void Node::setParent(Gre::Node parent)
 {
-    auto ptr = _mNode.lock();
-    
+    auto ptr = lock();
     if(ptr)
-        ptr->setMesh(mesh);
+    {
+        ptr->setParent(parent.lock().get());
+    }
 }
 
-Mesh& Node::getMesh()
+void Node::addChild(Gre::Node node)
 {
-    auto ptr = _mNode.lock();
-    
+    auto ptr = lock();
     if(ptr)
-        return ptr->getMesh();
-    
-    return Mesh::Null;
+    {
+        ptr->addChild(node.lock().get());
+    }
 }
 
-const Mesh& Node::getMesh() const
+void Node::removeChild(const std::string &name)
 {
-    auto ptr = _mNode.lock();
-    
+    auto ptr = lock();
     if(ptr)
-        return ptr->getMesh();
-    
-    return Mesh::Null;
+    {
+        ptr->removeChild(name);
+    }
 }
 
-void Node::setCamera(const Camera &camera)
+void Node::removeChild(Gre::Node node)
 {
-    auto ptr = _mNode.lock();
-    
+    auto ptr = lock();
     if(ptr)
-        ptr->setCamera(camera);
+    {
+        ptr->removeChild(node.lock().get());
+    }
 }
 
-Camera& Node::getCamera()
+void Node::removeAllChildren()
 {
-    auto ptr = _mNode.lock();
-    
+    auto ptr = lock();
     if(ptr)
-        return ptr->getCamera();
-    
-    return Camera::Null;
+    {
+        ptr->removeAllChildren();
+    }
 }
 
-const Camera& Node::getCamera() const
-{
-    auto ptr = _mNode.lock();
-    
-    if(ptr)
-        return ptr->getCamera();
-    
-    return Camera::Null;
-}
-
-std::weak_ptr<NodePrivate> Node::toWeakPtr()
-{
-    return _mNode;
-}
-
-const std::weak_ptr<NodePrivate> Node::toWeakPtr() const
-{
-    return _mNode;
-}
-
-void Node::setParent(const Node &node)
-{
-    auto ptr = _mNode.lock();
-    
-    if(ptr)
-        ptr->setParent(node);
-}
-
-Matrix4 Node::getNodeMatrix()
-{
-    auto ptr = _mNode.lock();
-    if(ptr)
-        return ptr->getNodeMatrix();
-    return MatrixUtils::Identity;
-}
-
-const Matrix4 Node::getNodeMatrix() const
-{
-    auto ptr = _mNode.lock();
-    if(ptr)
-        return ptr->getNodeMatrix();
-    return MatrixUtils::Identity;
-}
-
-void Node::setNodeMatrix(const Matrix4 &mat4)
-{
-    auto ptr = _mNode.lock();
-    if(ptr)
-        ptr->setNodeMatrix(mat4);
-}
-
-Node Node::Null = Node();
+Node Node::Null = Node (nullptr);
 
 GreEndNamespace

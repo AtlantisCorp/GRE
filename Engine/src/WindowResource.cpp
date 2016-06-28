@@ -10,130 +10,127 @@
 
 GreBeginNamespace
 
-WindowResource::WindowResource(const std::string& name)
-: Resource(name)
+WindowPrivate::WindowPrivate(const std::string& name)
+: RenderTargetPrivate(name)
 {
-    _mTitle = name;
-    _mSurface.top = 0;
-    _mSurface.left = 0;
-    _mSurface.width = 0;
-    _mSurface.height = 0;
-    _mExposed = false;
-    _mClosed = true;
-    _lastUpdate = _lastUpdate.min();
+    iTitle = name;
+    iSurface.top = 0;
+    iSurface.left = 0;
+    iSurface.width = 0;
+    iSurface.height = 0;
+    iExposed = false;
+    iClosed = true;
+    iLastUpdate = iLastUpdate.min();
 }
 
-WindowResource::~WindowResource()
+WindowPrivate::~WindowPrivate()
 {
     // Note : A subclass should always check that
     // the Window has correctly been closed before
     // destruction.
 }
 
-bool WindowResource::pollEvent()
+bool WindowPrivate::pollEvent()
 {
-    GreDebugFunctionNotImplemented();
     return false;
 }
 
-bool WindowResource::isClosed() const
+bool WindowPrivate::isClosed() const
 {
-    return _mClosed;
+    return iClosed;
 }
 
-const std::string WindowResource::recommendedRenderer() const
+const std::string WindowPrivate::recommendedRenderer() const
 {
-    GreDebugFunctionNotImplemented();
     return "none";
 }
 
-void WindowResource::setTitle(const std::string &title)
+void WindowPrivate::setTitle(const std::string &title)
 {
-    GreDebugFunctionNotImplemented();
-    _mTitle = title;
+    iTitle = title;
 }
 
-Surface WindowResource::getSurface() const
+Surface WindowPrivate::getSurface() const
 {
-    return _mSurface;
+    return iSurface;
 }
 
-void WindowResource::update()
+void WindowPrivate::update()
 {
     // Here we send an update event to listeners.
-    if(_lastUpdate != _lastUpdate.min())
+    if(iLastUpdate != iLastUpdate.min())
     {
-        UpdateTime now = UpdateChrono::now();
-        UpdateEvent ue;
-        ue.elapsedTime = std::chrono::duration_cast<std::chrono::nanoseconds>(now - _lastUpdate);
+        UpdateEvent ue; UpdateTime now = UpdateChrono::now();
+        ue.elapsedTime = std::chrono::duration_cast<std::chrono::nanoseconds>(now - iLastUpdate);
+        
         sendEvent(ue);
-        _lastUpdate = now;
+        
+        iLastUpdate = now;
     }
     else
     {
-        _lastUpdate = UpdateChrono::now();
+        iLastUpdate = UpdateChrono::now();
     }
     
     // Then, we must call every LoopBehaviour functions.
-    _mLoopBehaviours.call();
+    iLoopBehaviours.call();
 }
 
-bool WindowResource::isExposed() const
+bool WindowPrivate::isExposed() const
 {
-    return _mExposed;
+    return iExposed;
 }
 
-bool WindowResource::hasRenderContext() const
+bool WindowPrivate::hasRenderContext() const
 {
-    return !_mRenderContext.expired();
+    return !iRenderContext.expired();
 }
 
-void WindowResource::setRenderContext(const RenderContext &renderCtxt)
+void WindowPrivate::setRenderContext(const RenderContext &renderCtxt)
 {
     if(hasRenderContext())
     {
-        _mRenderContext.unbind();
-        removeListener(_mRenderContext.getName());
+        iRenderContext.unbind();
+        removeListener(iRenderContext.getName());
     }
     
-    _mRenderContext = renderCtxt;
-    addListener(_mRenderContext);
+    iRenderContext = renderCtxt;
+    addListener(iRenderContext);
     
     onRenderContextChanged();
 }
 
-RenderContext& WindowResource::getRenderContext()
+RenderContext& WindowPrivate::getRenderContext()
 {
-    return _mRenderContext;
+    return iRenderContext;
 }
 
-const RenderContext& WindowResource::getRenderContext() const
+const RenderContext& WindowPrivate::getRenderContext() const
 {
-    return _mRenderContext;
+    return iRenderContext;
 }
 
-void WindowResource::onRenderContextChanged()
+void WindowPrivate::onRenderContextChanged()
 {
-    GreDebugFunctionNotImplemented();
+    
 }
 
-void WindowResource::addLoopBehaviour(LoopBehaviour behaviour)
+void WindowPrivate::addLoopBehaviour(LoopBehaviour behaviour)
 {
-    _mLoopBehaviours.add(behaviour);
+    iLoopBehaviours.add(behaviour);
 }
 
-void WindowResource::clearLoopBehaviour()
+void WindowPrivate::clearLoopBehaviour()
 {
-    _mLoopBehaviours.clear();
+    iLoopBehaviours.clear();
 }
 
-bool WindowResource::hasBeenClosed() const
+bool WindowPrivate::hasBeenClosed() const
 {
-    GreDebugFunctionNotImplemented();
     return true;
 }
 
-bool WindowResource::holdsRenderContext() const
+bool WindowPrivate::holdsRenderContext() const
 {
     return true;
 }

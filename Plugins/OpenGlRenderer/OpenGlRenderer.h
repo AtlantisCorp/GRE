@@ -15,7 +15,7 @@
 #include "OpenGlTexture.h"
 #include "OpenGlRenderContext.h"
 
-class OpenGlRenderer : public RendererResource
+class OpenGlRenderer : public RendererPrivate
 {
 public:
     
@@ -80,7 +80,7 @@ public:
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Creates a RenderContext using given Info.
-    /// The RendererResource should keep a copy of this RenderContext, in
+    /// The RendererPrivate should keep a copy of this RenderContext, in
     /// order to destroy it.
     //////////////////////////////////////////////////////////////////////
     RenderContext createRenderContext(const std::string& name, const RenderContextInfo& info, Renderer caller);

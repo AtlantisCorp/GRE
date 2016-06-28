@@ -1,10 +1,34 @@
+//////////////////////////////////////////////////////////////////////
 //
 //  Pass.h
-//  GRE
+//  This source file is part of Gre
+//		(Gang's Resource Engine)
 //
-//  Created by Jacques Tronconi on 06/01/2016.
+//  Copyright (c) 2015 - 2016 Luk2010
+//  Created on 06/01/2016.
 //
-//
+//////////////////////////////////////////////////////////////////////
+/*
+ -----------------------------------------------------------------------------
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal
+ in the Software without restriction, including without limitation the rights
+ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
+ 
+ The above copyright notice and this permission notice shall be included in
+ all copies or substantial portions of the Software.
+ 
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ THE SOFTWARE.
+ -----------------------------------------------------------------------------
+ */
 
 #ifndef GRE_Pass_h
 #define GRE_Pass_h
@@ -43,7 +67,14 @@ public:
     
     POOLED(Pools::Resource)
     
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Constructs a Pass given its name and purpose.
+    //////////////////////////////////////////////////////////////////////
     PassPrivate (const std::string& name, const PassNumber& passNumber);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Destructs the Pass.
+    //////////////////////////////////////////////////////////////////////
     virtual ~PassPrivate();
     
     //////////////////////////////////////////////////////////////////////
@@ -114,43 +145,61 @@ public:
 protected:
     
     /// @brief The actual number of this Pass.
-    PassNumber _mNumber;
+    PassNumber iNumber;
     
     /// @brief Activated property : true if the Pass should be drew be the Renderer.
     /// Default value is true.
-    bool _mIsActivated;
+    bool iIsActivated;
     
     /// @brief The Program currently linked by this Pass. By default, HardwareProgram::Null.
-    HardwareProgram _mLinkedProgram;
+    HardwareProgram iLinkedProgram;
     
     /// @brief If true, it creates a HardwareProgram passthrough using the Renderer.
-    bool _mAutoCreateProgram;
+    bool iAutoCreateProgram;
     
     /// @brief A FrameBuffer object. This object is created by the Renderer.
-    FrameBuffer _mFbo;
+    FrameBuffer iFbo;
     
     /// @brief True if FrameBuffered rendering is desired.
     /// When _mNumber is 0 (default Pass), this value is false by
     /// default. When _mNumber is not 0 (custom Pass), this value
     /// is true.
-    bool _mFrameBufferedRendering;
+    bool iFrameBufferedRendering;
 };
 
+/// @brief SpecializedResourceHolder for PassPrivate.
+typedef SpecializedResourceHolder<PassPrivate> PassHolder;
+
+/// @brief SpecializedResourceHolderList for PassHolder list.
+typedef SpecializedResourceHolderList<PassPrivate> PassHolderList;
+
 //////////////////////////////////////////////////////////////////////
-/// @brief A Rendering Pass User object.
+/// @brief SpecializedResourceUser for PassPrivate.
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC Pass : public ResourceUser
+class DLL_PUBLIC Pass : public SpecializedResourceUser<PassPrivate>
 {
 public:
     
     POOLED(Pools::Resource)
     
-    Pass();
-    Pass(const Pass& rhs);
-    Pass(Pass&& rhs);
-    explicit Pass(const ResourceUser& rhs);
-    Pass& operator = (const Pass& rhs);
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Constructs from pointer.
+    //////////////////////////////////////////////////////////////////////
+    Pass(PassPrivate* pointer);
     
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Constructs from holder.
+    //////////////////////////////////////////////////////////////////////
+    Pass(const PassHolder& holder);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Constructs from user.
+    //////////////////////////////////////////////////////////////////////
+    Pass(const Pass& user);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Destructs the Pass user.
+    //////////////////////////////////////////////////////////////////////
     ~Pass();
     
     //////////////////////////////////////////////////////////////////////
@@ -215,18 +264,10 @@ public:
     
     /// @brief A Null Pass.
     static Pass Null;
-    
-private:
-    
-    /// @brief Holds a Quick weak pointer to PassPrivate object.
-    std::weak_ptr<PassPrivate> _mPass;
 };
 
 /// @brief Defines a simple list of Pass objects.
-typedef std::vector<Pass> PassList;
-
-/// @brief Defines a list of shared PassPrivate objects. (For managers)
-typedef std::vector<std::shared_ptr<PassPrivate> > PassPrivateOwnedList;
+typedef std::list<Pass> PassList;
 
 GreEndNamespace
 

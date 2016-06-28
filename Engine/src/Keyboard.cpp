@@ -23,75 +23,58 @@ KeyboardPrivate::~KeyboardPrivate()
 
 bool KeyboardPrivate::isKeyDown(Key k) const
 {
-    if(_keyDown.find(k) != _keyDown.end())
-        return _keyDown.at(k);
+    if(ikeyDown.find(k) != ikeyDown.end())
+        return ikeyDown.at(k);
     return false;
 }
 
 void KeyboardPrivate::onKeyUpEvent(const Gre::KeyUpEvent &e)
 {
-    _keyDown[e.key] = false;
+    ikeyDown[e.key] = false;
 }
 
 void KeyboardPrivate::onKeyDownEvent(const Gre::KeyDownEvent &e)
 {
-    _keyDown[e.key] = true;
+    ikeyDown[e.key] = true;
 }
 
 // ---------------------------------------------------------------------------------------------------
 
-Keyboard::Keyboard()
-: ResourceUser(), _kbd()
+Keyboard::Keyboard(Resource* resource)
+: SpecializedResourceUser<KeyboardPrivate>(resource)
 {
     
 }
 
-Keyboard::Keyboard(const Keyboard& rhs)
-: ResourceUser(rhs), _kbd(rhs._kbd)
+Keyboard::Keyboard(const ResourceUser& user)
+: SpecializedResourceUser<KeyboardPrivate>(user)
 {
     
 }
 
-Keyboard::Keyboard(Keyboard&& rhs)
-: ResourceUser(rhs), _kbd(std::move(rhs._kbd))
+Keyboard::Keyboard(const Keyboard& user)
+: SpecializedResourceUser<Gre::KeyboardPrivate>(user)
 {
     
 }
 
-Keyboard::Keyboard(const ResourceUser& rhs)
-: ResourceUser(rhs), _kbd(std::dynamic_pointer_cast<KeyboardPrivate>(rhs.lock()))
+Keyboard& Keyboard::operator=(const Gre::Keyboard &rhs)
 {
-    
-}
-
-Keyboard& Keyboard::operator=(const Keyboard &rhs)
-{
-    ResourceUser::operator=(rhs);
-    _kbd = rhs._kbd;
+    SpecializedResourceUser<KeyboardPrivate>::operator=(rhs);
     return *this;
-}
-
-bool Keyboard::operator==(const Gre::Keyboard &rhs) const
-{
-    return _kbd.lock() == rhs._kbd.lock();
-}
-
-bool Keyboard::operator!=(const Gre::Keyboard &rhs) const
-{
-    return !(*this == rhs);
-}
-
-bool Keyboard::isKeyDown(Key k) const
-{
-    auto ptr = _kbd.lock();
-    if(ptr)
-        return ptr->isKeyDown(k);
-    return false;
 }
 
 Keyboard::~Keyboard()
 {
     
+}
+
+bool Keyboard::isKeyDown(Key k) const
+{
+    auto ptr = lock();
+    if(ptr)
+        return ptr->isKeyDown(k);
+    return false;
 }
 
 // ---------------------------------------------------------------------------------------------------
