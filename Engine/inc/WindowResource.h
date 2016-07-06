@@ -26,6 +26,12 @@ GreBeginNamespace
 /// The Window object is highly platform-dependent, and should be
 /// different for each platforms.
 ///
+/// In order to draw onto this Window, you should select a SceneManager
+/// using RenderTarget::selectScene(), and then register this RenderTarget
+/// to the RendererDrawLoop using ResourceManager::getRendererDrawLoop().registerRenderTarget().
+/// Also, don't forget to associate a RenderContext using RenderTarget::setRenderContext().
+/// Remember this RenderContext must be created by the Renderer.
+///
 //////////////////////////////////////////////////////////////////////
 class DLL_PUBLIC WindowPrivate : public RenderTargetPrivate
 {
@@ -56,17 +62,6 @@ public:
     virtual bool isClosed() const;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Recommended Renderer name for this Object.
-    ///
-    /// @note This function is deprecated, because now it is the Renderer
-    /// Object which create the RenderContext, and then link it to the Window
-    /// Object. If the RenderContext Object is not compatible with the Window
-    /// system, the function Window::setRenderContext() will throw an
-    /// exception.
-    //////////////////////////////////////////////////////////////////////
-    virtual const std::string recommendedRenderer() const;
-    
-    //////////////////////////////////////////////////////////////////////
     /// @brief Set a new title for this Window.
     //////////////////////////////////////////////////////////////////////
     virtual void setTitle(const std::string& title);
@@ -89,9 +84,10 @@ public:
     virtual bool isExposed() const;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Return true if a RenderContext is linked with this Window.
+    /// @brief Returns true if this RenderTarget contains a RenderContext
+    /// and should be drawed by the Renderer during the first phase.
     //////////////////////////////////////////////////////////////////////
-    virtual bool hasRenderContext() const;
+    virtual bool holdsRenderContext() const;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Change the RenderContext used by this Window.
@@ -101,12 +97,12 @@ public:
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the RenderContext used by this Window.
     //////////////////////////////////////////////////////////////////////
-    virtual RenderContext& getRenderContext();
+    virtual RenderContextHolder getRenderContext();
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the RenderContext used by this Window.
     //////////////////////////////////////////////////////////////////////
-    virtual const RenderContext& getRenderContext() const;
+    virtual const RenderContextHolder getRenderContext() const;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Adds a loop behaviour function.
@@ -123,26 +119,6 @@ public:
     //////////////////////////////////////////////////////////////////////
     virtual bool hasBeenClosed() const;
     
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns true if this RenderTarget contains a RenderContext
-    /// and should be drawed by the Renderer during the first phase.
-    //////////////////////////////////////////////////////////////////////
-    virtual bool holdsRenderContext() const;
-    
-protected:
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Called by Window::setRenderContext() when a new RenderContext
-    /// is linked to the Window.
-    /// The object hold by _mRenderContext is the NEW RenderContext.
-    //////////////////////////////////////////////////////////////////////
-    virtual void onRenderContextChanged();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Called when this window's size changed.
-    //////////////////////////////////////////////////////////////////////
-    //virtual void onWindowSizeChangedEvent(const WindowSizeChangedEvent& e);
-    
 protected:
     
     /// @brief Window's title.
@@ -158,7 +134,7 @@ protected:
     bool iClosed;
     
     /// @brief Holds the RenderContext linked to this Window.
-    RenderContext iRenderContext;
+    RenderContextHolder iRenderContext;
     
     /// @brief Helper object to hold LoopBehaviour functions.
     LoopBehaviours iLoopBehaviours;

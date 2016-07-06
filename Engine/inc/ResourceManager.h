@@ -147,9 +147,6 @@ protected:
     /// @brief Factory to create MeshLoaders.
     MeshLoaderFactory iMeshLoaders;
     
-    /// @brief Creates ImageLoader.
-    ImageLoaderFactory iImageLoaders;
-    
     /// @brief Creates SceneLoader objects.
     SceneManagerLoaderFactory iSceneLoaders;
     
@@ -160,7 +157,7 @@ protected:
     HardwareProgramManagerLoaderFactory iProgManLoaders;
     
     /// @brief Creates FrameBufferLoader objects.
-    FrameBufferLoaderFactory iFboLoaders;
+    RenderFramebufferLoaderFactory iFboLoaders;
     
     /// @brief Utility class to create Names.
     NameGenerator iNameGenerator;
@@ -352,8 +349,6 @@ public:
     RendererLoaderFactory& getRendererLoaderFactory();
     /// @brief Returns the MeshLoader Factory
     MeshLoaderFactory& getMeshLoaderFactory();
-    /// @brief Returns the ImageLoader Factory.
-    ImageLoaderFactory& getImageLoaderFactory();
     /// @brief Returns the SceneLoader Factory.
     SceneManagerLoaderFactory& getSceneManagerLoaderFactory();
     /// @brief Returns the NameGenerator object.
@@ -363,7 +358,7 @@ public:
     /// @brief Returns the HardwareProgramManagerLoader Factory.
     HardwareProgramManagerLoaderFactory& getHardwareProgramManagerLoaderFactory();
     /// @brief Returns the FrameBufferLoader Factory.
-    FrameBufferLoaderFactory& getFrameBufferLoaderFactory();
+    RenderFramebufferLoaderFactory& getFrameBufferLoaderFactory();
     /// @brief Returns the Keyboard Loader.
     KeyboardLoader& getKeyboardLoader();
     

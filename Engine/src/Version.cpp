@@ -38,4 +38,19 @@ int DebugGetNumber()
     return ret;
 }
 
+Surface Surface::Null = { 0, 0, 0, 0 };
+
+/// @brief Common egality operator.
+bool operator == (const Surface& lhs, const Surface& rhs)
+{
+    return lhs.top == rhs.top && lhs.left == rhs.left &&
+    lhs.width == rhs.width && lhs.height == rhs.height;
+}
+
+/// @brief Common different operator.
+bool operator != (const Surface& lhs, const Surface& rhs)
+{
+    return ! (lhs == rhs);
+}
+
 GreEndNamespace

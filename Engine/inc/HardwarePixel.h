@@ -1,11 +1,11 @@
 //////////////////////////////////////////////////////////////////////
 //
-//  Viewport.h
+//  HardwarePixel.h
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
 //  Copyright (c) 2015 - 2016 Luk2010
-//  Created on 09/03/2016.
+//  Created on 05/07/2016.
 //
 //////////////////////////////////////////////////////////////////////
 /*
@@ -30,109 +30,104 @@
  -----------------------------------------------------------------------------
  */
 
-#ifndef GRE_Viewport_h
-#define GRE_Viewport_h
+#ifndef GRE_HardwarePixel_h
+#define GRE_HardwarePixel_h
 
 #include "Pools.h"
-#include "Scene.h"
 
 GreBeginNamespace
 
 //////////////////////////////////////////////////////////////////////
-/// @brief A simple Viewport object.
-///
-/// The Viewport is defined using ratio. This means that for example,
-/// if you set a width ratio of 0.5f, when RenderContext calls
-/// onBordersChanged() with the RenderContext new width of 400 px, the
-/// width given by getSurface().width will be 400*0.5f = 200.
+/// @brief Describes the format used for the Pixel data.
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC Viewport
+enum class HardwarePixelFormat
+{
+    /// @brief Invalid HardwarePixelFormat value.
+    Null = 0,
+    
+    /// @brief Every registered HardwarePixelFormat not added by the Core
+    /// Engine should have this type.
+    Custom = 999
+};
+
+//////////////////////////////////////////////////////////////////////
+/// @brief Descriptor for HardwarePixelFormat.
+//////////////////////////////////////////////////////////////////////
+struct HardwarePixelFormatDescriptor
+{
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    HardwarePixelFormatDescriptor();
+    
+    /// @brief The format this Descriptor is referred to.
+    HardwarePixelFormat iFormat;
+    
+    /// @brief The size of one pixel.
+    size_t iSize;
+    
+    /// @brief The name of this Descriptor.
+    std::string iName;
+};
+
+/// @brief std::list for HardwarePixelFormatDescriptor.
+typedef std::vector<HardwarePixelFormatDescriptor> HardwarePixelFormatDescriptorList;
+
+//////////////////////////////////////////////////////////////////////
+/// @brief Returns the HardwarePixelFormatDescriptor for each
+/// HardwarePixelFormat.
+///
+/// This Manager is also able to register new pixel formats. It can helps
+/// you handle unknown pixel formats. Access the global manager using
+/// HardwarePixelFormatDescriptorManager::Instance.
+///
+//////////////////////////////////////////////////////////////////////
+class DLL_PUBLIC HardwarePixelFormatDescriptorManager
 {
 public:
     
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Constructs a new Viewport structure.
-    //////////////////////////////////////////////////////////////////////
-    Viewport(const std::string& name = "", float top = 0.0f, float left = 0.0f, float width = 1.0f, float height = 1.0f, bool activated = true);
+    POOLED(Pools::Default)
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Destructs the Viewport.
     //////////////////////////////////////////////////////////////////////
-    virtual ~Viewport();
-    
-    Viewport& operator = (const Viewport& rhs);
+    HardwarePixelFormatDescriptorManager();
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Updates the Viewport. This function should be called by the
-    /// RenderContext object.
     //////////////////////////////////////////////////////////////////////
-    virtual void onBordersChanged(const Surface& parentSurface);
+    virtual ~HardwarePixelFormatDescriptorManager();
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Name of this Viewport.
+    /// @brief Registers a new HardwarePixelFormatDescriptor.
     //////////////////////////////////////////////////////////////////////
-    const std::string& getName() const;
+    void registerDescriptor(const HardwarePixelFormatDescriptor& descriptor);
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns true if this Viepwort should be rendered.
+    /// @brief Finds a Descriptor for given type.
     //////////////////////////////////////////////////////////////////////
-    bool isActivated() const;
+    const HardwarePixelFormatDescriptor getDescriptor(const HardwarePixelFormat& format) const;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Surface covered by this Viewport.
+    /// @brief Finds a Descriptor with given name.
     //////////////////////////////////////////////////////////////////////
-    const Surface& getSurface() const;
+    const HardwarePixelFormatDescriptor getDescriptorByName(const std::string& name) const;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Selects a SceneManager for this Viewport.
+    /// @brief Finds every Descriptor matching given size.
     //////////////////////////////////////////////////////////////////////
-    void selectScene(const SceneManager& scene);
+    HardwarePixelFormatDescriptorList getDescriptorsBySize(size_t size) const;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns 'true' if this Viewport has a Scene object linked to.
+    /// @brief Returns every Descriptors.
     //////////////////////////////////////////////////////////////////////
-    bool hasScene() const;
+    HardwarePixelFormatDescriptorList getDescriptors() const;
     
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Scene object linked to this Viewport if it has
-    /// one, or SceneManager::Null if not.
-    //////////////////////////////////////////////////////////////////////
-    const SceneManager& getScene() const;
-    
-    /// @brief An empty const vector of Viewport.
-    static const std::list<Viewport> EmptyList;
+    /// @brief A Global HardwarePixelFormatDescriptorManager.
+    static HardwarePixelFormatDescriptorManager Instance;
     
 protected:
     
-    /// @brief Name of this Viewport.
-    std::string _mName;
-    
-    /// @brief Is this Viewport activated ?
-    /// Default value is 'true'.
-    bool _mActivated;
-    
-    /// @brief Width border ratio.
-    float _mBorderWidth;
-    
-    /// @brief Height border ratio.
-    float _mBorderHeight;
-    
-    /// @brief Top margin ratio.
-    float _mBorderTop;
-    
-    /// @brief Left margin ratio.
-    float _mBorderLeft;
-    
-    /// @brief Surface object updated with Viewport::onBordersChanged().
-    Surface _mSurface;
-    
-    /// @brief Holds the Scene that might have been selected by the User to draw this
-    /// Viewport object.
-    SceneManager _mScene;
+    /// @brief Holds the Descriptors.
+    HardwarePixelFormatDescriptorList iDescriptors;
 };
-
-/// @brief std::list<> for Viewport.
-typedef std::list<Viewport> ViewportList;
 
 GreEndNamespace
 

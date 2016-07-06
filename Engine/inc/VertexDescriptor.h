@@ -1,11 +1,11 @@
 //////////////////////////////////////////////////////////////////////
 //
-//  Viewport.h
+//  VertexDescriptor.h
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
 //  Copyright (c) 2015 - 2016 Luk2010
-//  Created on 09/03/2016.
+//  Created on 06/07/2016.
 //
 //////////////////////////////////////////////////////////////////////
 /*
@@ -30,110 +30,115 @@
  -----------------------------------------------------------------------------
  */
 
-#ifndef GRE_Viewport_h
-#define GRE_Viewport_h
+#ifndef VertexDescriptor_h
+#define VertexDescriptor_h
 
 #include "Pools.h"
-#include "Scene.h"
 
 GreBeginNamespace
 
 //////////////////////////////////////////////////////////////////////
-/// @brief A simple Viewport object.
-///
-/// The Viewport is defined using ratio. This means that for example,
-/// if you set a width ratio of 0.5f, when RenderContext calls
-/// onBordersChanged() with the RenderContext new width of 400 px, the
-/// width given by getSurface().width will be 400*0.5f = 200.
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC Viewport
+enum class VertexComponentType
+{
+    Null = 0,
+    
+    /// @brief Disabled field size 1.
+    Null1 = 1,
+    
+    /// @brief Disabled field size 2.
+    Null2 = 2,
+    
+    /// @brief Disabled field size 3.
+    Null3 = 3,
+    
+    /// @brief Disabled field size 4.
+    Null4 = 4,
+    
+    /// @brief A XYZ Position Component. (Size = sizeof(float) * 3)
+    Position = 10,
+    
+    /// @brief A RGBA Color component. (Size = sizeof(uint_32) * 4)
+    Color = 11,
+    
+    /// @brief A XYZ Normal Component. (Size = sizeof(float) * 3)
+    Normal = 12,
+    
+    /// @brief A UV Texture Component. (Size = sizeof(float) * 2)
+    Texture = 13
+};
+
+/// @brief A VertexPosition.
+typedef glm::tvec3<float> VertexPosition;
+
+/// @brief A VertexColor.
+typedef glm::tvec4<uint_32> VertexColor;
+
+/// @brief A VertexNormal.
+typedef glm::tvec3<float> VertexNormal;
+
+/// @brief A VertexTexture.
+typedef glm::tvec2<float> VertexTexture;
+
+/// @brief A List of Component.
+typedef std::vector<VertexComponentType> VertexComponents;
+
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+class DLL_PUBLIC VertexDescriptor
 {
 public:
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Constructs a new Viewport structure.
     //////////////////////////////////////////////////////////////////////
-    Viewport(const std::string& name = "", float top = 0.0f, float left = 0.0f, float width = 1.0f, float height = 1.0f, bool activated = true);
+    VertexDescriptor();
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Destructs the Viewport.
     //////////////////////////////////////////////////////////////////////
-    virtual ~Viewport();
-    
-    Viewport& operator = (const Viewport& rhs);
+    virtual ~VertexDescriptor();
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Updates the Viewport. This function should be called by the
-    /// RenderContext object.
+    /// @brief Push a Component at the end of the list.
     //////////////////////////////////////////////////////////////////////
-    virtual void onBordersChanged(const Surface& parentSurface);
+    virtual void addComponent(const VertexComponentType& vtype);
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Name of this Viewport.
+    /// @brief Remove given Component from the list.
     //////////////////////////////////////////////////////////////////////
-    const std::string& getName() const;
+    virtual void removeComponent(const VertexComponentType& vtype);
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns true if this Viepwort should be rendered.
+    /// @brief Returns the Components from this Descriptor.
     //////////////////////////////////////////////////////////////////////
-    bool isActivated() const;
+    virtual const VertexComponents& getComponents() const;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Surface covered by this Viewport.
+    /// @brief Returns the total size for this Descriptor. (Size of every
+    /// Components)
     //////////////////////////////////////////////////////////////////////
-    const Surface& getSurface() const;
+    virtual size_t getSize() const;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Selects a SceneManager for this Viewport.
+    /// @brief Returns the stride between two same Components. ( getSize()
+    /// - sizeof (vtype) )
     //////////////////////////////////////////////////////////////////////
-    void selectScene(const SceneManager& scene);
+    virtual size_t getStride(const VertexComponentType& vtype) const;
     
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns 'true' if this Viewport has a Scene object linked to.
-    //////////////////////////////////////////////////////////////////////
-    bool hasScene() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Scene object linked to this Viewport if it has
-    /// one, or SceneManager::Null if not.
-    //////////////////////////////////////////////////////////////////////
-    const SceneManager& getScene() const;
-    
-    /// @brief An empty const vector of Viewport.
-    static const std::list<Viewport> EmptyList;
+    /// @brief Default Vertex Descriptor (Position + Color + Normal + Texture, in this order).
+    static VertexDescriptor Default;
     
 protected:
     
-    /// @brief Name of this Viewport.
-    std::string _mName;
+    /// @brief List of Components in this Vertex, by order.
+    VertexComponents iComponents;
     
-    /// @brief Is this Viewport activated ?
-    /// Default value is 'true'.
-    bool _mActivated;
-    
-    /// @brief Width border ratio.
-    float _mBorderWidth;
-    
-    /// @brief Height border ratio.
-    float _mBorderHeight;
-    
-    /// @brief Top margin ratio.
-    float _mBorderTop;
-    
-    /// @brief Left margin ratio.
-    float _mBorderLeft;
-    
-    /// @brief Surface object updated with Viewport::onBordersChanged().
-    Surface _mSurface;
-    
-    /// @brief Holds the Scene that might have been selected by the User to draw this
-    /// Viewport object.
-    SceneManager _mScene;
+    /// @brief Updated size of this Descriptor.
+    size_t iSize;
 };
 
-/// @brief std::list<> for Viewport.
-typedef std::list<Viewport> ViewportList;
+/// @brief Common operator to write VertexDescriptor.
+VertexDescriptor& operator << (VertexDescriptor& desc, const VertexComponentType& vtype);
 
 GreEndNamespace
 
-#endif
+#endif /* VertexDescriptor_h */

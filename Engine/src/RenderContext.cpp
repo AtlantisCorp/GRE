@@ -100,6 +100,11 @@ const ViewportList& RenderContextPrivate::getViewports() const
     return iViewports;
 }
 
+Viewport RenderContextPrivate::getDefaultViewport() const
+{
+    return iViewports.front();
+}
+
 void RenderContextPrivate::removeViewport(const std::string &name)
 {
     auto it = std::find_if(iViewports.begin(), iViewports.end(), [&](const Viewport& v) -> bool { return name == v.getName(); });
@@ -227,6 +232,14 @@ const ViewportList& RenderContext::getViewports() const
     if(ptr)
         return ptr->getViewports();
     return Viewport::EmptyList;
+}
+
+Viewport RenderContext::getDefaultViewport() const
+{
+    auto ptr = lock();
+    if ( ptr )
+        return ptr->getDefaultViewport();
+    return Viewport();
 }
 
 void RenderContext::removeViewport(const std::string &name)

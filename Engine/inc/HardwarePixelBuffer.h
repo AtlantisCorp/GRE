@@ -1,11 +1,11 @@
 //////////////////////////////////////////////////////////////////////
 //
-//  Pass.h
+//  HardwarePixelBuffer.h
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
 //  Copyright (c) 2015 - 2016 Luk2010
-//  Created on 06/01/2016.
+//  Created on 02/07/2016.
 //
 //////////////////////////////////////////////////////////////////////
 /*
@@ -30,165 +30,124 @@
  -----------------------------------------------------------------------------
  */
 
-#ifndef GRE_Pass_h
-#define GRE_Pass_h
+#ifndef HardwarePixelBuffer_h
+#define HardwarePixelBuffer_h
 
 #include "Pools.h"
-#include "Resource.h"
-#include "HardwareProgram.h"
+#include "HardwareBuffer.h"
+#include "HardwarePixel.h"
 
 GreBeginNamespace
 
-class DLL_PUBLIC RendererResource;
-
-/// @brief Type defining a Pass Number.
-typedef uint32_t PassNumber;
-
-/// @brief Defines the Pass Numbers that can be allocated.
-enum class PassPurpose
-{
-    /// @brief The first pass. Generally already allocated by the Renderer, should draw
-    /// every objects with a generic passthrough shader.
-    First = 1,
-    
-    /// @brief The last pass. This Pass can't be allocated. The number of Pass is high, i
-    /// hope you'll never have to get through 999 rendering of the Scene or you will have a
-    /// dramatic perf issue !
-    Last = 999
-};
-
 //////////////////////////////////////////////////////////////////////
-/// @brief A Rendering Pass Private object.
-///
-/// A Pass is an object, able to add a step in the Rendering Procees.
-/// Normally, one Pass is used by the Renderer to draw the Scene with
-/// one HardwareShader onto a Renderer's private framebuffer. Then, this
-/// RenderFramebuffer is blended with the following pass's ones.
-/// The result of this is a blend between all Pass's effect, from first
-/// to last.
-///
+/// @brief Buffer Object used to store Pixel data.
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC PassPrivate : public Resource
+class DLL_PUBLIC HardwarePixelBufferPrivate : public HardwareBufferPrivate
 {
 public:
     
-    POOLED(Pools::Resource)
+    POOLED(Pools::HwdBuffer)
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Constructs a Pass given its name and purpose.
     //////////////////////////////////////////////////////////////////////
-    PassPrivate (const std::string& name, const PassNumber& passNumber);
+    HardwarePixelBufferPrivate(const std::string& name);
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Destructs the Pass.
     //////////////////////////////////////////////////////////////////////
-    virtual ~PassPrivate();
+    virtual ~HardwarePixelBufferPrivate();
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Sets the property to true if you want this Pass to be enabled.
+    /// @brief Changes the HardwarePixelFormat.
     //////////////////////////////////////////////////////////////////////
-    void setActivated(bool activate);
+    virtual void setPixelFormat(const HardwarePixelFormat& pixformat);
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Tells if the Pass is enabled.
+    /// @brief Returns the HardwarePixelFormat used by this buffer.
     //////////////////////////////////////////////////////////////////////
-    bool isActivated() const;
+    virtual HardwarePixelFormat getPixelFormat() const;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Changes the HardwareProgram used by this PassPrivate object.
+    /// @brief Should return a pointer to the data stored by the
+    /// HardwarePixelBuffer.
     //////////////////////////////////////////////////////////////////////
-    void setHardwareProgram(const HardwareProgram& hwdProgram);
+    virtual void* getData();
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the HardwareProgram object. By default, HardwareProgram::Null.
+    /// @brief Should return a pointer to the data stored by the
+    /// HardwarePixelBuffer.
     //////////////////////////////////////////////////////////////////////
-    HardwareProgram getHardwareProgram() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the current PassNumber.
-    //////////////////////////////////////////////////////////////////////
-    PassNumber getPassNumber() const;
+    virtual const void* getData() const;
     
 protected:
     
-    /// @brief The actual number of this Pass.
-    PassNumber iNumber;
-    
-    /// @brief Activated property : true if the Pass should be drew be the Renderer.
-    /// Default value is true.
-    bool iIsActivated;
-    
-    /// @brief The Program currently linked by this Pass. By default, HardwareProgram::Null.
-    HardwareProgram iLinkedProgram;
+    /// @brief Holds the HardwarePixelFormat used to store data.
+    HardwarePixelFormat iPixFormat;
 };
 
-/// @brief SpecializedResourceHolder for PassPrivate.
-typedef SpecializedResourceHolder<PassPrivate> PassHolder;
+/// @brief SpecializedResourceHolder for HardwarePixelBufferPrivate.
+typedef SpecializedResourceHolder<HardwarePixelBufferPrivate> HardwarePixelBufferHolder;
 
-/// @brief SpecializedResourceHolderList for PassHolder list.
-typedef SpecializedResourceHolderList<PassPrivate> PassHolderList;
+/// @brief SpecializedResourceHolderList for HardwarePixelBufferPrivate.
+typedef SpecializedResourceHolderList<HardwarePixelBufferPrivate> HardwarePixelBufferHolderList;
 
 //////////////////////////////////////////////////////////////////////
-/// @brief SpecializedResourceUser for PassPrivate.
+/// @brief SpecializedResourceUser for HardwarePixelBufferPrivate.
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC Pass : public SpecializedResourceUser<PassPrivate>
+class DLL_PUBLIC HardwarePixelBuffer : public HardwareBuffer, public SpecializedResourceUser<HardwarePixelBufferPrivate>
 {
 public:
     
-    POOLED(Pools::Resource)
+    POOLED(Pools::HwdBuffer)
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Constructs from pointer.
     //////////////////////////////////////////////////////////////////////
-    Pass(const PassPrivate* pointer);
+    HardwarePixelBuffer(const HardwarePixelBufferPrivate* pointer);
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Constructs from holder.
     //////////////////////////////////////////////////////////////////////
-    Pass(const PassHolder& holder);
+    HardwarePixelBuffer(const HardwarePixelBufferHolder& holder);
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Constructs from user.
     //////////////////////////////////////////////////////////////////////
-    Pass(const Pass& user);
+    HardwarePixelBuffer(const HardwarePixelBuffer& user);
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Destructs the Pass user.
     //////////////////////////////////////////////////////////////////////
-    ~Pass();
+    virtual ~HardwarePixelBuffer() noexcept(false) ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Sets the property to true if you want this Pass to be enabled.
+    /// @brief Creates a new ResourceHolder in order to use the Resource.
     //////////////////////////////////////////////////////////////////////
-    void setActivated(bool activate);
+    HardwarePixelBufferHolder lock();
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Tells if the Pass is enabled.
+    /// @brief Creates a new ResourceHolder in order to use the Resource.
     //////////////////////////////////////////////////////////////////////
-    bool isActivated() const;
+    const HardwarePixelBufferHolder lock() const;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Changes the HardwareProgram used by this PassPrivate object.
+    /// @brief Changes the HardwarePixelFormat.
     //////////////////////////////////////////////////////////////////////
-    void setHardwareProgram(const HardwareProgram& hwdProgram);
+    virtual void setPixelFormat(const HardwarePixelFormat& pixformat);
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the HardwareProgram object. By default, HardwareProgram::Null.
+    /// @brief Returns the HardwarePixelFormat used by this buffer.
     //////////////////////////////////////////////////////////////////////
-    HardwareProgram getHardwareProgram() const;
+    virtual HardwarePixelFormat getPixelFormat() const;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the current PassNumber.
+    /// @brief Should return a pointer to the data stored by the
+    /// HardwarePixelBuffer.
     //////////////////////////////////////////////////////////////////////
-    PassNumber getPassNumber() const;
+    virtual void* getData();
     
-    /// @brief A Null Pass.
-    static Pass Null;
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Should return a pointer to the data stored by the
+    /// HardwarePixelBuffer.
+    //////////////////////////////////////////////////////////////////////
+    virtual const void* getData() const;
 };
-
-/// @brief Defines a simple list of Pass objects.
-typedef std::list<Pass> PassList;
 
 GreEndNamespace
 
-#endif
+#endif /* HardwarePixelBuffer_h */

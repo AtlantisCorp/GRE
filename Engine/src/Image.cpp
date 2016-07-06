@@ -8,6 +8,8 @@
 
 #include "Image.h"
 
+/*
+
 GreBeginNamespace
 
 ImageResource::ImageResource(const std::string& name)
@@ -191,3 +193,5 @@ PixelBatch PixelBatch::Empty = PixelBatch();
 Image Image::Null = Image();
 
 GreEndNamespace
+ 
+ */

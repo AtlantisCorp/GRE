@@ -1,27 +1,55 @@
-////////////////////////////////////////////////////
-//  File    : Camera.cpp
-//  Project : GRE
+//////////////////////////////////////////////////////////////////////
 //
-//  Created by Jacques Tronconi on 07/05/2016.
-//  
+//  Camera.cpp
+//  This source file is part of Gre
+//		(Gang's Resource Engine)
 //
-////////////////////////////////////////////////////
+//  Copyright (c) 2015 - 2016 Luk2010
+//  Created on 07/05/2016.
+//
+//////////////////////////////////////////////////////////////////////
+/*
+ -----------------------------------------------------------------------------
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal
+ in the Software without restriction, including without limitation the rights
+ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
+ 
+ The above copyright notice and this permission notice shall be included in
+ all copies or substantial portions of the Software.
+ 
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ THE SOFTWARE.
+ -----------------------------------------------------------------------------
+ */
 
 #include "Camera.h"
 
 GreBeginNamespace
 
 CameraPrivate::CameraPrivate(const std::string& name)
-: Resource(name)
+: Gre::Resource(name), iMaxVerticalAngle(89.0f)
 {
-    iPosition = Vector3(0, 0, 1);
-    iHorizontalAngle = 0.0f;
-    iVerticalAngle = 0.0f;
-    iFieldOfView = 45.0f;
-    iNearPlane = 0.01f;
-    iFarPlane = 100.0f;
-    iViewportRatio = 4.0f / 3.0f;
-    iMaxVerticalAngle = 85.0f;
+    
+}
+
+CameraPrivate::CameraPrivate(const std::string& name, const Vector3& position, const Vector3& to)
+: Gre::Resource(name), iPosition(position), iMaxVerticalAngle(89.0f)
+{
+    lookAt(to);
+}
+
+CameraPrivate::CameraPrivate(const std::string& name, const Vector3& position, const Radian& angle, const Vector3& direction)
+: Gre::Resource(name), iPosition(position), iMaxVerticalAngle(89.0f)
+{
+    lookAt(angle, direction);
 }
 
 CameraPrivate::~CameraPrivate()
@@ -29,128 +57,79 @@ CameraPrivate::~CameraPrivate()
     
 }
 
-const Vector3& CameraPrivate::getPosition() const
+void CameraPrivate::setPosition(const Vector3 &position)
+{
+    iPosition = position;
+    lookAtCache();
+}
+
+Vector3 CameraPrivate::getPosition() const
 {
     return iPosition;
 }
 
-void CameraPrivate::setPosition(const Vector3 &position)
-{
-    iPosition = position;
-}
-
-void CameraPrivate::offsetPosition(const Vector3 &offset)
-{
-    iPosition += offset;
-}
-
-float CameraPrivate::getFieldOfView() const
-{
-    return iFieldOfView;
-}
-
-void CameraPrivate::setFieldOfView(float fov)
-{
-    iFieldOfView = fov;
-}
-
-float CameraPrivate::getNearPlane() const
-{
-    return iNearPlane;
-}
-
-float CameraPrivate::getFarPlane() const
-{
-    return iFarPlane;
-}
-
-void CameraPrivate::setNearAndFarPlanes(float near, float far)
-{
-    iNearPlane = near;
-    iFarPlane = far;
-}
-
-Matrix4 CameraPrivate::getOrientation() const
-{
-    Matrix4 orientation;
-    orientation = glm::rotate(orientation, glm::radians(iVerticalAngle), Vector3(1,0,0));
-    orientation = glm::rotate(orientation, glm::radians(iHorizontalAngle), Vector3(0,1,0));
-    return orientation;
-}
-
-void CameraPrivate::offsetOrientation(float upAngle, float rightAngle)
-{
-    iHorizontalAngle = rightAngle;
-    iVerticalAngle = upAngle;
-}
-
 void CameraPrivate::lookAt(const Vector3 &position)
 {
-    Vector3 direction = glm::normalize(position - iPosition);
-    iVerticalAngle = glm::radians(asinf(-direction.y));
-    iHorizontalAngle = -glm::radians(atan2f(-direction.x, -direction.z));
-    _normalizeAngles();
+    Vector3 direction = glm::normalize (position - iPosition);
+    lookAt(0.0f, direction);
 }
 
-float CameraPrivate::getViewportAspectRatio() const
+void CameraPrivate::lookAt(const Radian &angle, const Vector3 &direction)
 {
-    return iViewportRatio;
-}
-
-void CameraPrivate::setViewportAspectRatio(float ratio)
-{
-    iViewportRatio = ratio;
-}
-
-Vector3 CameraPrivate::forward() const
-{
-    glm::vec4 forward = glm::inverse(getOrientation()) * glm::vec4(0,0,-1,1);
-    return glm::vec3(forward);
-}
-
-Vector3 CameraPrivate::up() const
-{
-    glm::vec4 up = glm::inverse(getOrientation()) * glm::vec4(0,1,0,1);
-    return glm::vec3(up);
-}
-
-Vector3 CameraPrivate::right() const
-{
-    glm::vec4 right = glm::inverse(getOrientation()) * glm::vec4(1,0,0,1);
-    return glm::vec3(right);
-}
-
-Matrix4 CameraPrivate::getMatrix() const
-{
-    return getProjection() * getView();
-}
-
-Matrix4 CameraPrivate::getProjection() const
-{
-    return glm::perspective(glm::radians(iFieldOfView), iViewportRatio, iNearPlane, iFarPlane);
-}
-
-Matrix4 CameraPrivate::getView() const
-{
-    return getOrientation() * glm::translate(glm::mat4(), -iPosition);
-}
-
-void CameraPrivate::_normalizeAngles()
-{
-    iHorizontalAngle = fmodf(iHorizontalAngle, 360.0f);
-    //fmodf can return negative values, but this will make them all positive
-    if(iHorizontalAngle < 0.0f)
-        iHorizontalAngle += 360.0f;
+    if(iCache.iLookDirection != direction)
+    {
+        float iVerticalAngle = glm::radians(asinf(-direction.y));
+        float iHorizontalAngle = -glm::radians(atan2f(-direction.x, -direction.z));
+        
+        iHorizontalAngle = fmodf(iHorizontalAngle, 360.0f);
+        //fmodf can return negative values, but this will make them all positive
+        if(iHorizontalAngle < 0.0f)
+            iHorizontalAngle += 360.0f;
+        
+        if(iVerticalAngle > iMaxVerticalAngle)
+            iVerticalAngle = iMaxVerticalAngle;
+        else if(iVerticalAngle < -iMaxVerticalAngle)
+            iVerticalAngle = -iMaxVerticalAngle;
+        
+        Matrix4 orientation;
+        orientation = glm::rotate(orientation, glm::radians(iVerticalAngle), Vector3(1,0,0));
+        orientation = glm::rotate(orientation, glm::radians(iHorizontalAngle), Vector3(0,1,0));
+        orientation = glm::rotate(orientation, glm::radians(angle), Vector3(0,0,1));
+        
+        Matrix4 view = orientation * glm::translate( glm::mat4(), -iPosition );
+        iFrustrum.setView(view);
+        
+        // Cache computed data.
+        iCache.iLookDirection = direction;
+        iCache.iOrientation = orientation;
+        
+        // Compute Planes for Frustrum.
+        iFrustrum.computePlanes();
+    }
     
-    if(iVerticalAngle > iMaxVerticalAngle)
-        iVerticalAngle = iMaxVerticalAngle;
-    else if(iVerticalAngle < -iMaxVerticalAngle)
-        iVerticalAngle = -iMaxVerticalAngle;
+    else
+    {
+        Matrix4 view = iCache.iOrientation * glm::translate( glm::mat4(), -iPosition );
+        iFrustrum.setView(view);
+        iFrustrum.computePlanes();
+    }
+}
+
+void CameraPrivate::lookAtCache()
+{
+    Matrix4 view = iCache.iOrientation * glm::translate( glm::mat4(), -iPosition );
+    iFrustrum.setView(view);
+    iFrustrum.computePlanes();
+}
+
+bool CameraPrivate::contains(const Vector3 &object) const
+{
+    return iFrustrum.contains(object);
 }
 
 // ---------------------------------------------------------------------------------------------------
 
-Camera::Camera(CameraPrivate* pointer)
+Camera::Camera(const CameraPrivate* pointer)
 : SpecializedResourceUser<Gre::CameraPrivate>(pointer)
 {
     
@@ -172,5 +151,51 @@ Camera::~Camera()
 {
     
 }
+
+void Camera::setPosition(const Vector3 &position)
+{
+    auto ptr = lock();
+    if( ptr )
+        ptr->setPosition(position);
+}
+
+Vector3 Camera::getPosition() const
+{
+    auto ptr = lock();
+    if( ptr )
+        return ptr->getPosition();
+    return Vector3();
+}
+
+void Camera::lookAt(const Vector3 &position)
+{
+    auto ptr = lock();
+    if( ptr )
+        ptr->lookAt(position);
+}
+
+void Camera::lookAt(const Radian &angle, const Vector3 &direction)
+{
+    auto ptr = lock();
+    if( ptr )
+        ptr->lookAt(angle, direction);
+}
+
+void Camera::lookAtCache()
+{
+    auto ptr = lock();
+    if( ptr )
+        ptr->lookAtCache();
+}
+
+bool Camera::contains(const Vector3 &object) const
+{
+    auto ptr = lock();
+    if( ptr )
+        return ptr->contains(object);
+    return false;
+}
+
+Camera Camera::Null = Camera(nullptr);
 
 GreEndNamespace

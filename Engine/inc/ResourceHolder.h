@@ -210,6 +210,40 @@ public:
             erase(it);
         }
     }
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns an iterator corresponding to the first match for
+    /// given object.
+    //////////////////////////////////////////////////////////////////////
+    typename list_t::iterator find(const SpecializedResourceHolder<Class>& obj)
+    {
+        for(auto it = list_t::begin(); it != list_t::end(); it++)
+        {
+            if( (*it).get() == obj.get() )
+            {
+                return it;
+            }
+        }
+        
+        return list_t::end();
+    }
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns an iterator corresponding to the first match for
+    /// given object.
+    //////////////////////////////////////////////////////////////////////
+    typename list_t::const_iterator find(const SpecializedResourceHolder<Class>& obj) const
+    {
+        for(auto it = list_t::begin(); it != list_t::end(); it++)
+        {
+            if( (*it).get() == obj.get() )
+            {
+                return it;
+            }
+        }
+        
+        return list_t::end();
+    }
 	
 	//////////////////////////////////////////////////////////////////////
 	/// @brief Returns an iterator corresponding to the first match for

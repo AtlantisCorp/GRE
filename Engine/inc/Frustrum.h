@@ -1,11 +1,11 @@
 //////////////////////////////////////////////////////////////////////
 //
-//  Viewport.h
+//  Frustrum.h
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
 //  Copyright (c) 2015 - 2016 Luk2010
-//  Created on 09/03/2016.
+//  Created on 05/07/2016.
 //
 //////////////////////////////////////////////////////////////////////
 /*
@@ -30,110 +30,108 @@
  -----------------------------------------------------------------------------
  */
 
-#ifndef GRE_Viewport_h
-#define GRE_Viewport_h
+#ifndef Frustrum_h
+#define Frustrum_h
 
 #include "Pools.h"
-#include "Scene.h"
 
 GreBeginNamespace
 
 //////////////////////////////////////////////////////////////////////
-/// @brief A simple Viewport object.
+/// @brief Structures representing the 6-planes from the Camera
+/// point of view.
 ///
-/// The Viewport is defined using ratio. This means that for example,
-/// if you set a width ratio of 0.5f, when RenderContext calls
-/// onBordersChanged() with the RenderContext new width of 400 px, the
-/// width given by getSurface().width will be 400*0.5f = 200.
+/// The Camera object should contains and updates one object of this
+/// kind. This object can be accessed using Camera::getFrustrum().
+///
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC Viewport
+class DLL_PUBLIC Frustrum
 {
 public:
     
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Constructs a new Viewport structure.
-    //////////////////////////////////////////////////////////////////////
-    Viewport(const std::string& name = "", float top = 0.0f, float left = 0.0f, float width = 1.0f, float height = 1.0f, bool activated = true);
+    POOLED(Pools::Default)
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Destructs the Viewport.
     //////////////////////////////////////////////////////////////////////
-    virtual ~Viewport();
-    
-    Viewport& operator = (const Viewport& rhs);
+    Frustrum();
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Updates the Viewport. This function should be called by the
-    /// RenderContext object.
     //////////////////////////////////////////////////////////////////////
-    virtual void onBordersChanged(const Surface& parentSurface);
+    Frustrum(const Matrix4& perspective);
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Name of this Viewport.
     //////////////////////////////////////////////////////////////////////
-    const std::string& getName() const;
+    Frustrum(const Matrix4& perspective, const Matrix4& view);
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns true if this Viepwort should be rendered.
     //////////////////////////////////////////////////////////////////////
-    bool isActivated() const;
+    Frustrum(const Frustrum& rhs);
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Surface covered by this Viewport.
     //////////////////////////////////////////////////////////////////////
-    const Surface& getSurface() const;
+    virtual ~Frustrum();
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Selects a SceneManager for this Viewport.
+    /// @brief Changes the iPerspective Matrix.
     //////////////////////////////////////////////////////////////////////
-    void selectScene(const SceneManager& scene);
+    virtual void setPerspective(const Matrix4& perspective);
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns 'true' if this Viewport has a Scene object linked to.
+    /// @brief Returns the iPerspective Matrix.
     //////////////////////////////////////////////////////////////////////
-    bool hasScene() const;
+    virtual Matrix4 getPerspective() const;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Scene object linked to this Viewport if it has
-    /// one, or SceneManager::Null if not.
+    /// @brief Changes the View Matrix.
     //////////////////////////////////////////////////////////////////////
-    const SceneManager& getScene() const;
+    virtual void setView(const Matrix4& view);
     
-    /// @brief An empty const vector of Viewport.
-    static const std::list<Viewport> EmptyList;
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the View Matrix.
+    //////////////////////////////////////////////////////////////////////
+    virtual Matrix4 getView() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Computes planes from the iPerspective and iView Matrix.
+    //////////////////////////////////////////////////////////////////////
+    virtual void computePlanes(bool normalize = true);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns one Plane.
+    //////////////////////////////////////////////////////////////////////
+    virtual Plane getPlane(int i) const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns every Plane (size = 6).
+    //////////////////////////////////////////////////////////////////////
+    virtual Plane* getPlanes();
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns every Plane (size = 6).
+    //////////////////////////////////////////////////////////////////////
+    virtual const Plane* getPlanes() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns true if the 6 planes have a positive distance with
+    /// the point.
+    //////////////////////////////////////////////////////////////////////
+    virtual bool contains(const Vector3& point) const;
     
 protected:
     
-    /// @brief Name of this Viewport.
-    std::string _mName;
+    /// @brief The perspective Matrix. ( = Projection matrix )
+    Matrix4 iPerspective;
     
-    /// @brief Is this Viewport activated ?
-    /// Default value is 'true'.
-    bool _mActivated;
+    /// @brief The view Matrix.
+    Matrix4 iView;
     
-    /// @brief Width border ratio.
-    float _mBorderWidth;
+    /// @brief The ViewProjection Matrix. (note : this property only change when ::computePlanes() is called)
+    Matrix4 iViewProjection;
     
-    /// @brief Height border ratio.
-    float _mBorderHeight;
-    
-    /// @brief Top margin ratio.
-    float _mBorderTop;
-    
-    /// @brief Left margin ratio.
-    float _mBorderLeft;
-    
-    /// @brief Surface object updated with Viewport::onBordersChanged().
-    Surface _mSurface;
-    
-    /// @brief Holds the Scene that might have been selected by the User to draw this
-    /// Viewport object.
-    SceneManager _mScene;
+    /// @brief The 6 Planes for the frustrum. (note : this property only change when ::computePlanes() is called)
+    Plane iPlanes[6];
 };
-
-/// @brief std::list<> for Viewport.
-typedef std::list<Viewport> ViewportList;
 
 GreEndNamespace
 
-#endif
+#endif /* Frustrum_h */

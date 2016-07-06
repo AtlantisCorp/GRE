@@ -250,6 +250,9 @@ public:
     static SceneNode Null;
 };
 
+/// @brief std::list for SceneNode.
+typedef std::list<SceneNode> SceneNodeList;
+
 GreEndNamespace
 
 #endif // __SCENENODE_H__

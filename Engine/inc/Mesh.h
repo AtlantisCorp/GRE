@@ -1,10 +1,34 @@
+//////////////////////////////////////////////////////////////////////
 //
 //  Mesh.h
-//  GRE
+//  This source file is part of Gre
+//		(Gang's Resource Engine)
 //
-//  Created by Jacques Tronconi on 26/11/2015.
+//  Copyright (c) 2015 - 2016 Luk2010
+//  Created on 26/11/2015.
 //
-//
+//////////////////////////////////////////////////////////////////////
+/*
+ -----------------------------------------------------------------------------
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal
+ in the Software without restriction, including without limitation the rights
+ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
+ 
+ The above copyright notice and this permission notice shall be included in
+ all copies or substantial portions of the Software.
+ 
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ THE SOFTWARE.
+ -----------------------------------------------------------------------------
+ */
 
 #ifndef GRE_Mesh_h
 #define GRE_Mesh_h
@@ -94,50 +118,29 @@ struct DLL_PUBLIC BufferedMesh
 /// The Mesh Object is responsible for its own drawing. You can subclass
 /// the Mesh::onUpdateEvent() method or the Mesh::onRenderEvent() in order
 /// to customize the Mesh.
+///
+/// Data is stored in the Mesh object as the following.
+/// When loading a Mesh from the MeshLoader, your Mesh object will only
+/// fills the SoftwareBuffer properties.
+///
+/// When the Renderer draw the Mesh, if the property Mesh::iUseHardwareBuffers
+/// is true, then the Renderer will creates some HardwareBuffer, upload
+/// data from the SoftwareBuffer's, and finally will release the SoftwareBuffer's
+/// using Mesh::clearSoftwareBuffers().
+///
+/// This allows the user to separate the loading of the Mesh, which is
+/// independent from the Rendering API, to the creation of HardwareBuffer's,
+/// which is dependent from the APi.
+///
+/// Don't forget also to sort the Index Buffers by materials. This is much
+/// more efficient.
+///
 //////////////////////////////////////////////////////////////////////
 class DLL_PUBLIC MeshPrivate : public Resource
 {
 public:
     
     POOLED(Pools::Resource)
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Relates on how the data is stored.
-    //////////////////////////////////////////////////////////////////////
-    enum class Type
-    {
-        /// @brief Significates the presence of Index and Vertex Buffers. The
-        /// Index buffers are categorized by Material objects. The HardwareBuffer
-        /// objects are stored on the GPU Memory.
-        Buffered = 0x0,
-        
-        /// @brief Significates there are a Vertex Buffer and Index Buffers
-        /// but in the CPU RAM.
-        MaterialIndexed = 0x1,
-        
-        /// @brief Significates Vertex and Indexes are grouped by Materials, on
-        /// CPU Memory.
-        Indexed = 0x2,
-        
-        /// @brief The Mesh stores only Vertexes, and Materials for each Face.
-        Raw = 0x3
-    };
-    
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    explicit MeshPrivate(const std::string& name, const BufferedMesh& bufmesh);
-    
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    explicit MeshPrivate(const std::string& name, const MaterialIndexedMesh& matinmesh);
-    
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    explicit MeshPrivate(const std::string& name, const IndexedMesh& inmesh);
-    
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    explicit MeshPrivate(const std::string& name, const MeshRaw& rawmesh);
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
@@ -148,41 +151,84 @@ public:
     virtual ~MeshPrivate();
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Vertex Buffer object.
+    /// @brief Returns the SoftwareVertexBuffer.
     //////////////////////////////////////////////////////////////////////
-    HardwareVertexBuffer& getVertexBuffer();
+    virtual const SoftwareVertexBuffer getSoftwareVertexBuffer() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Changes the SoftwareVertexBuffer.
+    //////////////////////////////////////////////////////////////////////
+    virtual void setSoftwareVertexBuffer(const SoftwareVertexBuffer& softvertexbuffer);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the SoftwareIndexBuffers.
+    //////////////////////////////////////////////////////////////////////
+    virtual const SoftwareIndexBufferList getSoftwareIndexBuffers() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Adds a SoftwareIndexBuffer to the list.
+    //////////////////////////////////////////////////////////////////////
+    virtual void addSoftwareIndexBuffer(const SoftwareIndexBuffer& softindexbuffer);
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the Vertex Buffer object.
     //////////////////////////////////////////////////////////////////////
-    const HardwareVertexBuffer& getVertexBuffer() const;
+    virtual const HardwareVertexBuffer getVertexBuffer() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Changes the HardwareVertexBuffer.
+    //////////////////////////////////////////////////////////////////////
+    virtual void setVertexBuffer(const HardwareVertexBuffer& vertexbuffer);
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the Index Buffer batch.
     //////////////////////////////////////////////////////////////////////
-    HardwareIndexBufferBatch& getIndexBufferBatch();
+    virtual const HardwareIndexBufferList getIndexBuffers() const;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Index Buffer batch.
+    /// @brief Adds an HardwareIndexBuffer to the list.
     //////////////////////////////////////////////////////////////////////
-    const HardwareIndexBufferBatch& getIndexBufferBatch() const;
+    virtual void addIndexBuffer(const HardwareIndexBuffer& indexbuffer);
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Mesh Hardware Type.
+    /// @brief Returns the iUseHardwareBuffers property.
     //////////////////////////////////////////////////////////////////////
-    Type getType() const;
+    virtual bool useHardwareBuffers() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Changes the iUseHardwareBuffers property.
+    //////////////////////////////////////////////////////////////////////
+    virtual void setUseHardwareBuffers(bool b);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the iSoftBuffersChanged property.
+    //////////////////////////////////////////////////////////////////////
+    virtual bool hasSoftwareBuffersChanged() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Forces a change to iSoftBuffersChanged property.
+    //////////////////////////////////////////////////////////////////////
+    virtual void setSoftwareBuffersChanged(bool b);
     
 private:
     
-    /// @brief Mesh's Type.
-    Type iType;
+    /// @brief Holds the SoftwareVertexBuffer.
+    SoftwareVertexBufferHolder iSoftVertexBuffer;
     
-    union {
-        BufferedMesh        iBufMesh;
-        MaterialIndexedMesh iMaterialIndexedMesh;
-        IndexedMesh         iIndexedMesh;
-        MeshRaw             iRawMesh;
-    };
+    /// @brief Holds the SoftwareIndexBuffers.
+    SoftwareIndexBufferHolderList iSoftIndexBuffers;
+    
+    /// @brief True if the Renderer can create HardwareBuffers.
+    bool iUseHardwareBuffers;
+    
+    /// @brief Holds the HardwareVertexBuffer.
+    HardwareVertexBufferHolder iHardVertexBuffer;
+    
+    /// @brief Holds the HardwareIndexBuffers.
+    HardwareIndexBufferHolderList iHardIndexBuffers;
+    
+    /// @brief True if the Software Buffers have changed.
+    mutable bool iSoftBuffersChanged;
 };
 
 //////////////////////////////////////////////////////////////////////

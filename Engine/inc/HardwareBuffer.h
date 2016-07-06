@@ -34,7 +34,6 @@
 #define GRE_HardwareBuffer_h
 
 #include "Pools.h"
-#include "Face.h"
 #include "Resource.h"
 
 GreBeginNamespace

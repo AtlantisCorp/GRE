@@ -44,6 +44,7 @@
 #include "HardwareProgramManager.h"
 #include "RenderContextInfo.h"
 #include "RenderTarget.h"
+#include "FrameBuffer.h"
 #include "Viewport.h"
 
 GreBeginNamespace
@@ -151,6 +152,12 @@ public:
     virtual void drawSceneNodeList(SceneNodeList& nodes, const HardwareProgramHolder& program);
     
     //////////////////////////////////////////////////////////////////////
+    /// @brief Draw a list of RenderFramebuffer onto the binded RenderTarget.
+    /// Those RenderFramebuffer's should be blended together.
+    //////////////////////////////////////////////////////////////////////
+    virtual void drawFramebufferList(RenderFramebufferHolderList& fbolist);
+    
+    //////////////////////////////////////////////////////////////////////
     /// @brief Sets the buffer's base color when clearing it.
     /// @sa glSetClearColor()
     //////////////////////////////////////////////////////////////////////
@@ -213,12 +220,12 @@ public:
     /// expected number is not available, it creates as Framebuffers as
     /// necessary.
     //////////////////////////////////////////////////////////////////////
-    virtual FramebufferHolderList getFramebuffers(int sz);
+    virtual RenderFramebufferHolderList getFramebuffers(int sz);
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Creates a Framebuffer object and returns it.
     //////////////////////////////////////////////////////////////////////
-    virtual FramebufferHolder createFramebuffer() const;
+    virtual RenderFramebufferHolder createFramebuffer() const;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Creates a RenderContext using given Info.
@@ -342,24 +349,6 @@ public:
     //////////////////////////////////////////////////////////////////////
     void prepare(PassPrivate* privPass);
     
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Prepare given fbo to be drawed on.
-    //////////////////////////////////////////////////////////////////////
-    void prepare(const FrameBuffer& fbo);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Finish use of given FrameBuffer.
-    /// @note Usually this function make the Pipeline to render again to
-    /// the default framebuffer, the screen.
-    //////////////////////////////////////////////////////////////////////
-    void finish(const FrameBuffer& fbo);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Renders Framebuffer's in the Queue to the screen (default
-    /// frame buffer), and clear the queue.
-    //////////////////////////////////////////////////////////////////////
-    void renderFrameBuffers(std::queue<FrameBuffer>& fboQueue);
-    
     HardwareVertexBuffer createVertexBuffer();
     HardwareIndexBuffer createIndexBuffer(PrimitiveType ptype, StorageType stype);
     Mesh createMeshFromBuffers(const std::string& name, const HardwareVertexBuffer& vbuf, const HardwareIndexBufferBatch& ibufs);
@@ -391,11 +380,6 @@ public:
     /// Normally, this function is called from ::drawPass().
     //////////////////////////////////////////////////////////////////////
     void draw(const Mesh& mesh, HardwareProgramVariables& variables);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Creates a FrameBuffer object and returns it.
-    //////////////////////////////////////////////////////////////////////
-    FrameBuffer createFrameBuffer(const std::string& name) const;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Creates a blank Texture object and returns it.

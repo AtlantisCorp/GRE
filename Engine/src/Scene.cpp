@@ -1,10 +1,34 @@
+//////////////////////////////////////////////////////////////////////
 //
 //  Scene.cpp
-//  GRE
+//  This source file is part of Gre
+//		(Gang's Resource Engine)
 //
-//  Created by Jacques Tronconi on 14/12/2015.
+//  Copyright (c) 2015 - 2016 Luk2010
+//  Created on 14/12/2015.
 //
-//
+//////////////////////////////////////////////////////////////////////
+/*
+ -----------------------------------------------------------------------------
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal
+ in the Software without restriction, including without limitation the rights
+ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
+ 
+ The above copyright notice and this permission notice shall be included in
+ all copies or substantial portions of the Software.
+ 
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ THE SOFTWARE.
+ -----------------------------------------------------------------------------
+ */
 
 #include "Scene.h"
 #include "ResourceManager.h"
@@ -12,7 +36,7 @@
 GreBeginNamespace
 
 SceneManagerPrivate::SceneManagerPrivate(const std::string& name)
-: Resource(name), iRootNode(nullptr)
+: Resource(name), iRootNode(nullptr), iCurrentCamera(nullptr)
 {
     // We always add the Default first Pass.
     createAndAddPass("Default", (PassNumber) PassPurpose::First);
@@ -135,20 +159,36 @@ const Camera& SceneManagerPrivate::getCurrentCamera() const
     return iCurrentCamera;
 }
 
-std::vector<const Node> SceneManagerPrivate::getNodesByFilter(Node::Filter filter) const
+std::vector<const Node> SceneManagerPrivate::getNodesByFilter(NodePrivate::Filter filter) const
 {
     GreDebugFunctionNotImplemented();
     return std::vector<const Node> ();
 }
 
-std::vector<const SceneNode> SceneManagerPrivate::getNodesForPass(Gre::PassPurpose pass, Node::Filter filter) const
+SceneNodeHolderList SceneManagerPrivate::getNodesForPass(Gre::PassPurpose pass, NodePrivate::Filter filter) const
 {
-	if(filter == Node::Filter::None)
+	if(filter == NodePrivate::Filter::None)
 	{
 		return iSceneNodes;
 	}
 	
-	return std::vector<const Node> ();
+	return SceneNodeHolderList();
+}
+
+SceneNodeList SceneManagerPrivate::getNodesFrom(const Gre::Camera &camera) const
+{
+    SceneNodeList ret;
+    
+    for(auto it = iSceneNodes.begin(); it != iSceneNodes.end(); it++)
+    {
+        Vector3 pos = (*it)->getTransformation().getTranslation();
+        if( camera.contains(pos) )
+        {
+            ret.push_back(SceneNode( (*it) ));
+        }
+    }
+    
+    return ret;
 }
 
 void SceneManagerPrivate::setActiveCamera(const Camera &camera)
@@ -287,9 +327,9 @@ void SceneManagerPrivate::removePassByNumber(const PassNumber &passNumber)
 #endif
 }
 
-PassList SceneManagerPrivate::getActivePasses() const
+PassHolderList SceneManagerPrivate::getActivePasses() const
 {
-    PassList retPass;
+    PassHolderList retPass;
     
     for(auto const& passIt : iPassesByNumber)
     {

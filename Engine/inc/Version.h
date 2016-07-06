@@ -184,14 +184,22 @@ enum class StorageType
 /// @brief Briefly describes a surface with Top, Left, Width, and
 /// Height.
 //////////////////////////////////////////////////////////////////////
-typedef struct
+struct Surface
 {
     int top;
     int left;
     int width;
     int height;
     
-} Surface;
+    /// @brief A Zero'd surface.
+    static Surface Null;
+};
+
+/// @brief Common egality operator.
+extern bool operator == (const Surface& lhs, const Surface& rhs);
+
+/// @brief Common different operator.
+extern bool operator != (const Surface& lhs, const Surface& rhs);
 
 //////////////////////////////////////////////////////////////////////
 /// @brief Describe when the ResourceManager should stop the Main Loop.
@@ -265,6 +273,12 @@ struct Volume
         Vector3 vec3;
     };
 };
+
+/// @brief Types that define a Radian angle.
+typedef float Radian;
+
+/// @brief Simply, a plane is a Vector4 component.
+typedef Vector4 Plane;
 
 GreEndNamespace
 #endif

@@ -142,6 +142,11 @@ void HardwareProgramPrivate::reset()
     iNeedsVarUpdate = false;
 }
 
+bool HardwareProgramPrivate::hasOutputLocation(uint16_t location) const
+{
+    return false;
+}
+
 void HardwareProgramPrivate::setCompiled(bool flag)
 {
     iNeedsCompilation = flag;
@@ -258,6 +263,14 @@ void HardwareProgram::reset()
     {
         ptr->reset();
     }
+}
+
+bool HardwareProgram::hasOutputLocation(uint16_t location) const
+{
+    auto ptr = lock();
+    if ( ptr )
+        return ptr->hasOutputLocation(location);
+    return false;
 }
 
 HardwareProgram HardwareProgram::Null = HardwareProgram(nullptr);

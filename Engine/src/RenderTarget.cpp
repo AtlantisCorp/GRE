@@ -45,6 +45,26 @@ RenderTargetPrivate::~RenderTargetPrivate()
     
 }
 
+void RenderTargetPrivate::bind()
+{
+    
+}
+
+void RenderTargetPrivate::unbind()
+{
+    
+}
+
+void RenderTargetPrivate::bindFramebuffer()
+{
+    
+}
+
+void RenderTargetPrivate::unbindFramebuffer()
+{
+    
+}
+
 void RenderTargetPrivate::selectScene(const SceneManager& scene)
 {
     iSelectedScene = scene;
@@ -53,6 +73,36 @@ void RenderTargetPrivate::selectScene(const SceneManager& scene)
 SceneManager RenderTargetPrivate::getSelectedScene()
 {
     return iSelectedScene;
+}
+
+bool RenderTargetPrivate::holdsRenderContext() const
+{
+    return false;
+}
+
+RenderContextHolder RenderTargetPrivate::getRenderContext()
+{
+    return RenderContextHolder(nullptr);
+}
+
+const RenderContextHolder RenderTargetPrivate::getRenderContext() const
+{
+    return RenderContextHolder(nullptr);
+}
+
+bool RenderTargetPrivate::holdsFramebuffer() const
+{
+    return false;
+}
+
+RenderFramebufferHolder RenderTargetPrivate::getFramebuffer()
+{
+    return RenderFramebufferHolder(nullptr);
+}
+
+const RenderFramebufferHolder RenderTargetPrivate::getFramebuffer() const
+{
+    return RenderFramebufferHolder(nullptr);
 }
 
 bool RenderTargetPrivate::needsDrawing() const
@@ -144,6 +194,46 @@ bool RenderTarget::holdsRenderContext() const
     if(ptr)
         return ptr->holdsRenderContext();
     return false;
+}
+
+RenderContextHolder RenderTarget::getRenderContext()
+{
+    auto ptr = lock();
+    if( ptr )
+        return ptr->getRenderContext();
+    return RenderContextHolder(nullptr);
+}
+
+const RenderContextHolder RenderTarget::getRenderContext() const
+{
+    auto ptr = lock();
+    if( ptr )
+        return ptr->getRenderContext();
+    return RenderContextHolder(nullptr);
+}
+
+bool RenderTarget::holdsFramebuffer() const
+{
+    auto ptr = lock();
+    if ( ptr )
+        return ptr->holdsFramebuffer();
+    return false;
+}
+
+RenderFramebufferHolder RenderTarget::getFramebuffer()
+{
+    auto ptr = lock();
+    if ( ptr )
+        return ptr->getFramebuffer();
+    return RenderFramebufferHolder(nullptr);
+}
+
+const RenderFramebufferHolder RenderTarget::getFramebuffer() const
+{
+    auto ptr = lock();
+    if ( ptr )
+        return ptr->getFramebuffer();
+    return RenderFramebufferHolder(nullptr);
 }
 
 bool RenderTarget::needsDrawing() const

@@ -52,7 +52,7 @@ bool RenderFramebufferPrivate::Attachement::isValid() const
 {
     if( attachType == RenderFramebufferAttachementType::Texture )
     {
-        return ! texture.isExpired();
+        return ! texture.isNull();
     }
   
     return false;
@@ -87,12 +87,12 @@ Texture RenderFramebufferPrivate::getTextureAttachement(const RenderFramebufferA
     if(it != iAttachements.end())
     {
 #ifdef GreIsDebugMode
-        if(it.second.attachType != RenderFramebufferAttachementType::Texture)
+        if(it->second.attachType != RenderFramebufferAttachementType::Texture)
         {
             GreDebugPretty() << "Looking for texture attachement '" << (int) attachement << "' but is not Texture." << std::endl;
         }
 #endif
-        return Texture(it.second.texture);
+        return Texture(it->second.texture);
     }
   
 #ifdef GreIsDebugMode
@@ -107,12 +107,12 @@ const Texture RenderFramebufferPrivate::getTextureAttachement(const RenderFrameb
     if(it != iAttachements.end())
     {
 #ifdef GreIsDebugMode
-        if(it.second.attachType != RenderFramebufferAttachementType::Texture)
+        if(it->second.attachType != RenderFramebufferAttachementType::Texture)
         {
             GreDebugPretty() << "Looking for texture attachement '" << (int) attachement << "' but is not Texture." << std::endl;
         }
 #endif
-        return Texture(it.second.texture);
+        return Texture(it->second.texture);
     }
   
 #ifdef GreIsDebugMode
@@ -126,7 +126,7 @@ Surface RenderFramebufferPrivate::getAttachementSurface(const RenderFramebufferA
     auto it = iAttachements.find(attachement);
     if(it != iAttachements.end())
 	 {
-        return it.second.surface;
+        return it->second.surface;
     }
   
 #ifdef GreIsDebugMode

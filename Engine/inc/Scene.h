@@ -166,7 +166,12 @@ public:
     /// If the given filter is not available, Node::Filter::None is always 
     /// used.
     //////////////////////////////////////////////////////////////////////
-    virtual std::vector<const SceneNode> getNodesForPass(Gre::PassPurpose pass, NodePrivate::Filter filter = NodePrivate::Filter::None) const;
+    virtual SceneNodeHolderList getNodesForPass(Gre::PassPurpose pass, NodePrivate::Filter filter = NodePrivate::Filter::None) const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the Nodes from given point of view.
+    //////////////////////////////////////////////////////////////////////
+    virtual SceneNodeList getNodesFrom(const Camera& camera) const;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Create a Default Pass given its name and number.
@@ -204,7 +209,7 @@ public:
     /// @brief Returns every active Pass, sorted by PassNumber from first
     /// to last.
     //////////////////////////////////////////////////////////////////////
-    virtual PassList getActivePasses() const;
+    virtual PassHolderList getActivePasses() const;
     
 protected:
     
@@ -385,7 +390,7 @@ public:
     /// @brief Returns every active Pass, sorted by PassNumber from first
     /// to last.
     //////////////////////////////////////////////////////////////////////
-	PassList getActivePasses() const;
+	PassHolderList getActivePasses() const;
     
     /// @brief Null Object.
     static SceneManager Null;

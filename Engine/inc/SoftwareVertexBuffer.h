@@ -1,11 +1,11 @@
 //////////////////////////////////////////////////////////////////////
 //
-//  Camera.h
+//  SoftwareVertexBuffer.h
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
 //  Copyright (c) 2015 - 2016 Luk2010
-//  Created on 07/05/2016.
+//  Created on 06/07/2016.
 //
 //////////////////////////////////////////////////////////////////////
 /*
@@ -30,168 +30,186 @@
  -----------------------------------------------------------------------------
  */
 
-#ifndef GRE_Camera_h
-#define GRE_Camera_h
+#ifndef SoftwareVertexBuffer_h
+#define SoftwareVertexBuffer_h
 
-#include "Resource.h"
-#include "Frustrum.h"
+#include "Pools.h"
+#include "HardwareVertexBuffer.h"
+#include "VertexDescriptor.h"
 
 GreBeginNamespace
 
 //////////////////////////////////////////////////////////////////////
-/// @brief Base Class to every Camera.
+/// @brief A Vertex Buffer holded in the Cpu's RAM.
 ///
-/// You can define your own Camera behaviour by subclassing the event's
-/// routines. Dont' forget to update the iFrustrum property when changing
-/// positions, look' position or any other properties.
+/// To create Vertex Data, here is an example :
+///   - Create your struct Vertex { .. }; with your Components (see
+/// VertexComponentType for available Components).
+///   - Create a VertexDescriptor describing how your Vertex is constitued.
+///   - Add your Vertex data to the SoftwareBuffer using ::addData().
+///   - Set the Descriptor using ::setVertexDescriptor().
+///   - Use Mesh::setSoftwareVertexBuffer() to set your buffer.
+///
+/// If you want to disable a field, use the VertexComponentType::Null's
+/// types.
 ///
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC CameraPrivate : public Resource
+class DLL_PUBLIC SoftwareVertexBufferPrivate : public HardwareVertexBufferPrivate
 {
 public:
     
-    POOLED(Pools::Resource)
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    SoftwareVertexBufferPrivate(const std::string& name);
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    CameraPrivate(const std::string& name);
+    virtual ~SoftwareVertexBufferPrivate();
     
     //////////////////////////////////////////////////////////////////////
+    /// @brief Bind the Hardware Buffer in order to use it.
     //////////////////////////////////////////////////////////////////////
-    CameraPrivate(const std::string& name, const Vector3& position, const Vector3& to);
+    virtual void bind() const;
     
     //////////////////////////////////////////////////////////////////////
+    /// @brief Unbind the Hardware Buffer after it has been used.
     //////////////////////////////////////////////////////////////////////
-    CameraPrivate(const std::string& name, const Vector3& position, const Radian& angle, const Vector3& direction);
+    virtual void unbind() const;
     
     //////////////////////////////////////////////////////////////////////
+    /// @brief Update the buffer if dirty.
     //////////////////////////////////////////////////////////////////////
-    virtual ~CameraPrivate();
+    virtual void update() const;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Changes the Camera's absolute position.
+    /// @brief Returns true if Buffer is invalid.
     //////////////////////////////////////////////////////////////////////
-    virtual void setPosition(const Vector3& position);
+    virtual bool isInvalid() const;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Camera's absolute position.
+    /// @brief Adds some data to this Buffer. Size is the total size in
+    /// bytes, not the number of Vertex.
     //////////////////////////////////////////////////////////////////////
-    virtual Vector3 getPosition() const;
+    virtual void addData(void* vdata, size_t sz);
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Compute a View Matrix to make this Camera look at the given
-    /// point.
+    /// @brief Returns the data in this SoftwareVertexBuffer.
     //////////////////////////////////////////////////////////////////////
-    virtual void lookAt(const Vector3& position);
+    virtual const void* getData() const;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Compute a View Matrix to make this Camera look at the given
-    /// direction.
+    /// @brief Returns the size of the buffer, in bytes.
     //////////////////////////////////////////////////////////////////////
-    virtual void lookAt(const Radian& angle, const Vector3& direction);
+    virtual size_t getSize() const;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Sets up the Frustrum from the Orientation Matrix cached.
+    /// @brief Returns the number of elements in the buffer.
     //////////////////////////////////////////////////////////////////////
-    virtual void lookAtCache();
+    virtual size_t count() const;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns true if an object is inside the Frustrum from this
-    /// Camera.
+    /// @brief Returns the VertexDescriptor.
     //////////////////////////////////////////////////////////////////////
-    virtual bool contains (const Vector3& object) const;
+    virtual const VertexDescriptor& getVertexDescriptor() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Changes the VertexDescriptor.
+    //////////////////////////////////////////////////////////////////////
+    virtual void setVertexDescriptor(const VertexDescriptor& vdesc);
     
 protected:
     
-    /// @brief Absolute position of the Camera.
-    Vector3 iPosition;
+    /// @brief Holds the raw Vertex data.
+    void* iVertexData;
     
-    /// @brief The Frustrum object.
-    Frustrum iFrustrum;
+    /// @brief Size of the buffer.
+    size_t iSize;
     
-    /// @brief Max Vertical Angle the Camera can reach. (Default is 89.0f)
-    float iMaxVerticalAngle;
-    
-    /// @brief Defines cached data.
-    struct Cache
-    {
-        Vector3 iLookDirection;
-        Matrix4 iOrientation;
-    };
-    
-    /// @brief Holds Cached data.
-    Cache iCache;
+    /// @brief Vertex's Descriptor map.
+    VertexDescriptor iComponents;
 };
 
-/// @brief SpecializedResourceHolder for CameraPrivate.
-typedef SpecializedResourceHolder<CameraPrivate> CameraHolder;
+/// @brief SpecializedResourceHolder for SoftwareVertexBufferPrivate.
+typedef SpecializedResourceHolder<SoftwareVertexBufferPrivate> SoftwareVertexBufferHolder;
 
-/// @brief SpecializedResourceHolderList for CameraPrivate.
-typedef SpecializedResourceHolderList<CameraPrivate> CameraHolderList;
+/// @brief SpecializedResourceHolderList for SoftwareVertexBufferPrivate.
+typedef SpecializedResourceHolderList<SoftwareVertexBufferPrivate> SoftwareVertexBufferHolderList;
 
 //////////////////////////////////////////////////////////////////////
+/// @brief SpecializedResourceUser for SoftwareVertexBufferPrivate.
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC Camera : public SpecializedResourceUser<CameraPrivate>
+class DLL_PUBLIC SoftwareVertexBuffer : public HardwareVertexBuffer, public SpecializedResourceUser<SoftwareVertexBufferPrivate>
 {
 public:
     
-    POOLED(Pools::Resource)
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    SoftwareVertexBuffer(const SoftwareVertexBufferPrivate* pointer);
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    Camera(const CameraPrivate* pointer);
+    SoftwareVertexBuffer(const SoftwareVertexBufferHolder& holder);
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    Camera(const CameraHolder& holder);
+    SoftwareVertexBuffer(const SoftwareVertexBuffer& user);
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    Camera(const Camera& user);
+    virtual ~SoftwareVertexBuffer();
     
     //////////////////////////////////////////////////////////////////////
+    /// @brief Bind the Hardware Buffer in order to use it.
     //////////////////////////////////////////////////////////////////////
-    virtual ~Camera();
+    virtual void bind() const;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Changes the Camera's absolute position.
+    /// @brief Unbind the Hardware Buffer after it has been used.
     //////////////////////////////////////////////////////////////////////
-    virtual void setPosition(const Vector3& position);
+    virtual void unbind() const;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Camera's absolute position.
+    /// @brief Update the buffer if dirty.
     //////////////////////////////////////////////////////////////////////
-    virtual Vector3 getPosition() const;
+    virtual void update() const;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Compute a View Matrix to make this Camera look at the given
-    /// point.
+    /// @brief Returns true if Buffer is invalid.
     //////////////////////////////////////////////////////////////////////
-    virtual void lookAt(const Vector3& position);
+    virtual bool isInvalid() const;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Compute a View Matrix to make this Camera look at the given
-    /// direction.
+    /// @brief Adds some data to this Buffer. Size is the total size in
+    /// bytes, not the number of Vertex.
     //////////////////////////////////////////////////////////////////////
-    virtual void lookAt(const Radian& angle, const Vector3& direction);
+    virtual void addData(void* vdata, size_t sz);
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Sets up the Frustrum from the Orientation Matrix cached.
+    /// @brief Returns the data in this SoftwareVertexBuffer.
     //////////////////////////////////////////////////////////////////////
-    virtual void lookAtCache();
+    virtual const void* getData() const;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns true if an object is inside the Frustrum from this
-    /// Camera.
+    /// @brief Returns the size of the buffer, in bytes.
     //////////////////////////////////////////////////////////////////////
-    virtual bool contains (const Vector3& object) const;
+    virtual size_t getSize() const;
     
-    /// @brief Null Camera.
-    static Camera Null;
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the number of elements in the buffer.
+    //////////////////////////////////////////////////////////////////////
+    virtual size_t count() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the VertexDescriptor.
+    //////////////////////////////////////////////////////////////////////
+    virtual const VertexDescriptor& getVertexDescriptor() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Changes the VertexDescriptor.
+    //////////////////////////////////////////////////////////////////////
+    virtual void setVertexDescriptor(const VertexDescriptor& vdesc);
 };
-
-
 
 GreEndNamespace
 
-#endif
+#endif /* SoftwareVertexBuffer_h */

@@ -68,7 +68,7 @@ void RendererPrivate::drawRenderTarget(const Gre::RenderTarget &rendertarget)
             }
             
             // Now we should have the Scene we should draw with this RenderTarget.
-            SceneManagerHolder smholder = holder->getSelectedScene();
+            SceneManagerHolder smholder = holder->getSelectedScene().lock();
             
             if( smholder )
             {
@@ -121,7 +121,7 @@ void RendererPrivate::drawSceneManager(const Gre::SceneManager &scenemanager)
         }
         
         // We have to draw every Pass objects. First, prepare the Framebuffer objects.
-        RenderFramebufferHolderList fbolist = getFramebuffers(passlist.size());
+        RenderFramebufferHolderList fbolist = getFramebuffers((int)passlist.size());
         
         if( fbolist.size() == 0 )
         {
@@ -188,15 +188,23 @@ void RendererPrivate::drawPassList(const PassHolderList& passlist, RenderFramebu
         return;
     }
     
-    unsigned int i = 0;
+    if( fbolist.size() < passlist.size() )
+    {
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "Not enough RenderFramebuffer's to draw each Pass. (" << fbolist.size() << ":" << passlist.size() << ")." << std::endl;
+#endif
+        return;
+    }
+    
+    auto itfbo = fbolist.begin();
     for( auto passit = passlist.begin(); passit != passlist.end(); passit++ )
     {
         auto passholder = *passit;
-        auto fboholder = fbolist.at(i);
+        auto fboholder = *itfbo;
         
         // Draw Pass with its Framebuffer.
         drawPassWithFramebuffer(passholder, fboholder);
-        i++;
+        itfbo++;
     }
     
     // After drawing every Pass into a Framebuffer, we should blend the Framebuffers.
@@ -209,7 +217,7 @@ void RendererPrivate::drawPassWithFramebuffer(const PassHolder& passholder, Rend
     if( !passholder || !fboholder )
     {
 #ifdef GreIsDebugMode
-        GreDebugPretty() << "No pass or framebuffer to draw." << endl;
+        GreDebugPretty() << "No pass or framebuffer to draw." << std::endl;
 #endif
         return;
     }
@@ -604,16 +612,16 @@ HardwareProgram RendererPrivate::createHardwareProgram(const std::string &name, 
     return HardwareProgram(nullptr);
 }
 
-FramebufferHolderList RendererPrivate::getFramebuffers(int sz)
+RenderFramebufferHolderList RendererPrivate::getFramebuffers(int sz)
 {
     if( iFrameContext.Framebuffers.size() >= sz )
     {
         // We have enough Framebuffers, returns the first ones.
-        FramebufferHolderList fbolist;
+        RenderFramebufferHolderList fbolist;
         
         for(int i = 0; i < sz; i++)
         {
-            fbolist.add(iFrameContext.Framebuffers.at(sz));
+            fbolist.add( *(iFrameContext.Framebuffers.begin() + i) );
         }
         
         return fbolist;
@@ -622,11 +630,11 @@ FramebufferHolderList RendererPrivate::getFramebuffers(int sz)
     else
     {
         // Push the first Framebuffers.
-        FramebufferHolderList fbolist;
+        RenderFramebufferHolderList fbolist;
         
         for(int i = 0; i < iFrameContext.Framebuffers.size(); i++)
         {
-            fbolist.add(iFrameContext.Framebuffers.at(i));
+            fbolist.add( *(iFrameContext.Framebuffers.begin() + i) );
         }
         
         int numtocreate = sz - iFrameContext.Framebuffers.size();
@@ -634,14 +642,14 @@ FramebufferHolderList RendererPrivate::getFramebuffers(int sz)
         // Creates as Framebuffers as necessary.
         for(int i = 0; i < numtocreate; i++)
         {
-            FramebufferHolder fbo = createFramebuffer();
+            RenderFramebufferHolder fbo = createFramebuffer();
             iFrameContext.Framebuffers.add(fbo);
             fbolist.add(fbo);
         }
     }
 }
 
-FramebufferHolder RendererPrivate::createFramebuffer() const
+RenderFramebufferHolder RendererPrivate::createFramebuffer() const
 {
     return FramebufferHolder(nullptr);
     
