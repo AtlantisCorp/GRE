@@ -1,11 +1,34 @@
-////////////////////////////////////////////////////
-//  File    : ResourceLoader.h
-//  Project : GRE
+//////////////////////////////////////////////////////////////////////
 //
-//  Created by Jacques Tronconi on 07/05/2016.
-//  
+//  ResourceLoader.h
+//  This source file is part of Gre
+//		(Gang's Resource Engine)
 //
-////////////////////////////////////////////////////
+//  Copyright (c) 2015 - 2016 Luk2010
+//  Created on 07/05/2016.
+//
+//////////////////////////////////////////////////////////////////////
+/*
+ -----------------------------------------------------------------------------
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal
+ in the Software without restriction, including without limitation the rights
+ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
+ 
+ The above copyright notice and this permission notice shall be included in
+ all copies or substantial portions of the Software.
+ 
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ THE SOFTWARE.
+ -----------------------------------------------------------------------------
+ */
 
 #ifndef GRE_ResourceLoader_h
 #define GRE_ResourceLoader_h
@@ -22,13 +45,11 @@ GreBeginNamespace
 /// basic interface but not the main loading function.
 ///
 /// The main loading function is of the form :
-/// Resource* load (Resource::Type type, const std::string& name, ...) const
-/// where '...' is a list of other argues that must be known from the user.
+/// CustomResourceHolder load ( const std::string& name , ... ) ;
 ///
-/// The ResourceLoader object must not save data, because of the factory
-/// system.
-/// At each loading, the factory constructs a new loader. This loader is
-/// used by the ResourceManager, then is destroyed by the ResourceManager.
+/// Where '...' are variables arguments for the function.
+/// The loaders should not store data because one can clone the Loader and
+/// use this cloned object with the ResourceManager to load a new Resource.
 ///
 /// @see Resource, ResourceUser
 ////////////////////////////////////////////////////////////////////////
@@ -43,25 +64,20 @@ public:
     ResourceLoader();
     
     ////////////////////////////////////////////////////////////////////////
-    /// @brief Copies the object.
     ////////////////////////////////////////////////////////////////////////
-    ResourceLoader(const ResourceLoader&);
-    
-    ////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////
-    virtual ~ResourceLoader();
-    
-    ////////////////////////////////////////////////////////////////////////
-    /// @brief Returns true if given Resource::Type is supported.
-    ////////////////////////////////////////////////////////////////////////
-    virtual bool isTypeSupported (Resource::Type type) const;
+    virtual ~ResourceLoader() noexcept(false);
     
     ////////////////////////////////////////////////////////////////////////
     /// @brief Returns a clone of this object.
     /// Typically, this function is implemented as 'return new MyLoaderClass();',
     /// but you are free to do whatever you want.
     ////////////////////////////////////////////////////////////////////////
-    virtual ResourceLoader* clone() const;
+    virtual ResourceLoader* clone() const = 0;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns true if the file given is loadable by this loader.
+    //////////////////////////////////////////////////////////////////////
+    virtual bool isLoadable( const std::string& filepath ) const = 0;
 };
 
 ////////////////////////////////////////////////////////////////////////
@@ -69,7 +85,7 @@ public:
 /// @brief Constructs a Loader given its name.
 ///
 /// In fact, this class just use the ResourceFactory::clone() function to
-/// clone th registered factory for the user to use it.
+/// clone the registered factory for the user to use it.
 ///
 /// # The ResourceFactory process
 ///
@@ -83,7 +99,7 @@ public:
 /// - The Factory user can use the registered Factory in using the ResourceLoaderFactory::get()
 /// function.
 /// - The user is responsible of the deletion of the factory, but you have to keep
-/// in mind that ResourceManager::load() destroys the Factory object.
+/// in mind that ResourceManager::loadResourceWith() destroys the Factory object.
 ///
 /// @see ResourceLoader
 ////////////////////////////////////////////////////////////////////////
@@ -147,6 +163,14 @@ public:
         }
         
         return ret;
+    }
+    
+    ////////////////////////////////////////////////////////////////////////
+    /// @brief Returns the Loader's list.
+    ////////////////////////////////////////////////////////////////////////
+    std::map<std::string, std::shared_ptr<T> > getLoaders()
+    {
+        return _loaders;
     }
     
 protected:

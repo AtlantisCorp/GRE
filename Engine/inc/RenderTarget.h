@@ -197,41 +197,41 @@ public:
     /// In case this RenderTarget has a RenderContext object, this function
     /// may change the current RenderContext.
     //////////////////////////////////////////////////////////////////////
-    void bind();
+    virtual void bind();
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Unbind the RenderTarget.
     //////////////////////////////////////////////////////////////////////
-    void unbind();
+    virtual void unbind();
     
     //////////////////////////////////////////////////////////////////////
     /// @brief If has one, should bind the internal Framebuffer.
     /// This method is used by the Renderer in order to be able to draw the
     /// result of the blended Pass'es objects in a custom Framebuffer.
     //////////////////////////////////////////////////////////////////////
-    void bindFramebuffer();
+    virtual void bindFramebuffer();
     
     //////////////////////////////////////////////////////////////////////
     /// @brief If has one, unbind the internal Framebuffer.
     //////////////////////////////////////////////////////////////////////
-    void unbindFramebuffer();
+    virtual void unbindFramebuffer();
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Select a Scene to be rendered when rendering on this
+    /// @brief Select a SceneManager to be rendered when rendering on this
     /// RenderTarget.
     //////////////////////////////////////////////////////////////////////
-    void selectScene(const SceneManager& scene);
+    virtual void selectScene(const SceneManager& scene);
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Selected Scene to be rendered on this Target.
+    /// @brief Returns the Selected SceneManager to be rendered on this Target.
     //////////////////////////////////////////////////////////////////////
-    SceneManager getSelectedScene();
+    virtual SceneManager getSelectedScene();
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns true if this RenderTarget contains a RenderContext
     /// and should be drawed by the Renderer during the first phase.
     //////////////////////////////////////////////////////////////////////
-    bool holdsRenderContext() const;
+    virtual bool holdsRenderContext() const;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns an holder to the RenderContext associated to this
@@ -267,18 +267,18 @@ public:
     /// @brief Returns true if this RenderTarget needs to be drawed, either
     /// because it has changed or because the Scene has changed.
     //////////////////////////////////////////////////////////////////////
-    bool needsDrawing() const;
+    virtual bool needsDrawing() const;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Forces the draw of this RenderTarget for one frame.
     //////////////////////////////////////////////////////////////////////
-    void forceRedraw();
+    virtual void forceRedraw();
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Used by the Renderer to notifiate the RenderTarget it has
     /// been drawed.
     //////////////////////////////////////////////////////////////////////
-    void onRenderFinished() const;
+    virtual void onRenderFinished() const;
 };
 
 GreEndNamespace

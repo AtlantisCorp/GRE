@@ -5,7 +5,7 @@
 //  Created by Jacques Tronconi on 26/11/2015.
 //
 //
-
+/*
 #include "MeshLoader.h"
 
 GreBeginNamespace
@@ -61,3 +61,4 @@ ResourceLoader* MeshLoader::clone() const
 }
 
 GreEndNamespace
+*/

@@ -94,6 +94,19 @@ const ResourceHolder ResourceUser::lock() const
     return ResourceHolder(iResource, iCounter);
 }
 
+bool ResourceUser::isInvalid() const
+{
+    if ( iCounter )
+    {
+        return iCounter->getHolderCount() == 0;
+    }
+    
+    else
+    {
+        return true;
+    }
+}
+
 bool ResourceUser::isExpired() const
 {
     if(iCounter)

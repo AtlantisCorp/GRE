@@ -45,7 +45,10 @@ enum class HdwProgVarType
     Vec2, ///< @brief vec2 GLSL type.
     Vec3, ///< @brief vec3 GLSL type.
     Vec4, ///< @brief vec4 GLSL type.
-    Mat4  ///< @brief mat4 GLSL type.
+    Mat4, ///< @brief mat4 GLSL type.
+    Uint32, ///< @brief uint GLSL type.
+    Sampler2D, ///< @brief sampler2d GLSL type.
+    Sampler3D ///< @brief sampler3d GLSL type.
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -68,6 +71,13 @@ struct HardwareProgramVariable
     /// @brief Type of the Variable.
     HdwProgVarType type;
     
+    /// @brief If this property is 'true', properties 'elementNumber' is used.
+    bool isArrayElement;
+    
+    /// @brief Describes the index of this Variable in the Array given by 'name'. This
+    /// property is used only if 'isArrayElement' is 'true'.
+    int elementNumber;
+    
     /// @brief Should be self-explainatory.
     union _u
     {
@@ -75,6 +85,8 @@ struct HardwareProgramVariable
         Vector3 vec3;
         Vector4 vec4;
         Matrix4 mat4;
+        uint32_t uint32;
+        int textureunit;
         
         _u() { memset(this, 0, sizeof(_u)); }
         

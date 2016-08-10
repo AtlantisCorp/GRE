@@ -182,19 +182,22 @@ void HardwareProgramManagerPrivate::onUpdateEvent(const Gre::UpdateEvent &e)
 // ---------------------------------------------------------------------------------------------------
 
 HardwareProgramManager::HardwareProgramManager(const HardwareProgramManagerPrivate* pointer)
-: SpecializedResourceUser<Gre::HardwareProgramManagerPrivate>(pointer)
+: ResourceUser(pointer)
+, SpecializedResourceUser<Gre::HardwareProgramManagerPrivate>(pointer)
 {
     
 }
 
 HardwareProgramManager::HardwareProgramManager(const HardwareProgramManagerHolder& holder)
-: SpecializedResourceUser<Gre::HardwareProgramManagerPrivate>(holder)
+: ResourceUser(holder)
+, SpecializedResourceUser<Gre::HardwareProgramManagerPrivate>(holder)
 {
     
 }
 
 HardwareProgramManager::HardwareProgramManager(const HardwareProgramManager& user)
-: SpecializedResourceUser<Gre::HardwareProgramManagerPrivate>(user)
+: ResourceUser(user)
+, SpecializedResourceUser<Gre::HardwareProgramManagerPrivate>(user)
 {
     
 }

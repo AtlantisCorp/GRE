@@ -56,12 +56,12 @@ HardwarePixelFormat HardwarePixelBufferPrivate::getPixelFormat() const
     return iPixFormat;
 }
 
-void* HardwarePixelBufferPrivate::getData()
+char* HardwarePixelBufferPrivate::getData()
 {
     return nullptr;
 }
 
-const void* HardwarePixelBufferPrivate::getData() const
+const char* HardwarePixelBufferPrivate::getData() const
 {
     return nullptr;
 }
@@ -69,19 +69,25 @@ const void* HardwarePixelBufferPrivate::getData() const
 // ---------------------------------------------------------------------------------------------------
 
 HardwarePixelBuffer::HardwarePixelBuffer(const HardwarePixelBufferPrivate* pointer)
-: Gre::HardwareBuffer(pointer), SpecializedResourceUser<Gre::HardwarePixelBufferPrivate>(pointer)
+: ResourceUser(pointer)
+, Gre::HardwareBuffer(pointer)
+, SpecializedResourceUser<Gre::HardwarePixelBufferPrivate>(pointer)
 {
     
 }
 
 HardwarePixelBuffer::HardwarePixelBuffer(const HardwarePixelBufferHolder& holder)
-: Gre::HardwareBuffer(holder.get()), SpecializedResourceUser<Gre::HardwarePixelBufferPrivate>(holder)
+: ResourceUser(holder)
+, Gre::HardwareBuffer(holder.get())
+, SpecializedResourceUser<Gre::HardwarePixelBufferPrivate>(holder)
 {
     
 }
 
 HardwarePixelBuffer::HardwarePixelBuffer(const HardwarePixelBuffer& user)
-: Gre::HardwareBuffer(user), SpecializedResourceUser<Gre::HardwarePixelBufferPrivate>(user)
+: ResourceUser(user)
+, Gre::HardwareBuffer(user)
+, SpecializedResourceUser<Gre::HardwarePixelBufferPrivate>(user)
 {
     
 }
@@ -116,7 +122,7 @@ HardwarePixelFormat HardwarePixelBuffer::getPixelFormat() const
     return HardwarePixelFormat::Null;
 }
 
-void* HardwarePixelBuffer::getData()
+char* HardwarePixelBuffer::getData()
 {
     auto ptr = lock();
     if( ptr )
@@ -124,7 +130,7 @@ void* HardwarePixelBuffer::getData()
     return nullptr;
 }
 
-const void* HardwarePixelBuffer::getData() const
+const char* HardwarePixelBuffer::getData() const
 {
     auto ptr = lock();
     if( ptr )

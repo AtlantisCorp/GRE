@@ -153,19 +153,22 @@ void RenderContextPrivate::_onWindowSizedEvent(WindowSizedEvent &event)
 // ---------------------------------------------------------------------------------------------------
 
 RenderContext::RenderContext(const RenderContextPrivate* pointer)
-: SpecializedResourceUser<RenderContextPrivate>(pointer)
+: ResourceUser(pointer)
+, SpecializedResourceUser<RenderContextPrivate>(pointer)
 {
     
 }
 
 RenderContext::RenderContext(const RenderContextHolder& holder)
-: SpecializedResourceUser<RenderContextPrivate>(holder)
+: ResourceUser(holder)
+, SpecializedResourceUser<RenderContextPrivate>(holder)
 {
     
 }
 
 RenderContext::RenderContext(const RenderContext& user)
-: SpecializedResourceUser<RenderContextPrivate>(user)
+: ResourceUser(user)
+, SpecializedResourceUser<RenderContextPrivate>(user)
 {
     
 }

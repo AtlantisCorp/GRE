@@ -22,7 +22,7 @@ WindowEvent::WindowEvent(const WindowEvent& event)
     
 }
 
-WindowEvent::~WindowEvent()
+WindowEvent::~WindowEvent() noexcept(false)
 {
     
 }

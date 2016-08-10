@@ -133,6 +133,9 @@ public:
     //////////////////////////////////////////////////////////////////////
     void apply(const Transformation& transformation);
     
+    /// @brief Default Transformation.
+    static Transformation Default;
+    
 private:
     
     /// @brief Translation component.

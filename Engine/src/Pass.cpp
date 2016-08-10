@@ -74,19 +74,22 @@ PassNumber PassPrivate::getPassNumber() const
 // ---------------------------------------------------------------------------------------------------
 
 Pass::Pass(const PassPrivate* pointer)
-: SpecializedResourceUser<Gre::PassPrivate>(pointer)
+: ResourceUser(pointer)
+, SpecializedResourceUser<Gre::PassPrivate>(pointer)
 {
     
 }
 
 Pass::Pass(const PassHolder& holder)
-: SpecializedResourceUser<Gre::PassPrivate>(holder)
+: ResourceUser(holder)
+, SpecializedResourceUser<Gre::PassPrivate>(holder)
 {
     
 }
 
 Pass::Pass(const Pass& user)
-: SpecializedResourceUser<Gre::PassPrivate>(user)
+: ResourceUser(user)
+, SpecializedResourceUser<Gre::PassPrivate>(user)
 {
     
 }

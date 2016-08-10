@@ -31,11 +31,12 @@
  */
 
 #include "Texture.h"
+#include "Renderer.h"
 
 GreBeginNamespace
 
 TexturePrivate::TexturePrivate(const std::string& name)
-: Resource(name)
+: Resource(name), iSampler(nullptr)
 {
     iType = TextureType::Null;
     iBinded = false;
@@ -44,7 +45,7 @@ TexturePrivate::TexturePrivate(const std::string& name)
     iSurface = { 0, 0, 0, 0 };
 }
 
-TexturePrivate::~TexturePrivate()
+TexturePrivate::~TexturePrivate() noexcept(false)
 {
     
 }
@@ -114,6 +115,16 @@ void TexturePrivate::setType(TextureType type)
 {
     iType = type;
     iDirty = true;
+}
+
+bool TexturePrivate::hasHardwareSamplerActivated() const
+{
+    return iSampler.isInvalid();
+}
+
+HardwareSampler TexturePrivate::getHardwareSampler()
+{
+    return iSampler;
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -217,6 +228,22 @@ void Texture::setType(TextureType textype)
         ptr->setType(textype);
 }
 
+bool Texture::hasHardwareSamplerActivated() const
+{
+    auto ptr = lock();
+    if ( ptr )
+        return ptr->hasHardwareSamplerActivated();
+    return false;
+}
+
+HardwareSampler Texture::getHardwareSampler()
+{
+    auto ptr = lock();
+    if ( ptr )
+        return ptr->getHardwareSampler();
+    return HardwareSampler::Null;
+}
+
 Texture Texture::Null = Texture(nullptr);
 
 // ---------------------------------------------------------------------------------------------------
@@ -226,35 +253,291 @@ TextureLoader::TextureLoader()
     
 }
 
-TextureLoader::TextureLoader(const TextureLoader& rhs)
-{
-    
-}
-
 TextureLoader::~TextureLoader()
 {
     
 }
 
-bool TextureLoader::isTypeSupported(Resource::Type type) const
+// ---------------------------------------------------------------------------------------------------
+
+TextureManager::TextureManager()
+: iRenderer(nullptr)
 {
-    return type == Resource::Type::Texture;
+    
 }
 
-ResourceLoader* TextureLoader::clone() const
+TextureManager::~TextureManager()
 {
-    return new TextureLoader;
+    
 }
 
-TextureHolder TextureLoader::load(Resource::Type type, const std::string& name, const std::string& file) const
+void TextureManager::setRenderer(Gre::RendererPrivate *renderer)
 {
-    TextureHolder holder(new TexturePrivate(name));
-    return holder;
+    if ( iRenderer )
+    {
+        clearTextures();
+    }
+    
+    iRenderer = renderer;
 }
 
-TextureHolder TextureLoader::load(TextureHolder &to, const std::string &file) const
+Texture TextureManager::load(const std::string &name, const std::string &filepath)
 {
-    return to;
+    RendererHolder rholder ( iRenderer );
+    
+    if ( !rholder.isInvalid() )
+    {
+        if ( !name.empty() )
+        {
+            // Check if this name is not already used.
+            
+            if ( isLoaded(name) )
+            {
+                return load(name + '*', filepath);
+            }
+            
+            if ( !filepath.empty() )
+            {
+                // Iterates through the Loader to find one able to load this file.
+                
+                auto loadermap = iLoaders.getLoaders();
+                
+                for ( auto it = loadermap.begin(); it != loadermap.end(); it++ )
+                {
+                    if ( it->second->isLoadable(filepath) )
+                    {
+                        // File is loadable by this loader, so use it.
+                        
+                        TextureHolder holder = rholder->createTexture(name);
+                        
+                        if ( holder.isInvalid() )
+                        {
+#ifdef GreIsDebugMode
+                            GreDebugPretty() << "Resource '" << name << "' could not be created by Renderer." << std::endl;
+#endif
+                            return Texture ( nullptr );
+                        }
+                        
+                        holder = it->second->load(holder, filepath);
+                        
+                        if ( holder.isInvalid() )
+                        {
+#ifdef GreIsDebugMode
+                            GreDebugPretty() << "Resource '" << name << "' could not be loaded." << std::endl;
+#endif
+                            return Texture ( nullptr );
+                        }
+                        
+                        iTextures.add(holder);
+                        
+#ifdef GreIsDebugMode
+                        GreDebugPretty() << "Resource '" << name << "' registered." << std::endl;
+#endif
+                        
+                        return Texture ( holder );
+                    }
+                }
+                
+#ifdef GreIsDebugMode
+                GreDebugPretty() << "No loader found for Resource '" << name << "'." << std::endl;
+#endif
+                return Texture ( nullptr );
+            }
+            
+            else
+            {
+#ifdef GreIsDebugMode
+                GreDebugPretty() << "'filepath' is empty." << std::endl;
+#endif
+                return Texture ( nullptr );
+            }
+        }
+        
+        else
+        {
+#ifdef GreIsDebugMode
+            GreDebugPretty() << "'name' parameter is empty." << std::endl;
+#endif
+            return Texture ( nullptr );
+        }
+    }
+    
+    else
+    {
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "'iRenderer' property is invalid." << std::endl;
+#endif
+        return Texture ( nullptr );
+    }
+}
+
+Texture TextureManager::load(TextureHolder &holder)
+{
+    if ( !holder.isInvalid() )
+    {
+        if ( isLoaded(holder->getName()) )
+        {
+#ifdef GreIsDebugMode
+            GreDebugPretty() << "Resource Texture '" << holder->getName() << "' has an already registered name." << std::endl;
+#endif
+            return Texture ( nullptr );
+        }
+        
+        iTextures.add(holder);
+        
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "Resource Texture '" << holder->getName() << "' registered." << std::endl;
+#endif
+        
+        return Texture ( holder );
+    }
+    
+    else
+    {
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "'holder' parameter is invalid." << std::endl;
+#endif
+        return Texture ( nullptr );
+    }
+}
+
+bool TextureManager::isLoaded(const std::string &name) const
+{
+    if ( !name.empty() )
+    {
+        for ( auto holder : iTextures )
+        {
+            if ( !holder.isInvalid() )
+            {
+                if ( holder->getName() == name )
+                {
+                    return true;
+                }
+            }
+        }
+        
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "Resource Texture '" << name << "' not found." << std::endl;
+#endif
+        
+        return false;
+    }
+    
+    else
+    {
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "'name' parameter is invalid." << std::endl;
+#endif
+        return false;
+    }
+}
+
+Texture TextureManager::get(const std::string &name, const std::string &filepath)
+{
+    if ( !name.empty() )
+    {
+        for ( auto holder : iTextures )
+        {
+            if ( !holder.isInvalid() )
+            {
+                if ( holder->getName() == name )
+                {
+                    return Texture ( holder );
+                }
+            }
+        }
+        
+        // If we reach this point, we try to load the 'filepath' file to given 'name' Texture.
+        
+        return load ( name , filepath );
+    }
+    
+    else
+    {
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "'name' parameter is empty." << std::endl;
+#endif
+        return Texture ( nullptr );
+    }
+}
+
+const Texture TextureManager::get(const std::string &name) const
+{
+    if ( !name.empty() )
+    {
+        for ( auto holder : iTextures )
+        {
+            if ( !holder.isInvalid() )
+            {
+                if ( holder->getName() == name )
+                {
+                    return Texture ( holder );
+                }
+            }
+        }
+        
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "Resource Texture '" << name << "' not found." << std::endl;
+#endif
+        
+        return Texture ( nullptr );
+    }
+    
+    else
+    {
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "'name' parameter is empty." << std::endl;
+#endif
+        return Texture ( nullptr );
+    }
+}
+
+void TextureManager::unload(const std::string &name)
+{
+    if ( !name.empty() )
+    {
+        for ( auto it = iTextures.begin(); it != iTextures.end(); it++ )
+        {
+            auto holder = (*it);
+            
+            if ( !holder.isInvalid() )
+            {
+                if ( holder->getName() == name )
+                {
+                    iTextures.erase(it);
+#ifdef GreIsDebugMode
+                    GreDebugPretty() << "Resource Texture '" << name << "' unloaded." << std::endl;
+#endif
+                    return;
+                }
+            }
+        }
+        
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "Resource Texture '" << name << "' not found." << std::endl;
+#endif
+    }
+}
+
+void TextureManager::clearTextures()
+{
+    iTextures.clear();
+}
+
+TextureLoaderFactory& TextureManager::getLoaderFactory()
+{
+    return iLoaders;
+}
+
+const TextureLoaderFactory& TextureManager::getLoaderFactory() const
+{
+    return iLoaders;
+}
+
+void TextureManager::clear()
+{
+    iTextures.clear();
+    iLoaders.clear();
 }
 
 GreEndNamespace

@@ -1,11 +1,11 @@
 //////////////////////////////////////////////////////////////////////
 //
-//  HardwareVertexBuffer.h
+//  SoftwareIndexBuffer.h
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
 //  Copyright (c) 2015 - 2016 Luk2010
-//  Created on 26/11/2015.
+//  Created on 16/07/2016.
 //
 //////////////////////////////////////////////////////////////////////
 /*
@@ -30,19 +30,24 @@
  -----------------------------------------------------------------------------
  */
 
-#ifndef GRE_HardwareVertexBuffer_h
-#define GRE_HardwareVertexBuffer_h
+#ifndef SoftwareIndexBuffer_h
+#define SoftwareIndexBuffer_h
 
-#include "Pools.h"
-#include "HardwareBuffer.h"
-#include "VertexDescriptor.h"
+#include "HardwareIndexBuffer.h"
 
 GreBeginNamespace
 
 //////////////////////////////////////////////////////////////////////
-/// @brief Defines a HardwareBuffer used to hold Vertexs.
+/// @brief A Software Index Buffer 's resource.
+///
+/// By default, every indexes added with ::addData() is added in the
+/// default IndexBatch , i.e. iIndexes[0] . The Default Index Batch
+/// is initialized with IndexDescriptor::Default.
+///
+/// Using ::setIndexBatchVector() changes the Default Index Batch.
+///
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC HardwareVertexBufferPrivate : public HardwareBufferPrivate
+class DLL_PUBLIC SoftwareIndexBufferPrivate : public HardwareIndexBufferPrivate
 {
 public:
     
@@ -50,38 +55,71 @@ public:
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    HardwareVertexBufferPrivate(const std::string& name);
+    SoftwareIndexBufferPrivate(const std::string& name);
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    virtual ~HardwareVertexBufferPrivate();
+    virtual ~SoftwareIndexBufferPrivate() noexcept(false);
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the VertexDescriptor.
+    /// @brief Returns the Vector of indexes.
     //////////////////////////////////////////////////////////////////////
-    virtual const VertexDescriptor& getVertexDescriptor() const;
+    virtual const IndexBatchVector& getIndexBatchVector() const;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Changes the VertexDescriptor.
+    /// @brief Sets the IndexBatchVector.
     //////////////////////////////////////////////////////////////////////
-    virtual void setVertexDescriptor(const VertexDescriptor& vdesc);
+    virtual void setIndexBatchVector(const IndexBatchVector& ivector);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Adds a new IndexBatch in the list.
+    //////////////////////////////////////////////////////////////////////
+    virtual void addIndexBatch(const IndexBatch& ibatch);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Adds some data to this Buffer. Size is the total size in
+    /// bytes, not the number of Vertex. Data is added to the default
+    /// IndexBatch.
+    //////////////////////////////////////////////////////////////////////
+    virtual void addData(const char* vdata, size_t sz);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the data in the default index batch.
+    //////////////////////////////////////////////////////////////////////
+    virtual const char* getData() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Clears the data in the buffer.
+    /// This function does not clear the Indexes's Descriptors, only the
+    /// raw Indexes data are erased.
+    //////////////////////////////////////////////////////////////////////
+    virtual void clearData();
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the size of the buffer, in bytes.
+    //////////////////////////////////////////////////////////////////////
+    virtual size_t getSize() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the number of elements in the buffer.
+    //////////////////////////////////////////////////////////////////////
+    virtual size_t count() const;
     
 protected:
     
-    /// @brief Vertex's Descriptor map.
-    VertexDescriptor iComponents;
+    /// @brief Stores the indexes.
+    IndexBatchVector iIndexes;
 };
 
-/// @brief SpecializedResourceHolder for HardwareVertexBufferPrivate.
-typedef SpecializedResourceHolder<HardwareVertexBufferPrivate> HardwareVertexBufferHolder;
+/// @brief SpecializedResourceHolder for SoftwareIndexBufferPrivate.
+typedef SpecializedResourceHolder<SoftwareIndexBufferPrivate> SoftwareIndexBufferHolder;
 
-/// @brief SpecializedResourceHolderList for HardwareVertexBufferPrivate.
-typedef SpecializedResourceHolderList<HardwareVertexBufferPrivate> HardwareVertexBufferHolderList;
+/// @brief SpecializedResourceHolderList for SoftwareIndexBufferPrivate.
+typedef SpecializedResourceHolderList<SoftwareIndexBufferPrivate> SoftwareIndexBufferHolderList;
 
 //////////////////////////////////////////////////////////////////////
-/// @brief Proxy to the HardwareVertexBufferPrivate object.
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC HardwareVertexBuffer : public HardwareBuffer, virtual public SpecializedResourceUser<HardwareVertexBufferPrivate>
+class DLL_PUBLIC SoftwareIndexBuffer : public HardwareIndexBuffer , public SpecializedResourceUser<SoftwareIndexBufferPrivate>
 {
 public:
     
@@ -89,44 +127,47 @@ public:
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    HardwareVertexBuffer(const HardwareVertexBufferPrivate* pointer);
+    SoftwareIndexBuffer(const SoftwareIndexBufferPrivate* pointer);
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    HardwareVertexBuffer(const HardwareVertexBufferHolder& holder);
+    SoftwareIndexBuffer(const SoftwareIndexBufferHolder& holder);
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    HardwareVertexBuffer(const HardwareVertexBuffer& user);
+    SoftwareIndexBuffer(const SoftwareIndexBuffer& user);
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    virtual ~HardwareVertexBuffer();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Creates a new ResourceHolder in order to use the Resource.
-    //////////////////////////////////////////////////////////////////////
-    HardwareVertexBufferHolder lock();
+    virtual ~SoftwareIndexBuffer();
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Creates a new ResourceHolder in order to use the Resource.
     //////////////////////////////////////////////////////////////////////
-    const HardwareVertexBufferHolder lock() const;
+    SoftwareIndexBufferHolder lock();
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the VertexDescriptor.
+    /// @brief Creates a new ResourceHolder in order to use the Resource.
     //////////////////////////////////////////////////////////////////////
-    virtual const VertexDescriptor& getVertexDescriptor() const;
+    const SoftwareIndexBufferHolder lock() const;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Changes the VertexDescriptor.
+    /// @brief Returns the Vector of indexes.
     //////////////////////////////////////////////////////////////////////
-    virtual void setVertexDescriptor(const VertexDescriptor& vdesc);
+    virtual const IndexBatchVector getIndexBatchVector() const;
     
-    /// @brief A Null HardwareVertexBuffer.
-    static HardwareVertexBuffer Null;
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Sets the IndexBatchVector.
+    //////////////////////////////////////////////////////////////////////
+    virtual void setIndexBatchVector(const IndexBatchVector& ivector);
+    
+    /// @brief Null SoftwareIndexBuffer.
+    static SoftwareIndexBuffer Null;
 };
+
+/// @brief std::list for SoftwareIndexBuffer.
+typedef std::list<SoftwareIndexBuffer> SoftwareIndexBufferList;
 
 GreEndNamespace
 
-#endif
+#endif /* SoftwareIndexBuffer_h */

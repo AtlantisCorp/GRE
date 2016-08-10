@@ -21,7 +21,7 @@ class Clonable
 {
 public:
     
-    virtual ~Clonable() { }
+    virtual ~Clonable() noexcept (false) { }
     virtual T* clone () const = 0;
 };
 

@@ -253,70 +253,71 @@ public:
     virtual ResourceHolder loadEmptyResource(const std::string& name);
     
     ////////////////////////////////////////////////////////////////////////
-    /// @brief Loads a Resource object using a Loader, the type of the Resource,
-    /// and the Args used by the Loader to load the Resource.
-    /// @note The Arg awaited by this function are dependant to the Loader given.
-    /// @see ResourceLoader
+    /// @brief Loads a Resource and return it to the form of a ResourceHolder
+    /// of given type.
+    ///
+    /// Using the Resource::Type assertions should be avoided. The ResourceLoader
+    /// should have a load() function of type :
+    ///
+    ///     MyResourceHolder load ( const std::string& name, myargs ... ) const ;
+    ///
+    /// This function waits for a referenced loader. This loader is not destroyed
+    /// in this function, so if you need this behaviour please use a pointer
+    /// instead.
     ////////////////////////////////////////////////////////////////////////
-    template <class RHolder, class RLoader, class... Args>
-    RHolder loadResourceWith(RLoader loader, Resource::Type type, const std::string& name, Args&&... args)
+    template <class Holder , class Loader , class ... Args>
+    Holder loadResourceWith ( const Loader& loader , const std::string& name , Args&& ... args )
     {
-        RHolder resptr(loader.load(type, name, std::forward<Args>(args)...));
+        Holder retvalue = loader->load(name , std::forward<Args>(args)...);
         
 #ifdef GreIsDebugMode
-        if(resptr)
+        if ( retvalue.isInvalid() )
         {
-            GreDebugPretty() << "Loaded Resource " << name << "." << std::endl;
-        }
-        else
-        {
-            GreDebugPretty() << "Error loading Resource " << name << "." << std::endl;
+            GreDebugPretty() << "Can't load Resource '" << name << "'." << std::endl;
         }
 #endif
-        
-        return resptr;
+
+        return retvalue;
     }
     
     ////////////////////////////////////////////////////////////////////////
-    /// @brief Loads a Resource object using a Loader pointer, the type of the
-    /// Resource, and the Args used by the Loader to load the Resource.
-    /// @note The Arg awaited by this function are dependant to the Loader given.
-    /// @note Usually, the loader pointer is given using one of the Factory registered
-    /// in the Engine. The pointer is ALWAYS destroyed in this function, because the
-    /// Factory object allocate it. This function assume the loader is created by either
-    /// the user or the Factory, and it take responsability of the deleting.
-    /// @see ResourceLoader
+    /// @brief Loads a Resource and return it to the form of a ResourceHolder
+    /// of given type.
+    ///
+    /// Using the Resource::Type assertions should be avoided. The ResourceLoader
+    /// should have a load() function of type :
+    ///
+    ///     MyResourceHolder load ( const std::string& name, myargs ... ) const ;
+    ///
+    /// This function waits for a pointer to a Loader. This loader is destroyed
+    /// by this function. If you don't need this behaviour, use ::loadResourceWith()
+    /// with a referenced loader instead of a pointer.
     ////////////////////////////////////////////////////////////////////////
-    template <class RHolder, class RLoader, class... Args>
-    RHolder loadResourceWith(RLoader* loader, Resource::Type type, const std::string& name, Args&&... args)
+    template <class Holder , class Loader , class ... Args>
+    Holder loadResourceWith ( const Loader* loader , const std::string& name , Args&& ... args )
     {
-        if(loader)
+        if ( loader )
         {
-            RHolder resptr(loader->load(type, name, std::forward<Args>(args)...));
+            Holder retvalue = loader->load(name , std::forward<Args>(args)...);
             
 #ifdef GreIsDebugMode
-            if(resptr)
+            if ( retvalue.isInvalid() )
             {
-                GreDebugPretty() << "Loaded Resource " << name << "." << std::endl;
-            }
-            else
-            {
-                GreDebugPretty() << "Error loading Resource " << name << "." << std::endl;
+                GreDebugPretty() << "Can't load Resource '" << name << "'." << std::endl;
             }
 #endif
             
             delete loader;
-            return resptr;
+            return retvalue;
         }
         
         else
         {
-            
 #ifdef GreIsDebugMode
-            GreDebugPretty() << "Invalid loader given (resource='" << name << "')." << std::endl;
+            GreDebugPretty() << "No loader provided to load Resource '" << name << "'." << std::endl;
 #endif
             
-            return RHolder(nullptr);
+            return Holder ( nullptr );
         }
     }
     

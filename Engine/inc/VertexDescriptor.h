@@ -43,22 +43,22 @@ enum class VertexComponentType
 {
     Null = 0,
     
-    /// @brief Disabled field size 1.
+    /// @brief Disabled field size 1. ( Size = sizeof(uint32_t) )
     Null1 = 1,
     
-    /// @brief Disabled field size 2.
+    /// @brief Disabled field size 2. ( Size = sizeof(uint32_t) * 2 )
     Null2 = 2,
     
-    /// @brief Disabled field size 3.
+    /// @brief Disabled field size 3. ( Size = sizeof(uint32_t) * 3 )
     Null3 = 3,
     
-    /// @brief Disabled field size 4.
+    /// @brief Disabled field size 4. ( Size = sizeof(uint32_t) * 4 )
     Null4 = 4,
     
     /// @brief A XYZ Position Component. (Size = sizeof(float) * 3)
     Position = 10,
     
-    /// @brief A RGBA Color component. (Size = sizeof(uint_32) * 4)
+    /// @brief A RGBA Color component. (Size = sizeof(uint32_t) * 4)
     Color = 11,
     
     /// @brief A XYZ Normal Component. (Size = sizeof(float) * 3)
@@ -72,7 +72,7 @@ enum class VertexComponentType
 typedef glm::tvec3<float> VertexPosition;
 
 /// @brief A VertexColor.
-typedef glm::tvec4<uint_32> VertexColor;
+typedef glm::tvec4<uint32_t> VertexColor;
 
 /// @brief A VertexNormal.
 typedef glm::tvec3<float> VertexNormal;
@@ -82,6 +82,9 @@ typedef glm::tvec2<float> VertexTexture;
 
 /// @brief A List of Component.
 typedef std::vector<VertexComponentType> VertexComponents;
+
+/// @brief Returns the size of given Component, in bytes.
+size_t VertexComponentTypeGetSize(const VertexComponentType& vtype);
 
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
@@ -103,6 +106,12 @@ public:
     virtual void addComponent(const VertexComponentType& vtype);
     
     //////////////////////////////////////////////////////////////////////
+    /// @brief Pushes a Component at the end of the list. If a component
+    /// of the same type is already in the list, removes it before.
+    //////////////////////////////////////////////////////////////////////
+    virtual void addComponentUnique(const VertexComponentType& vtype);
+    
+    //////////////////////////////////////////////////////////////////////
     /// @brief Remove given Component from the list.
     //////////////////////////////////////////////////////////////////////
     virtual void removeComponent(const VertexComponentType& vtype);
@@ -120,7 +129,7 @@ public:
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the stride between two same Components. ( getSize()
-    /// - sizeof (vtype) )
+    /// - VertexComponentTypeGetSize(vtype) )
     //////////////////////////////////////////////////////////////////////
     virtual size_t getStride(const VertexComponentType& vtype) const;
     

@@ -1,11 +1,11 @@
 //////////////////////////////////////////////////////////////////////
 //
-//  Keyboard.h
+//  HardwareSampler.h
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
 //  Copyright (c) 2015 - 2016 Luk2010
-//  Created on 11/12/2015.
+//  Created on 08/08/2016.
 //
 //////////////////////////////////////////////////////////////////////
 /*
@@ -30,124 +30,88 @@
  -----------------------------------------------------------------------------
  */
 
-#ifndef GRE_Keyboard_h
-#define GRE_Keyboard_h
+#ifndef HardwareSampler_h
+#define HardwareSampler_h
 
+#include "Pools.h"
 #include "Resource.h"
 
 GreBeginNamespace
 
 //////////////////////////////////////////////////////////////////////
-/// @brief A Basic Resource to handle more easily Key Events.
+/// @brief Describes a Sampler that can be used to change the
+/// configurations of a Texture to a HardwareProgram.
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC KeyboardPrivate : public Resource
+class DLL_PUBLIC HardwareSamplerPrivate : public Resource
 {
 public:
     
-    POOLED(Pools::Event)
-    
-    KeyboardPrivate(const std::string& name);
-    ~KeyboardPrivate();
+    POOLED(Pools::HdwBuffer)
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns true if given key is down.
     //////////////////////////////////////////////////////////////////////
-    bool isKeyDown(Key k) const;
-    
-protected:
+    HardwareSamplerPrivate(const std::string& name);
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Called when a Key is up.
     //////////////////////////////////////////////////////////////////////
-    virtual void onKeyUpEvent(const KeyUpEvent& e);
+    virtual ~HardwareSamplerPrivate() noexcept(false);
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Called when a Key is down.
+    /// @brief Bind the HardwareSampler.
     //////////////////////////////////////////////////////////////////////
-    virtual void onKeyDownEvent(const KeyDownEvent& e);
+    virtual void bind() const;
     
-private:
-    
-    /// @brief Helper to store Key currently down.
-    std::map<Key, bool> ikeyDown;
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Unbind the HardwareSampler from given Texture Unit.
+    //////////////////////////////////////////////////////////////////////
+    virtual void unbind(int textureunit) const;
 };
 
-/// @brief SpecializedResourceHolder for KeyboardPrivate.
-typedef SpecializedResourceHolder<KeyboardPrivate> KeyboardHolder;
+/// @brief SpecializedResourceHolder for HardwareSamplerPrivate.
+typedef SpecializedResourceHolder<HardwareSamplerPrivate> HardwareSamplerHolder;
 
-/// @brief SpecializedResourceHolderList for KeyboardPrivate.
-typedef SpecializedResourceHolderList<KeyboardPrivate> KeyboardHolderList;
+/// @brief SpecializedResourceHolderList for HardwareSamplerPrivate.
+typedef SpecializedResourceHolderList<HardwareSamplerPrivate> HardwareSamplerHolderList;
 
 //////////////////////////////////////////////////////////////////////
-/// @brief ResourceUser to manipulate the KeyboardPrivate class.
+/// @brief SpecializedResourceUser for HardwareSampler.
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC Keyboard : public SpecializedResourceUser<KeyboardPrivate>
+class DLL_PUBLIC HardwareSampler : public SpecializedResourceUser<HardwareSamplerPrivate>
 {
 public:
     
-    POOLED(Pools::Event)
+    POOLED(Pools::HdwBuffer)
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    Keyboard(const KeyboardPrivate* resource);
+    HardwareSampler(const HardwareSamplerPrivate* pointer);
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    Keyboard(const KeyboardHolder& user);
+    HardwareSampler(const HardwareSamplerHolder& holder);
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    Keyboard(const Keyboard& user);
+    HardwareSampler(const HardwareSampler& user);
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    virtual ~Keyboard() noexcept(false);
+    virtual ~HardwareSampler();
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns true if given key is down.
+    /// @brief Bind the HardwareSampler to the given Texture Unit.
     //////////////////////////////////////////////////////////////////////
-    bool isKeyDown(Key k) const;
-    
-    /// @brief A Null Keyboard.
-    static Keyboard Null;
-};
-
-//////////////////////////////////////////////////////////////////////
-/// @brief A simple ResourceLoader to permit to the ResourceManager
-/// to load a Keyboard Object.
-//////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC KeyboardLoader : public ResourceLoader
-{
-public:
-    
-    POOLED(Pools::Event)
+    virtual void bind(int textureunit) const;
     
     //////////////////////////////////////////////////////////////////////
+    /// @brief Unbind the HardwareSampler from given Texture Unit.
     //////////////////////////////////////////////////////////////////////
-    KeyboardLoader();
+    virtual void unbind(int textureunit) const;
     
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    virtual ~KeyboardLoader() noexcept(false);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Loads a Keyboard.
-    //////////////////////////////////////////////////////////////////////
-    virtual KeyboardHolder load(const std::string& name) const;
-    
-    ////////////////////////////////////////////////////////////////////////
-    /// @brief Returns a clone of this object.
-    /// Typically, this function is implemented as 'return new MyLoaderClass();',
-    /// but you are free to do whatever you want.
-    ////////////////////////////////////////////////////////////////////////
-    virtual ResourceLoader* clone() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns true if the file given is loadable by this loader.
-    //////////////////////////////////////////////////////////////////////
-    virtual bool isLoadable( const std::string& filepath ) const;
+    /// @brief A Null HardwareSampler.
+    static HardwareSampler Null;
 };
 
 GreEndNamespace
 
-#endif
+#endif /* HardwareSampler_h */

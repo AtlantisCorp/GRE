@@ -54,12 +54,12 @@ void SoftwarePixelBufferPrivate::setPixelFormat(const Gre::HardwarePixelFormat &
     // No need to set the 'dirty' flag to true, as every data is stored here.
 }
 
-void* SoftwarePixelBufferPrivate::getData()
+char* SoftwarePixelBufferPrivate::getData()
 {
     return iPixBuffer;
 }
 
-const void* SoftwarePixelBufferPrivate::getData() const
+const char* SoftwarePixelBufferPrivate::getData() const
 {
     return iPixBuffer;
 }
@@ -80,7 +80,7 @@ size_t SoftwarePixelBufferPrivate::count() const
     return 0;
 }
 
-void SoftwarePixelBufferPrivate::setData(const void *data, size_t sz)
+void SoftwarePixelBufferPrivate::setData(const char *data, size_t sz)
 {
     if( iPixBuffer )
     {
@@ -88,26 +88,32 @@ void SoftwarePixelBufferPrivate::setData(const void *data, size_t sz)
     }
     
     iSize = sz;
-    iPixBuffer = malloc(sz);
+    iPixBuffer = (char*) malloc(sz);
     memcpy(iPixBuffer, data, sz);
 }
 
 // ---------------------------------------------------------------------------------------------------
 
 SoftwarePixelBuffer::SoftwarePixelBuffer(const SoftwarePixelBufferPrivate* pointer)
-: HardwarePixelBuffer(pointer), SpecializedResourceUser<SoftwarePixelBufferPrivate>(pointer)
+: ResourceUser(pointer)
+, HardwarePixelBuffer(pointer)
+, SpecializedResourceUser<SoftwarePixelBufferPrivate>(pointer)
 {
     
 }
 
 SoftwarePixelBuffer::SoftwarePixelBuffer(const SoftwarePixelBufferHolder& holder)
-: HardwarePixelBuffer(holder.get()), SpecializedResourceUser<SoftwarePixelBufferPrivate>(holder)
+: ResourceUser(holder)
+, HardwarePixelBuffer(holder.get())
+, SpecializedResourceUser<SoftwarePixelBufferPrivate>(holder)
 {
     
 }
 
 SoftwarePixelBuffer::SoftwarePixelBuffer(const SoftwarePixelBuffer& user)
-: HardwarePixelBuffer(user), SpecializedResourceUser<SoftwarePixelBufferPrivate>(user)
+: ResourceUser(user)
+, HardwarePixelBuffer(user)
+, SpecializedResourceUser<SoftwarePixelBufferPrivate>(user)
 {
     
 }
@@ -134,7 +140,7 @@ void SoftwarePixelBuffer::setPixelFormat(const Gre::HardwarePixelFormat &pixform
         ptr->setPixelFormat(pixformat);
 }
 
-void* SoftwarePixelBuffer::getData()
+char* SoftwarePixelBuffer::getData()
 {
     auto ptr = lock();
     if ( ptr )
@@ -142,7 +148,7 @@ void* SoftwarePixelBuffer::getData()
     return nullptr;
 }
 
-const void* SoftwarePixelBuffer::getData() const
+const char* SoftwarePixelBuffer::getData() const
 {
     auto ptr = lock();
     if ( ptr )
@@ -166,7 +172,7 @@ size_t SoftwarePixelBuffer::count() const
     return 0;
 }
 
-void SoftwarePixelBuffer::setData(const void *data, size_t sz)
+void SoftwarePixelBuffer::setData(const char *data, size_t sz)
 {
     auto ptr = lock();
     if ( ptr )

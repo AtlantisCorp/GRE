@@ -46,6 +46,7 @@
 #include "RenderTarget.h"
 #include "FrameBuffer.h"
 #include "Viewport.h"
+#include "RenderContext.h"
 
 GreBeginNamespace
 
@@ -120,7 +121,7 @@ public:
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    virtual ~RendererPrivate ();
+    virtual ~RendererPrivate () noexcept(false);
     
 public:
     
@@ -149,13 +150,40 @@ public:
     //////////////////////////////////////////////////////////////////////
     /// @brief Draws the List of SceneNode using given HardwareProgram.
     //////////////////////////////////////////////////////////////////////
-    virtual void drawSceneNodeList(SceneNodeList& nodes, const HardwareProgramHolder& program);
+    virtual void drawSceneNodeList(SceneNodeList& nodes, HardwareProgramHolder& program);
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Draw a list of RenderFramebuffer onto the binded RenderTarget.
     /// Those RenderFramebuffer's should be blended together.
     //////////////////////////////////////////////////////////////////////
     virtual void drawFramebufferList(RenderFramebufferHolderList& fbolist);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Draw one Mesh to the binded Framebuffer using given
+    /// HardwareProgram.
+    //////////////////////////////////////////////////////////////////////
+    virtual void drawSimpleMesh ( Mesh& mesh , HardwareProgram& prog );
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Draw given Vertex Buffer using the given HardwareProgram.
+    //////////////////////////////////////////////////////////////////////
+    virtual void drawVertexBuffer(const HardwareVertexBuffer& vbuf, const HardwareProgramHolder& program);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Calls the API - dependent 'drawVertexBuffer' stuff.
+    //////////////////////////////////////////////////////////////////////
+    virtual void drawVertexBufferPrivate(const HardwareVertexBuffer& vbuf, const HardwareProgramHolder& program);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Calls the API - dependent 'drawIndexBuffer' stuff.
+    //////////////////////////////////////////////////////////////////////
+    virtual void drawIndexBufferPrivate(const HardwareIndexBuffer& ibuf, const HardwareVertexBuffer& vbuf, const HardwareProgramHolder& program);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Draw given Vertex Buffer using Index Buffer and Hardware
+    /// Program.
+    //////////////////////////////////////////////////////////////////////
+    virtual void drawIndexBuffer(const HardwareIndexBuffer& ibuf, const HardwareVertexBuffer& vbuf, const HardwareProgramHolder& program);
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Sets the buffer's base color when clearing it.
@@ -209,11 +237,32 @@ public:
     virtual void loadMesh(Mesh& mesh);
     
     //////////////////////////////////////////////////////////////////////
+    /// @brief Creates a new Texture object.
+    /// This function is here to let API - dependent Texture objects to
+    /// be created directly. The newly - created Texture should not be
+    /// bindable or drawable.
+    //////////////////////////////////////////////////////////////////////
+    virtual TextureHolder createTexture(const std::string& name);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Creates a Texture object directly drawable or bindable.
+    //////////////////////////////////////////////////////////////////////
+    virtual TextureHolder createTexture(const std::string& name, const std::string& file);
+    
+    //////////////////////////////////////////////////////////////////////
     /// @brief Creates an empty Texture and return its holder.
     //////////////////////////////////////////////////////////////////////
     virtual TextureHolder createEmptyTexture(int width, int height);
     
-    virtual Texture createTexture(const std::string& name, const std::string& file);
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the TextureManager.
+    //////////////////////////////////////////////////////////////////////
+    virtual TextureManager& getTextureManager();
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the TextureManager.
+    //////////////////////////////////////////////////////////////////////
+    virtual const TextureManager& getTextureManager() const;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the 'sz' numbers of Framebuffers available. If the
@@ -262,182 +311,47 @@ protected:
     
     /// @brief The Hardware Program Manager for this Renderer.
     HardwareProgramManagerHolder iProgramManager;
+    
+    /// @brief The Mesh Manager.
+    MeshManager iMeshManager;
+    
+    /// @brief The Texture Manager.
+    TextureManager iTextureManager;
 };
 
-class DLL_PUBLIC Renderer : public ResourceUser
+/// @brief SpecializedResourceHolder for RendererPrivate.
+typedef SpecializedResourceHolder<RendererPrivate> RendererHolder;
+
+/// @brief SpecializedResourceHolderList for RendererPrivate.
+typedef SpecializedResourceHolderList<RendererPrivate> RendererHolderList;
+
+//////////////////////////////////////////////////////////////////////
+/// @brief SpecializedResourceUser for Renderer.
+//////////////////////////////////////////////////////////////////////
+class DLL_PUBLIC Renderer : public SpecializedResourceUser<RendererPrivate>
 {
 public:
     
-    Renderer ();
-    Renderer (Renderer&& movref);
-    Renderer (const Renderer& renderer);
-    explicit Renderer (const ResourceUser& ruser);
+    POOLED(Pools::Resource)
     
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    Renderer(const RendererPrivate* pointer);
+    
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    Renderer(const RendererHolder& holder);
+    
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    Renderer(const Renderer& user);
+    
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
     virtual ~Renderer();
-    
-    Renderer& operator = (const ResourceUser& ruser);
-    Renderer& operator = (const Renderer& ruser);
-    
-    void render();
-    
-    void setFramerate (float fps);
-    
-    float getCurrentFramerate () const;
-    ElapsedTime getElapsedTime() const;
-    void resetElapsedTime();
-    
-    void beginRender();
-    void endRender();
-    
-    void setClearColor(const Color& color);
-    void setClearDepth(float depth);
-    
-    void setActive(bool active);
-    bool isActive() const;
-    
-    bool isImmediate() const;
-    void setImmediateMode(bool mode);
-    
-    void addImmediateAction(std::function<void(void)> action);
-    void resetImmediateActions();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Loads a Scene object, loading it using the Resource Manager
-    /// system.
-    /// @param name     Name of the loader to use to create the Scene Object.
-    /// @param sname    Name of the Scene that will be loaded.
-    //////////////////////////////////////////////////////////////////////
-    SceneManager loadSceneByName(const std::string& name, const std::string& sname);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Loads a Scene object already created using the Resource Manager
-    /// system.
-    /// @param scene    The scene to load.
-    //////////////////////////////////////////////////////////////////////
-    SceneManager loadSceneByResource(SceneManager scene);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Push the given matrix to save data.
-    //////////////////////////////////////////////////////////////////////
-    void pushMatrix(MatrixType matrix);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Pop the given matrix to restore data.
-    //////////////////////////////////////////////////////////////////////
-    void popMatrix(MatrixType matrix);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Scene object.
-    //////////////////////////////////////////////////////////////////////
-    SceneManager& getScene();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Scene object.
-    //////////////////////////////////////////////////////////////////////
-    const SceneManager& getScene() const;
-    
-    void translate(float x, float y, float z);
-    void rotate(float angle, float x, float y, float z);
-    
-    void drawTriangle(float sz, const Color& color1 = Color::White, const Color& color2 = Color::White, const Color& color3 = Color::White);
-    void drawQuad(float sz, const Color& color1 = Color::White, const Color& color2 = Color::White, const Color& color3 = Color::White, const Color& color4 = Color::White);
-    void draw(const Mesh& mesh, const HardwareProgram& activProgram);
-    void prepare(const Camera& cam);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Prepare the Pass object to be drew.
-    //////////////////////////////////////////////////////////////////////
-    void prepare(PassPrivate* privPass);
-    
-    HardwareVertexBuffer createVertexBuffer();
-    HardwareIndexBuffer createIndexBuffer(PrimitiveType ptype, StorageType stype);
-    Mesh createMeshFromBuffers(const std::string& name, const HardwareVertexBuffer& vbuf, const HardwareIndexBufferBatch& ibufs);
-    Texture createTexture(const std::string& name, const std::string& file);
-    Camera createCamera(const std::string& name);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Constructs a HardwareProgram using given Vertex Shader,
-    /// IndexShader.
-    /// @note You can set every value to HardwareShader::PassThrough if you
-    /// just want default Program.
-    //////////////////////////////////////////////////////////////////////
-    HardwareProgram createHardwareProgram(const std::string& name, const HardwareShader& vertexShader, const HardwareShader& fragmentShader);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Constructs a HardwareProgram using given Vertex and Fragment
-    /// Shader's files.
-    //////////////////////////////////////////////////////////////////////
-    HardwareProgram createHardwareProgram(const std::string& name, const std::string& vertexShaderPath, const std::string& fragmentShaderPath);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Apply the transformation in the given node.
-    //////////////////////////////////////////////////////////////////////
-    void transform(const Node& node);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Draw given Mesh and updates the set of HardwareProgramVariables
-    /// provided.
-    /// Normally, this function is called from ::drawPass().
-    //////////////////////////////////////////////////////////////////////
-    void draw(const Mesh& mesh, HardwareProgramVariables& variables);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Creates a blank Texture object and returns it.
-    //////////////////////////////////////////////////////////////////////
-    Texture createTexture(const std::string& name) const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Creates a RenderContext using given Info.
-    /// The RendererPrivate should keep a copy of this RenderContext, in
-    /// order to destroy it.
-    //////////////////////////////////////////////////////////////////////
-    RenderContext createRenderContext(const std::string& name, const RenderContextInfo& info);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Notifiates the Renderer that the RenderContext currently
-    /// binded has changed.
-    //////////////////////////////////////////////////////////////////////
-    void onCurrentContextChanged(RenderContextPrivate* renderCtxt);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Adds a new RenderTarget to the Renderer.
-    /// The RenderTarget may be a Window, a Framebuffer, or any object where
-    /// the Renderer should draw into.
-    //////////////////////////////////////////////////////////////////////
-    void addRenderTarget(const RenderTarget& renderTarget);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Specifically adds a Window as a RenderTarget.
-    //////////////////////////////////////////////////////////////////////
-    void addRenderTarget(Window& window, bool autoCreateContext = true);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Select the default Scene to draw a RenderTarget object if this
-    /// one does not already have one.
-    //////////////////////////////////////////////////////////////////////
-    void selectDefaultScene(const SceneManager& defScene);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Default Scene set by ::selectDefaultScene().
-    //////////////////////////////////////////////////////////////////////
-    SceneManager getDefaultScene();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Render given RenderTarget.
-    //////////////////////////////////////////////////////////////////////
-    void render(RenderTarget& rtarget);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Launches the Drawing Loop Thread.
-    //////////////////////////////////////////////////////////////////////
-    void launchDrawingThread();
     
     /// @brief Holds the Null Renderer User.
     static Renderer Null;
-    
-private:
-    
-    std::weak_ptr<RendererPrivate> _mRenderer;
 };
 
 class DLL_PUBLIC RendererLoader : public ResourceLoader

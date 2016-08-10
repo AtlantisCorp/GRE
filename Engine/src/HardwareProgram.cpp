@@ -147,6 +147,11 @@ bool HardwareProgramPrivate::hasOutputLocation(uint16_t location) const
     return false;
 }
 
+void HardwareProgramPrivate::bindTextureUnit(int) const
+{
+    
+}
+
 void HardwareProgramPrivate::setCompiled(bool flag)
 {
     iNeedsCompilation = flag;
@@ -271,6 +276,13 @@ bool HardwareProgram::hasOutputLocation(uint16_t location) const
     if ( ptr )
         return ptr->hasOutputLocation(location);
     return false;
+}
+
+void HardwareProgram::bindTextureUnit(int unit) const
+{
+    auto ptr = lock();
+    if ( ptr )
+        ptr->bindTextureUnit(unit);
 }
 
 HardwareProgram HardwareProgram::Null = HardwareProgram(nullptr);

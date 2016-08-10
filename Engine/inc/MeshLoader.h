@@ -5,7 +5,7 @@
 //  Created by Jacques Tronconi on 26/11/2015.
 //
 //
-
+/*
 #ifndef GRE_MeshLoader_h
 #define GRE_MeshLoader_h
 
@@ -26,7 +26,7 @@ public:
     
     virtual Resource* load(Resource::Type type, const std::string& name, const std::string& file, Renderer renderer) const;
     
-    Resource* load(Resource::Type type, const std::string& name, const HardwareVertexBuffer& vbuf, const HardwareIndexBufferBatch& ibuf) const;
+    Resource* load(Resource::Type type, const std::string& name, const HardwareVertexBuffer& vbuf, const HardwareIndexBuffer& ibuf) const;
     
     Resource* load(Resource::Type type, const std::string& name, const MeshPrivate::Type& meshtype, const Renderer& renderer, const VertexBatch& vbatch, const MaterialIndexedFaceBatch& ibatch) const;
     
@@ -44,3 +44,4 @@ typedef ResourceLoaderFactory<MeshLoader> MeshLoaderFactory;
 GreEndNamespace
 
 #endif
+*/

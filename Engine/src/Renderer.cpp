@@ -1,10 +1,34 @@
+//////////////////////////////////////////////////////////////////////
 //
 //  Renderer.cpp
-//  GResource
+//  This source file is part of Gre
+//		(Gang's Resource Engine)
 //
-//  Created by Jacques Tronconi on 08/11/2015.
-//  Copyright (c) 2015 Atlanti's Corporation. All rights reserved.
+//  Copyright (c) 2015 - 2016 Luk2010
+//  Created on 08/11/2015.
 //
+//////////////////////////////////////////////////////////////////////
+/*
+ -----------------------------------------------------------------------------
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal
+ in the Software without restriction, including without limitation the rights
+ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
+ 
+ The above copyright notice and this permission notice shall be included in
+ all copies or substantial portions of the Software.
+ 
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ THE SOFTWARE.
+ -----------------------------------------------------------------------------
+ */
 
 #include "Renderer.h"
 #include "ResourceManager.h"
@@ -23,7 +47,7 @@ RendererPrivate::RendererPrivate (const std::string& name)
     
 }
 
-RendererPrivate::~RendererPrivate()
+RendererPrivate::~RendererPrivate() noexcept ( false )
 {
     
 }
@@ -31,7 +55,7 @@ RendererPrivate::~RendererPrivate()
 void RendererPrivate::drawRenderTarget(const Gre::RenderTarget &rendertarget)
 {
     RenderTargetHolder holder = rendertarget.lock();
-    
+   
     if( !holder )
     {
 #ifndef GreIsDebugMode
@@ -259,24 +283,14 @@ void RendererPrivate::drawPassWithFramebuffer(const PassHolder& passholder, Rend
     fboholder->unbind();
 }
 
-void RendererPrivate::drawSceneNodeList(SceneNodeList& nodes, const HardwareProgramHolder& program)
+void RendererPrivate::drawSceneNodeList(SceneNodeList& nodes, HardwareProgramHolder& program)
 {
     if( !nodes.empty() && program )
     {
-        // First, see if the program has every coordinates.
-        int proghasposition = program->hasAttribLocation("position");
-        int proghasnormals = program->hasAttribLocation("normal");
-        int proghastextures = program->hasAttribLocation("texture");
+        // We iterates to every Node's from the list given by the SceneManager to draw the
+        // objects. Those Objects are 'placed' thanks to the 'ModelMatrix' uniform.
+        // Notes the ViewMatrix and ProjectionMatrix are set by the Camera during Rendering.
         
-        if( proghasposition < 0 )
-        {
-#ifdef GreIsDebugMode
-            GreDebugPretty() << "No 'position' attribute in program '" << program->getName() << "'." << std::endl;
-#endif
-            return;
-        }
-        
-        // Then, for each Nodes
         for(auto node : nodes)
         {
             Mesh mesh = node.getRenderable();
@@ -287,69 +301,13 @@ void RendererPrivate::drawSceneNodeList(SceneNodeList& nodes, const HardwareProg
             }
             
             // Updates the Model Matrix.
-            program->setUniformMat4("ModelMatrix", node->getModelMatrix());
             
-            // First, we have to bind the Hardware Buffers.
+            program->setUniformMat4("ModelMatrix", node.getModelMatrix());
             
-            if( proghasposition >= 0)
-            {
-                HardwareVertexBuffer vbuf = mesh.getVertexBuffer();
-                
-                if( !vbuf.isExpired() )
-                {
-                    vbuf.bindAttrib(proghasposition, program);
-                }
-            }
+            // Draw the Mesh normally.
             
-            if( proghasnormals >= 0 )
-            {
-                HardwareVertexBuffer nbuf = mesh.getNormalBuffer();
-                
-                if( !nbuf.isExpired() )
-                {
-                    nbuf.bindAttrib(proghasnormals, program);
-                }
-            }
-            
-            if( proghastextures >= 0 )
-            {
-                HardwareVertexBuffer tbuf = mesh.getTextureBuffer();
-                
-                if( !tbuf.isExpired() )
-                {
-                    tbuf.bindAttrib(proghastextures, program);
-                }
-            }
-            
-            // Then, bind the index buffer if we have one, and draws it / them.
-            for(auto indexbuf : mesh.getIndexBufferBatch().batchs)
-            {
-                if( !indexbuf.isExpired() )
-                {
-                    indexbuf.bind();
-                    
-                    if(indexbuf.getMaterial().hasTexture())
-                    {
-                        indexbuf.getMaterial().texture.bind();
-                    }
-                    
-                    prepareMaterial(indexbuf.getMaterial());
-                    
-                    drawIndexBuffer(indexbuf);
-                    
-                    if(indexbuf.getMaterial().hasTexture())
-                    {
-                        indexbuf.getMaterial().texture.unbind();
-                    }
-                    
-                    indexbuf.unbind();
-                }
-                
-                else
-                {
-                    continue;
-                }
-            }
+            HardwareProgram tmpprog ( program );
+            drawSimpleMesh(mesh, tmpprog);
         }
     }
 }
@@ -358,139 +316,245 @@ void RendererPrivate::drawFramebufferList(RenderFramebufferHolderList& fbolist)
 {
     if( !fbolist.empty() )
     {
-        // We now have every Framebuffers correctly filled. We now have to use multitexturing in order to blend
-        // the Framebuffers.
+        // Get the HardwareProgram to use.
         
-        for(auto it = fbolist.begin(); it != fbolist.end(); it++)
-        {
-            fbolist.getTextureAttachement(RenderFramebufferAttachement::Color).bind();
-        }
+        HardwareProgram multitexturing = getHardwareProgramManager().getProgram("Shader/Multitexturing");
         
-        // After having binded every textures, just call the multitexturing program.
-        Mesh myplane = ResourceManager::Get().getMeshManager().createPlane(iFrameContext.RenderedViewport.getSurface());
-        HardwareProgram multitexturing = getHardwareProgramManager().getProgram("Gre.multitexturing");
-        
-        if( myplane.isExpired() || multitexturing.isExpired() )
+        if ( multitexturing.isInvalid() )
         {
 #ifdef GreIsDebugMode
-            GreDebugPretty() << "Can't get multitexturing final pass objects." << std::endl;
+            GreDebugPretty() << "'Shader/Multitexturing' Shader Program was not found in database." << std::endl;
+#endif
+            return;
+        }
+        
+        // Bind the HardwareProgram in order to use it.
+        
+        multitexturing.bind();
+        
+        // The 'Gre/Multitexturing' HardwareProgram has the uniform 'uTextureCount' which specify
+        // the number of textures binded. The textures must be binded from 0 to this number minus 1.
+        
+        HardwareProgramVariable textureCountVar;
+        textureCountVar.name = "uTextureCount";
+        textureCountVar.type = HdwProgVarType::Uint32;
+        textureCountVar.value.uint32 = (uint32_t) fbolist.size();
+        multitexturing.setUniform(textureCountVar);
+        
+        // Next, we bind every Textures to the multitexturing samplers objects.
+        // Notes if the Texture object has a HardwareSampler, it will also bind it. The Texture object is
+        // binded from the first to the last.
+        
+        // The Sampler's name in the Shader is as follow :
+        // 'u' + Sampler's type to string + The Array index.
+        
+        int i = 0;
+        for ( auto it = fbolist.begin(); it != fbolist.end(); it++ )
+        {
+            
+            auto fbo = (*it);
+            
+            if ( fbo.isInvalid() )
+            {
+                continue;
+            }
+            
+            // Use the Program to activate the Texture Unit.
+            
+            multitexturing.bindTextureUnit(i);
+            
+            // Bind the Framebuffer Texture.
+            
+            Texture iTexture = fbo->getTextureAttachement(RenderFramebufferAttachement::Color);
+            
+            if ( iTexture.isInvalid() )
+            {
+#ifdef GreIsDebugMode
+                GreDebugPretty() << "Failed accessing Framebuffer Color Texture ('" << i << "')." << std::endl;
+#endif
+                continue;
+            }
+            
+            iTexture.bind();
+            
+            // Check if the Texture has a Sampler to bind.
+            
+            if ( iTexture.hasHardwareSamplerActivated() )
+            {
+                // This will bind the HardwareSampler to the same texture unit the Texture was binded to.
+                iTexture.getHardwareSampler().bind(i);
+            }
+            
+            // Create the uniform and set it to the shader.
+            
+            HardwareProgramVariable textureVar;
+            textureVar.name = std::string("u") + TextureTypeToString(iTexture.getType());
+            textureVar.isArrayElement = true;
+            textureVar.elementNumber = i;
+            textureVar.type = TextureTypeToHdwProgType(iTexture.getType());
+            textureVar.value.textureunit = i;
+            multitexturing.setUniform(textureVar);
+    
+            // Increment the Texture Unit counter.
+            
+            i += 1;
+        }
+        
+        // Now we get the Plane's Mesh.
+        
+        Mesh myplane = iMeshManager.createRectangle(iFrameContext.RenderedViewport.getSurface());
+        
+        if ( myplane.isInvalid() )
+        {
+#ifdef GreIsDebugMode
+            GreDebugPretty() << "'Mesh/Rectangle' was not found in database." << std::endl;
 #endif
         }
         
         else
         {
-            multitexturing.bind();
+            // Draw the Plane.
             
             drawSimpleMesh(myplane, multitexturing);
-            
-            multitexturing.unbind();
         }
+            
+        // Unbind the HardwareProgram and the Texture's units.
         
+        multitexturing.unbind();
+        
+        i = 0;
         for(auto it = fbolist.begin(); it != fbolist.end(); it++)
         {
-            fbolist.getTextureAttachement(RenderFramebufferAttachement::Color).unbind();
+            // Unbind the Texture unit.
+            
+            Texture iTexture = (*it)->getTextureAttachement(RenderFramebufferAttachement::Color);
+            
+            if ( iTexture.isInvalid() )
+            {
+#ifdef GreIsDebugMode
+                GreDebugPretty() << "Failed accessing Framebuffer Color Texture ('" << i << "')." << std::endl;
+#endif
+                continue;
+            }
+            
+            iTexture.unbind();
+            
+            // Check if the Texture has a Sampler to unbind.
+            
+            if ( iTexture.hasHardwareSamplerActivated() )
+            {
+                // This will unbind the HardwareSampler to the same texture unit the Texture was binded to.
+                iTexture.getHardwareSampler().unbind(i);
+            }
+            
+            // Increment the Texture Unit counter.
+            
+            i += 1;
         }
     }
 }
 
 void RendererPrivate::drawSimpleMesh(Mesh& mesh, HardwareProgram& prog)
 {
-    if( mesh.isExpired() )
+    if( mesh.isInvalid() )
     {
         return;
     }
     
+    // Here we provided every informations necessary to draw the Mesh. The Program,
+    // the VertexBuffer and the IndexBuffer.
+    
+    // If one of the Vertex/IndexBuffer is not found, it is replaced by one of its
+    // Software clones, if it has one.
+    // If no IndexBuffer is found, we just draw the VertexBuffer.
+    
     HardwareProgramHolder program = prog.lock();
+    HardwareVertexBuffer vbuf (nullptr);
+    HardwareIndexBuffer ibuf (nullptr);
     
-    int proghasposition = program->hasAttribLocation("position");
-    int proghasnormals = program->hasAttribLocation("normal");
-    int proghastextures = program->hasAttribLocation("texture");
+    if ( mesh.useHardwareBuffers() && !mesh.getVertexBuffer().isInvalid() )
+    {
+        vbuf = mesh.getVertexBuffer();
+    }
+    else
+    {
+        vbuf = mesh.getSoftwareVertexBuffer();
+    }
     
-    if( proghasposition < 0 )
+    if ( mesh.useHardwareBuffers() && !mesh.getIndexBuffer().isInvalid() )
+    {
+        ibuf = mesh.getIndexBuffer();
+    }
+    else
+    {
+        ibuf = mesh.getSoftwareIndexBuffer();
+    }
+    
+    if ( vbuf.isInvalid() )
     {
 #ifdef GreIsDebugMode
-        GreDebugPretty() << "No 'position' attribute in program '" << program->getName() << "'." << std::endl;
+        GreDebugPretty() << "No VertexBuffer found in Mesh '" << mesh.getName() << "'." << std::endl;
 #endif
         return;
     }
     
-    // First, we have to bind the Hardware Buffers.
-    
-    if( proghasposition >= 0)
+    if ( ibuf.isInvalid() )
     {
-        HardwareVertexBuffer vbuf = mesh.getVertexBuffer();
-        
-        if( !vbuf.isExpired() )
-        {
-            vbuf.bindAttrib(proghasposition, program);
-        }
+        drawVertexBuffer( vbuf, program );
     }
     
-    if( proghasnormals >= 0 )
+    else
     {
-        HardwareVertexBuffer nbuf = mesh.getNormalBuffer();
-        
-        if( !nbuf.isExpired() )
-        {
-            nbuf.bindAttrib(proghasnormals, program);
-        }
+        drawIndexBuffer( ibuf, vbuf, program );
     }
+}
+
+void RendererPrivate::drawVertexBuffer(const HardwareVertexBuffer& vbuf, const HardwareProgramHolder& program)
+{
+    // First, ask the HardwareProgram to binds every attributes in the VertexDescriptor.
+    // Name from the VertexDescriptor are the same used in the Program.
     
-    if( proghastextures >= 0 )
-    {
-        HardwareVertexBuffer tbuf = mesh.getTextureBuffer();
-        
-        if( !tbuf.isExpired() )
-        {
-            tbuf.bindAttrib(proghastextures, program);
-        }
-    }
+    program->bindAttribsVertex(vbuf.getVertexDescriptor());
     
-    // Then, bind the index buffer if we have one, and draws it / them.
-    for(auto indexbuf : mesh.getIndexBufferBatch().batchs)
+    // Then, we bind the Material::Default and draw the VertexBuffer as Triangles.
+    
+    drawVertexBufferPrivate(vbuf, program);
+}
+
+void RendererPrivate::drawIndexBuffer(const HardwareIndexBuffer& ibuf, const HardwareVertexBuffer& vbuf, const HardwareProgramHolder& program)
+{
+    // First, ask the HardwareProgram to binds every attributes in the VertexDescriptor.
+    // Name from the VertexDescriptor are the same used in the Program.
+    
+    program->bindAttribsVertex(vbuf.getVertexDescriptor());
+    
+    // Then, draw the IndexBatchs in the Index Buffer. The IndexBuffer is constitued by
+    // IndexBatch's, which contains Material objects. Notes for some API, the Indexes in
+    // one HardwareIndexBuffer should have the same type.
+    
+    ibuf.bind();
+    for ( auto indexbatch : ibuf.getIndexBatchVector() )
     {
-        if( !indexbuf.isExpired() )
+        if ( indexbatch.getMaterial().isInvalid() )
         {
-            indexbuf.bind();
-            
-            if(indexbuf.getMaterial().hasTexture())
-            {
-                indexbuf.getMaterial().texture.bind();
-            }
-            
-            prepareMaterial(indexbuf.getMaterial());
-            
-            drawIndexBuffer(indexbuf);
-            
-            if(indexbuf.getMaterial().hasTexture())
-            {
-                indexbuf.getMaterial().texture.unbind();
-            }
-            
-            indexbuf.unbind();
+            bindMaterial(Material::Default);
         }
         
         else
         {
-            continue;
-        }
-    }
-    
-    // If there weren't any Index Buffers, we try to display it as normal Vertex Buffer.
-    
-    if( mesh.getIndexBufferBatch().batchs.size() == 0 )
-    {
-        if(mesh.getMaterial().hasTexture())
-        {
-            mesh.getMaterial().getTexture().bind();
+            bindMaterial(indexbatch.getMaterial());
         }
         
-        prepareMaterial(mesh.getMaterial());
-        drawVertexBuffer(mesh.getVertexBuffer());
+        drawIndexBufferPrivate(ibuf, vbuf, program);
         
-        if(mesh.getMaterial().hasTexture())
+        if ( indexbatch.getMaterial().isInvalid() )
         {
-            mesh.getMaterial().getTexture().unbind();
+            unbindMaterial(Material::Default);
+        }
+        
+        else
+        {
+            unbindMaterial(indexbatch.getMaterial());
         }
     }
 }
@@ -501,7 +565,7 @@ HardwareVertexBuffer RendererPrivate::createVertexBuffer()
     return HardwareVertexBuffer::Null;
 }
 
-HardwareIndexBuffer RendererPrivate::createIndexBuffer(PrimitiveType ptype, StorageType stype)
+HardwareIndexBuffer RendererPrivate::createIndexBuffer()
 {
     GreDebugFunctionNotImplemented();
     return HardwareIndexBuffer::Null;
@@ -511,57 +575,46 @@ void RendererPrivate::loadMesh(Mesh& mesh, bool deleteCache)
 {
     // Here we wants to create GPU - stored HardwareBuffer.
     
-    if(mesh.hasSoftwareVertexBuffer())
+    if( !mesh.getSoftwareVertexBuffer().isInvalid() )
     {
-        HardwareVertexBuffer& softvbuf = mesh.getSoftwareVertexBuffer();
+        SoftwareVertexBuffer softvbuf = mesh.getSoftwareVertexBuffer();
         HardwareVertexBuffer gpuvbuf = createVertexBuffer();
-        gpuvbuf.setType(HardwareVertexBufferType::Position);
-        gpuvbuf.add(softvbuf.getVertexBatch());
+        
+        gpuvbuf.setVertexDescriptor(softvbuf.getVertexDescriptor());
+        gpuvbuf.addData(softvbuf.getData(), softvbuf.getSize());
+        
         mesh.setVertexBuffer(gpuvbuf);
     }
     
-    if(mesh.hasSoftwareNormalBuffer())
-    {
-        HardwareVertexBuffer& softvbuf2 = mesh.getSoftwareNormalBuffer();
-        HardwareVertexBuffer gpuvbuf2 = createVertexBuffer();
-        gpuvbuf2.setType(HardwareVertexBufferType::Normal);
-        gpuvbuf2.add(softvbuf2.getVertexBatch());
-        mesh.setVertexBuffer(gpuvbuf2);
-    }
     
-    if(mesh.hasSoftwareTextureBuffer())
+    if( !mesh.getSoftwareIndexBuffer().isInvalid() )
     {
-        HardwareVertexBuffer& softvbuf3 = mesh.getSoftwareTextureBuffer();
-        HardwareVertexBuffer gpuvbuf3 = createVertexBuffer();
-        gpuvbuf3.setType(HardwareVertexBufferType::Texture);
-        gpuvbuf3.add(softvbuf3.getVertexBatch());
-        mesh.setVertexBuffer(gpuvbuf3);
-    }
-    
-    if(mesh.hasSoftwareIndexBuffers())
-    {
-        HardwareIndexBufferBatch& ibatch = mesh.getSoftwareIndexBuffers();
+        SoftwareIndexBuffer softibuf = mesh.getSoftwareIndexBuffer();
+        HardwareIndexBuffer gpuibuf = createIndexBuffer();
         
-        for(auto softibuf : ibatch.batchs)
+        // As SoftwareIndexBuffer stores the 'default' IndexBatch in the Batch's vector,
+        // we can iterates through every IndexBatch.
+        
+        // Handles for IndexDescriptor should be done by the Hardware Index Buffer itself,
+        // in ::addIndexBatch.
+        
+        for ( auto batch : softibuf.getIndexBatchVector() )
         {
-            HardwareIndexBuffer gpuibuf = createIndexBuffer(softibuf.getPrimitiveType(), softibuf.getStorageType());
-            gpuibuf.add(softibuf.getIndexbatch());
-            gpuibuf.setMaterial(softibuf.getMaterial());
-            mesh.addIndexBuffer(gpuibuf);
+            gpuibuf.addIndexBatch(batch);
         }
+        
+        mesh.setIndexBuffer(gpuibuf);
     }
+    
+    // Deleting cache should be done only when we are sure everything is loaded to the
+    // GPU , so things must be done properly before deleting the cache.
     
     if(deleteCache)
     {
-        mesh.clearSoftwareBuffers();
+        mesh.onNextEvent(EventType::Update , [&] (const Event& e) {
+            mesh.clearSoftwareBuffers();
+        });
     }
-    
-    // NOTES : When loading a Mesh, the loader should create HardwareGenericVertexBuffer and HardwareGenericIndexBuffers
-    // for the created Mesh, and registers it to the Mesh using Mesh::setSoftwareVertexBuffer() and
-    // Mesh::addSoftwareIndexBuffer().
-    // Loading a Mesh should so have 2 steps : loading it from the files using an appropriate Loader, then loading it
-    // to the Renderer using Renderer::loadMesh().
-    // This permit to separate the loading from the rendering part, and also to delete the cache when unneeded.
 }
 
 TextureHolder RendererPrivate::createEmptyTexture(int width, int height)

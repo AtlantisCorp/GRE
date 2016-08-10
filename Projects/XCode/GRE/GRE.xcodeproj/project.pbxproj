@@ -217,6 +217,8 @@
 		41B8C8451C1CD058000084F2 /* Scene.h in Headers */ = {isa = PBXBuildFile; fileRef = 41B8C8441C1CD058000084F2 /* Scene.h */; };
 		41BB7F961D0F5F5B00E18BF8 /* SceneNode.h in Headers */ = {isa = PBXBuildFile; fileRef = 41BB7F951D0F5F5B00E18BF8 /* SceneNode.h */; };
 		41BB7F981D0F5F8200E18BF8 /* SceneNode.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41BB7F971D0F5F8200E18BF8 /* SceneNode.cpp */; };
+		41BD72F91D33DA42003CEC4F /* SoftwareVertexBuffer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41BD72F81D33DA42003CEC4F /* SoftwareVertexBuffer.cpp */; };
+		41BD72FC1D3A5C57003CEC4F /* SoftwareIndexBuffer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41BD72FB1D3A5C57003CEC4F /* SoftwareIndexBuffer.cpp */; };
 		41CEB00B1C86762400F9246C /* OpenGlRenderContext.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41CEB0091C86617E00F9246C /* OpenGlRenderContext.cpp */; };
 		41D1216D1C4473B7009E5B0F /* HardwareProgramVariables.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41D1216C1C4473B7009E5B0F /* HardwareProgramVariables.cpp */; };
 		41D1216F1C44759E009E5B0F /* HardwareProgramVariable.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41D1216E1C44759E009E5B0F /* HardwareProgramVariable.cpp */; };
@@ -395,6 +397,7 @@
 		419A85FD1C7A2A7D00E7407C /* WindowResource.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = WindowResource.cpp; path = ../../../Engine/src/WindowResource.cpp; sourceTree = "<group>"; };
 		419A85FF1C7A2E2D00E7407C /* LoopBehaviours.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = LoopBehaviours.h; path = ../../../Engine/inc/LoopBehaviours.h; sourceTree = "<group>"; };
 		419A86011C7A2F9E00E7407C /* LoopBehaviours.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = LoopBehaviours.cpp; path = ../../../Engine/src/LoopBehaviours.cpp; sourceTree = "<group>"; };
+		419B418D1D58EC4F0025DBD0 /* HardwareSampler.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = HardwareSampler.h; path = ../../../Engine/inc/HardwareSampler.h; sourceTree = "<group>"; };
 		41A344081C55DB2C00C2EC5C /* Variant.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Variant.h; path = ../../../Engine/inc/Variant.h; sourceTree = "<group>"; };
 		41A344091C55DD1E00C2EC5C /* Variant.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Variant.cpp; path = ../../../Engine/src/Variant.cpp; sourceTree = "<group>"; };
 		41A3440B1C56527900C2EC5C /* FrameBuffer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = FrameBuffer.h; path = ../../../Engine/inc/FrameBuffer.h; sourceTree = "<group>"; };
@@ -410,6 +413,9 @@
 		41B8C8441C1CD058000084F2 /* Scene.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Scene.h; path = ../../../Engine/inc/Scene.h; sourceTree = "<group>"; };
 		41BB7F951D0F5F5B00E18BF8 /* SceneNode.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SceneNode.h; path = ../../../Engine/inc/SceneNode.h; sourceTree = "<group>"; };
 		41BB7F971D0F5F8200E18BF8 /* SceneNode.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = SceneNode.cpp; path = ../../../Engine/src/SceneNode.cpp; sourceTree = "<group>"; };
+		41BD72F81D33DA42003CEC4F /* SoftwareVertexBuffer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = SoftwareVertexBuffer.cpp; path = ../../../Engine/src/SoftwareVertexBuffer.cpp; sourceTree = "<group>"; };
+		41BD72FA1D3A5629003CEC4F /* SoftwareIndexBuffer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = SoftwareIndexBuffer.h; path = ../../../Engine/inc/SoftwareIndexBuffer.h; sourceTree = "<group>"; };
+		41BD72FB1D3A5C57003CEC4F /* SoftwareIndexBuffer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = SoftwareIndexBuffer.cpp; path = ../../../Engine/src/SoftwareIndexBuffer.cpp; sourceTree = "<group>"; };
 		41CEB0081C86608100F9246C /* OpenGlRenderContext.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = OpenGlRenderContext.h; path = ../../../Plugins/OpenGlRenderer/OpenGlRenderContext.h; sourceTree = "<group>"; };
 		41CEB0091C86617E00F9246C /* OpenGlRenderContext.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = OpenGlRenderContext.cpp; path = ../../../Plugins/OpenGlRenderer/OpenGlRenderContext.cpp; sourceTree = "<group>"; };
 		41D1216A1C446F03009E5B0F /* HardwareProgramVariable.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = HardwareProgramVariable.h; path = ../../../Engine/inc/HardwareProgramVariable.h; sourceTree = "<group>"; };
@@ -650,11 +656,13 @@
 				4102561F1D2C249100198097 /* Frustrum.cpp */,
 				418A92501C07841B00806BA3 /* HardwareBuffer.cpp */,
 				418A92581C078A2900806BA3 /* HardwareIndexBuffer.cpp */,
+				41BD72FB1D3A5C57003CEC4F /* SoftwareIndexBuffer.cpp */,
 				410256221D2C39CE00198097 /* HardwarePixel.cpp */,
 				4102561C1D2B229500198097 /* HardwarePixelBuffer.cpp */,
 				4120041F1C3DC4330010739D /* HardwareProgram.cpp */,
 				41B2E30C1D2D853400CF5F7E /* VertexDescriptor.cpp */,
 				4131D53F1C41ED4900AB376A /* HardwareProgramManager.cpp */,
+				41BD72F81D33DA42003CEC4F /* SoftwareVertexBuffer.cpp */,
 				41D1216E1C44759E009E5B0F /* HardwareProgramVariable.cpp */,
 				41D1216C1C4473B7009E5B0F /* HardwareProgramVariables.cpp */,
 				4131D53C1C41715600AB376A /* HardwareShader.cpp */,
@@ -719,6 +727,7 @@
 				4102561E1D2C22CC00198097 /* Frustrum.h */,
 				418A924E1C075A7D00806BA3 /* HardwareBuffer.h */,
 				418A92561C07892600806BA3 /* HardwareIndexBuffer.h */,
+				41BD72FA1D3A5629003CEC4F /* SoftwareIndexBuffer.h */,
 				410256211D2C392100198097 /* HardwarePixel.h */,
 				418AF0F31D28366B00F21855 /* HardwarePixelBuffer.h */,
 				4120041E1C3DC39C0010739D /* HardwareProgram.h */,
@@ -759,6 +768,7 @@
 				418AF0F01D28315500F21855 /* SoftwarePixelBuffer.h */,
 				41877B7D1BEFAED10024B643 /* TextResource.h */,
 				418A92461C0758A500806BA3 /* Texture.h */,
+				419B418D1D58EC4F0025DBD0 /* HardwareSampler.h */,
 				414DD1CA1C51577800569E45 /* ThirdParty.h */,
 				41460A6E1D11CD52002B1185 /* Transformation.h */,
 				41A344081C55DB2C00C2EC5C /* Variant.h */,
@@ -1167,6 +1177,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				41BD72FC1D3A5C57003CEC4F /* SoftwareIndexBuffer.cpp in Sources */,
 				418A92611C07B03F00806BA3 /* Mesh.cpp in Sources */,
 				41BB7F981D0F5F8200E18BF8 /* SceneNode.cpp in Sources */,
 				411B1E2A1C715C1800941DD0 /* RenderContext.cpp in Sources */,
@@ -1195,6 +1206,7 @@
 				418AF0F21D28332400F21855 /* SoftwarePixelBuffer.cpp in Sources */,
 				41877B6E1BEFAE8D0024B643 /* Plugin.cpp in Sources */,
 				41460A701D11D10E002B1185 /* Transformation.cpp in Sources */,
+				41BD72F91D33DA42003CEC4F /* SoftwareVertexBuffer.cpp in Sources */,
 				4102561D1D2B229500198097 /* HardwarePixelBuffer.cpp in Sources */,
 				41877B6F1BEFAE8D0024B643 /* Pools.cpp in Sources */,
 				418A92631C07B23E00806BA3 /* MeshLoader.cpp in Sources */,

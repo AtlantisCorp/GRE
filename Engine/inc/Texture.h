@@ -36,8 +36,15 @@
 #include "Pools.h"
 #include "Resource.h"
 #include "SoftwarePixelBuffer.h"
+#include "HardwareSampler.h"
+#include "HardwareProgramVariable.h"
 
 GreBeginNamespace
+
+// We use this workaround in order to store a pointer to the Renderer
+// to use it later.
+
+class DLL_PUBLIC RendererPrivate;
 
 /// @brief Resumes the Texture's possible Types.
 enum class TextureType
@@ -49,32 +56,41 @@ enum class TextureType
     Null
 };
 
+/// @brief Translates the TextureType value to a String.
+static std::string TextureTypeToString(const TextureType& type);
+
+/// @brief Translates the TextureType value to HdwProgVarType.
+static HdwProgVarType TextureTypeToHdwProgType(const TextureType& type);
+
 //////////////////////////////////////////////////////////////////////
 /// @brief Represents a Texture Resource object.
 ///
-/// A Texture object should contains :
-///   - A SoftwarePixelBuffer that contains the Pixel raw data from the
-/// Resource Loader.
-///   - Some datas specific to the Rendering API (for example, the OpenGl
-/// texture id).
+/// A Texture object should contains the data related to Texture's
+/// objects, as the Images pixels.
 ///
-/// Loading a Texture object should be done only be a specific Loader.
-/// The SoftwarePixelBuffer is not guaranteed to be compatible with the
-/// Rendering API.
+/// Before being registered to the Renderer, it may holds SoftwarePixelBuffer's
+/// objects to holds the pixels. The SoftwarePixelBuffer is then transfered
+/// to the GPU by the Renderer.
 ///
-/// To load a Texture, you have to connect the Renderer Texture system
-/// with the TextureLoader system. To do this, you have to load the Texture
-/// using the Renderer, with Renderer::loadTexture(name, file, loader). You
-/// can get the Texture Loader with ResourceManager::getTextureLoaderManager().
+/// Please notes you should load a Texture file to a pre-created Texture
+/// object from the Renderer.
 ///
-/// A Texture is not an Image. An Image can be written/readen from a file,
-/// a Texture can be loaded/unloaded to/from the GPU memory.
+/// Example ( Loading file 'textures/wood.png' ) :
 ///
-/// From the Renderer point of view, loading a Texture should be :
-///   - RTextureHolder tex = Renderer::createEmptyTexture(name).
-///   - Resource* result = TextureLoader::load(&tex, file)
-///   - if ( !result ) : The Texture loading has failed, so return should
-/// be TextureHolder(nullptr).
+/// TextureHolder texture = myrenderer.loadTexture("MyWoodTexture", "textures/wood.png");
+///
+/// Other example ( Same file ) :
+///
+/// TextureHolder texture = myrenderer.createTexture("MyWoodTexture");
+/// Texture textureuser = myrenderer.getTextureManager().loadTexture(texture, "textures/wood.png");
+///
+/// Other example ( Same file ) :
+///
+/// Texture textureuser = myrenderer.getTextureManager().loadTexture("MyWoodTexture", "textures/wood.png");
+///
+/// Using the TextureManager from the Renderer can be useful to have a Texture
+/// user. Using the Renderer to load the Texture lets you with a TextureHolder,
+/// but the Texture is still registered in the Renderer's Texture Manager.
 ///
 //////////////////////////////////////////////////////////////////////
 class DLL_PUBLIC TexturePrivate : public Resource
@@ -89,7 +105,7 @@ public:
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    virtual ~TexturePrivate();
+    virtual ~TexturePrivate() noexcept(false);
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Bind the Texture unit.
@@ -146,6 +162,16 @@ public:
     //////////////////////////////////////////////////////////////////////
     virtual void setType(TextureType textype);
     
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns true if it holds an HardwareSampler activated.
+    //////////////////////////////////////////////////////////////////////
+    virtual bool hasHardwareSamplerActivated() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the activated HardwareSampler.
+    //////////////////////////////////////////////////////////////////////
+    virtual HardwareSampler getHardwareSampler();
+    
 protected:
     
     /// @brief Holds the Texture's type.
@@ -165,6 +191,9 @@ protected:
     
     /// @brief Surface for this Texture.
     Surface iSurface;
+    
+    /// @brief HardwareSampler activated for this Texture.
+    HardwareSampler iSampler;
 };
 
 /// @brief SpecializedResourceHolder for TexturePrivate.
@@ -253,6 +282,16 @@ public:
     //////////////////////////////////////////////////////////////////////
     virtual void setType(TextureType textype);
     
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns true if it holds an HardwareSampler activated.
+    //////////////////////////////////////////////////////////////////////
+    virtual bool hasHardwareSamplerActivated() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the activated HardwareSampler.
+    //////////////////////////////////////////////////////////////////////
+    virtual HardwareSampler getHardwareSampler();
+    
     static Texture Null;
 };
 
@@ -267,39 +306,109 @@ public:
     //////////////////////////////////////////////////////////////////////
     TextureLoader();
     
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    TextureLoader(const TextureLoader& rhs);
-    
     ////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////
     virtual ~TextureLoader();
     
     ////////////////////////////////////////////////////////////////////////
-    /// @brief Returns true if given Resource::Type is supported.
+    /// @brief Loads a Texture from a file.
+    /// The resulting Texture only has SoftwarePixelBuffer, and cannot be
+    /// used to render objects.
     ////////////////////////////////////////////////////////////////////////
-    virtual bool isTypeSupported (Resource::Type type) const;
+    virtual TextureHolder load(const std::string& name, const std::string& filepath) const = 0;
     
     ////////////////////////////////////////////////////////////////////////
-    /// @brief Returns a clone of this object.
-    /// Typically, this function is implemented as 'return new MyLoaderClass();',
-    /// but you are free to do whatever you want.
+    /// @brief Loads a Texture from a file to a pre-created Texture Object.
     ////////////////////////////////////////////////////////////////////////
-    virtual ResourceLoader* clone() const;
+    virtual TextureHolder load(TextureHolder& to, const std::string& filepath) const = 0;
+};
+
+/// @brief ResourceLoaderFactory for TextureLoader.
+typedef ResourceLoaderFactory<TextureLoader> TextureLoaderFactory;
+
+//////////////////////////////////////////////////////////////////////
+/// @brief Manages Texture objects.
+//////////////////////////////////////////////////////////////////////
+class DLL_PUBLIC TextureManager
+{
+public:
     
-    ////////////////////////////////////////////////////////////////////////
-    /// @brief Should load a Texture from a file.
-    /// This function is here for conveniency. The Texture object created by
-    /// this function as many chances not to be related to any drawing functions,
-    /// because no Renderer object can create the base texture object.
-    ////////////////////////////////////////////////////////////////////////
-    virtual TextureHolder load(Resource::Type type, const std::string& name, const std::string& file) const;
+    POOLED(Pools::Manager)
     
-    ////////////////////////////////////////////////////////////////////////
-    /// @brief Should load SoftwarePixelBuffers and other things into the
-    /// Renderer's created Texture object.
-    ////////////////////////////////////////////////////////////////////////
-    virtual TextureHolder load(TextureHolder& to, const std::string& file) const;
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    TextureManager();
+    
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    virtual ~TextureManager();
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Changes the Renderer used to load Texture's objects.
+    //////////////////////////////////////////////////////////////////////
+    virtual void setRenderer(RendererPrivate* renderer);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Loads a Texture from a file.
+    //////////////////////////////////////////////////////////////////////
+    virtual Texture load(const std::string& name, const std::string& filepath);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Loads a Texture to this Manager.
+    //////////////////////////////////////////////////////////////////////
+    virtual Texture load(TextureHolder& holder);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns true if given Texture is loaded.
+    //////////////////////////////////////////////////////////////////////
+    virtual bool isLoaded(const std::string& name) const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the given Texture if it is already loaded, or try
+    /// the given filepath.
+    //////////////////////////////////////////////////////////////////////
+    virtual Texture get(const std::string& name, const std::string& filepath);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the given Texture if already loaded.
+    //////////////////////////////////////////////////////////////////////
+    virtual const Texture get(const std::string& name) const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Unload the given Texture.
+    //////////////////////////////////////////////////////////////////////
+    virtual void unload(const std::string& name);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Clears every Texture objects.
+    //////////////////////////////////////////////////////////////////////
+    virtual void clearTextures();
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the Texture Loader's Factory.
+    //////////////////////////////////////////////////////////////////////
+    virtual TextureLoaderFactory& getLoaderFactory();
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the Texture Loader's Factory.
+    //////////////////////////////////////////////////////////////////////
+    virtual const TextureLoaderFactory& getLoaderFactory() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Clears the Texture Manager.
+    //////////////////////////////////////////////////////////////////////
+    virtual void clear();
+    
+protected:
+    
+    /// @brief A Renderer this Manager is holded.
+    RendererPrivate* iRenderer;
+    
+    /// @brief List of loaded Texture.
+    TextureHolderList iTextures;
+    
+    /// @brief The TextureLoader Factory.
+    TextureLoaderFactory iLoaders;
 };
 
 GreEndNamespace

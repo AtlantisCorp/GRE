@@ -35,19 +35,9 @@
 GreBeginNamespace
 
 HardwareIndexBufferPrivate::HardwareIndexBufferPrivate(const std::string& name)
-: Gre::HardwareBufferPrivate(name), iPrimitiveType(PrimitiveType::Triangles), iStorageType(StorageType::UnsignedInt)
+: Gre::HardwareBufferPrivate(name)
 {
-    iPrimitiveType = PrimitiveType::Triangles;
-    iStorageType = StorageType::UnsignedInt;
-    iFaces.indexedFaces.reserve(100);
-}
-
-HardwareIndexBufferPrivate::HardwareIndexBufferPrivate(const std::string& name, PrimitiveType ptype, StorageType stype)
-: Gre::HardwareIndexBufferPrivate(name)
-{
-    iPrimitiveType = ptype;
-    iStorageType = stype;
-    iFaces.indexedFaces.reserve(100);
+    
 }
 
 HardwareIndexBufferPrivate::~HardwareIndexBufferPrivate()
@@ -55,74 +45,43 @@ HardwareIndexBufferPrivate::~HardwareIndexBufferPrivate()
     
 }
 
-size_t HardwareIndexBufferPrivate::getSize() const
+void HardwareIndexBufferPrivate::addIndexBatch(const IndexBatch& ibatch)
 {
-    return sizeof(unsigned) * count();
+
 }
 
-size_t HardwareIndexBufferPrivate::count() const
+const IndexDescriptor& HardwareIndexBufferPrivate::getDefaultDescriptor() const
 {
-    unsigned ret = 0;
-    
-    for(auto indexedFace : iFaces.indexedFaces)
-        ret += indexedFace.indices.size();
-    
-    return ret;
+    return iDescriptor;
 }
 
-void HardwareIndexBufferPrivate::add(const IndexedFace &index)
+void HardwareIndexBufferPrivate::setDefaultDescriptor(const IndexDescriptor& desc)
 {
-    iFaces.indexedFaces.push_back(index);
-    setDirty(true);
-}
-
-void HardwareIndexBufferPrivate::add(const IndexedFaceBatch &batch)
-{
-    for(auto face : batch)
-        add(face);
-}
-
-void HardwareIndexBufferPrivate::setMaterial(const Material &material)
-{
-    iFaces.material = material;
-}
-
-Material& HardwareIndexBufferPrivate::getMaterial()
-{
-    return iFaces.material;
-}
-
-const Material& HardwareIndexBufferPrivate::getMaterial() const
-{
-    return iFaces.material;
-}
-
-PrimitiveType HardwareIndexBufferPrivate::getPrimitiveType() const
-{
-    return iPrimitiveType;
-}
-
-StorageType HardwareIndexBufferPrivate::getStorageType() const
-{
-    return iStorageType;
+    iDescriptor = desc;
 }
 
 // ---------------------------------------------------------------------------------------------------
 
 HardwareIndexBuffer::HardwareIndexBuffer(const HardwareIndexBufferPrivate* resource)
-: Gre::HardwareBuffer(resource), SpecializedResourceUser<Gre::HardwareIndexBufferPrivate>(resource)
+: ResourceUser(resource)
+, Gre::HardwareBuffer(resource)
+, SpecializedResourceUser<Gre::HardwareIndexBufferPrivate>(resource)
 {
     
 }
 
 HardwareIndexBuffer::HardwareIndexBuffer(const HardwareIndexBufferHolder& holder)
-: Gre::HardwareBuffer(holder.get()), SpecializedResourceUser<Gre::HardwareIndexBufferPrivate>(holder)
+: ResourceUser(holder)
+, Gre::HardwareBuffer(holder.get())
+, SpecializedResourceUser<Gre::HardwareIndexBufferPrivate>(holder)
 {
     
 }
 
 HardwareIndexBuffer::HardwareIndexBuffer(const HardwareIndexBuffer& user)
-: Gre::HardwareBuffer(user), SpecializedResourceUser<Gre::HardwareIndexBufferPrivate>(user)
+: ResourceUser(user)
+, Gre::HardwareBuffer(user)
+, SpecializedResourceUser<Gre::HardwareIndexBufferPrivate>(user)
 {
     
 }
@@ -142,57 +101,26 @@ const HardwareIndexBufferHolder HardwareIndexBuffer::lock() const
     return SpecializedResourceUser<HardwareIndexBufferPrivate>::lock();
 }
 
-void HardwareIndexBuffer::add(const IndexedFace &index)
+void HardwareIndexBuffer::addIndexBatch(const IndexBatch& ibatch)
 {
     auto ptr = lock();
-    if(ptr)
-        ptr->add(index);
+    if ( ptr )
+        ptr->addIndexBatch(ibatch);
 }
 
-void HardwareIndexBuffer::add(const IndexedFaceBatch &index)
+const IndexDescriptor& HardwareIndexBuffer::getDefaultDescriptor() const
 {
     auto ptr = lock();
-    if(ptr)
-        ptr->add(index);
+    if ( ptr )
+        return ptr->getDefaultDescriptor();
+    return IndexDescriptor::Default;
 }
 
-void HardwareIndexBuffer::setMaterial(const Material &material)
+void HardwareIndexBuffer::setDefaultDescriptor(const IndexDescriptor& desc)
 {
     auto ptr = lock();
-    if(ptr)
-        ptr->setMaterial(material);
-}
-
-Material& HardwareIndexBuffer::getMaterial()
-{
-    auto ptr = lock();
-    if(ptr)
-        return ptr->getMaterial();
-    return Material::Null;
-}
-
-const Material& HardwareIndexBuffer::getMaterial() const
-{
-    auto ptr = lock();
-    if(ptr)
-        return ptr->getMaterial();
-    return Material::Null;
-}
-
-PrimitiveType HardwareIndexBuffer::getPrimitiveType() const
-{
-    auto ptr = lock();
-    if(ptr)
-        return ptr->getPrimitiveType();
-    return PrimitiveType::Triangles;
-}
-
-StorageType HardwareIndexBuffer::getStorageType() const
-{
-    auto ptr = lock();
-    if(ptr)
-        return ptr->getStorageType();
-    return StorageType::UnsignedInt;
+    if ( ptr )
+        ptr->setDefaultDescriptor(desc);
 }
 
 HardwareIndexBuffer HardwareIndexBuffer::Null = HardwareIndexBuffer(nullptr);

@@ -46,7 +46,7 @@ class DLL_PUBLIC HardwarePixelBufferPrivate : public HardwareBufferPrivate
 {
 public:
     
-    POOLED(Pools::HwdBuffer)
+    POOLED(Pools::HdwBuffer)
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
@@ -70,13 +70,13 @@ public:
     /// @brief Should return a pointer to the data stored by the
     /// HardwarePixelBuffer.
     //////////////////////////////////////////////////////////////////////
-    virtual void* getData();
+    virtual char* getData();
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Should return a pointer to the data stored by the
     /// HardwarePixelBuffer.
     //////////////////////////////////////////////////////////////////////
-    virtual const void* getData() const;
+    virtual const char* getData() const;
     
 protected:
     
@@ -97,7 +97,7 @@ class DLL_PUBLIC HardwarePixelBuffer : public HardwareBuffer, public Specialized
 {
 public:
     
-    POOLED(Pools::HwdBuffer)
+    POOLED(Pools::HdwBuffer)
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
@@ -139,13 +139,13 @@ public:
     /// @brief Should return a pointer to the data stored by the
     /// HardwarePixelBuffer.
     //////////////////////////////////////////////////////////////////////
-    virtual void* getData();
+    virtual char* getData();
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Should return a pointer to the data stored by the
     /// HardwarePixelBuffer.
     //////////////////////////////////////////////////////////////////////
-    virtual const void* getData() const;
+    virtual const char* getData() const;
 };
 
 GreEndNamespace

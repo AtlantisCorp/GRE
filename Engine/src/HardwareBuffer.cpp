@@ -47,29 +47,27 @@ HardwareBufferPrivate::~HardwareBufferPrivate()
 
 size_t HardwareBufferPrivate::getSize() const
 {
-    GreDebugFunctionNotImplemented();
     return 0;
 }
 
 size_t HardwareBufferPrivate::count() const
 {
-    GreDebugFunctionNotImplemented();
     return 0;
 }
 
 void HardwareBufferPrivate::bind() const
 {
-    GreDebugFunctionNotImplemented();
+    
 }
 
 void HardwareBufferPrivate::unbind() const
 {
-    GreDebugFunctionNotImplemented();
+
 }
 
 void HardwareBufferPrivate::update() const
 {
-    GreDebugFunctionNotImplemented();
+
 }
 
 bool HardwareBufferPrivate::isDirty() const
@@ -82,28 +80,45 @@ void HardwareBufferPrivate::setDirty(bool dirty) const
     iIsDirty = dirty;
 }
 
-bool HardwareBufferPrivate::isInvalid() const
+bool HardwareBufferPrivate::isDataInvalid() const
 {
-    GreDebugFunctionNotImplemented();
     return true;
+}
+
+void HardwareBufferPrivate::addData(const char *vdata, size_t sz)
+{
+    
+}
+
+const char* HardwareBufferPrivate::getData() const
+{
+    return nullptr;
+}
+
+void HardwareBufferPrivate::clearData()
+{
+    
 }
 
 // ---------------------------------------------------------------------------------------------------
 
 HardwareBuffer::HardwareBuffer(const HardwareBufferPrivate* resource)
-: SpecializedResourceUser<Gre::HardwareBufferPrivate>(resource)
+: ResourceUser(resource)
+, SpecializedResourceUser<Gre::HardwareBufferPrivate>(resource)
 {
     
 }
 
 HardwareBuffer::HardwareBuffer(const HardwareBufferHolder& holder)
-: SpecializedResourceUser<Gre::HardwareBufferPrivate>(holder)
+: ResourceUser(holder)
+, SpecializedResourceUser<Gre::HardwareBufferPrivate>(holder)
 {
     
 }
 
 HardwareBuffer::HardwareBuffer(const HardwareBuffer& user)
-: SpecializedResourceUser<Gre::HardwareBufferPrivate>(user)
+: ResourceUser(user)
+, SpecializedResourceUser<Gre::HardwareBufferPrivate>(user)
 {
     
 }
@@ -156,6 +171,28 @@ bool HardwareBuffer::isDirty() const
     if(ptr)
         return ptr->isDirty();
     return false;
+}
+
+void HardwareBuffer::addData(const char *vdata, size_t sz)
+{
+    auto ptr = lock();
+    if ( ptr )
+        ptr->addData(vdata, sz);
+}
+
+const char* HardwareBuffer::getData() const
+{
+    auto ptr = lock();
+    if ( ptr )
+        return ptr->getData();
+    return nullptr;
+}
+
+void HardwareBuffer::clearData()
+{
+    auto ptr = lock();
+    if ( ptr )
+        ptr->clearData();
 }
 
 GreEndNamespace

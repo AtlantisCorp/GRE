@@ -34,6 +34,67 @@
 
 GreBeginNamespace
 
+size_t VertexComponentTypeGetSize(const VertexComponentType& vtype)
+{
+    size_t totsz = 0;
+
+    if ( vtype == VertexComponentType::Null )
+    {
+        
+    }
+    
+    else if ( vtype == VertexComponentType::Null1 )
+    {
+        totsz += 1 * sizeof(uint32_t);
+    }
+    
+    else if ( vtype == VertexComponentType::Null2 )
+    {
+        totsz += 2 * sizeof(uint32_t);
+    }
+    
+    else if ( vtype == VertexComponentType::Null3 )
+    {
+        totsz += 3 * sizeof(uint32_t);
+    }
+    
+    else if ( vtype == VertexComponentType::Null4 )
+    {
+        totsz += 4 * sizeof(uint32_t);
+    }
+    
+    else if ( vtype == VertexComponentType::Position )
+    {
+        totsz += 3 * sizeof(float);
+    }
+    
+    else if ( vtype == VertexComponentType::Color )
+    {
+        totsz += 4 * sizeof(uint32_t);
+    }
+    
+    else if ( vtype == VertexComponentType::Normal )
+    {
+        totsz += 3 * sizeof(float);
+    }
+    
+    else if ( vtype == VertexComponentType::Texture )
+    {
+        totsz += 2 * sizeof(float);
+    }
+    
+#ifdef GreIsDebugMode
+    else
+    {
+        GreDebugPretty() << "Bad VertexComponentType given : " << (uint32_t) vtype << "." << std::endl;
+    }
+#endif
+    
+    return totsz;
+}
+
+// ---------------------------------------------------------------------------------------------------
+
 VertexDescriptor::VertexDescriptor()
 {
     
@@ -46,8 +107,53 @@ VertexDescriptor::~VertexDescriptor()
 
 void VertexDescriptor::addComponent(const Gre::VertexComponentType &vtype)
 {
+    iComponents.push_back(vtype);
+    iSize += VertexComponentTypeGetSize(vtype);
+}
+
+void VertexDescriptor::addComponentUnique(const Gre::VertexComponentType &vtype)
+{
     removeComponent(vtype);
-    iComponents.push_back(<#const_reference __x#>)
+    iComponents.push_back(vtype);
+    iSize += VertexComponentTypeGetSize(vtype);
+}
+
+void VertexDescriptor::removeComponent(const Gre::VertexComponentType &vtype)
+{
+    for (auto it = iComponents.begin(); it != iComponents.end(); it++)
+    {
+        if( (*it) == vtype )
+        {
+            iComponents.erase(it);
+            iSize -= VertexComponentTypeGetSize(vtype);
+            break;
+        }
+    }
+}
+
+const VertexComponents& VertexDescriptor::getComponents() const
+{
+    return iComponents;
+}
+
+size_t VertexDescriptor::getSize() const
+{
+    return iSize;
+}
+
+size_t VertexDescriptor::getStride(const Gre::VertexComponentType &vtype) const
+{
+    return iSize - VertexComponentTypeGetSize(vtype);
+}
+
+VertexDescriptor VertexDescriptor::Default = VertexDescriptor();
+
+// ---------------------------------------------------------------------------------------------------
+
+VertexDescriptor& operator << (VertexDescriptor& desc, const VertexComponentType& vtype)
+{
+    desc.addComponent(vtype);
+    return desc;
 }
 
 GreEndNamespace

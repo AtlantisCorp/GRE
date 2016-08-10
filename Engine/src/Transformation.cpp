@@ -126,6 +126,8 @@ void Transformation::apply(const Gre::Transformation &transformation)
     scale(transformation.iScale);
 }
 
+Transformation Transformation::Default = Transformation();
+
 GreEndNamespace
 
 

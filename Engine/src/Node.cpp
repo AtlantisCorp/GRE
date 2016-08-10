@@ -285,19 +285,22 @@ void NodePrivate::onParentRemoved(Gre::NodePrivate *parent)
 // ---------------------------------------------------------------------------------------------------
 
 Node::Node(const NodePrivate* node)
-: SpecializedResourceUser<Gre::NodePrivate>(node)
+: ResourceUser(node)
+, SpecializedResourceUser<Gre::NodePrivate>(node)
 {
     
 }
 
 Node::Node(const NodeHolder& holder)
-: SpecializedResourceUser<Gre::NodePrivate>(holder)
+: ResourceUser(holder)
+, SpecializedResourceUser<Gre::NodePrivate>(holder)
 {
     
 }
 
 Node::Node(const Node& user)
-: SpecializedResourceUser<Gre::NodePrivate>(user)
+: ResourceUser(user)
+, SpecializedResourceUser<Gre::NodePrivate>(user)
 {
     
 }

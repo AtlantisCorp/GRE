@@ -104,6 +104,11 @@ bool ResourceHolder::isNull() const
     return iResource == nullptr;
 }
 
+bool ResourceHolder::isInvalid() const
+{
+    return iResource == nullptr;
+}
+
 ResourceHolder::operator bool() const
 {
     return iResource != nullptr;

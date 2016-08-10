@@ -130,19 +130,22 @@ bool CameraPrivate::contains(const Vector3 &object) const
 // ---------------------------------------------------------------------------------------------------
 
 Camera::Camera(const CameraPrivate* pointer)
-: SpecializedResourceUser<Gre::CameraPrivate>(pointer)
+: ResourceUser(pointer)
+, SpecializedResourceUser<Gre::CameraPrivate>(pointer)
 {
     
 }
 
 Camera::Camera(const CameraHolder& holder)
-: SpecializedResourceUser<Gre::CameraPrivate>(holder)
+: ResourceUser(holder)
+, SpecializedResourceUser<Gre::CameraPrivate>(holder)
 {
     
 }
 
 Camera::Camera(const Camera& user)
-: SpecializedResourceUser<Gre::CameraPrivate>(user)
+: ResourceUser(user)
+, SpecializedResourceUser<Gre::CameraPrivate>(user)
 {
     
 }

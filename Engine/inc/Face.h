@@ -1,56 +1,195 @@
+//////////////////////////////////////////////////////////////////////
 //
 //  Face.h
-//  GRE
+//  This source file is part of Gre
+//		(Gang's Resource Engine)
 //
-//  Created by Jacques Tronconi on 26/11/2015.
+//  Copyright (c) 2015 - 2016 Luk2010
+//  Created on 26/11/2015.
 //
-//
+//////////////////////////////////////////////////////////////////////
+/*
+ -----------------------------------------------------------------------------
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal
+ in the Software without restriction, including without limitation the rights
+ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
+ 
+ The above copyright notice and this permission notice shall be included in
+ all copies or substantial portions of the Software.
+ 
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ THE SOFTWARE.
+ -----------------------------------------------------------------------------
+ */
 
 #ifndef GRE_Face_h
 #define GRE_Face_h
 
-#include "Vertex.h"
 #include "Material.h"
 
 GreBeginNamespace
 
-/// @brief Defines a Face, with its material if it exists.
-struct DLL_PUBLIC Face
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+enum class IndexType
 {
-    std::vector<Vertex> vertexs;
-    Material            material;
-};
-typedef struct Face Face;
-
-/// @brief A face with indices to describe the vertex used.
-struct DLL_PUBLIC IndexedFace
-{
-    std::vector<unsigned> indices;
-    Material              material;
+    /// @brief Invalid
+    Null ,
     
-    IndexedFace() { }
-    ~IndexedFace() { }
+    /// @brief unsigned int 's type.
+    UnsignedInteger ,
+    
+    /// @brief short's type.
+    UnsignedShort ,
+    
+    /// @brief unsigned byte's type.
+    UnsignedByte
 };
 
-typedef std::vector<IndexedFace> IndexedFaceBatch;
-IndexedFaceBatch IndexedFaceBatchFromRaw(unsigned* indices, unsigned facenum, unsigned faceelem);
+/// @brief Returns the Size for the given type, in bytes.
+size_t IndexTypeGetSize(const IndexType& itype);
 
-/// @brief A set of IndexedFace objects, grouped by Material.
-/// The IndexedFace material are not taken in account. In this object,
-/// the faces are grouped for one material. This allow to draw multiple faces
-/// with the same material without making other api-calls in the renderer.
-class DLL_PUBLIC MaterialIndexedFace
+//////////////////////////////////////////////////////////////////////
+/// @brief Holds informations about a batch of indexes.
+//////////////////////////////////////////////////////////////////////
+class DLL_PUBLIC IndexDescriptor
 {
 public:
     
-    IndexedFaceBatch indexedFaces;
-    Material         material;
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    IndexDescriptor();
     
-    MaterialIndexedFace();
-    ~MaterialIndexedFace();
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    virtual ~IndexDescriptor();
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the Index's type.
+    //////////////////////////////////////////////////////////////////////
+    const IndexType& getType() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Change the index's type.
+    //////////////////////////////////////////////////////////////////////
+    void setType(const IndexType& type);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the Material used in this descriptor.
+    //////////////////////////////////////////////////////////////////////
+    const Material& getMaterial() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Changes the Material.
+    //////////////////////////////////////////////////////////////////////
+    void setMaterial(const Material& material);
+    
+    /// @brief A default IndexDesciptor.
+    static IndexDescriptor Default;
+    
+protected:
+    
+    /// @brief Holds the indexe's type (like int , unsigned int, ...)
+    IndexType iType;
+    
+    /// @brief Material associated to the batch of indexes.
+    Material iMaterial;
 };
 
-typedef std::vector<MaterialIndexedFace> MaterialIndexedFaceBatch;
+//////////////////////////////////////////////////////////////////////
+/// @brief A set of indexes for one Descriptor.
+///
+/// The IndexBatch's are generally stored in SoftwareIndexBuffer's. They
+/// can have a different IndexDescriptor. This can be used to differenciate
+/// the Indexes by Materials, or by type, or both.
+///
+/// When loading a Mesh, the Loader creates IndexBatch's and add them
+/// to a SoftwareIndexBuffer.
+///
+/// The buffer managed by this batch is allocated when adding memory,
+/// and is free'd when destroying the object, or when calling ::clear().
+///
+//////////////////////////////////////////////////////////////////////
+class DLL_PUBLIC IndexBatch
+{
+public:
+    
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    IndexBatch();
+    
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    IndexBatch(const IndexBatch& rhs);
+    
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    virtual ~IndexBatch();
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the IndexDescriptor.
+    //////////////////////////////////////////////////////////////////////
+    const IndexDescriptor& getDescriptor() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Changes the IndexDescriptor.
+    //////////////////////////////////////////////////////////////////////
+    void setDescriptor(const IndexDescriptor& desc);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the raw indexes data.
+    //////////////////////////////////////////////////////////////////////
+    const char* getData() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Adds data to the batch.
+    //////////////////////////////////////////////////////////////////////
+    void addData(const char* data, size_t sz);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Changes the data.
+    //////////////////////////////////////////////////////////////////////
+    void setData(const char* data, size_t sz);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the data's size.
+    //////////////////////////////////////////////////////////////////////
+    size_t getSize() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Clears the index data.
+    //////////////////////////////////////////////////////////////////////
+    void clear();
+    
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    IndexBatch& operator = (const IndexBatch& rhs);
+    
+protected:
+    
+    /// @brief Descriptor for this index's batch.
+    IndexDescriptor iDescriptor;
+    
+    /// @brief Sets of indexes.
+    char* iData;
+    
+    /// @brief Indexes's size ( in bytes ).
+    size_t iSize;
+};
+
+/// @brief std::vector for IndexBatch. Use it to store multi-materials index batches.
+typedef std::vector<IndexBatch> IndexBatchVector;
+
+/// @brief std::list for IndexBatch. Use it to store big indexes with few materials.
+typedef std::list<IndexBatch> IndexBatchList;
 
 GreEndNamespace
 

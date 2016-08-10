@@ -119,11 +119,6 @@ void PluginPrivate::stop ()
     }
 }
 
-const void* PluginPrivate::_getData() const
-{
-    return &_mHandle;
-}
-
 const std::string& PluginPrivate::getName() const
 {
     return _mName;
@@ -132,19 +127,22 @@ const std::string& PluginPrivate::getName() const
 // ---------------------------------------------------------------------------------------------------
 
 Plugin::Plugin(const PluginPrivate* pointer)
-: SpecializedResourceUser<Gre::PluginPrivate>(pointer)
+: ResourceUser(pointer)
+, SpecializedResourceUser<Gre::PluginPrivate>(pointer)
 {
     
 }
 
 Plugin::Plugin(const PluginHolder& holder)
-: SpecializedResourceUser<Gre::PluginPrivate>(holder)
+: ResourceUser(holder)
+, SpecializedResourceUser<Gre::PluginPrivate>(holder)
 {
     
 }
 
 Plugin::Plugin(const Plugin& user)
-: SpecializedResourceUser<Gre::PluginPrivate>(user)
+: ResourceUser(user)
+, SpecializedResourceUser<Gre::PluginPrivate>(user)
 {
     
 }
@@ -186,25 +184,85 @@ PluginLoader::PluginLoader ()
     
 }
 
-bool PluginLoader::isTypeSupported(Resource::Type type) const
+PluginLoader::~PluginLoader() noexcept(false)
 {
-    return type == Resource::Type::Plugin;
+    
 }
 
-Resource* PluginLoader::load(Resource::Type type, const std::string& name, const std::string& file) const
+bool PluginLoader::isLoadable(const std::string &filepath) const
 {
-    if(!isTypeSupported(type))
-        return nullptr;
+    // Check extension validity.
     
-    PluginPrivate* plugres = new PluginPrivate(name, file);
-    if(!plugres) return nullptr;
+    size_t ext = filepath.find_last_of( std::string(".") );
+    std::string extension = filepath.substr( ext + 1 , filepath.size() );
     
-    if(!plugres->start()) {
-        delete plugres;
-        return nullptr;
+    if ( extension != DYNLIB_EXTENSION )
+    {
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "'" << extension << "' is not a viable extension for Dynamic Library file. ('" << DYNLIB_EXTENSION << "' is correct.)" << std::endl;
+#endif
+        return false;
     }
     
-    return (Resource*) plugres;
+    else
+    {
+        // Try to open the file in binary mode.
+        
+        std::ifstream tmpstream ( filepath , std::ios::binary );
+        
+        if ( tmpstream )
+        {
+            return true;
+        }
+        
+        else
+        {
+#ifdef GreIsDebugMode
+            GreDebugPretty() << "File '" << filepath << "' cannot be opened." << std::endl;
+#endif
+            return false;
+        }
+    }
+}
+
+PluginHolder PluginLoader::load(const std::string &name, const std::string &file) const
+{
+    if ( !isLoadable(file) )
+    {
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "File '" << file << "' is not loadable by this Loader." << std::endl;
+#endif
+        return PluginHolder ( nullptr );
+    }
+    
+    else
+    {
+        try
+        {
+            PluginPrivate* newPlugin = new PluginPrivate ( name , file );
+            
+            if ( !newPlugin )
+            {
+#ifdef GreIsDebugMode 
+                GreDebugPretty() << "Plugin '" << name << "' could not be created." << std::endl;
+#endif
+                return PluginHolder ( nullptr );
+            }
+            
+            else
+            {
+                return PluginHolder ( newPlugin );
+            }
+        }
+        catch ( const std::exception& e )
+        {
+#ifdef GreIsDebugMode 
+            GreDebugPretty() << "Plugin '" << name << "' could not be created." << std::endl;
+            GreDebugPretty() << "Exception : " << e.what() << "." << std::endl;
+#endif
+            return PluginHolder ( nullptr );
+        }
+    }
 }
 
 ResourceLoader* PluginLoader::clone() const

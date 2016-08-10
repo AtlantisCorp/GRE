@@ -127,11 +127,6 @@ public:
     //////////////////////////////////////////////////////////////////////
     const std::string& getName() const;
     
-protected:
-    
-    /// @deprecated
-    const void* _getData() const;
-    
 private:
     
     std::string         _file;
@@ -218,7 +213,7 @@ public:
 //////////////////////////////////////////////////////////////////////
 /// @brief Loads PluginPrivate Objects.
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC PluginLoader : public FileLoader
+class DLL_PUBLIC PluginLoader : public ResourceLoader
 {
 public:
     
@@ -229,19 +224,26 @@ public:
     PluginLoader ();
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns true if the Resource desired is Resource::Plugin.
     //////////////////////////////////////////////////////////////////////
-    bool isTypeSupported(Resource::Type type) const;
+    virtual ~PluginLoader() noexcept(false);
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Loads the desired plugin file.
     //////////////////////////////////////////////////////////////////////
-    Resource* load(Resource::Type type, const std::string& name, const std::string& file) const;
+    virtual PluginHolder load(const std::string& name, const std::string& file) const;
+    
+    ////////////////////////////////////////////////////////////////////////
+    /// @brief Returns a clone of this object.
+    /// Typically, this function is implemented as 'return new MyLoaderClass();',
+    /// but you are free to do whatever you want.
+    ////////////////////////////////////////////////////////////////////////
+    virtual ResourceLoader* clone() const;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Clones the Loader.
+    /// @brief Returns true if the file given is loadable by this loader.
+    /// Basically opens the file and if success, returns true.
     //////////////////////////////////////////////////////////////////////
-    ResourceLoader* clone() const;
+    virtual bool isLoadable( const std::string& filepath ) const;
 };
 
 GreEndNamespace

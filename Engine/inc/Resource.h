@@ -1,11 +1,34 @@
-////////////////////////////////////////////////////
-//  File    : Resource.h
-//  Project : GRE
+//////////////////////////////////////////////////////////////////////
 //
-//  Created by Jacques Tronconi on 06/05/2016.
-//  
+//  Resource.h
+//  This source file is part of Gre
+//		(Gang's Resource Engine)
 //
-////////////////////////////////////////////////////
+//  Copyright (c) 2015 - 2016 Luk2010
+//  Created on 06/05/2016.
+//
+//////////////////////////////////////////////////////////////////////
+/*
+ -----------------------------------------------------------------------------
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal
+ in the Software without restriction, including without limitation the rights
+ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
+ 
+ The above copyright notice and this permission notice shall be included in
+ all copies or substantial portions of the Software.
+ 
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ THE SOFTWARE.
+ -----------------------------------------------------------------------------
+ */
 
 #ifndef GRE_Resource_h
 #define GRE_Resource_h
@@ -123,6 +146,12 @@ public:
     //////////////////////////////////////////////////////////////////////
     virtual void onEvent (const Event& e);
     
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Registers a new EventCallback function that will be called
+    /// when the next presenting event is one of given type.
+    //////////////////////////////////////////////////////////////////////
+    virtual void onNextEvent ( const EventType& etype , EventCallback callback );
+    
 protected:
     
     //////////////////////////////////////////////////////////////////////
@@ -237,6 +266,9 @@ private:
     
     /// @brief Actions related to the Listening part from the Resource.
     std::map<EventType, std::vector<std::function<void (const Event&)> > > iActions;
+    
+    /// @brief Callbacks to call on next event.
+    std::map < EventType , std::vector < EventCallback > > iNextCallbacks;
     
     /// @brief Listeners to which we must send Events.
     std::map<std::string, ResourceUser> iListeners;

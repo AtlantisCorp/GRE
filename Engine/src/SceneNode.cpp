@@ -55,15 +55,14 @@ bool SceneNodePrivate::Identificator::IsValid(SceneNodePrivate::Identifier id)
 // ---------------------------------------------------------------------------------------------------
 
 SceneNodePrivate::SceneNodePrivate(const SceneManager& creator)
-: NodePrivate(std::string("SceneNodePrivate#") + std::to_string(Identificator::Create()))
+: NodePrivate(std::string("SceneNodePrivate#") + std::to_string(Identificator::Create())), iRenderable(nullptr)
 {
 	iCreator = new SceneManager(creator);
 	iIdentifier = Identificator::Last();
-    iRenderable = Mesh::Null;
 }
 
 SceneNodePrivate::SceneNodePrivate(const SceneManager& creator, const std::string& name)
-: NodePrivate(name)
+: NodePrivate(name), iRenderable(nullptr)
 {
 	iCreator = new SceneManager(creator);
 	iIdentifier = Identificator::Create();
@@ -71,7 +70,7 @@ SceneNodePrivate::SceneNodePrivate(const SceneManager& creator, const std::strin
 }
 
 SceneNodePrivate::SceneNodePrivate(const SceneManager& creator, const std::string& name, const Mesh& renderable)
-: NodePrivate(name)
+: NodePrivate(name), iRenderable(nullptr)
 {
     iCreator = new SceneManager(creator);
     iIdentifier = Identificator::Create();
@@ -112,22 +111,52 @@ bool SceneNodePrivate::isRenderableChanged() const
     return iRenderableChanged;
 }
 
+void SceneNodePrivate::setTransformation(const Gre::Transformation &transformation)
+{
+    iTransformation = transformation;
+}
+
+const Transformation& SceneNodePrivate::getTransformation() const
+{
+    return iTransformation;
+}
+
+Matrix4 SceneNodePrivate::getModelMatrix() const
+{
+    if ( getParent() )
+    {
+        Matrix4 modelmatrix = (reinterpret_cast<const SceneNodePrivate*>(getParent()))->getModelMatrix();
+        return iTransformation.get() * modelmatrix;
+    }
+    
+    else
+    {
+        return iTransformation.get();
+    }
+}
+
 // ---------------------------------------------------------------------------------------------------
 
 SceneNode::SceneNode(SceneNodePrivate* node)
-: Node(node), SpecializedResourceUser<Gre::SceneNodePrivate>(node)
+: ResourceUser(node)
+, Node(node)
+, SpecializedResourceUser<Gre::SceneNodePrivate>(node)
 {
     
 }
 
 SceneNode::SceneNode(const SceneNodeHolder& holder)
-: Node(holder.get()), SpecializedResourceUser<Gre::SceneNodePrivate>(holder)
+: ResourceUser(holder)
+, Node(holder.get())
+, SpecializedResourceUser<Gre::SceneNodePrivate>(holder)
 {
     
 }
 
 SceneNode::SceneNode(const SceneNode& user)
-: Node(user), SpecializedResourceUser<Gre::SceneNodePrivate>(user)
+: ResourceUser(user)
+, Node(user)
+, SpecializedResourceUser<Gre::SceneNodePrivate>(user)
 {
     
 }
@@ -216,7 +245,15 @@ const Transformation& SceneNode::getTransformation() const
     {
         return ptr->getTransformation();
     }
-    return Transformation();
+    return Transformation::Default;
+}
+
+Matrix4 SceneNode::getModelMatrix() const
+{
+    auto ptr = lock();
+    if ( ptr )
+        return ptr->getModelMatrix();
+    return Matrix4(0);
 }
 
 SceneNode SceneNode::Null = SceneNode(nullptr);

@@ -37,10 +37,7 @@ GreBeginNamespace
 HardwareVertexBufferPrivate::HardwareVertexBufferPrivate(const std::string& name)
 : Gre::HardwareBufferPrivate(name)
 {
-    iAllowDuplicates = false;
-    iColorActivated = false;
-    iTexCoordActivated = false;
-    iVertexs.reserve(100);
+    
 }
 
 HardwareVertexBufferPrivate::~HardwareVertexBufferPrivate()
@@ -48,85 +45,38 @@ HardwareVertexBufferPrivate::~HardwareVertexBufferPrivate()
     
 }
 
-size_t HardwareVertexBufferPrivate::getSize() const
+const VertexDescriptor& HardwareVertexBufferPrivate::getVertexDescriptor() const
 {
-    return sizeof(Vertex) * count();
+    return iComponents;
 }
 
-size_t HardwareVertexBufferPrivate::count() const
+void HardwareVertexBufferPrivate::setVertexDescriptor(const Gre::VertexDescriptor &vdesc)
 {
-    return iVertexs.size();
-}
-
-void HardwareVertexBufferPrivate::add(const Vertex &vertex)
-{
-    if(areDuplicatesAllowed()) {
-        iVertexs.push_back(vertex);
-        setDirty(true);
-    }
-    else if(!contains(vertex)) {
-        iVertexs.push_back(vertex);
-        setDirty(true);
-    }
-}
-
-void HardwareVertexBufferPrivate::add(const VertexBatch &batch)
-{
-    for(auto vertex : batch)
-        add(vertex);
-}
-
-bool HardwareVertexBufferPrivate::contains(const Vertex& vertex) const
-{
-    return std::find(iVertexs.begin(), iVertexs.end(), vertex) != iVertexs.end();
-}
-
-void HardwareVertexBufferPrivate::setDuplicatesAllowed(bool allowed)
-{
-    iAllowDuplicates = allowed;
-}
-
-bool HardwareVertexBufferPrivate::areDuplicatesAllowed() const
-{
-    return iAllowDuplicates;
-}
-
-void HardwareVertexBufferPrivate::activateColor(bool activate)
-{
-    iColorActivated = activate;
-}
-
-bool HardwareVertexBufferPrivate::isColorActivated() const
-{
-    return iColorActivated;
-}
-
-void HardwareVertexBufferPrivate::activateTexCoord(bool activate)
-{
-    iTexCoordActivated = activate;
-}
-
-bool HardwareVertexBufferPrivate::isTexCoordActivated() const
-{
-    return iTexCoordActivated;
+    iComponents = vdesc;
 }
 
 // ---------------------------------------------------------------------------------------------------
 
 HardwareVertexBuffer::HardwareVertexBuffer(const HardwareVertexBufferPrivate* pointer)
-: HardwareBuffer(pointer), SpecializedResourceUser<Gre::HardwareVertexBufferPrivate>(pointer)
+: ResourceUser(pointer)
+, HardwareBuffer(pointer)
+, SpecializedResourceUser<Gre::HardwareVertexBufferPrivate>(pointer)
 {
     
 }
 
 HardwareVertexBuffer::HardwareVertexBuffer(const HardwareVertexBufferHolder& holder)
-: HardwareBuffer(holder.get()), SpecializedResourceUser<Gre::HardwareVertexBufferPrivate>(holder)
+: ResourceUser(holder)
+, HardwareBuffer(holder.get())
+, SpecializedResourceUser<Gre::HardwareVertexBufferPrivate>(holder)
 {
     
 }
 
 HardwareVertexBuffer::HardwareVertexBuffer(const HardwareVertexBuffer& user)
-: HardwareBuffer(user), SpecializedResourceUser<Gre::HardwareVertexBufferPrivate>(user)
+: ResourceUser(user)
+, HardwareBuffer(user)
+, SpecializedResourceUser<Gre::HardwareVertexBufferPrivate>(user)
 {
     
 }
@@ -146,71 +96,19 @@ const HardwareVertexBufferHolder HardwareVertexBuffer::lock() const
     return SpecializedResourceUser<HardwareVertexBufferPrivate>::lock();
 }
 
-void HardwareVertexBuffer::add(const Vertex& vertex)
+const VertexDescriptor& HardwareVertexBuffer::getVertexDescriptor() const
 {
     auto ptr = lock();
-    if(ptr)
-        ptr->add(vertex);
+    if ( ptr )
+        return ptr->getVertexDescriptor();
+    return VertexDescriptor::Default;
 }
 
-void HardwareVertexBuffer::add(const VertexBatch &batch)
+void HardwareVertexBuffer::setVertexDescriptor(const Gre::VertexDescriptor &vdesc)
 {
     auto ptr = lock();
-    if(ptr)
-        ptr->add(batch);
-}
-
-bool HardwareVertexBuffer::contains(const Vertex &vertex) const
-{
-    auto ptr = lock();
-    if(ptr)
-        return ptr->contains(vertex);
-    return false;
-}
-
-void HardwareVertexBuffer::setDuplicatesAllowed(bool allowed)
-{
-    auto ptr = lock();
-    if(ptr)
-        ptr->setDuplicatesAllowed(allowed);
-}
-
-bool HardwareVertexBuffer::areDuplicatesAllowed() const
-{
-    auto ptr = lock();
-    if(ptr)
-        return ptr->areDuplicatesAllowed();
-    return false;
-}
-
-void HardwareVertexBuffer::activateColor(bool activate)
-{
-    auto ptr = lock();
-    if(ptr)
-        ptr->activateColor(activate);
-}
-
-bool HardwareVertexBuffer::isColorActivated() const
-{
-    auto ptr = lock();
-    if(ptr)
-        return ptr->isColorActivated();
-    return false;
-}
-
-void HardwareVertexBuffer::activateTexCoord(bool activate)
-{
-    auto ptr = lock();
-    if(ptr)
-        ptr->activateTexCoord(activate);
-}
-
-bool HardwareVertexBuffer::isTexCoordActivated() const
-{
-    auto ptr = lock();
-    if(ptr)
-        return ptr->isTexCoordActivated();
-    return false;
+    if ( ptr )
+        ptr->setVertexDescriptor(vdesc);
 }
 
 HardwareVertexBuffer HardwareVertexBuffer::Null = HardwareVertexBuffer(nullptr);

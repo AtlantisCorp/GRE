@@ -46,7 +46,7 @@ class DLL_PUBLIC SoftwarePixelBufferPrivate : public HardwarePixelBufferPrivate
 {
 public:
     
-    POOLED(Pools::HwdBuffer)
+    POOLED(Pools::HdwBuffer)
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
@@ -65,13 +65,13 @@ public:
     /// @brief Should return a pointer to the data stored by the
     /// HardwarePixelBuffer.
     //////////////////////////////////////////////////////////////////////
-    virtual void* getData();
+    virtual char* getData();
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Should return a pointer to the data stored by the
     /// HardwarePixelBuffer.
     //////////////////////////////////////////////////////////////////////
-    virtual const void* getData() const;
+    virtual const char* getData() const;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the size of the buffer, in bytes.
@@ -86,12 +86,12 @@ public:
     //////////////////////////////////////////////////////////////////////
     /// @brief Sets the data buffer.
     //////////////////////////////////////////////////////////////////////
-    virtual void setData(const void* data, size_t sz);
+    virtual void setData(const char* data, size_t sz);
     
 protected:
     
     /// @brief Holds the data, independently from its type.
-    void* iPixBuffer;
+    char* iPixBuffer;
     
     /// @brief Size of the data, in bytes.
     size_t iSize;
@@ -109,7 +109,7 @@ class DLL_PUBLIC SoftwarePixelBuffer : public HardwarePixelBuffer, public Specia
 {
 public:
     
-    POOLED(Pools::HwdBuffer)
+    POOLED(Pools::HdwBuffer)
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
@@ -146,13 +146,13 @@ public:
     /// @brief Should return a pointer to the data stored by the
     /// HardwarePixelBuffer.
     //////////////////////////////////////////////////////////////////////
-    virtual void* getData();
+    virtual char* getData();
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Should return a pointer to the data stored by the
     /// HardwarePixelBuffer.
     //////////////////////////////////////////////////////////////////////
-    virtual const void* getData() const;
+    virtual const char* getData() const;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the size of the buffer, in bytes.
@@ -167,7 +167,7 @@ public:
     //////////////////////////////////////////////////////////////////////
     /// @brief Sets the data buffer.
     //////////////////////////////////////////////////////////////////////
-    virtual void setData(const void* data, size_t sz);
+    virtual void setData(const char* data, size_t sz);
     
     /// @brief Null SoftwarePixelBuffer.
     static SoftwarePixelBuffer Null;

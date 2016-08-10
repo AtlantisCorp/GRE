@@ -123,19 +123,22 @@ void RenderTargetPrivate::onRenderFinished() const
 // ---------------------------------------------------------------------------------------------------
 
 RenderTarget::RenderTarget(const RenderTargetPrivate* pointer)
-: SpecializedResourceUser<Gre::RenderTargetPrivate>(pointer)
+: ResourceUser(pointer)
+, SpecializedResourceUser<Gre::RenderTargetPrivate>(pointer)
 {
     
 }
 
 RenderTarget::RenderTarget(const RenderTargetHolder& holder)
-: SpecializedResourceUser<Gre::RenderTargetPrivate>(holder)
+: ResourceUser(holder)
+, SpecializedResourceUser<Gre::RenderTargetPrivate>(holder)
 {
     
 }
 
 RenderTarget::RenderTarget(const RenderTarget& user)
-: SpecializedResourceUser<Gre::RenderTargetPrivate>(user)
+: ResourceUser(user)
+, SpecializedResourceUser<Gre::RenderTargetPrivate>(user)
 {
     
 }
