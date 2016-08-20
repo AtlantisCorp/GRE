@@ -134,7 +134,7 @@ size_t SoftwareVertexBufferPrivate::count() const
 SoftwareVertexBuffer::SoftwareVertexBuffer(const SoftwareVertexBufferPrivate* pointer)
 : ResourceUser(pointer)
 , Gre::HardwareVertexBuffer(pointer)
-, SpecializedResourceUser<Gre::SoftwareVertexBufferPrivate>(pointer)
+// , SpecializedResourceUser<Gre::SoftwareVertexBufferPrivate>(pointer)
 {
     
 }
@@ -142,7 +142,7 @@ SoftwareVertexBuffer::SoftwareVertexBuffer(const SoftwareVertexBufferPrivate* po
 SoftwareVertexBuffer::SoftwareVertexBuffer(const SoftwareVertexBufferHolder& holder)
 : ResourceUser(holder)
 , Gre::HardwareVertexBuffer(holder.get())
-, SpecializedResourceUser<Gre::SoftwareVertexBufferPrivate>(holder)
+// , SpecializedResourceUser<Gre::SoftwareVertexBufferPrivate>(holder)
 {
     
 }
@@ -150,7 +150,7 @@ SoftwareVertexBuffer::SoftwareVertexBuffer(const SoftwareVertexBufferHolder& hol
 SoftwareVertexBuffer::SoftwareVertexBuffer(const SoftwareVertexBuffer& user)
 : ResourceUser(user)
 , Gre::HardwareVertexBuffer(user)
-, SpecializedResourceUser<Gre::SoftwareVertexBufferPrivate>(user)
+// , SpecializedResourceUser<Gre::SoftwareVertexBufferPrivate>(user)
 {
     
 }
@@ -162,12 +162,12 @@ SoftwareVertexBuffer::~SoftwareVertexBuffer()
 
 SoftwareVertexBufferHolder SoftwareVertexBuffer::lock()
 {
-    return SpecializedResourceUser<SoftwareVertexBufferPrivate>::lock();
+    return GreUserLockCast(SoftwareVertexBufferHolder, SoftwareVertexBufferPrivate, HardwareVertexBuffer);
 }
 
 const SoftwareVertexBufferHolder SoftwareVertexBuffer::lock() const
 {
-    return SpecializedResourceUser<SoftwareVertexBufferPrivate>::lock();
+    return GreUserConstLockCast(SoftwareVertexBufferHolder, SoftwareVertexBufferPrivate, HardwareVertexBuffer);
 }
 
 SoftwareVertexBuffer SoftwareVertexBuffer::Null = SoftwareVertexBuffer(nullptr);

@@ -1,10 +1,34 @@
+//////////////////////////////////////////////////////////////////////
 //
 //  Version.h
-//  GRE
+//  This source file is part of Gre
+//		(Gang's Resource Engine)
 //
-//  Created by Jacques Tronconi on 23/11/2015.
+//  Copyright (c) 2015 - 2016 Luk2010
+//  Created on 23/11/2015.
 //
-//
+//////////////////////////////////////////////////////////////////////
+/*
+ -----------------------------------------------------------------------------
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal
+ in the Software without restriction, including without limitation the rights
+ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
+ 
+ The above copyright notice and this permission notice shall be included in
+ all copies or substantial portions of the Software.
+ 
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ THE SOFTWARE.
+ -----------------------------------------------------------------------------
+ */
 
 #ifndef GRE_Version_h
 #define GRE_Version_h
@@ -230,6 +254,66 @@ private:
 };
 
 typedef GreExceptionWithText GreUnsupportedOperation;
+
+/// @brief Exception called when a call from ResourceUser fails.
+typedef GreExceptionWithText GreInvalidUserException;
+
+//////////////////////////////////////////////////////////////////////
+/// @brief Describes an Error where a Constructor has failed to
+/// initialize.
+//////////////////////////////////////////////////////////////////////
+class GreConstructorException : public GreException
+{
+public:
+    
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    GreConstructorException(const char* constructor);
+    
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    GreConstructorException(const char* constructor, const char* error);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Tells which was the Constructor involved, and the error.
+    //////////////////////////////////////////////////////////////////////
+    const char* what() const throw();
+    
+private:
+    
+    /// @brief Constructor involved.
+    std::string iConstructor;
+    
+    /// @brief Error involved.
+    std::string iError;
+};
+
+//////////////////////////////////////////////////////////////////////
+/// @brief Exception from Invalid Index.
+//////////////////////////////////////////////////////////////////////
+class GreIndexException : public GreException
+{
+public:
+    
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    GreIndexException(const char* emitter, size_t idx, size_t max);
+    
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    const char* what() const throw();
+    
+private:
+    
+    /// @brief Emitter who send this Exception.
+    std::string iEmitter;
+    
+    /// @brief Index given.
+    size_t iIndex;
+    
+    /// @brief Maximum index that could be reached.
+    size_t iMaxIndex;
+};
 
 typedef std::vector<std::string> StringList;
 typedef glm::vec2 Vector2;

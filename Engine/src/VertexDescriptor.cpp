@@ -93,6 +93,63 @@ size_t VertexComponentTypeGetSize(const VertexComponentType& vtype)
     return totsz;
 }
 
+std::string VertexComponentTypeToString(const VertexComponentType& component)
+{
+    if ( component == VertexComponentType::Null )
+    {
+        return "Null";
+    }
+    
+    else if ( component == VertexComponentType::Null1 )
+    {
+        return "Null1";
+    }
+    
+    else if ( component == VertexComponentType::Null2 )
+    {
+        return "Null2";
+    }
+    
+    else if ( component == VertexComponentType::Null3 )
+    {
+        return "Null3";
+    }
+    
+    else if ( component == VertexComponentType::Null4 )
+    {
+        return "Null4";
+    }
+    
+    else if ( component == VertexComponentType::Position )
+    {
+        return "Position";
+    }
+    
+    else if ( component == VertexComponentType::Normal )
+    {
+        return "Normal";
+    }
+    
+    else if ( component == VertexComponentType::Texture )
+    {
+        return "Texture";
+    }
+    
+    else if ( component == VertexComponentType::Color )
+    {
+        return "Color";
+    }
+    
+#ifdef GreIsDebugMode
+    else
+    {
+        GreDebugPretty() << "Component given not found ('" << (int) component << "')." << std::endl;
+    }
+#endif
+    
+    return std::string();
+}
+
 // ---------------------------------------------------------------------------------------------------
 
 VertexDescriptor::VertexDescriptor()
@@ -139,6 +196,30 @@ const VertexComponents& VertexDescriptor::getComponents() const
 size_t VertexDescriptor::getSize() const
 {
     return iSize;
+}
+
+size_t VertexDescriptor::getComponentLocation(const Gre::VertexComponentType &component) const
+{
+    size_t loc = 0;
+    
+    for ( auto comp : iComponents )
+    {
+        if ( comp == component )
+        {
+            return loc;
+        }
+        
+        else
+        {
+            loc += VertexComponentTypeGetSize(comp);
+        }
+    }
+    
+#ifdef GreIsDebugMode
+    GreDebugPretty() << "Component '" << VertexComponentTypeToString(component) << "' not found in Vertex." << std::endl;
+#endif
+    
+    return 0;
 }
 
 size_t VertexDescriptor::getStride(const Gre::VertexComponentType &vtype) const

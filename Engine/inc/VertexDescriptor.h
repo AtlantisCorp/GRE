@@ -86,6 +86,9 @@ typedef std::vector<VertexComponentType> VertexComponents;
 /// @brief Returns the size of given Component, in bytes.
 size_t VertexComponentTypeGetSize(const VertexComponentType& vtype);
 
+/// @brief Returns a Readable name for given Component.
+std::string VertexComponentTypeToString ( const VertexComponentType& component );
+
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 class DLL_PUBLIC VertexDescriptor
@@ -126,6 +129,11 @@ public:
     /// Components)
     //////////////////////////////////////////////////////////////////////
     virtual size_t getSize() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the Component location in the Vertex structure.
+    //////////////////////////////////////////////////////////////////////
+    virtual size_t getComponentLocation ( const VertexComponentType& component ) const;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the stride between two same Components. ( getSize()

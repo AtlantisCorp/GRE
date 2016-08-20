@@ -35,11 +35,9 @@
 GreBeginNamespace
 
 SoftwareIndexBufferPrivate::SoftwareIndexBufferPrivate(const std::string& name)
-: Gre::HardwareIndexBufferPrivate(name), iIndexes()
+: Gre::HardwareIndexBufferPrivate(name)
 {
-    IndexBatch idefbatch;
-    idefbatch.setDescriptor(IndexDescriptor::Default);
-    iIndexes.push_back(idefbatch);
+    
 }
 
 SoftwareIndexBufferPrivate::~SoftwareIndexBufferPrivate() noexcept(false)
@@ -47,86 +45,30 @@ SoftwareIndexBufferPrivate::~SoftwareIndexBufferPrivate() noexcept(false)
     
 }
 
-const IndexBatchVector& SoftwareIndexBufferPrivate::getIndexBatchVector() const
+void SoftwareIndexBufferPrivate::onUpdateEvent(const Gre::UpdateEvent &e)
 {
-    return iIndexes;
-}
-
-void SoftwareIndexBufferPrivate::setIndexBatchVector(const IndexBatchVector &ivector)
-{
-    iIndexes = ivector;
-}
-
-void SoftwareIndexBufferPrivate::addIndexBatch(const Gre::IndexBatch &ibatch)
-{
-    iIndexes.push_back(ibatch);
-}
-
-void SoftwareIndexBufferPrivate::addData(const char *vdata, size_t sz)
-{
-    auto idefbatch = iIndexes.at(0);
-    idefbatch.addData(vdata, sz);
-}
-
-const char* SoftwareIndexBufferPrivate::getData() const
-{
-    return iIndexes.at(0).getData();
-}
-
-void SoftwareIndexBufferPrivate::clearData()
-{
-    for ( int i = 0; i < iIndexes.size(); ++i )
-    {
-        iIndexes.at(i).clear();
-    }
-}
-
-size_t SoftwareIndexBufferPrivate::getSize() const
-{
-    size_t totsz = 0;
-    
-    for ( int i = 0; i < iIndexes.size(); ++i )
-    {
-        totsz += iIndexes[i].getSize();
-    }
-    
-    return totsz;
-}
-
-size_t SoftwareIndexBufferPrivate::count() const
-{
-    size_t totcount = 0;
-    
-    for ( int i = 0; i < iIndexes.size(); ++i )
-    {
-        totcount += iIndexes[i].getSize() / IndexTypeGetSize(iIndexes[i].getDescriptor().getType());
-    }
-    
-    return totcount;
+    iDataChanged = false;
 }
 
 // ---------------------------------------------------------------------------------------------------
 
 SoftwareIndexBuffer::SoftwareIndexBuffer(const SoftwareIndexBufferPrivate* pointer)
 : Gre::ResourceUser(pointer),
-  Gre::HardwareIndexBuffer(pointer),
-  SpecializedResourceUser<Gre::SoftwareIndexBufferPrivate>(pointer)
+  Gre::HardwareIndexBuffer(pointer)
 {
     
 }
 
 SoftwareIndexBuffer::SoftwareIndexBuffer(const SoftwareIndexBufferHolder& holder)
 : Gre::ResourceUser(holder),
-  Gre::HardwareIndexBuffer(holder.get()),
-  SpecializedResourceUser<Gre::SoftwareIndexBufferPrivate>(holder)
+  Gre::HardwareIndexBuffer(holder.get())
 {
     
 }
 
 SoftwareIndexBuffer::SoftwareIndexBuffer(const SoftwareIndexBuffer& user)
 : Gre::ResourceUser(user),
-  Gre::HardwareIndexBuffer(user),
-  SpecializedResourceUser<Gre::SoftwareIndexBufferPrivate>(user)
+  Gre::HardwareIndexBuffer(user)
 {
     
 }
@@ -138,27 +80,12 @@ SoftwareIndexBuffer::~SoftwareIndexBuffer()
 
 SoftwareIndexBufferHolder SoftwareIndexBuffer::lock()
 {
-    return SpecializedResourceUser<SoftwareIndexBufferPrivate>::lock();
+    return GreUserLockCast(SoftwareIndexBufferHolder, SoftwareIndexBufferPrivate, HardwareIndexBuffer);
 }
 
 const SoftwareIndexBufferHolder SoftwareIndexBuffer::lock() const
 {
-    return SpecializedResourceUser<SoftwareIndexBufferPrivate>::lock();
-}
-
-const IndexBatchVector SoftwareIndexBuffer::getIndexBatchVector() const
-{
-    auto ptr = lock();
-    if ( ptr )
-        return ptr->getIndexBatchVector();
-    return IndexBatchVector();
-}
-
-void SoftwareIndexBuffer::setIndexBatchVector(const IndexBatchVector &ivector)
-{
-    auto ptr = lock();
-    if ( ptr )
-        ptr->setIndexBatchVector(ivector);
+    return GreUserConstLockCast(SoftwareIndexBufferHolder, SoftwareIndexBufferPrivate, HardwareIndexBuffer);
 }
 
 SoftwareIndexBuffer SoftwareIndexBuffer::Null = SoftwareIndexBuffer(nullptr);

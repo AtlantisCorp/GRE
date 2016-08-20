@@ -71,6 +71,30 @@ const HardwareProgramVariable& HardwareProgramVariables::get(const std::string &
     return HardwareProgramVariable::Null;
 }
 
+bool HardwareProgramVariables::has(const std::string &name) const
+{
+    if ( !name.empty() )
+    {
+        for ( auto it = begin(); it != end(); it++ )
+        {
+            if ( (*it).name == name )
+            {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    else
+    {
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "Invalid 'name' given." << std::endl;
+#endif
+        return false;
+    }
+}
+
 void HardwareProgramVariables::remove(const std::string &name)
 {
     for(auto it = begin(); it != end(); it++)

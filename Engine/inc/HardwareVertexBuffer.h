@@ -81,7 +81,7 @@ typedef SpecializedResourceHolderList<HardwareVertexBufferPrivate> HardwareVerte
 //////////////////////////////////////////////////////////////////////
 /// @brief Proxy to the HardwareVertexBufferPrivate object.
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC HardwareVertexBuffer : public HardwareBuffer, virtual public SpecializedResourceUser<HardwareVertexBufferPrivate>
+class DLL_PUBLIC HardwareVertexBuffer : public HardwareBuffer /* , virtual public SpecializedResourceUser<HardwareVertexBufferPrivate> */
 {
 public:
     

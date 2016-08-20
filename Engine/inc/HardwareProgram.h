@@ -37,6 +37,7 @@
 #include "Resource.h"
 #include "HardwareShader.h"
 #include "HardwareProgramVariables.h"
+#include "VertexDescriptor.h"
 
 GreBeginNamespace
 
@@ -149,6 +150,44 @@ public:
     /// @brief Activate the given Texture Unit.
     //////////////////////////////////////////////////////////////////////
     virtual void bindTextureUnit ( int unit ) const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Binds the given VertexDescriptor.
+    /// The Attributes should be binded in the order given by the descriptor,
+    /// or if the name corresponding to given entree already exists in the
+    /// HardwareProgram.
+    ///
+    /// @param descriptor : The descriptor that should describe the Vertex
+    /// structure.
+    /// @param data : A generic pointer used to point to the first Vertex's
+    /// data. This pointer should be 'nullptr' if the first Vertex used is
+    /// the first data of an HardwareBuffer ( and not a SoftwareBuffer ).
+    ///
+    //////////////////////////////////////////////////////////////////////
+    virtual void bindAttribsVertex ( const VertexDescriptor& descriptor, const char* data ) const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the location for the given component.
+    /// If this component is not found, it will return '-1' .
+    //////////////////////////////////////////////////////////////////////
+    virtual int getAttribLocation ( const VertexComponentType& component ) const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Sets the data that should be given as argument for the
+    /// HardwareProgram at given index.
+    ///
+    /// @param index : Location for the data to be set.
+    /// @param stride : The stride between two contiguous data.
+    /// @param data : A pointer to an array of data.
+    ///
+    //////////////////////////////////////////////////////////////////////
+    virtual void setAttribData ( int index , size_t stride , const char* data ) const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Bind an Attribute to the HardwareProgram's given location.
+    /// This should be called before linking the HardwareProgram.
+    //////////////////////////////////////////////////////////////////////
+    virtual void bindAttributeLocation ( const VertexComponentType& component, int index );
     
 protected:
     
@@ -282,6 +321,44 @@ public:
     /// @brief Activate the given Texture Unit.
     //////////////////////////////////////////////////////////////////////
     virtual void bindTextureUnit ( int unit ) const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Binds the given VertexDescriptor.
+    /// The Attributes should be binded in the order given by the descriptor,
+    /// or if the name corresponding to given entree already exists in the
+    /// HardwareProgram.
+    ///
+    /// @param descriptor : The descriptor that should describe the Vertex
+    /// structure.
+    /// @param data : A generic pointer used to point to the first Vertex's
+    /// data. This pointer should be 'nullptr' if the first Vertex used is
+    /// the first data of an HardwareBuffer ( and not a SoftwareBuffer ).
+    ///
+    //////////////////////////////////////////////////////////////////////
+    virtual void bindAttribsVertex ( const VertexDescriptor& descriptor, const char* data ) const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the location for the given component.
+    /// If this component is not found, it will return '-1' .
+    //////////////////////////////////////////////////////////////////////
+    virtual int getAttribLocation ( const VertexComponentType& component ) const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Sets the data that should be given as argument for the
+    /// HardwareProgram at given index.
+    ///
+    /// @param index : Location for the data to be set.
+    /// @param stride : The stride between two contiguous data.
+    /// @param data : A pointer to an array of data.
+    ///
+    //////////////////////////////////////////////////////////////////////
+    virtual void setAttribData ( int index , size_t stride , const char* data ) const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Bind an Attribute to the HardwareProgram's given location.
+    /// This should be called before linking the HardwareProgram.
+    //////////////////////////////////////////////////////////////////////
+    virtual void bindAttributeLocation ( const VertexComponentType& component, int index );
     
     /// @brief Null HardwareProgram.
     static HardwareProgram Null;

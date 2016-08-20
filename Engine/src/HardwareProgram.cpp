@@ -157,22 +157,90 @@ void HardwareProgramPrivate::setCompiled(bool flag)
     iNeedsCompilation = flag;
 }
 
+void HardwareProgramPrivate::bindAttribsVertex(const VertexDescriptor &descriptor, const char* data) const
+{
+    if ( iNeedsCompilation )
+    {
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "HardwareProgram '" << getName() << "' is not compiled." << std::endl;
+#endif
+        return;
+    }
+    
+    if ( descriptor.getSize() )
+    {
+        VertexComponents components = descriptor.getComponents();
+        
+        for ( auto comp : components )
+        {
+            if ( VertexComponentTypeGetSize(comp) )
+            {
+                int index = getAttribLocation(comp);
+                
+                if ( index >= 0 )
+                {
+                    setAttribData(index, descriptor.getStride(comp), data + descriptor.getComponentLocation(comp) );
+                }
+                
+                else
+                {
+#ifdef GreIsDebugMode
+                    GreDebugPretty() << "Attribute '" << VertexComponentTypeToString(comp) << "' not found in HardwareProgram '" << getName() << "'." << std::endl;
+#endif
+                }
+            }
+        }
+    }
+    
+    else
+    {
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "Descriptor given is empty." << std::endl;
+#endif
+    }
+}
+
+int HardwareProgramPrivate::getAttribLocation(const VertexComponentType& component) const
+{
+#ifdef GreIsDebugMode
+    GreDebugPretty() << "Not implemented." << std::endl;
+#endif
+    return -1;
+}
+
+void HardwareProgramPrivate::setAttribData(int index, size_t stride, const char *data) const
+{
+#ifdef GreIsDebugMode
+    GreDebugPretty() << "Not implemented." << std::endl;
+#endif
+}
+
+void HardwareProgramPrivate::bindAttributeLocation(const Gre::VertexComponentType &component, int index)
+{
+#ifdef GreIsDebugMode
+    GreDebugPretty() << "Not implemented." << std::endl;
+#endif
+}
+
 // ---------------------------------------------------------------------------------------------------
 
 HardwareProgram::HardwareProgram(const HardwareProgramPrivate* pointer)
-: SpecializedResourceUser<HardwareProgramPrivate>(pointer)
+: ResourceUser(pointer)
+, SpecializedResourceUser<HardwareProgramPrivate>(pointer)
 {
     
 }
 
 HardwareProgram::HardwareProgram(const HardwareProgramHolder& holder)
-: SpecializedResourceUser<HardwareProgramPrivate>(holder)
+: ResourceUser(holder)
+, SpecializedResourceUser<HardwareProgramPrivate>(holder)
 {
     
 }
 
 HardwareProgram::HardwareProgram(const HardwareProgram& user)
-: SpecializedResourceUser<HardwareProgramPrivate>(user)
+: ResourceUser(user)
+, SpecializedResourceUser<HardwareProgramPrivate>(user)
 {
     
 }
@@ -283,6 +351,35 @@ void HardwareProgram::bindTextureUnit(int unit) const
     auto ptr = lock();
     if ( ptr )
         ptr->bindTextureUnit(unit);
+}
+
+void HardwareProgram::bindAttribsVertex(const Gre::VertexDescriptor &descriptor, const char* data) const
+{
+    auto ptr = lock();
+    if ( ptr )
+        ptr->bindAttribsVertex(descriptor, data);
+}
+
+int HardwareProgram::getAttribLocation(const Gre::VertexComponentType &component) const
+{
+    auto ptr = lock();
+    if ( ptr )
+        return ptr->getAttribLocation(component);
+    return -1;
+}
+
+void HardwareProgram::setAttribData(int index, size_t stride, const char *data) const
+{
+    auto ptr = lock();
+    if ( ptr )
+        ptr->setAttribData(index, stride, data);
+}
+
+void HardwareProgram::bindAttributeLocation(const Gre::VertexComponentType &component, int index)
+{
+    auto ptr = lock();
+    if ( ptr )
+        ptr->bindAttributeLocation(component, index);
 }
 
 HardwareProgram HardwareProgram::Null = HardwareProgram(nullptr);

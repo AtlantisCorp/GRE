@@ -131,7 +131,7 @@ typedef SpecializedResourceHolderList<SoftwareVertexBufferPrivate> SoftwareVerte
 //////////////////////////////////////////////////////////////////////
 /// @brief SpecializedResourceUser for SoftwareVertexBufferPrivate.
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC SoftwareVertexBuffer : public HardwareVertexBuffer, public SpecializedResourceUser<SoftwareVertexBufferPrivate>
+class DLL_PUBLIC SoftwareVertexBuffer : public HardwareVertexBuffer /*, public SpecializedResourceUser<SoftwareVertexBufferPrivate> */
 {
 public:
     

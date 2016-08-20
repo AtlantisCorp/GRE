@@ -31,13 +31,36 @@
  */
 
 #include "HardwareIndexBuffer.h"
+#include "ResourceManager.h"
 
 GreBeginNamespace
 
 HardwareIndexBufferPrivate::HardwareIndexBufferPrivate(const std::string& name)
 : Gre::HardwareBufferPrivate(name)
+, iElementsCount(0)
+, iElementsSize(0)
+, iDataChanged(false)
 {
+    Material defaultMat = ResourceManager::Get().findResource<Material>("Materials/Default");
     
+    if ( !defaultMat.isInvalid() )
+    {
+        IndexDescriptor defaultDescriptor;
+        defaultDescriptor.setType(IndexType::UnsignedShort);
+        defaultDescriptor.setMaterial(defaultMat);
+        
+        IndexBatch defaultBatch;
+        defaultBatch.setDescriptor(defaultDescriptor);
+        addIndexBatch(defaultBatch);
+    }
+    
+    else
+    {
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "Can't load Material 'Default' from MaterialManager." << std::endl;
+#endif
+        throw GreConstructorException("HardwareIndexBufferPrivate", "Resource 'Materials/Default' not found.");
+    }
 }
 
 HardwareIndexBufferPrivate::~HardwareIndexBufferPrivate()
@@ -45,19 +68,118 @@ HardwareIndexBufferPrivate::~HardwareIndexBufferPrivate()
     
 }
 
-void HardwareIndexBufferPrivate::addIndexBatch(const IndexBatch& ibatch)
+void HardwareIndexBufferPrivate::addData(const char *data, size_t sz)
 {
-
+    addDataToIndexBatch(data, sz, 0);
 }
 
-const IndexDescriptor& HardwareIndexBufferPrivate::getDefaultDescriptor() const
+void HardwareIndexBufferPrivate::addIndexBatch(const Gre::IndexBatch &batch)
 {
-    return iDescriptor;
+    iBatches.push_back(batch);
+    iElementsSize += batch.getSize();
+    iElementsCount += batch.getSize() / IndexTypeGetSize(batch.getDescriptor().getType());
+    iDataChanged = true;
 }
 
-void HardwareIndexBufferPrivate::setDefaultDescriptor(const IndexDescriptor& desc)
+void HardwareIndexBufferPrivate::addDataToIndexBatch(const char *data, size_t sz, size_t index)
 {
-    iDescriptor = desc;
+    if ( sz && data )
+    {
+        if ( index < iBatches.size() )
+        {
+            IndexBatch& batch = iBatches.at(index);
+            batch.addData(data, sz);
+            iElementsSize += sz;
+            iElementsCount += sz / IndexTypeGetSize(batch.getDescriptor().getType());
+            iDataChanged = true;
+        }
+        
+#ifdef GreIsDebugMode
+        else
+        {
+            GreDebugPretty() << "Invalid index given ('" << index << "')." << std::endl;
+        }
+#endif
+    }
+    
+#ifdef GreIsDebugMode
+    else
+    {
+        GreDebugPretty() << "Invalid arguments given." << std::endl;
+    }
+#endif
+}
+
+const char* HardwareIndexBufferPrivate::getData() const
+{
+    const IndexBatch& batch = iBatches.at(0);
+    return batch.getData();
+}
+
+const IndexBatchVector& HardwareIndexBufferPrivate::getIndexBatches() const
+{
+    return iBatches;
+}
+
+const IndexBatch& HardwareIndexBufferPrivate::getIndexBatch(const size_t &index) const
+{
+    if ( index < iBatches.size() )
+    {
+        return iBatches.at(index);
+    }
+    
+#ifdef GreIsDebugMode
+    GreDebugPretty() << "Invalid index given ('" << index << "')." << std::endl;
+#endif
+    
+    throw GreIndexException("HardwareIndexBufferPrivate", index, iBatches.size());
+}
+
+const IndexBatch& HardwareIndexBufferPrivate::getDefaultBatch() const
+{
+    return iBatches.at(0);
+}
+
+void HardwareIndexBufferPrivate::removeIndexBatch(const size_t &index)
+{
+    if ( index < iBatches.size() )
+    {
+        IndexBatch& batch = iBatches.at(index);
+        iElementsSize -= batch.getSize();
+        iElementsCount -= batch.getSize() / IndexTypeGetSize( batch.getDescriptor().getType() );
+        iBatches.erase(iBatches.begin() + index);
+        iDataChanged = true;
+    }
+    
+#ifdef GreIsDebugMode
+    else
+    {
+        GreDebugPretty() << "Invalid index given ('" << index << "')." << std::endl;
+    }
+#endif
+}
+
+void HardwareIndexBufferPrivate::clearBatches()
+{
+    iElementsCount = 0;
+    iElementsSize = 0;
+    iBatches.clear();
+    iDataChanged = true;
+}
+
+void HardwareIndexBufferPrivate::clearData()
+{
+    clearBatches();
+}
+
+size_t HardwareIndexBufferPrivate::getSize() const
+{
+    return iElementsSize;
+}
+
+size_t HardwareIndexBufferPrivate::count() const
+{
+    return iElementsCount;
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -65,7 +187,6 @@ void HardwareIndexBufferPrivate::setDefaultDescriptor(const IndexDescriptor& des
 HardwareIndexBuffer::HardwareIndexBuffer(const HardwareIndexBufferPrivate* resource)
 : ResourceUser(resource)
 , Gre::HardwareBuffer(resource)
-, SpecializedResourceUser<Gre::HardwareIndexBufferPrivate>(resource)
 {
     
 }
@@ -73,7 +194,6 @@ HardwareIndexBuffer::HardwareIndexBuffer(const HardwareIndexBufferPrivate* resou
 HardwareIndexBuffer::HardwareIndexBuffer(const HardwareIndexBufferHolder& holder)
 : ResourceUser(holder)
 , Gre::HardwareBuffer(holder.get())
-, SpecializedResourceUser<Gre::HardwareIndexBufferPrivate>(holder)
 {
     
 }
@@ -81,7 +201,6 @@ HardwareIndexBuffer::HardwareIndexBuffer(const HardwareIndexBufferHolder& holder
 HardwareIndexBuffer::HardwareIndexBuffer(const HardwareIndexBuffer& user)
 : ResourceUser(user)
 , Gre::HardwareBuffer(user)
-, SpecializedResourceUser<Gre::HardwareIndexBufferPrivate>(user)
 {
     
 }
@@ -93,34 +212,68 @@ HardwareIndexBuffer::~HardwareIndexBuffer()
 
 HardwareIndexBufferHolder HardwareIndexBuffer::lock()
 {
-    return SpecializedResourceUser<HardwareIndexBufferPrivate>::lock();
+    return GreUserLockCast(HardwareIndexBufferHolder, HardwareIndexBufferPrivate, HardwareBuffer);
 }
 
 const HardwareIndexBufferHolder HardwareIndexBuffer::lock() const
 {
-    return SpecializedResourceUser<HardwareIndexBufferPrivate>::lock();
+    return GreUserConstLockCast(HardwareIndexBufferHolder, HardwareIndexBufferPrivate, HardwareBuffer);
 }
 
-void HardwareIndexBuffer::addIndexBatch(const IndexBatch& ibatch)
+void HardwareIndexBuffer::addIndexBatch(const Gre::IndexBatch &batch)
 {
     auto ptr = lock();
     if ( ptr )
-        ptr->addIndexBatch(ibatch);
+        ptr->addIndexBatch(batch);
+    throw GreInvalidUserException("HardwareIndexBuffer");
 }
 
-const IndexDescriptor& HardwareIndexBuffer::getDefaultDescriptor() const
+void HardwareIndexBuffer::addDataToIndexBatch(const char *data, size_t sz, size_t index)
 {
     auto ptr = lock();
     if ( ptr )
-        return ptr->getDefaultDescriptor();
-    return IndexDescriptor::Default;
+        ptr->addDataToIndexBatch(data, sz, index);
+    throw GreInvalidUserException("HardwareIndexBuffer");
 }
 
-void HardwareIndexBuffer::setDefaultDescriptor(const IndexDescriptor& desc)
+const IndexBatchVector& HardwareIndexBuffer::getIndexBatches() const
 {
     auto ptr = lock();
     if ( ptr )
-        ptr->setDefaultDescriptor(desc);
+        return ptr->getIndexBatches();
+    throw GreInvalidUserException("HardwareIndexBuffer");
+}
+
+const IndexBatch& HardwareIndexBuffer::getIndexBatch(const size_t &index) const
+{
+    auto ptr = lock();
+    if ( ptr )
+        return ptr->getIndexBatch(index);
+    throw GreInvalidUserException("HardwareIndexBuffer");
+}
+
+const IndexBatch& HardwareIndexBuffer::getDefaultBatch() const
+{
+    auto ptr = lock();
+    if ( ptr )
+        return ptr->getDefaultBatch();
+    throw GreInvalidUserException("HardwareIndexBuffer");
+}
+
+void HardwareIndexBuffer::removeIndexBatch(const size_t &index)
+{
+    auto ptr = lock();
+    if ( ptr )
+        ptr->removeIndexBatch(index);
+    throw GreInvalidUserException("HardwareIndexBuffer");
+}
+
+void HardwareIndexBuffer::clearBatches()
+{
+    auto ptr = lock();
+    if ( ptr )
+        ptr->clearBatches();
+    throw GreInvalidUserException("HardwareIndexBuffer");
 }
 
 HardwareIndexBuffer HardwareIndexBuffer::Null = HardwareIndexBuffer(nullptr);

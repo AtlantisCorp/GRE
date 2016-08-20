@@ -514,7 +514,7 @@ void RendererPrivate::drawVertexBuffer(const HardwareVertexBuffer& vbuf, const H
     // First, ask the HardwareProgram to binds every attributes in the VertexDescriptor.
     // Name from the VertexDescriptor are the same used in the Program.
     
-    program->bindAttribsVertex(vbuf.getVertexDescriptor());
+    program->bindAttribsVertex(vbuf.getVertexDescriptor(), vbuf.getData());
     
     // Then, we bind the Material::Default and draw the VertexBuffer as Triangles.
     
@@ -526,35 +526,40 @@ void RendererPrivate::drawIndexBuffer(const HardwareIndexBuffer& ibuf, const Har
     // First, ask the HardwareProgram to binds every attributes in the VertexDescriptor.
     // Name from the VertexDescriptor are the same used in the Program.
     
-    program->bindAttribsVertex(vbuf.getVertexDescriptor());
+    program->bindAttribsVertex(vbuf.getVertexDescriptor(), vbuf.getData());
     
     // Then, draw the IndexBatchs in the Index Buffer. The IndexBuffer is constitued by
     // IndexBatch's, which contains Material objects. Notes for some API, the Indexes in
     // one HardwareIndexBuffer should have the same type.
     
-    ibuf.bind();
-    for ( auto indexbatch : ibuf.getIndexBatchVector() )
+    HardwareIndexBufferHolder bufholder = ibuf.lock();
+    
+    if ( !bufholder.isInvalid() )
     {
-        if ( indexbatch.getMaterial().isInvalid() )
-        {
-            bindMaterial(Material::Default);
-        }
+        bufholder->bind();
         
-        else
+        for ( const IndexBatch& indexbatch : ibuf.getIndexBatches() )
         {
-            bindMaterial(indexbatch.getMaterial());
-        }
-        
-        drawIndexBufferPrivate(ibuf, vbuf, program);
-        
-        if ( indexbatch.getMaterial().isInvalid() )
-        {
-            unbindMaterial(Material::Default);
-        }
-        
-        else
-        {
-            unbindMaterial(indexbatch.getMaterial());
+            const Material& material = indexbatch.getDescriptor().getMaterial();
+            
+            if ( !material.isInvalid() )
+            {
+                bindMaterial(material);
+            }
+            
+#ifdef GreIsDebugMode
+            else
+            {
+                GreDebugPretty() << "No material in IndexBatch for HardwareIndexBuffer '" << bufholder->getName() << "'." << std::endl;
+            }
+#endif
+            
+            drawIndexBufferPrivate(ibuf, vbuf, program);
+            
+            if ( !material.isInvalid() )
+            {
+                unbindMaterial(material);
+            }
         }
     }
 }
@@ -575,35 +580,90 @@ void RendererPrivate::loadMesh(Mesh& mesh, bool deleteCache)
 {
     // Here we wants to create GPU - stored HardwareBuffer.
     
-    if( !mesh.getSoftwareVertexBuffer().isInvalid() )
-    {
-        SoftwareVertexBuffer softvbuf = mesh.getSoftwareVertexBuffer();
-        HardwareVertexBuffer gpuvbuf = createVertexBuffer();
-        
-        gpuvbuf.setVertexDescriptor(softvbuf.getVertexDescriptor());
-        gpuvbuf.addData(softvbuf.getData(), softvbuf.getSize());
-        
-        mesh.setVertexBuffer(gpuvbuf);
-    }
+    MeshHolder meshholder = mesh.lock();
     
+    bool deleteVertexBuffer = false;
+    bool deleteIndexBuffer = false;
     
-    if( !mesh.getSoftwareIndexBuffer().isInvalid() )
+    if( !meshholder->getSoftwareVertexBuffer().isInvalid() )
     {
-        SoftwareIndexBuffer softibuf = mesh.getSoftwareIndexBuffer();
-        HardwareIndexBuffer gpuibuf = createIndexBuffer();
+        SoftwareVertexBuffer softvbuf = meshholder->getSoftwareVertexBuffer();
         
-        // As SoftwareIndexBuffer stores the 'default' IndexBatch in the Batch's vector,
-        // we can iterates through every IndexBatch.
-        
-        // Handles for IndexDescriptor should be done by the Hardware Index Buffer itself,
-        // in ::addIndexBatch.
-        
-        for ( auto batch : softibuf.getIndexBatchVector() )
+        if ( softvbuf.isInvalid() )
         {
-            gpuibuf.addIndexBatch(batch);
+#ifdef GreIsDebugMode
+            GreDebugPretty() << "No SoftwareVertexBuffer in Mesh '" << meshholder->getName() << "'." << std::endl;
+#endif
         }
         
-        mesh.setIndexBuffer(gpuibuf);
+        else
+        {
+            HardwareVertexBuffer gpuvbuf = createVertexBufferWithSize(meshholder->getName() + "/HdwVertexBuffer" , softvbuf.getSize());
+            
+            if ( gpuvbuf.isInvalid() )
+            {
+#ifdef GreIsDebugMode
+                GreDebugPretty() << "Can't create HardwareVertexBuffer for Mesh '" << meshholder->getName() << "'." << std::endl;
+#endif
+            }
+            
+            else
+            {
+                gpuvbuf.setVertexDescriptor(softvbuf.getVertexDescriptor());
+                gpuvbuf.addData(softvbuf.getData(), softvbuf.getSize());
+                meshholder->setVertexBuffer(gpuvbuf);
+                
+                if ( deleteCache )
+                {
+                    deleteVertexBuffer = true;
+                }
+            }
+        }
+    }
+    
+    if( !meshholder->getSoftwareIndexBuffer().isInvalid() )
+    {
+        SoftwareIndexBuffer softibuf = meshholder->getSoftwareIndexBuffer();
+        
+        if ( !softibuf.isInvalid() )
+        {
+            HardwareIndexBuffer gpuibuf = createIndexBuffer();
+            
+            if ( gpuibuf.isInvalid() )
+            {
+#ifdef GreIsDebugMode
+                GreDebugPretty() << "Can't create SoftwareIndexBuffer for Mesh '" << meshholder->getName() << "'." << std::endl;
+#endif
+            }
+            
+            else
+            {
+                // As SoftwareIndexBuffer stores the 'default' IndexBatch in the Batch's vector,
+                // we can iterates through every IndexBatch.
+                
+                // Handles for IndexDescriptor should be done by the Hardware Index Buffer itself,
+                // in ::addIndexBatch.
+                
+                for ( auto batch : softibuf.getIndexBatchVector() )
+                {
+                    gpuibuf.addIndexBatch(batch);
+                }
+                
+                meshholder->setIndexBuffer(gpuibuf);
+                
+                if ( deleteCache )
+                {
+                    deleteIndexBuffer = true;
+                }
+            }
+        }
+        
+        else
+        {
+#ifdef GreIsDebugMode
+            GreDebugPretty() << "No SoftwareIndexBuffer in Mesh '" << meshholder->getName() << "'." << std::endl;
+#endif
+        }
     }
     
     // Deleting cache should be done only when we are sure everything is loaded to the
@@ -611,8 +671,17 @@ void RendererPrivate::loadMesh(Mesh& mesh, bool deleteCache)
     
     if(deleteCache)
     {
-        mesh.onNextEvent(EventType::Update , [&] (const Event& e) {
-            mesh.clearSoftwareBuffers();
+        meshholder->onNextEvent(EventType::Update , [&] (const Event& e) {
+            
+            if ( deleteVertexBuffer )
+            {
+                meshholder->getSoftwareVertexBuffer().reset();
+            }
+            
+            if ( deleteIndexBuffer )
+            {
+                meshholder->getSoftwareIndexBuffer().reset();
+            }
         });
     }
 }

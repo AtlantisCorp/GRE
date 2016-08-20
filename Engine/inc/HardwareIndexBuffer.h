@@ -41,11 +41,21 @@ GreBeginNamespace
 //////////////////////////////////////////////////////////////////////
 /// @brief Defines a HardwareBuffer used to hold Indexes.
 ///
-/// Storage is dependent of the Implementation. You can submit new Indexes
-/// by using ::addData() or ::addIndexBatch(). The iDescriptor property
-/// should be used to set the default property for the Indexes.
+/// As Indexes are stored by Materials, you have ways to add Indexes
+/// to this HardwareBuffer.
+///   - ::addData() adds raw indexes to the IndexBatch '0' which has
+/// Material 'Materials/Default'.
+///   - ::addIndexBatch() adds an IndexBatch which should contain a
+/// custom Material.
+///   - ::addDataToIndexBatch() adds raw indexes to the given IndexBatch.
 ///
-/// The Renderer can use this buffer to draw indexed meshes.
+/// You can't get a pointer to all the data, considering each IndexBatch
+/// has a Material different and may have data of different type. To get
+/// the Batches, use ::getIndexBatches(), ::getIndexBatch() or ::getDefaultBatch().
+/// ::getData() returns the Indexes in the IndexBatch '0'.
+///
+/// To remove an IndexBatch, you can use ::removeIndexBatch() or
+/// ::clearBatches().
 ///
 //////////////////////////////////////////////////////////////////////
 class DLL_PUBLIC HardwareIndexBufferPrivate : public HardwareBufferPrivate
@@ -63,24 +73,83 @@ public:
     virtual ~HardwareIndexBufferPrivate();
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Adds a new IndexBatch in the list.
+    /// @brief Adds raw Indexes to the default IndexBatch.
     //////////////////////////////////////////////////////////////////////
-    virtual void addIndexBatch(const IndexBatch& ibatch);
+    virtual void addData ( const char* data , size_t sz );
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the default IndexDescriptor.
+    /// @brief Adds an IndexBatch to the list.
     //////////////////////////////////////////////////////////////////////
-    virtual const IndexDescriptor& getDefaultDescriptor() const;
+    virtual void addIndexBatch ( const IndexBatch& batch );
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Sets the default IndexDescriptor.
+    /// @brief Adds raw Indexes to the given IndexBatch.
+    ///
+    /// @param data : Raw indexes to add.
+    /// @param sz : Size of the indexes.
+    /// @param index : Index of the IndexBatch in the HardwareIndexBuffer.
+    ///
     //////////////////////////////////////////////////////////////////////
-    virtual void setDefaultDescriptor(const IndexDescriptor& desc);
+    virtual void addDataToIndexBatch ( const char* data , size_t sz , size_t index );
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the Indexes from IndexBatch '0'.
+    //////////////////////////////////////////////////////////////////////
+    virtual const char* getData () const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns every IndexBatch.
+    //////////////////////////////////////////////////////////////////////
+    virtual const IndexBatchVector& getIndexBatches () const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the IndexBatch at given index.
+    //////////////////////////////////////////////////////////////////////
+    virtual const IndexBatch& getIndexBatch ( const size_t& index ) const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns IndexBatch '0'.
+    //////////////////////////////////////////////////////////////////////
+    virtual const IndexBatch& getDefaultBatch () const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Removes IndexBatch at given index.
+    //////////////////////////////////////////////////////////////////////
+    virtual void removeIndexBatch ( const size_t& index );
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Removes every IndexBatch.
+    //////////////////////////////////////////////////////////////////////
+    virtual void clearBatches();
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Clears the data in the buffer.
+    //////////////////////////////////////////////////////////////////////
+    virtual void clearData();
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the size of the buffer, in bytes.
+    //////////////////////////////////////////////////////////////////////
+    virtual size_t getSize() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the number of elements in the buffer.
+    //////////////////////////////////////////////////////////////////////
+    virtual size_t count() const;
     
 protected:
     
-    /// @brief Default IndexDescritor for the buffer.
-    IndexDescriptor iDescriptor;
+    /// @brief Incremented Counter to count elements.
+    uint32_t iElementsCount;
+    
+    /// @brief Incremented Counter to get overall size. (in bytes)
+    uint32_t iElementsSize;
+    
+    /// @brief IndexBatch's Vector.
+    IndexBatchVector iBatches;
+    
+    /// @brief True if data has changed since last update.
+    mutable bool iDataChanged;
 };
 
 /// @brief SpecializedResourceHolder for HardwareIndexBufferPrivate.
@@ -92,7 +161,7 @@ typedef SpecializedResourceHolderList<HardwareIndexBufferPrivate> HardwareIndexB
 //////////////////////////////////////////////////////////////////////
 /// @brief Proxy to the HardwareIndexBufferPrivate object.
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC HardwareIndexBuffer : public HardwareBuffer, public SpecializedResourceUser<HardwareIndexBufferPrivate>
+class DLL_PUBLIC HardwareIndexBuffer : public HardwareBuffer
 {
 public:
     
@@ -125,19 +194,44 @@ public:
     const HardwareIndexBufferHolder lock() const;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Adds a new IndexBatch in the list.
+    /// @brief Adds an IndexBatch to the list.
     //////////////////////////////////////////////////////////////////////
-    virtual void addIndexBatch(const IndexBatch& ibatch);
+    virtual void addIndexBatch ( const IndexBatch& batch );
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the default IndexDescriptor.
+    /// @brief Adds raw Indexes to the given IndexBatch.
+    ///
+    /// @param data : Raw indexes to add.
+    /// @param sz : Size of the indexes.
+    /// @param index : Index of the IndexBatch in the HardwareIndexBuffer.
+    ///
     //////////////////////////////////////////////////////////////////////
-    virtual const IndexDescriptor& getDefaultDescriptor() const;
+    virtual void addDataToIndexBatch ( const char* data , size_t sz , size_t index );
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Sets the default IndexDescriptor.
+    /// @brief Returns every IndexBatch.
     //////////////////////////////////////////////////////////////////////
-    virtual void setDefaultDescriptor(const IndexDescriptor& desc);
+    virtual const IndexBatchVector& getIndexBatches () const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the IndexBatch at given index.
+    //////////////////////////////////////////////////////////////////////
+    virtual const IndexBatch& getIndexBatch ( const size_t& index ) const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns IndexBatch '0'.
+    //////////////////////////////////////////////////////////////////////
+    virtual const IndexBatch& getDefaultBatch () const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Removes IndexBatch at given index.
+    //////////////////////////////////////////////////////////////////////
+    virtual void removeIndexBatch ( const size_t& index );
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Removes every IndexBatch.
+    //////////////////////////////////////////////////////////////////////
+    virtual void clearBatches();
     
     /// @brief A Null HardwareIndexBuffer.
     static HardwareIndexBuffer Null;

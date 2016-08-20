@@ -380,6 +380,33 @@ private:
     ResourceLockerHelper<Class> iHelper;
 };
 
+/// @brief Should permit a simple lock() for a Child user-class.
+///
+/// @param holdertype : Class the lock() function should return.
+/// @param privatetype : Class the holder handles. ( Your private resource )
+/// @param baseusertype : The base class your Child comes from.
+///
+/// To handle multiple inheritance, just set 'baseusertype' as your first
+/// ResourceUser parent, as it is used in order to retrieve a pointer from the
+/// Resource object.
+#define GreUserLockCast( holdertype , privatetype , baseusertype ) \
+    holdertype ( reinterpret_cast < privatetype * > ( baseusertype ::lock().get() ) )
+
+/// @brief Should permit a simple const-lock() for a Child user-class.
+/// @param holdertype : Class the lock() function should return.
+/// @param privatetype : Class the holder handles. ( Your private resource )
+/// @param baseusertype : The base class your Child comes from.
+///
+/// To handle multiple inheritance, just set 'baseusertype' as your first
+/// ResourceUser parent, as it is used in order to retrieve a pointer from the
+/// Resource object.
+///
+/// @note This Constant derived macro use 'const_cast', because the return type
+/// of the function using this one should be 'const ResourceHolderType' . The
+/// constant is preserved.
+#define GreUserConstLockCast( holdertype , privatetype , baseusertype ) \
+    holdertype ( const_cast < privatetype * > ( reinterpret_cast < const privatetype * > ( baseusertype ::lock().get() ) ) )
+
 GreEndNamespace
 
 #endif

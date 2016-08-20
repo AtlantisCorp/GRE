@@ -40,11 +40,11 @@ GreBeginNamespace
 //////////////////////////////////////////////////////////////////////
 /// @brief A Software Index Buffer 's resource.
 ///
-/// By default, every indexes added with ::addData() is added in the
-/// default IndexBatch , i.e. iIndexes[0] . The Default Index Batch
-/// is initialized with IndexDescriptor::Default.
+/// As HardwareIndexBufferPrivate already stores every indexes, we just
+/// need to ensure that 'iDataChanged' is set to false on every updates.
 ///
-/// Using ::setIndexBatchVector() changes the Default Index Batch.
+/// SoftwareIndexBuffer can be used to stores indexes only on the CPU
+/// memory.
 ///
 //////////////////////////////////////////////////////////////////////
 class DLL_PUBLIC SoftwareIndexBufferPrivate : public HardwareIndexBufferPrivate
@@ -61,54 +61,14 @@ public:
     //////////////////////////////////////////////////////////////////////
     virtual ~SoftwareIndexBufferPrivate() noexcept(false);
     
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Vector of indexes.
-    //////////////////////////////////////////////////////////////////////
-    virtual const IndexBatchVector& getIndexBatchVector() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Sets the IndexBatchVector.
-    //////////////////////////////////////////////////////////////////////
-    virtual void setIndexBatchVector(const IndexBatchVector& ivector);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Adds a new IndexBatch in the list.
-    //////////////////////////////////////////////////////////////////////
-    virtual void addIndexBatch(const IndexBatch& ibatch);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Adds some data to this Buffer. Size is the total size in
-    /// bytes, not the number of Vertex. Data is added to the default
-    /// IndexBatch.
-    //////////////////////////////////////////////////////////////////////
-    virtual void addData(const char* vdata, size_t sz);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the data in the default index batch.
-    //////////////////////////////////////////////////////////////////////
-    virtual const char* getData() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Clears the data in the buffer.
-    /// This function does not clear the Indexes's Descriptors, only the
-    /// raw Indexes data are erased.
-    //////////////////////////////////////////////////////////////////////
-    virtual void clearData();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the size of the buffer, in bytes.
-    //////////////////////////////////////////////////////////////////////
-    virtual size_t getSize() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the number of elements in the buffer.
-    //////////////////////////////////////////////////////////////////////
-    virtual size_t count() const;
-    
 protected:
     
-    /// @brief Stores the indexes.
-    IndexBatchVector iIndexes;
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Called when receiving Update Event.
+    /// In SoftwareIndexBuffer, this function is used to set 'iDataChanged'
+    /// to false, as we don't need to update any data.
+    //////////////////////////////////////////////////////////////////////
+    virtual void onUpdateEvent(const UpdateEvent& e);
 };
 
 /// @brief SpecializedResourceHolder for SoftwareIndexBufferPrivate.
@@ -119,7 +79,7 @@ typedef SpecializedResourceHolderList<SoftwareIndexBufferPrivate> SoftwareIndexB
 
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC SoftwareIndexBuffer : public HardwareIndexBuffer , public SpecializedResourceUser<SoftwareIndexBufferPrivate>
+class DLL_PUBLIC SoftwareIndexBuffer : public HardwareIndexBuffer
 {
 public:
     
@@ -150,16 +110,6 @@ public:
     /// @brief Creates a new ResourceHolder in order to use the Resource.
     //////////////////////////////////////////////////////////////////////
     const SoftwareIndexBufferHolder lock() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Vector of indexes.
-    //////////////////////////////////////////////////////////////////////
-    virtual const IndexBatchVector getIndexBatchVector() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Sets the IndexBatchVector.
-    //////////////////////////////////////////////////////////////////////
-    virtual void setIndexBatchVector(const IndexBatchVector& ivector);
     
     /// @brief Null SoftwareIndexBuffer.
     static SoftwareIndexBuffer Null;

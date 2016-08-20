@@ -60,7 +60,7 @@ void HardwareVertexBufferPrivate::setVertexDescriptor(const Gre::VertexDescripto
 HardwareVertexBuffer::HardwareVertexBuffer(const HardwareVertexBufferPrivate* pointer)
 : ResourceUser(pointer)
 , HardwareBuffer(pointer)
-, SpecializedResourceUser<Gre::HardwareVertexBufferPrivate>(pointer)
+// , SpecializedResourceUser<Gre::HardwareVertexBufferPrivate>(pointer)
 {
     
 }
@@ -68,7 +68,7 @@ HardwareVertexBuffer::HardwareVertexBuffer(const HardwareVertexBufferPrivate* po
 HardwareVertexBuffer::HardwareVertexBuffer(const HardwareVertexBufferHolder& holder)
 : ResourceUser(holder)
 , HardwareBuffer(holder.get())
-, SpecializedResourceUser<Gre::HardwareVertexBufferPrivate>(holder)
+// , SpecializedResourceUser<Gre::HardwareVertexBufferPrivate>(holder)
 {
     
 }
@@ -76,7 +76,7 @@ HardwareVertexBuffer::HardwareVertexBuffer(const HardwareVertexBufferHolder& hol
 HardwareVertexBuffer::HardwareVertexBuffer(const HardwareVertexBuffer& user)
 : ResourceUser(user)
 , HardwareBuffer(user)
-, SpecializedResourceUser<Gre::HardwareVertexBufferPrivate>(user)
+// , SpecializedResourceUser<Gre::HardwareVertexBufferPrivate>(user)
 {
     
 }
@@ -88,12 +88,12 @@ HardwareVertexBuffer::~HardwareVertexBuffer()
 
 HardwareVertexBufferHolder HardwareVertexBuffer::lock()
 {
-    return SpecializedResourceUser<HardwareVertexBufferPrivate>::lock();
+    return GreUserLockCast(HardwareVertexBufferHolder, HardwareVertexBufferPrivate, HardwareBuffer);
 }
 
 const HardwareVertexBufferHolder HardwareVertexBuffer::lock() const
 {
-    return SpecializedResourceUser<HardwareVertexBufferPrivate>::lock();
+    return GreUserConstLockCast(HardwareVertexBufferHolder, HardwareVertexBufferPrivate, HardwareBuffer);
 }
 
 const VertexDescriptor& HardwareVertexBuffer::getVertexDescriptor() const

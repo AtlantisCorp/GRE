@@ -140,9 +140,7 @@
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "192"
-            endingLineNumber = "192"
-            landmarkName = "POOLED(Pools::Resource)"
-            landmarkType = "6">
+            endingLineNumber = "192">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -188,6 +186,22 @@
             startingLineNumber = "305"
             endingLineNumber = "305"
             landmarkName = "RendererPrivate::drawSceneNodeList(SceneNodeList&amp; nodes, HardwareProgramHolder&amp; program)"
+            landmarkType = "5">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "../../../Engine/src/Renderer.cpp"
+            timestampString = "492951544.018077"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "673"
+            endingLineNumber = "673"
+            landmarkName = "RendererPrivate::loadMesh(Mesh&amp; mesh, bool deleteCache)"
             landmarkType = "5">
          </BreakpointContent>
       </BreakpointProxy>

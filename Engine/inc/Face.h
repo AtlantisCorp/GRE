@@ -178,11 +178,11 @@ protected:
     /// @brief Descriptor for this index's batch.
     IndexDescriptor iDescriptor;
     
-    /// @brief Sets of indexes.
-    char* iData;
-    
     /// @brief Indexes's size ( in bytes ).
     size_t iSize;
+    
+    /// @brief Sets of indexes.
+    char* iData;
 };
 
 /// @brief std::vector for IndexBatch. Use it to store multi-materials index batches.

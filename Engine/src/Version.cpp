@@ -53,4 +53,24 @@ bool operator != (const Surface& lhs, const Surface& rhs)
     return ! (lhs == rhs);
 }
 
+// ---------------------------------------------------------------------------------------------------
+
+GreConstructorException::GreConstructorException(const char* constructor)
+: iConstructor(constructor)
+{
+    
+}
+
+GreConstructorException::GreConstructorException(const char* constructor, const char* error)
+: iConstructor(constructor)
+, iError(error)
+{
+    
+}
+
+const char* GreConstructorException::what() const throw()
+{
+    return (iConstructor + " : " + iError).c_str();
+}
+
 GreEndNamespace
