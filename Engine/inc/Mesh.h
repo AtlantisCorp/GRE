@@ -35,6 +35,7 @@
 
 #include "Resource.h"
 #include "Vertex.h"
+#include "BoundingBox.h"
 
 #include "SoftwareVertexBuffer.h"
 #include "SoftwareIndexBuffer.h"
@@ -61,6 +62,25 @@ GreBeginNamespace
 /// independent from the Rendering API, to the creation of HardwareBuffer's,
 /// which is dependent from the APi.
 ///
+/// You should always use SoftwareVertexBuffers to create a Mesh. The
+/// SoftwareVertexBuffer will help making a BoundingBox for the Mesh, if
+/// 'iIsBoundingBoxUser' is false. 'set[Vertex/Index]Buffer' assumes that
+/// the HardwareBuffers are created using the Renderer from the
+/// Software[Vertex/Index]Buffers.
+///
+/// Modifying the Mesh structure
+///
+/// If you want to modify the Mesh structure, you may want to modify the
+/// Software[Vertex/Index]Buffers and let the Renderer updates the
+/// Hardware[Vertex/Index]Buffers directly. If your Mesh doesn't keep
+/// Software[Vertex/Index]Buffers, you should update yourself the
+/// 'iBoundingBox' property as it rely on Software Buffers.
+///
+/// Modifying directly the HardwareBuffers using a mapped pointer from the
+/// GPU is outdated, the reason is that typically, 'glMapBuffer' is blocking
+/// the Gpu driver while you performs your things, so this method is too
+/// slow. Updating the whole buffer orphaning it is much faster.
+///
 //////////////////////////////////////////////////////////////////////
 class DLL_PUBLIC MeshPrivate : public Resource
 {
@@ -82,6 +102,11 @@ public:
     virtual const SoftwareVertexBuffer getSoftwareVertexBuffer() const;
     
     //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the SoftwareVertexBufferHolder reference.
+    //////////////////////////////////////////////////////////////////////
+    virtual SoftwareVertexBufferHolder& getSoftwareVertexBufferHolder();
+    
+    //////////////////////////////////////////////////////////////////////
     /// @brief Changes the SoftwareVertexBuffer.
     //////////////////////////////////////////////////////////////////////
     virtual void setSoftwareVertexBuffer(const SoftwareVertexBuffer& softvertexbuffer);
@@ -90,6 +115,11 @@ public:
     /// @brief Returns the SoftwareIndexBuffers.
     //////////////////////////////////////////////////////////////////////
     virtual const SoftwareIndexBuffer getSoftwareIndexBuffer() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the SoftwareIndexBufferHolder reference.
+    //////////////////////////////////////////////////////////////////////
+    virtual SoftwareIndexBufferHolder& getSoftwareIndexBufferHolder();
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Adds a SoftwareIndexBuffer to the list.
@@ -161,6 +191,28 @@ public:
     //////////////////////////////////////////////////////////////////////
     virtual void clearHardwareBuffers();
     
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the 'iBoundingBox' property.
+    //////////////////////////////////////////////////////////////////////
+    virtual const BoundingBox& getBoundingBox() const;
+    
+protected:
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Called when receiving Update Event.
+    ///
+    /// If 'iSoftVertexBufferUpdate' is true, we updates the HardwareVertexBuffer
+    /// from the SoftwareVertexBuffer.
+    ///
+    /// If 'iSoftIndexBufferUpdate' is true, we updates the HardwareIndexBuffer
+    /// from the SoftwareIndexBuffer.
+    ///
+    /// If 'iSoftVertexBufferUpdate' is true, we updates the 'iBoundingBox' property
+    /// if 'iIsBoundingBoxUser' is false, using the SoftwareVertexBuffer.
+    ///
+    //////////////////////////////////////////////////////////////////////
+    virtual void onUpdateEvent(const UpdateEvent& e);
+    
 private:
     
     /// @brief Holds the SoftwareVertexBuffer.
@@ -175,6 +227,14 @@ private:
     /// @brief Holds the HardwareIndexBuffers.
     HardwareIndexBufferHolder iHardIndexBuffer;
     
+    /// @brief Mesh's BoundingBox.
+    BoundingBox iBoundingBox;
+    
+    /// @brief True if 'iBoundingBox' has been set by a user.
+    /// Setting this property to false will make the Mesh update
+    /// the BoundingBox from Software Buffers.
+    bool iIsBoundingBoxUser;
+    
     /// @brief True if the Renderer can create HardwareBuffers.
     bool iUseHardwareBuffers;
     
@@ -183,6 +243,12 @@ private:
     
     /// @brief True if the Hardware Buffers have changed.
     mutable bool iHardBuffersChanged;
+    
+    /// @brief True if SoftwareVertexBuffer changed.
+    mutable bool iSoftVertexBufferUpdate;
+    
+    /// @brief True if SoftwareIndexBuffer changed.
+    mutable bool iSoftIndexBufferUpdate;
 };
 
 /// @brief SpecializedResourceHolder for MeshPrivate.
@@ -301,6 +367,12 @@ public:
     //////////////////////////////////////////////////////////////////////
     virtual void clearHardwareBuffers();
     
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the 'iBoundingBox' property.
+    //////////////////////////////////////////////////////////////////////
+    virtual const BoundingBox& getBoundingBox() const;
+    
+    /// @brief Null Mesh Property.
     static Mesh Null;
 };
 

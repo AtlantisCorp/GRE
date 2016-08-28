@@ -36,6 +36,7 @@
 #include "Pools.h"
 #include "Resource.h"
 #include "HardwareProgram.h"
+#include "SceneNode.h"
 
 GreBeginNamespace
 
@@ -108,6 +109,13 @@ public:
     /// @brief Returns the current PassNumber.
     //////////////////////////////////////////////////////////////////////
     PassNumber getPassNumber() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns 'true' if given RenderNodeIdentifier is acceptable
+    /// to draw in this Pass object.
+    /// @note By default, this function returns always 'true'.
+    //////////////////////////////////////////////////////////////////////
+    virtual bool isAcceptable ( const RenderNodeIdentifier& identifier ) const;
     
 protected:
     

@@ -47,6 +47,7 @@
 #include "FrameBuffer.h"
 #include "Viewport.h"
 #include "RenderContext.h"
+#include "RenderingApiDescriptor.h"
 
 GreBeginNamespace
 
@@ -78,8 +79,8 @@ typedef struct
 /// Scene to one or more RenderTarget.
 ///
 /// Basically, the job of the Renderer is :
-///   - Get the SceneManager to draw for a RenderTarget.
-///   - Get the Pass's objects from the SceneManager.
+///   - Get the RenderScene to draw for a RenderTarget.
+///   - Get the Pass's objects from the RenderScene.
 ///   - Drawing every Pass with each Pass settings.
 ///   - Mixing the result from those Pass.
 ///   - Drawing the result to the RenderTarget.
@@ -131,10 +132,10 @@ public:
     virtual void drawRenderTarget(const RenderTarget& rendertarget);
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Draw the given SceneManager.
+    /// @brief Draw the given RenderScene.
     /// @note A RenderTarget should already be binded.
     //////////////////////////////////////////////////////////////////////
-    virtual void drawSceneManager(const SceneManager& scenemanager);
+    virtual void drawRenderScene(const RenderScene& scenemanager);
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Draw a list of Pass to given list of Framebuffers.
@@ -148,9 +149,9 @@ public:
     virtual void drawPassWithFramebuffer(const PassHolder& passholder, RenderFramebufferHolder& fboholder);
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Draws the List of SceneNode using given HardwareProgram.
+    /// @brief Draws the List of RenderNode using given HardwareProgram.
     //////////////////////////////////////////////////////////////////////
-    virtual void drawSceneNodeList(SceneNodeList& nodes, HardwareProgramHolder& program);
+    virtual void drawRenderNodeList(RenderNodeHolderList& nodes, HardwareProgramHolder& program);
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Draw a list of RenderFramebuffer onto the binded RenderTarget.
@@ -281,6 +282,12 @@ public:
     //////////////////////////////////////////////////////////////////////
     virtual RenderContextHolder createRenderContext(const std::string& name, const RenderContextInfo& info, Renderer caller);
     
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Creates a HardwareVertexBuffer of given size, or
+    /// 'HardwareVertexBufferHolder(nullptr)' if invalid.
+    //////////////////////////////////////////////////////////////////////
+    virtual HardwareVertexBufferHolder createVertexBufferWithSize ( const std::string& name , size_t sz ) const;
+    
 protected:
     
     /// @brief The Last binded / used RenderContext.
@@ -293,9 +300,9 @@ protected:
         RenderFramebufferHolder SpecialFramebuffer;
         
         /// @brief The Scene we have to render.
-        SceneManagerHolder RenderedScene;
+        RenderSceneHolder RenderedScene;
         
-        /// @brief The Viewport used to draw the Scene. Available from the call to ::drawSceneManager().
+        /// @brief The Viewport used to draw the Scene. Available from the call to ::drawRenderScene().
         Viewport RenderedViewport;
         
         /// @brief Framebuffers used to draw Pass objects.
@@ -354,39 +361,121 @@ public:
     static Renderer Null;
 };
 
+//////////////////////////////////////////////////////////////////////
+/// @brief ResourceLoader for Renderer.
+//////////////////////////////////////////////////////////////////////
 class DLL_PUBLIC RendererLoader : public ResourceLoader
 {
 public:
     
     POOLED(Pools::Loader)
     
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
     RendererLoader();
+    
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
     virtual ~RendererLoader();
     
-    virtual bool isTypeSupported (Resource::Type type) const;
-    virtual Resource* load (Resource::Type type, const std::string& name) const;
-    virtual ResourceLoader* clone() const;
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns 'true' if the given RenderingApiDescriptor is compatible
+    /// with the Renderer loaded by this object.
+    //////////////////////////////////////////////////////////////////////
+    virtual bool isCompatible ( const RenderingApiDescriptor& apidescriptor ) const = 0;
     
-protected:
-    
-    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Creates a new Renderer Object.
+    //////////////////////////////////////////////////////////////////////
+    virtual RendererHolder load ( const std::string& name ) const = 0;
 };
 
 //////////////////////////////////////////////////////////////////////
 /// @brief A factory that stores every Renderer Loaders.
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC RendererLoaderFactory : public ResourceLoaderFactory<RendererLoader>
+typedef ResourceLoaderFactory<RendererLoader> RendererLoaderFactory;
+
+//////////////////////////////////////////////////////////////////////
+/// @brief Renderer Manager.
+//////////////////////////////////////////////////////////////////////
+class DLL_PUBLIC RendererManager
 {
 public:
     
-    RendererLoaderFactory();
-    ~RendererLoaderFactory();
+    POOLED(Pools::Manager)
+    
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    RendererManager();
+    
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    virtual ~RendererManager();
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Loads a Renderer into the Manager.
+    //////////////////////////////////////////////////////////////////////
+    virtual Renderer load ( const RendererHolder& renderer );
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Loads a Renderer into the Manager giving its name.
+    //////////////////////////////////////////////////////////////////////
+    virtual Renderer load ( const std::string& name );
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Loads a Renderer into the Manager given its name and API
+    /// name.
+    //////////////////////////////////////////////////////////////////////
+    virtual Renderer load ( const std::string& name , const RenderingApiDescriptor& apidescriptor );
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the Renderer by its name.
+    //////////////////////////////////////////////////////////////////////
+    virtual Renderer get ( const std::string& name );
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the Renderer by its name.
+    //////////////////////////////////////////////////////////////////////
+    virtual const Renderer get ( const std::string& name ) const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns every Renderer loaded.
+    //////////////////////////////////////////////////////////////////////
+    virtual const RendererHolderList& getRenderers() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Removes given Renderer from this Manager.
+    //////////////////////////////////////////////////////////////////////
+    virtual void remove ( const std::string& name );
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Removes every Renderer.
+    //////////////////////////////////////////////////////////////////////
+    virtual void clearRenderers();
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the RendererLoaderFactory.
+    //////////////////////////////////////////////////////////////////////
+    virtual RendererLoaderFactory& getRendererLoaderFactory();
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the RendererLoaderFactory.
+    //////////////////////////////////////////////////////////////////////
+    virtual const RendererLoaderFactory& getRendererLoaderFactory() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Clears the Renderers and the Factory.
+    //////////////////////////////////////////////////////////////////////
+    virtual void clear();
+    
+protected:
+    
+    /// @brief Renderers loaded.
+    RendererHolderList iRenderers;
+    
+    /// @brief RendererLoaderFactory.
+    RendererLoaderFactory iFactory;
 };
-
-typedef GreException                          RendererInvalidVersion;
-typedef GreException                          RendererInvalidApi;
-typedef GreExceptionWithText                  RendererNoProgramManagerException;
-typedef GreExceptionWithText                  RendererNoCapacityException;
 
 GreEndNamespace
 #endif

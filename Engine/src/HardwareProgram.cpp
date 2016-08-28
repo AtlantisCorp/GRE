@@ -222,6 +222,153 @@ void HardwareProgramPrivate::bindAttributeLocation(const Gre::VertexComponentTyp
 #endif
 }
 
+void HardwareProgramPrivate::bindMaterial(const Gre::Material &material) const
+{
+    if ( !material.isInvalid() )
+    {
+        // First, we see if the Material has Texture to bind.
+        
+        if ( material.hasTexture() )
+        {
+            const Texture& tex = material.getTexture();
+            
+            if ( !tex.isInvalid() )
+            {
+                std::string texname = std::string("uTexture0");
+                int texloc = getUniformLocation(texname);
+                
+                if ( texloc >= 0 )
+                {
+                    // Remember that the Texture's type should be handled by the Shader itself. Here we just
+                    // communicate the Texture Unit to the sampler variable.
+                    
+                    HardwareProgramVariable texunit;
+                    texunit.location = texloc;
+                    texunit.type = HdwProgVarType::Uint32;
+                    texunit.value.uint32 = 0;
+                    setUniformVariable(texunit);
+                    
+                    // As 'setUniformVariable' should not wait an update to set the Uniform , we should bind
+                    // the Texture here and communicate the Texture object our Texture Unit.
+                    
+                    tex.bindWithTextureUnit(0);
+                }
+            }
+        }
+        
+        if ( material.hasMultitexture() )
+        {
+            auto texvec = material.getTextures();
+            int loc = 1;
+            
+            for ( auto& tex : texvec )
+            {
+                if ( !tex.isInvalid() )
+                {
+                    std::string texname = std::string("uTexture") + std::to_string(loc);
+                    int texloc = getUniformLocation(texname);
+                    
+                    if ( texloc >= 0 )
+                    {
+                        // Remember that the Texture's type should be handled by the Shader itself. Here we just
+                        // communicate the Texture Unit to the sampler variable.
+                        
+                        HardwareProgramVariable texunit;
+                        texunit.location = texloc;
+                        texunit.type = HdwProgVarType::Uint32;
+                        texunit.value.uint32 = loc;
+                        setUniformVariable(texunit);
+                        
+                        // As 'setUniformVariable' should not wait an update to set the Uniform , we should bind
+                        // the Texture here and communicate the Texture object our Texture Unit.
+                        
+                        tex.bindWithTextureUnit(loc);
+                    }
+                }
+                
+                loc++;
+            }
+        }
+        
+        // Then, bind the Material Properties.
+        
+        const Color& ambient = material.getAmbient();
+        int ambientloc = getUniformLocation("uAmbient");
+        
+        if ( ambientloc >= 0 )
+        {
+            HardwareProgramVariable ambientvar;
+            ambientvar.location = ambientloc;
+            ambientvar.type = HdwProgVarType::Vec4;
+            ambientvar.value.vec4 = Vector4 (ambient.getRed(), ambient.getGreen(), ambient.getBlue(), ambient.getAlpha());
+            setUniformVariable(ambientvar);
+        }
+        
+        const Color& diffuse = material.getDiffuse();
+        int diffuseloc = getUniformLocation("uDiffuse");
+        
+        if ( diffuseloc >= 0 )
+        {
+            HardwareProgramVariable diffusevar;
+            diffusevar.location = diffuseloc;
+            diffusevar.type = HdwProgVarType::Vec4;
+            diffusevar.value.vec4 = Vector4 (diffuse.getRed(), diffuse.getGreen(), diffuse.getBlue(), diffuse.getAlpha());
+            setUniformVariable(diffusevar);
+        }
+        
+        const Color& specular = material.getSpecular();
+        int specularloc = getUniformLocation("uSpecular");
+        
+        if ( specularloc >= 0 )
+        {
+            HardwareProgramVariable specularvar;
+            specularvar.location = specularloc;
+            specularvar.type = HdwProgVarType::Vec4;
+            specularvar.value.vec4 = Vector4 (specular.getRed(), specular.getGreen(), specular.getBlue(), specular.getAlpha());
+            setUniformVariable(specularvar);
+        }
+        
+        const Color& emission = material.getEmission();
+        int emissionloc = getUniformLocation("uEmission");
+        
+        if ( emissionloc >= 0 )
+        {
+            HardwareProgramVariable emissionvar;
+            emissionvar.location = emissionloc;
+            emissionvar.type = HdwProgVarType::Vec4;
+            emissionvar.value.vec4 = Vector4 (emission.getRed(), emission.getGreen(), emission.getBlue(), emission.getAlpha());
+            setUniformVariable(emissionvar);
+        }
+        
+        float shininess = material.getShininess();
+        int shininessloc = getUniformLocation("uShininess");
+        
+        if ( shininessloc >= 0 )
+        {
+            HardwareProgramVariable shininessvar;
+            shininessvar.location = shininessloc;
+            shininessvar.type = HdwProgVarType::Float1;
+            shininessvar.value.float1 = shininess;
+            setUniformVariable(shininessvar);
+        }
+    }
+}
+
+int HardwareProgramPrivate::getUniformLocation(const std::string &name) const
+{
+#ifdef GreIsDebugMode
+    GreDebugPretty() << "Not implemented." << std::endl;
+#endif
+    return -1;
+}
+
+void HardwareProgramPrivate::setUniformVariable(const Gre::HardwareProgramVariable &var) const
+{
+#ifdef GreIsDebugMode
+    GreDebugPretty() << "Not implemented." << std::endl;
+#endif
+}
+
 // ---------------------------------------------------------------------------------------------------
 
 HardwareProgram::HardwareProgram(const HardwareProgramPrivate* pointer)

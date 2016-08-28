@@ -175,19 +175,22 @@ int RenderFramebufferPrivate::getMaximumColorAttachementCount() const
 // ---------------------------------------------------------------------------------------------------
 
 RenderFramebuffer::RenderFramebuffer(const RenderFramebufferPrivate* pointer)
-: SpecializedResourceUser<RenderFramebufferPrivate>(pointer)
+: Gre::ResourceUser(pointer)
+, SpecializedResourceUser<RenderFramebufferPrivate>(pointer)
 {
     
 }
 
 RenderFramebuffer::RenderFramebuffer(const RenderFramebufferHolder& holder)
-: SpecializedResourceUser<RenderFramebufferPrivate>(holder)
+: Gre::ResourceUser(holder)
+, SpecializedResourceUser<RenderFramebufferPrivate>(holder)
 {
     
 }
 
 RenderFramebuffer::RenderFramebuffer(const RenderFramebuffer& user)
-: SpecializedResourceUser<RenderFramebufferPrivate>(user)
+: Gre::ResourceUser(user)
+, SpecializedResourceUser<RenderFramebufferPrivate>(user)
 {
     
 }

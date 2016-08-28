@@ -5,7 +5,7 @@
 //  Created by Jacques Tronconi on 11/04/2016.
 //
 //
-
+/*
 #include "CustomNodePrivate.h"
 
 #include "MeshCustomNode.h"
@@ -145,3 +145,4 @@ bool CustomNodePrivate::hasChildren() const
 }
 
 GreEndNamespace
+*/

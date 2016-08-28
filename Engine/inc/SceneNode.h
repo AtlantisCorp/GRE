@@ -35,37 +35,45 @@ THE SOFTWARE.
 
 #include "Pools.h"
 #include "Resource.h"
-#include "Node.h"
 #include "Mesh.h"
 #include "Transformation.h"
+#include "BoundingBox.h"
+#include "Camera.h"
 
 GreBeginNamespace
 
-class SceneManager;
+/// @brief Identifies a node.
+typedef uint64_t RenderNodeIdentifier;
 
 //////////////////////////////////////////////////////////////////////
-/// @class SceneNode
 /// @brief Specialized Node to contains particular Objects as Mesh.
 /// 
-/// The SceneNode is a Node (i.e. contains a parent node and one or more
-/// children nodes), also holding some informations as transformations.
-/// The SceneNode is not guaranteed to be hold in the bounding box from
-/// its parent. This behaviour is implementation dependent. 
+/// The RenderNode is an updatable Object. It can holds a Mesh, or only
+/// describe a Part of a Space for a Scene Division.
 ///
-/// The SceneNode can creates child using the same creator used to create
-/// this SceneNode. 
+/// Every RenderNode has a generated Id using 'Identificator::Create()'.
 ///
-/// Every SceneNode has a generated Id. This Id is dependent from the
-/// SceneManager that created it. @see SceneManager::createIdentifier().
+/// You can add a RenderNode using 'RenderScene::addNode()' or
+/// 'RenderNode::addNode()'. In the default implementation, if the
+/// BoundingBox from the futur child node is in the BoundingBox of
+/// the Node, the Child will be added. If not, it will be added to the
+/// Parent's Node using same technic.
+///
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC SceneNodePrivate : public NodePrivate
+class DLL_PUBLIC RenderNodePrivate : public Resource
 {
 public:
     
     POOLED(Pools::Scene)
-	
-	/// @brief Identifies a node.
-	typedef uint64_t Identifier;
+    
+    /// @brief Pre-holder typedef.
+    typedef SpecializedResourceHolder<RenderNodePrivate> RenderNodeHolder;
+    
+    /// @brief Pre-holder list.
+    typedef SpecializedResourceHolderList<RenderNodePrivate> RenderNodeHolderList;
+    
+    /// @brief Easier Id.
+    typedef RenderNodeIdentifier Identifier;
 	
 	/// @brief A simple class to generate Identifiers.
 	class Identificator
@@ -84,53 +92,38 @@ public:
 		/// @brief Identifier counter.
 		static Identifier identifier;
 	};
-	
-	//////////////////////////////////////////////////////////////////////
-	/// @brief Creates a SceneNodePrivate.
-	//////////////////////////////////////////////////////////////////////
-	SceneNodePrivate(const SceneManager& creator);
-	
-	//////////////////////////////////////////////////////////////////////
-	/// @brief Creates a SceneNodePrivate with name.
-	//////////////////////////////////////////////////////////////////////
-	SceneNodePrivate(const SceneManager& creator, const std::string& name);
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Creates a SceneNodePrivate with a name and a Mesh shared
-    /// object.
     //////////////////////////////////////////////////////////////////////
-    SceneNodePrivate(const SceneManager& creator, const std::string& name, const Mesh& renderable);
+    RenderNodePrivate();
 	
 	//////////////////////////////////////////////////////////////////////
-	/// @brief Destroys a SceneNodePrivate.
 	//////////////////////////////////////////////////////////////////////
-	virtual ~SceneNodePrivate();
+    RenderNodePrivate(const std::string& name);
+	
+	//////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////
+	virtual ~RenderNodePrivate();
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns true if this SceneNode contains a Mesh.
+    /// @brief Returns true if this RenderNode contains a Mesh.
     //////////////////////////////////////////////////////////////////////
     virtual bool isRenderable() const;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the Mesh rendered in this Node.
     //////////////////////////////////////////////////////////////////////
-    virtual const Mesh& getRenderable() const;
+    virtual const Mesh& getMesh() const;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the Mesh rendered in this Node.
     //////////////////////////////////////////////////////////////////////
-    virtual Mesh& getRenderable();
+    virtual Mesh& getMesh();
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Sets a new Mesh to render in this Node.
     //////////////////////////////////////////////////////////////////////
-    virtual void setRenderable(const Mesh& mesh);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns true if the Mesh object has changed since the last
-    /// update.
-    //////////////////////////////////////////////////////////////////////
-    virtual bool isRenderableChanged() const;
+    virtual void setMesh(const Mesh& mesh);
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Change the local transformation applied to this Node.
@@ -147,11 +140,96 @@ public:
     /// parents.
     //////////////////////////////////////////////////////////////////////
     virtual Matrix4 getModelMatrix() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Adds a Child to this Node.
+    //////////////////////////////////////////////////////////////////////
+    virtual void addNode ( const RenderNodeHolder& node );
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns every Childs this Node has.
+    //////////////////////////////////////////////////////////////////////
+    virtual RenderNodeHolderList& getChilds();
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns every Childs this Node has.
+    //////////////////////////////////////////////////////////////////////
+    virtual const RenderNodeHolderList& getChilds() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Finds RenderNode from its identifier.
+    //////////////////////////////////////////////////////////////////////
+    virtual RenderNodeHolder find ( RenderNodeIdentifier identifier );
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Finds RenderNode from its identifier.
+    //////////////////////////////////////////////////////////////////////
+    virtual const RenderNodeHolder find ( RenderNodeIdentifier identifier ) const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns Children visible by given CameraHolder.
+    //////////////////////////////////////////////////////////////////////
+    virtual RenderNodeHolderList getVisibleChildren ( const CameraHolder& camera ) const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Removes given Child.
+    /// This function also removes every Child's Children. To unremove this
+    /// Child's Children, use 'RenderNode::removeNotRecursive()' .
+    //////////////////////////////////////////////////////////////////////
+    virtual void remove ( const Identifier& identifier );
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Removes given Child but not its Children.
+    /// Its Children are added to this Node using 'RenderNode::addNode()' .
+    //////////////////////////////////////////////////////////////////////
+    virtual void removeNotRecursive ( const Identifier& identifier );
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Removes every Child.
+    //////////////////////////////////////////////////////////////////////
+    virtual void clear();
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the BoundingBox for this Node.
+    //////////////////////////////////////////////////////////////////////
+    virtual const BoundingBox& getBoundingBox() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Translates the RenderNode.
+    //////////////////////////////////////////////////////////////////////
+    virtual void translate ( const Vector3& vec );
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Rotates the RenderNode.
+    //////////////////////////////////////////////////////////////////////
+    virtual void rotate ( float angle , const Vector3& axis );
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Scales the RenderNode.
+    //////////////////////////////////////////////////////////////////////
+    virtual void scale ( float value );
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns 'iIdentifier' property.
+    //////////////////////////////////////////////////////////////////////
+    virtual Identifier getIdentifier() const;
+    
+protected:
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Changes the RenderNode's parent.
+    /// @note This function is protected in order to prevent anyone to change
+    /// inaccurately the node's parent.
+    //////////////////////////////////////////////////////////////////////
+    virtual void setParent ( const RenderNodeHolder& parent );
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Called when receiving Update Event.
+    /// Updates 'iBoundingBox' and 'iModelMatrix' if needed.
+    //////////////////////////////////////////////////////////////////////
+    virtual void onUpdateEvent(const UpdateEvent& e);
 	
 protected:
-	
-	/// @brief Creator of this SceneNodePrivate.
-	SceneManager* iCreator;
 	
 	/// @brief Identifier of this node.
 	Identifier iIdentifier;
@@ -160,110 +238,127 @@ protected:
     /// Mesh::Null.
     Mesh iRenderable;
     
-    /// @brief Flags set to true when the Mesh object has changed and no update
-    /// has been done yet.
-    mutable bool iRenderableChanged;
-    
     /// @brief Holds transformation properties.
     Transformation iTransformation;
     
+    /// @brief Childs' list.
+    RenderNodeHolderList iChilds;
+    
+    /// @brief Parent Holder.
+    RenderNodeHolder iParent;
+    
+    /// @brief Axis Aligned BoundingBox translated to this Node.
+    BoundingBox iBoundingBox;
+    
+    /// @brief ModelMatrix used for the HardwareProgram.
+    Matrix4 iModelMatrix;
+    
     /// @brief Flags set to true when the iTransformation property has changed.
     mutable bool iTransformationChanged;
+    
+    /// @brief Flag set to true when 'iRenderable' has been changed.
+    mutable bool iRenderableChanged;
 };
 
 /// @brief Common typedef to specialize ResourceHolder.
-typedef SpecializedResourceHolder<SceneNodePrivate> SceneNodeHolder;
+typedef SpecializedResourceHolder<RenderNodePrivate> RenderNodeHolder;
 
 /// @brief Common typedef to specialize SpecializedResourceHolderList.
-typedef SpecializedResourceHolderList<SceneNodePrivate> SceneNodeHolderList;
+typedef SpecializedResourceHolderList<RenderNodePrivate> RenderNodeHolderList;
 
 //////////////////////////////////////////////////////////////////////
-/// @brief Specialized Node for SceneNodePrivate.
+/// @brief Specialized Node for RenderNodePrivate.
 //////////////////////////////////////////////////////////////////////
-class SceneNode : public Node, public SpecializedResourceUser<SceneNodePrivate>
+class RenderNode : public SpecializedResourceUser<RenderNodePrivate>
 {
 public:
     
     POOLED(Pools::Scene)
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Constructs a SceneNode from raw pointer.
     //////////////////////////////////////////////////////////////////////
-    SceneNode(SceneNodePrivate* node);
+    RenderNode(const RenderNodePrivate* node);
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Constructs a SceneNode from Holder.
     //////////////////////////////////////////////////////////////////////
-    SceneNode(const SceneNodeHolder& holder);
+    RenderNode(const RenderNodeHolder& holder);
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Constructs a SceneNode from User.
     //////////////////////////////////////////////////////////////////////
-    SceneNode(const SceneNode& user);
+    RenderNode(const RenderNode& user);
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Destroys the SceneNode.
     //////////////////////////////////////////////////////////////////////
-    virtual ~SceneNode();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Creates a new ResourceHolder in order to use the Resource.
-    //////////////////////////////////////////////////////////////////////
-    SpecializedResourceHolder<SceneNodePrivate> lock();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Creates a new ResourceHolder in order to use the Resource.
-    //////////////////////////////////////////////////////////////////////
-    const SpecializedResourceHolder<SceneNodePrivate> lock() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns true if this SceneNode contains a Mesh.
-    //////////////////////////////////////////////////////////////////////
-    virtual bool isRenderable() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Mesh rendered in this Node.
-    //////////////////////////////////////////////////////////////////////
-    virtual const Mesh& getRenderable() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Mesh rendered in this Node.
-    //////////////////////////////////////////////////////////////////////
-    virtual Mesh& getRenderable();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Sets a new Mesh to render in this Node.
-    //////////////////////////////////////////////////////////////////////
-    virtual void setRenderable(const Mesh& mesh);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns true if the Mesh object has changed since the last
-    /// update.
-    //////////////////////////////////////////////////////////////////////
-    virtual bool isRenderableChanged() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Change the local transformation applied to this Node.
-    //////////////////////////////////////////////////////////////////////
-    virtual void setTransformation(const Transformation& transformation);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the local transformation applied to this Node.
-    //////////////////////////////////////////////////////////////////////
-    virtual const Transformation& getTransformation() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Model Matrix applied to this Node and the
-    /// parents.
-    //////////////////////////////////////////////////////////////////////
-    virtual Matrix4 getModelMatrix() const;
+    virtual ~RenderNode();
     
     /// @brief Null Object.
-    static SceneNode Null;
+    static RenderNode Null;
 };
 
-/// @brief std::list for SceneNode.
-typedef std::list<SceneNode> SceneNodeList;
+/// @brief std::list for RenderNode.
+typedef std::list<RenderNode> RenderNodeList;
+
+/*
+RenderScene scene = ResourceManager::Get().getRenderSceneManager().load("MyScene", "Default");
+
+RenderNodeHolder cube = scene.createNode("MyCube");
+cube.setMesh(mycubemesh);
+cube.translate(Vector3(0,0,1));
+scene.addNode(cube);
+
+cube.translate()
+{
+    iPosition = position;
+    iParent->onChildNodeMoved(this)
+    {
+        if ( !node->getBoundingBox()->in(getBoundingBox()) )
+        {
+            RenderNodeHolder node ( node );
+            this->remove(node);
+            iParent->addNode(node);
+            {
+                if ( !node->getBoundingBox()->in(getBoundingBox()) )
+                {
+                    iParent->addNode(node);
+                }
+                else
+                {
+                    for ( child : nodes )
+                    {
+                        if ( node->boundingbox->in (child->boundingbox) )
+                        {
+                            child->addNode(node)
+                            return;
+                        }
+                    }
+                    
+                    iChilds.push_back(node);
+                    return;
+                }
+            }
+        }
+    }
+}
+
+Later, while updating...
+ 
+ MyRenderSceneManager.onUpdateEvent ()
+ {
+    updateseveryscene();
+    {
+        scene.onUpdateEvent();
+        {
+            scene.updaterootnode();
+        }
+    }
+ }
+ 
+ To make a player :
+ 
+ Camera::connectRenderNode(myplayerbignode);
+ Camera::onKeyUp, onKeyDown -> myplayerbignode.translate, scale, rotate, ...
+ 
+*/
 
 GreEndNamespace
 

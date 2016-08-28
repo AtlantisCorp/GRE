@@ -5,7 +5,7 @@
 //  Created by Jacques Tronconi on 02/11/2015.
 //  Copyright (c) 2015 Atlanti's Corporation. All rights reserved.
 //
-
+/*
 #include "TextResource.h"
 
 GreBeginNamespace
@@ -60,3 +60,4 @@ ResourceLoader* TextLoader::clone() const
 }
 
 GreEndNamespace
+*/

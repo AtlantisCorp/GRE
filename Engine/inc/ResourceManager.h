@@ -43,6 +43,8 @@
 #include "FrameBuffer.h"
 #include "LoopBehaviours.h"
 #include "Keyboard.h"
+#include "ResourcePath.h"
+#include "Material.h"
 
 GreBeginNamespace
 
@@ -135,30 +137,6 @@ public:
     
 protected:
     
-    /// @brief Factory to create FileLoaders.
-    FileLoaderFactory iFileloaders;
-    
-    /// @brief Factory to create WindowLoaders.
-    WindowLoaderFactory iWindowLoaders;
-    
-    /// @brief Factory to create RendererLoaders.
-    RendererLoaderFactory iRendererLoaders;
-    
-    /// @brief Factory to create MeshLoaders.
-    MeshLoaderFactory iMeshLoaders;
-    
-    /// @brief Creates SceneLoader objects.
-    SceneManagerLoaderFactory iSceneLoaders;
-    
-    /// @brief Creates HardwareShaderLoader objects.
-    HardwareShaderLoaderFactory iShaderLoaders;
-    
-    /// @brief Creates HardwareProgramManagerLoader objects.
-    HardwareProgramManagerLoaderFactory iProgManLoaders;
-    
-    /// @brief Creates FrameBufferLoader objects.
-    RenderFramebufferLoaderFactory iFboLoaders;
-    
     /// @brief Utility class to create Names.
     NameGenerator iNameGenerator;
     
@@ -186,14 +164,20 @@ protected:
     /// @brief The current Elapsed Time since app started.
     UpdateTime iLastUpdate;
     
-    /// @brief Holds Resource's owned by the ResourceManager.
-    std::list<ResourceHolder> iResources;
-    
-    /// @brief WindowManager.
+    /// @brief Window Manager.
     WindowManager iWindowManager;
     
-    /// @brief SceneManager's Manager.
-    SceneManagerManager iSceneManagerManager;
+    /// @brief Renderer Manager.
+    RendererManager iRendererManager;
+    
+    /// @brief RenderScene's Manager.
+    RenderSceneManager iRenderSceneManager;
+    
+    /// @brief Material Manager.
+    MaterialManager iMaterialManager;
+    
+    /// @brief Plugin Manager.
+    PluginManager iPluginManager;
     
 public:
     
@@ -238,13 +222,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
     /// @brief Destroys the ResourceManager and, all the Resource objects.
     ////////////////////////////////////////////////////////////////////////
-    virtual ~ResourceManager ();
-    
-    ////////////////////////////////////////////////////////////////////////
-    /// @brief Adds a new Resource, created by the user.
-    /// This resource is owned by the ResourceManager only.
-    ////////////////////////////////////////////////////////////////////////
-    virtual ResourceUser addResource(const ResourceHolder& holder);
+    virtual ~ResourceManager() noexcept(false);
     
     ////////////////////////////////////////////////////////////////////////
     /// @brief Creates a generic empty Resource.
@@ -266,9 +244,9 @@ public:
     /// instead.
     ////////////////////////////////////////////////////////////////////////
     template <class Holder , class Loader , class ... Args>
-    Holder loadResourceWith ( const Loader& loader , const std::string& name , Args&& ... args )
+    Holder loadResourceFrom ( const Loader& loader , const std::string& name , Args&& ... args )
     {
-        Holder retvalue = loader->load(name , std::forward<Args>(args)...);
+        Holder retvalue = loader.load(name , std::forward<Args>(args)...);
         
 #ifdef GreIsDebugMode
         if ( retvalue.isInvalid() )
@@ -322,45 +300,23 @@ public:
     }
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the first Resource that has given name.
+    /// @brief Clears every Managers, Factory, and others.
     //////////////////////////////////////////////////////////////////////
-    virtual ResourceUser findResourceByName(const std::string& name);
+    virtual void clear();
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Unload Resource giving its name.
-    //////////////////////////////////////////////////////////////////////
-    virtual void unloadResource(const std::string& name);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Unload every Resource objects.
-    //////////////////////////////////////////////////////////////////////
-    virtual void clear ();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Memory used by every ResourceObject, using the
-    /// Pool system.
+    /// @brief Returns 'Pool<Resource>::Get().getCurrentSize()'.
     //////////////////////////////////////////////////////////////////////
     virtual unsigned getResourceUsage() const;
     
-    /// @brief Returns the FileLoader Factory.
-    FileLoaderFactory& getFileLoaderFactory();
-    /// @brief Returns the WindowLoader Factory.
-    WindowLoaderFactory& getWindowLoaderFactory();
-    /// @brief Returns the RendererLoader Factory.
-    RendererLoaderFactory& getRendererLoaderFactory();
-    /// @brief Returns the MeshLoader Factory
-    MeshLoaderFactory& getMeshLoaderFactory();
-    /// @brief Returns the SceneLoader Factory.
-    SceneManagerLoaderFactory& getSceneManagerLoaderFactory();
+    //////////////////////////////////////////////////////////////////////
     /// @brief Returns the NameGenerator object.
+    //////////////////////////////////////////////////////////////////////
     NameGenerator& getNameGenerator();
-    /// @brief Returns the HardwareShaderLoader Factory.
-    HardwareShaderLoaderFactory& getHardwareShaderLoaderFactory();
-    /// @brief Returns the HardwareProgramManagerLoader Factory.
-    HardwareProgramManagerLoaderFactory& getHardwareProgramManagerLoaderFactory();
-    /// @brief Returns the FrameBufferLoader Factory.
-    RenderFramebufferLoaderFactory& getFrameBufferLoaderFactory();
+    
+    //////////////////////////////////////////////////////////////////////
     /// @brief Returns the Keyboard Loader.
+    //////////////////////////////////////////////////////////////////////
     KeyboardLoader& getKeyboardLoader();
     
     //////////////////////////////////////////////////////////////////////
@@ -400,14 +356,6 @@ public:
     virtual void loop();
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Creates a Resource that should be used only for Event handling/
-    /// sending.
-    /// @deprecated
-    /// This function is the same as ::loadEmptyResource().
-    //////////////////////////////////////////////////////////////////////
-    virtual ResourceHolder createPureListener(const std::string& name);
-    
-    //////////////////////////////////////////////////////////////////////
     /// @brief Creates a simple Keyboard Resource.
     //////////////////////////////////////////////////////////////////////
     virtual KeyboardHolder createKeyboard(const std::string& name);
@@ -421,6 +369,96 @@ public:
     /// @brief Returns the Window Manager.
     //////////////////////////////////////////////////////////////////////
     virtual const WindowManager& getWindowManager() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the MaterialManager.
+    //////////////////////////////////////////////////////////////////////
+    virtual const MaterialManager& getMaterialManager() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the MaterialManager.
+    //////////////////////////////////////////////////////////////////////
+    virtual MaterialManager& getMaterialManager();
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the RendererManager.
+    //////////////////////////////////////////////////////////////////////
+    virtual RendererManager& getRendererManager();
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the RendererManager.
+    //////////////////////////////////////////////////////////////////////
+    virtual const RendererManager& getRendererManager() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the RenderSceneManager.
+    //////////////////////////////////////////////////////////////////////
+    virtual RenderSceneManager& getRenderSceneManager();
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the RenderSceneManager.
+    //////////////////////////////////////////////////////////////////////
+    virtual const RenderSceneManager& getRenderSceneManager() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Find a Resource given its 'ResourcePath'.
+    //////////////////////////////////////////////////////////////////////
+    template< typename User >
+    User findResource ( const ResourcePath& path )
+    {
+        if ( !path.empty() )
+        {
+            ResourceDirectoryType resourcetype = path.getDirectoryType();
+            
+            if ( resourcetype == ResourceDirectoryType::Material )
+            {
+                return iMaterialManager.get(path.getName());
+            }
+            
+#ifdef GreIsDebugMode
+            GreDebugPretty() << "ResourcePath '" << path.toString() << "' has invalid ResourceDirectoryType." << std::endl;
+#endif
+            return User ( nullptr );
+        }
+        
+        else
+        {
+#ifdef GreIsDebugMode
+            GreDebugPretty() << "'path' is empty." << std::endl;
+#endif
+            return User ( nullptr );
+        }
+    }
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Find a Resource given its 'ResourcePath'.
+    //////////////////////////////////////////////////////////////////////
+    template< typename User >
+    const User findResource ( const ResourcePath& path ) const
+    {
+        if ( !path.empty() )
+        {
+            ResourceDirectoryType resourcetype = path.getDirectoryType();
+            
+            if ( resourcetype == ResourceDirectoryType::Material )
+            {
+                return iMaterialManager.get(path.getName());
+            }
+            
+#ifdef GreIsDebugMode
+            GreDebugPretty() << "ResourcePath '" << path.toString() << "' has invalid ResourceDirectoryType." << std::endl;
+#endif
+            return User ( nullptr );
+        }
+        
+        else
+        {
+#ifdef GreIsDebugMode
+            GreDebugPretty() << "'path' is empty." << std::endl;
+#endif
+            return User ( nullptr );
+        }
+    }
     
 protected:
     

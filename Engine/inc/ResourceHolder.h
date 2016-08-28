@@ -210,6 +210,17 @@ public:
 	{
 		this->push_back(obj);
 	}
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Adds a SpecializedResourceHolderList to the list.
+    //////////////////////////////////////////////////////////////////////
+    void add ( const SpecializedResourceHolderList<Class>& objs )
+    {
+        for ( auto obj : objs )
+        {
+            add(obj);
+        }
+    }
 	
 	//////////////////////////////////////////////////////////////////////
 	/// @brief Adds a Resource Pointer to the list.
@@ -227,7 +238,7 @@ public:
         auto it = find(name);
         if(it != list_t::end())
         {
-            erase(it);
+            this->erase(it);
         }
     }
     

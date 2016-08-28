@@ -86,19 +86,22 @@ void HardwareShaderPrivate::clear()
 // ---------------------------------------------------------------------------------------------------
 
 HardwareShader::HardwareShader(const HardwareShaderPrivate* pointer)
-: SpecializedResourceUser<HardwareShaderPrivate>(pointer)
+: Gre::ResourceUser(pointer)
+, SpecializedResourceUser<HardwareShaderPrivate>(pointer)
 {
     
 }
 
 HardwareShader::HardwareShader(const HardwareShaderHolder& holder)
-: SpecializedResourceUser<HardwareShaderPrivate>(holder)
+: Gre::ResourceUser(holder)
+, SpecializedResourceUser<HardwareShaderPrivate>(holder)
 {
     
 }
 
 HardwareShader::HardwareShader(const HardwareShader& user)
-: SpecializedResourceUser<HardwareShaderPrivate>(user)
+: Gre::ResourceUser(user)
+, SpecializedResourceUser<HardwareShaderPrivate>(user)
 {
     
 }
@@ -164,17 +167,6 @@ HardwareShaderLoader::HardwareShaderLoader()
 HardwareShaderLoader::~HardwareShaderLoader()
 {
     
-}
-
-bool HardwareShaderLoader::isTypeSupported(Resource::Type type) const
-{
-    return type == Resource::Type::HdwShader;
-}
-
-Resource* HardwareShaderLoader::load(Resource::Type type, const std::string &name, const std::string& filepath, const Gre::ShaderType &stype) const
-{
-    GreDebugFunctionNotImplemented();
-    return nullptr;
 }
 
 HardwareShader HardwareShader::Null = HardwareShader(nullptr);

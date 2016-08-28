@@ -35,6 +35,7 @@
 
 #include "Pools.h"
 #include "HardwareVertexBuffer.h"
+#include "BoundingBox.h"
 
 GreBeginNamespace
 
@@ -51,6 +52,11 @@ GreBeginNamespace
 ///
 /// If you want to disable a field, use the VertexComponentType::Null's
 /// types.
+///
+/// The SoftwareVertexBuffer has a 'iBoundingBox' field, which is computed
+/// when modifying the data. If you want to modify Vertex Data by mapping
+/// a pointer, use '::makeBoundingBox()' to compute the BoundingBox with new
+/// data.
 ///
 //////////////////////////////////////////////////////////////////////
 class DLL_PUBLIC SoftwareVertexBufferPrivate : public HardwareVertexBufferPrivate
@@ -80,7 +86,7 @@ public:
     //////////////////////////////////////////////////////////////////////
     /// @brief Update the buffer if dirty.
     //////////////////////////////////////////////////////////////////////
-    virtual void update() const;
+    virtual void update();
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns true if Buffer is invalid.
@@ -113,6 +119,35 @@ public:
     //////////////////////////////////////////////////////////////////////
     virtual size_t count() const;
     
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the BoundingBox computed for this Software Buffer.
+    //////////////////////////////////////////////////////////////////////
+    virtual const BoundingBox& getBoundingBox() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Computes the BoundingBox from this Software Buffer's data.
+    /// Uses this function if you modify the HardwareBuffer from a pointer,
+    /// after setting new data.
+    //////////////////////////////////////////////////////////////////////
+    virtual void makeBoundingBox();
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Sets data from another HardwareVertexBuffer object, erasing
+    /// prior data and updating new one.
+    //////////////////////////////////////////////////////////////////////
+    virtual void setData ( const HardwareVertexBufferHolder& holder );
+    
+protected:
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Called when receiving Update Event.
+    ///
+    /// Updates the 'iBoundingBox' property if 'iVertexData' has changed,
+    /// calls 'makeBoundingBox()'.
+    ///
+    //////////////////////////////////////////////////////////////////////
+    virtual void onUpdateEvent(const UpdateEvent& e);
+    
 protected:
     
     /// @brief Holds the raw Vertex data.
@@ -120,6 +155,12 @@ protected:
     
     /// @brief Size of the buffer.
     size_t iSize;
+    
+    /// @brief BoundingBox computed for this VertexBuffer.
+    BoundingBox iBoundingBox;
+    
+    /// @brief True if the BoundingBox must be computed.
+    mutable bool iBoundingBoxInvalid;
 };
 
 /// @brief SpecializedResourceHolder for SoftwareVertexBufferPrivate.
@@ -131,7 +172,7 @@ typedef SpecializedResourceHolderList<SoftwareVertexBufferPrivate> SoftwareVerte
 //////////////////////////////////////////////////////////////////////
 /// @brief SpecializedResourceUser for SoftwareVertexBufferPrivate.
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC SoftwareVertexBuffer : public HardwareVertexBuffer /*, public SpecializedResourceUser<SoftwareVertexBufferPrivate> */
+class DLL_PUBLIC SoftwareVertexBuffer : public HardwareVertexBuffer
 {
 public:
     
@@ -162,6 +203,18 @@ public:
     /// @brief Creates a new ResourceHolder in order to use the Resource.
     //////////////////////////////////////////////////////////////////////
     const SoftwareVertexBufferHolder lock() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the BoundingBox computed for this Software Buffer.
+    //////////////////////////////////////////////////////////////////////
+    virtual const BoundingBox& getBoundingBox() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Computes the BoundingBox from this Software Buffer's data.
+    /// Uses this function if you modify the HardwareBuffer from a pointer,
+    /// after setting new data.
+    //////////////////////////////////////////////////////////////////////
+    virtual void makeBoundingBox();
     
     /// @brief Null SoftwareVertexBuffer.
     static SoftwareVertexBuffer Null;

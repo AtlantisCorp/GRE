@@ -65,12 +65,12 @@ void RenderTargetPrivate::unbindFramebuffer()
     
 }
 
-void RenderTargetPrivate::selectScene(const SceneManager& scene)
+void RenderTargetPrivate::selectScene(const RenderScene& scene)
 {
     iSelectedScene = scene;
 }
 
-SceneManager RenderTargetPrivate::getSelectedScene()
+RenderScene RenderTargetPrivate::getSelectedScene()
 {
     return iSelectedScene;
 }
@@ -176,19 +176,19 @@ void RenderTarget::unbindFramebuffer()
         ptr->unbindFramebuffer();
 }
 
-void RenderTarget::selectScene(const SceneManager &scene)
+void RenderTarget::selectScene(const RenderScene &scene)
 {
     auto ptr = lock();
     if(ptr)
         ptr->selectScene(scene);
 }
 
-SceneManager RenderTarget::getSelectedScene()
+RenderScene RenderTarget::getSelectedScene()
 {
     auto ptr = lock();
     if(ptr)
         return ptr->getSelectedScene();
-    return SceneManager::Null;
+    return RenderScene::Null;
 }
 
 bool RenderTarget::holdsRenderContext() const

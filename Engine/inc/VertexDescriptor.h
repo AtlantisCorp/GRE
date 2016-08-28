@@ -133,7 +133,7 @@ public:
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the Component location in the Vertex structure.
     //////////////////////////////////////////////////////////////////////
-    virtual size_t getComponentLocation ( const VertexComponentType& component ) const;
+    virtual int getComponentLocation ( const VertexComponentType& component ) const;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the stride between two same Components. ( getSize()

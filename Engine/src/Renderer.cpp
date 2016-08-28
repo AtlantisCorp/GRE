@@ -92,25 +92,25 @@ void RendererPrivate::drawRenderTarget(const Gre::RenderTarget &rendertarget)
             }
             
             // Now we should have the Scene we should draw with this RenderTarget.
-            SceneManagerHolder smholder = holder->getSelectedScene().lock();
+            RenderSceneHolder smholder = holder->getSelectedScene().lock();
             
             if( smholder )
             {
-                // Sets the SceneManager to the FrameContext.
+                // Sets the RenderScene to the FrameContext.
                 iFrameContext.RenderedScene = smholder;
                 
-                // Now Render the selected SceneManager.
-                drawSceneManager(iFrameContext.RenderedScene);
+                // Now Render the selected RenderScene.
+                drawRenderScene(iFrameContext.RenderedScene);
                 
-                // After rendering the SceneManager, just unbind the RenderContext.
+                // After rendering the RenderScene, just unbind the RenderContext.
                 iLastRenderContext->unbind();
             }
             
             else
             {
-                // If we don't have any SceneManager to render, abort.
+                // If we don't have any RenderScene to render, abort.
 #ifdef GreIsDebugMode
-                GreDebugPretty() << "No SceneManager selected for RenderTarget '" << holder->getName() << "'." << std::endl;
+                GreDebugPretty() << "No RenderScene selected for RenderTarget '" << holder->getName() << "'." << std::endl;
 #endif
                 
                 iLastRenderContext->unbind();
@@ -129,7 +129,7 @@ void RendererPrivate::drawRenderTarget(const Gre::RenderTarget &rendertarget)
     }
 }
 
-void RendererPrivate::drawSceneManager(const Gre::SceneManager &scenemanager)
+void RendererPrivate::drawRenderScene(const Gre::RenderScene &scenemanager)
 {
     // Ensure everything is alright.
     if( iLastRenderContext && iFrameContext.RenderedScene == scenemanager.lock() )
@@ -261,21 +261,24 @@ void RendererPrivate::drawPassWithFramebuffer(const PassHolder& passholder, Rend
     
     else
     {
-        // NOTES : In this phasis, the Camera object is not prepared to the Program. Why ? Because this is done
-        // when updating the SceneManager and updating the HardwareProgramManager. The SceneManager will update
-        // its current Camera, which will changes its position. The HardwareProgramManager will updates its Programs
-        // with the global values "ProjectionMatrix" and "ViewMatrix" from the Camera.
-        
         // Program has correct location, now bind it and configure the Camera.
         program->bind();
         
+        // NOTES : The Camera is given by the CameraManager as 'CameraManager::getCurrentCamera()'. But, if you have to
+        // render multiple cameras, you can do it in rendering in multiple RenderFramebuffer then using those Texture
+        // to your final program.
+        // The Camera will updates the 'uProjectionMatrix' and 'uViewMatrix' variables from the HardwareProgram. Please
+        // be sure your HardwareProgram has those 2 variables.
+        
+        CameraHolder camera ( nullptr );
+        
         // Now we are drawing to the correct Framebuffer, using the correct HardwareProgram. We still have to
         // get the Objects to draw.
-        SceneNodeList nodes = iFrameContext.RenderedScene->getNodesFrom(iFrameContext.RenderedScene->getCurrentCamera());
+        RenderNodeHolderList nodes = iFrameContext.RenderedScene->findNodes(camera, DefaultRenderSceneFilter());
         
-        // The SceneNode's objects should be rendered now to the binded Framebuffer, accordingly to the given
+        // The RenderNode's objects should be rendered now to the binded Framebuffer, accordingly to the given
         // HardwareProgram.
-        drawSceneNodeList(nodes, program);
+        drawRenderNodeList(nodes, program);
         
         program->unbind();
     }
@@ -283,17 +286,17 @@ void RendererPrivate::drawPassWithFramebuffer(const PassHolder& passholder, Rend
     fboholder->unbind();
 }
 
-void RendererPrivate::drawSceneNodeList(SceneNodeList& nodes, HardwareProgramHolder& program)
+void RendererPrivate::drawRenderNodeList(RenderNodeHolderList& nodes, HardwareProgramHolder& program)
 {
     if( !nodes.empty() && program )
     {
-        // We iterates to every Node's from the list given by the SceneManager to draw the
+        // We iterates to every Node's from the list given by the RenderScene to draw the
         // objects. Those Objects are 'placed' thanks to the 'ModelMatrix' uniform.
         // Notes the ViewMatrix and ProjectionMatrix are set by the Camera during Rendering.
         
-        for(auto node : nodes)
+        for(RenderNodeHolder& node : nodes)
         {
-            Mesh mesh = node.getRenderable();
+            Mesh mesh = node->getMesh();
             
             if( mesh.isExpired() )
             {
@@ -302,7 +305,7 @@ void RendererPrivate::drawSceneNodeList(SceneNodeList& nodes, HardwareProgramHol
             
             // Updates the Model Matrix.
             
-            program->setUniformMat4("ModelMatrix", node.getModelMatrix());
+            program->setUniformMat4("ModelMatrix", node->getModelMatrix());
             
             // Draw the Mesh normally.
             
@@ -544,7 +547,7 @@ void RendererPrivate::drawIndexBuffer(const HardwareIndexBuffer& ibuf, const Har
             
             if ( !material.isInvalid() )
             {
-                bindMaterial(material);
+                program->bindMaterial(material);
             }
             
 #ifdef GreIsDebugMode
@@ -558,7 +561,7 @@ void RendererPrivate::drawIndexBuffer(const HardwareIndexBuffer& ibuf, const Har
             
             if ( !material.isInvalid() )
             {
-                unbindMaterial(material);
+                program->unbindMaterial(material);
             }
         }
     }
@@ -644,7 +647,7 @@ void RendererPrivate::loadMesh(Mesh& mesh, bool deleteCache)
                 // Handles for IndexDescriptor should be done by the Hardware Index Buffer itself,
                 // in ::addIndexBatch.
                 
-                for ( auto batch : softibuf.getIndexBatchVector() )
+                for ( auto batch : softibuf.getIndexBatches() )
                 {
                     gpuibuf.addIndexBatch(batch);
                 }
@@ -675,12 +678,12 @@ void RendererPrivate::loadMesh(Mesh& mesh, bool deleteCache)
             
             if ( deleteVertexBuffer )
             {
-                meshholder->getSoftwareVertexBuffer().reset();
+                meshholder->getSoftwareVertexBufferHolder().reset();
             }
             
             if ( deleteIndexBuffer )
             {
-                meshholder->getSoftwareIndexBuffer().reset();
+                meshholder->getSoftwareIndexBufferHolder().reset();
             }
         });
     }
@@ -692,17 +695,17 @@ TextureHolder RendererPrivate::createEmptyTexture(int width, int height)
     return TextureHolder(nullptr);
 }
 
-Texture RendererPrivate::createTexture(const std::string &name, const std::string &file)
+TextureHolder RendererPrivate::createTexture(const std::string &name, const std::string &file)
 {
     GreDebugFunctionNotImplemented();
-    return Texture::Null;
+    return TextureHolder(nullptr);
 }
 
 HardwareProgram RendererPrivate::createHardwareProgram(const std::string& name, const HardwareShader &vertexShader, const HardwareShader &fragmentShader)
 {
-    if( iHardwareProgramManager )
+    if( iProgramManager )
     {
-        HardwareProgram program = iHardwareProgramManager->createProgram(name, vertexShader, fragmentShader);
+        HardwareProgram program = iProgramManager->createHardwareProgram(name, vertexShader, fragmentShader);
         if( program.isExpired() )
         {
 #ifdef GreIsDebugMode
@@ -718,9 +721,9 @@ HardwareProgram RendererPrivate::createHardwareProgram(const std::string& name, 
 
 HardwareProgram RendererPrivate::createHardwareProgram(const std::string &name, const std::string &vertexShaderPath, const std::string &fragmentShaderPath)
 {
-    if( iHardwareProgramManager )
+    if( iProgramManager )
     {
-        HardwareProgram program = iHardwareProgramManager->createProgram(name, vertexShaderPath, fragmentShaderPath);
+        HardwareProgram program = iProgramManager->createHardwareProgramFromFiles(name, vertexShaderPath, fragmentShaderPath);
         if( program.isExpired() )
         {
 #ifdef GreIsDebugMode
@@ -739,11 +742,23 @@ RenderFramebufferHolderList RendererPrivate::getFramebuffers(int sz)
     if( iFrameContext.Framebuffers.size() >= sz )
     {
         // We have enough Framebuffers, returns the first ones.
+        
         RenderFramebufferHolderList fbolist;
         
-        for(int i = 0; i < sz; i++)
+        int i = 0;
+        for ( auto& framebuf : iFrameContext.Framebuffers )
         {
-            fbolist.add( *(iFrameContext.Framebuffers.begin() + i) );
+            fbolist.add( framebuf );
+            
+            if ( i >= sz )
+            {
+                break;
+            }
+            
+            else
+            {
+                i++;
+            }
         }
         
         return fbolist;
@@ -752,28 +767,31 @@ RenderFramebufferHolderList RendererPrivate::getFramebuffers(int sz)
     else
     {
         // Push the first Framebuffers.
+        
         RenderFramebufferHolderList fbolist;
         
-        for(int i = 0; i < iFrameContext.Framebuffers.size(); i++)
+        for ( auto& framebuf : iFrameContext.Framebuffers )
         {
-            fbolist.add( *(iFrameContext.Framebuffers.begin() + i) );
+            fbolist.add( framebuf );
         }
         
-        int numtocreate = sz - iFrameContext.Framebuffers.size();
+        int numtocreate = (int) ( sz - iFrameContext.Framebuffers.size() );
         
         // Creates as Framebuffers as necessary.
-        for(int i = 0; i < numtocreate; i++)
+        for ( int i = 0; i < numtocreate; i++ )
         {
             RenderFramebufferHolder fbo = createFramebuffer();
             iFrameContext.Framebuffers.add(fbo);
             fbolist.add(fbo);
         }
+        
+        return fbolist;
     }
 }
 
 RenderFramebufferHolder RendererPrivate::createFramebuffer() const
 {
-    return FramebufferHolder(nullptr);
+    return RenderFramebufferHolder(nullptr);
     
     /*
     auto rloader = ResourceManager::Get().getFramebufferLoaderFactory().get("OpenGlFramebufferLoader");
@@ -805,26 +823,23 @@ RenderContextHolder RendererPrivate::createRenderContext(const std::string&, con
 
 // ---------------------------------------------------------------------------------------------------
 
-Renderer::Renderer()
-: ResourceUser(), _mRenderer()
+Renderer::Renderer(const RendererPrivate* pointer)
+: Gre::ResourceUser(pointer)
+, SpecializedResourceUser<Gre::RendererPrivate>(pointer)
 {
     
 }
 
-Renderer::Renderer(Renderer&& movref)
-: ResourceUser(movref), _mRenderer(std::move(movref._mRenderer))
+Renderer::Renderer(const RendererHolder& holder)
+: Gre::ResourceUser(holder)
+, SpecializedResourceUser<Gre::RendererPrivate>(holder)
 {
     
 }
 
-Renderer::Renderer (const Renderer& renderer)
-: ResourceUser(renderer.lock()), _mRenderer(renderer._mRenderer)
-{
-    
-}
-
-Renderer::Renderer (const ResourceUser& renderer)
-: ResourceUser(renderer.lock()), _mRenderer(std::dynamic_pointer_cast<RendererPrivate>(renderer.lock()))
+Renderer::Renderer(const Renderer& user)
+: Gre::ResourceUser(user)
+, SpecializedResourceUser<Gre::RendererPrivate>(user)
 {
     
 }
@@ -834,360 +849,7 @@ Renderer::~Renderer()
     
 }
 
-Renderer& Renderer::operator=(const ResourceUser &ruser)
-{
-    ResourceUser::_resource = ruser.lock();
-    _mRenderer = std::dynamic_pointer_cast<RendererPrivate>(ruser.lock());
-    return *this;
-}
-
-Renderer& Renderer::operator=(const Renderer &ruser)
-{
-    ResourceUser::_resource = ruser.lock();
-    _mRenderer = ruser._mRenderer;
-    return *this;
-}
-
-void Renderer::render()
-{
-    auto ptr = _mRenderer.lock();
-    if(ptr)
-        ptr->render();
-}
-
-void Renderer::setFramerate(float fps)
-{
-    auto ptr = _mRenderer.lock();
-    if(ptr)
-        ptr->setFramerate(fps);
-}
-
-float Renderer::getCurrentFramerate() const
-{
-    auto ptr = _mRenderer.lock();
-    if(ptr)
-        return ptr->getCurrentFramerate();
-    
-    return 0.0f;
-}
-
-ElapsedTime Renderer::getElapsedTime() const
-{
-    auto ptr = _mRenderer.lock();
-    if(ptr)
-        return ptr->getElapsedTime();
-    return ElapsedTime::zero();
-}
-
-void Renderer::resetElapsedTime()
-{
-    auto ptr = _mRenderer.lock();
-    if(ptr)
-        ptr->resetElapsedTime();
-}
-
-void Renderer::beginRender()
-{
-    auto ptr = _mRenderer.lock();
-    if(ptr)
-        ptr->beginRender();
-}
-
-void Renderer::endRender()
-{
-    auto ptr = _mRenderer.lock();
-    if(ptr)
-        ptr->endRender();
-}
-
-void Renderer::setClearColor(const Color& color)
-{
-    auto ptr = _mRenderer.lock();
-    if(ptr)
-        ptr->setClearColor(color);
-}
-
-void Renderer::setClearDepth(float depth)
-{
-    auto ptr = _mRenderer.lock();
-    if(ptr)
-        ptr->setClearDepth(depth);
-}
-
-void Renderer::setActive(bool active)
-{
-    auto ptr = _mRenderer.lock();
-    if(ptr)
-        ptr->setActive(active);
-}
-
-bool Renderer::isActive() const
-{
-    auto ptr = _mRenderer.lock();
-    if(ptr)
-        return ptr->isActive();
-    return false;
-}
-
-bool Renderer::isImmediate() const
-{
-    auto ptr = _mRenderer.lock();
-    if(ptr)
-        return ptr->isImmediate();
-    return false;
-}
-
-void Renderer::setImmediateMode(bool mode)
-{
-    auto ptr = _mRenderer.lock();
-    if(ptr)
-        ptr->setImmediateMode(mode);
-}
-
-void Renderer::addImmediateAction(std::function<void ()> action)
-{
-    auto ptr = _mRenderer.lock();
-    if(ptr)
-        ptr->addImmediateAction(action);
-}
-
-void Renderer::resetImmediateActions()
-{
-    auto ptr = _mRenderer.lock();
-    if(ptr)
-        ptr->resetImmediateActions();
-}
-
-void Renderer::translate(float x, float y, float z)
-{
-    auto ptr = _mRenderer.lock();
-    if(ptr)
-        ptr->translate(x, y, z);
-}
-
-void Renderer::rotate(float angle, float x, float y, float z)
-{
-    auto ptr = _mRenderer.lock();
-    if(ptr)
-        ptr->rotate(angle, x, y, z);
-}
-
-void Renderer::drawTriangle(float sz, const Color& color1, const Color& color2, const Color& color3)
-{
-    auto ptr = _mRenderer.lock();
-    if(ptr)
-        ptr->drawTriangle(sz, color1, color2, color3);
-}
-
-void Renderer::drawQuad(float sz, const Color& color1, const Color& color2, const Color& color3, const Color& color4)
-{
-    auto ptr = _mRenderer.lock();
-    if(ptr)
-        ptr->drawQuad(sz, color1, color2, color3, color4);
-}
-
-HardwareVertexBuffer Renderer::createVertexBuffer()
-{
-    auto ptr = _mRenderer.lock();
-    if(ptr)
-        return ptr->createVertexBuffer();
-    return HardwareVertexBuffer::Null;
-}
-
-HardwareIndexBuffer Renderer::createIndexBuffer(PrimitiveType ptype, StorageType stype)
-{
-    auto ptr = _mRenderer.lock();
-    if(ptr)
-        return ptr->createIndexBuffer(ptype, stype);
-    return HardwareIndexBuffer::Null;
-}
-
-Mesh Renderer::createMeshFromBuffers(const std::string &name, const HardwareVertexBuffer &vbuf, const HardwareIndexBufferBatch &ibufs)
-{
-    auto ptr = _mRenderer.lock();
-    if(ptr)
-        return ptr->createMeshFromBuffers(name, vbuf, ibufs);
-    return Mesh::Null;
-}
-
-Texture Renderer::createTexture(const std::string &name, const std::string &file)
-{
-    auto ptr = _mRenderer.lock();
-    if(ptr)
-        return ptr->createTexture(name, file);
-    return Texture::Null;
-}
-
-Camera Renderer::createCamera(const std::string &name)
-{
-    auto ptr = _mRenderer.lock();
-    if(ptr)
-        return ptr->createCamera(name);
-    return Camera(nullptr);
-}
-
-void Renderer::draw(const Mesh &mesh, const HardwareProgram& activProgram)
-{
-    auto ptr = _mRenderer.lock();
-    if(ptr)
-        ptr->draw(mesh, activProgram);
-}
-
-void Renderer::prepare(const Camera& cam)
-{
-    auto ptr = _mRenderer.lock();
-    if(ptr)
-        ptr->prepare(cam);
-}
-
-Scene Renderer::loadSceneByName(const std::string& name, const std::string& sname)
-{
-    auto ptr = _mRenderer.lock();
-    if(ptr)
-        return ptr->loadSceneByName(name, sname);
-    return Scene::Null;
-}
-
-Scene Renderer::loadSceneByResource(Scene scene)
-{
-    auto ptr = _mRenderer.lock();
-    if(ptr)
-        return ptr->loadSceneByResource(scene);
-    return Scene::Null;
-}
-
-void Renderer::pushMatrix(MatrixType matrix)
-{
-    auto ptr = _mRenderer.lock();
-    if(ptr)
-        ptr->pushMatrix(matrix);
-}
-
-void Renderer::popMatrix(MatrixType matrix)
-{
-    auto ptr = _mRenderer.lock();
-    if(ptr)
-        ptr->popMatrix(matrix);
-}
-
-Scene& Renderer::getScene()
-{
-    auto ptr = _mRenderer.lock();
-    if(ptr)
-        return ptr->getScene();
-    return Scene::Null;
-}
-
-const Scene& Renderer::getScene() const
-{
-    auto ptr = _mRenderer.lock();
-    if(ptr)
-        return ptr->getScene();
-    return Scene::Null;
-}
-
-void Renderer::transform(const Node &node)
-{
-    auto ptr = _mRenderer.lock();
-    if(ptr)
-        ptr->transform(node);
-}
-
-HardwareProgram Renderer::createHardwareProgram(const std::string& name, const HardwareShader &vertexShader, const HardwareShader &fragmentShader)
-{
-    auto ptr = _mRenderer.lock();
-    if(ptr)
-        return ptr->createHardwareProgram(name, vertexShader, fragmentShader);
-    return HardwareProgram::Null;
-}
-
-void Renderer::prepare(Gre::PassPrivate *privPass)
-{
-    auto ptr = _mRenderer.lock();
-    if(ptr)
-        ptr->prepare(privPass);
-}
-
-void Renderer::prepare(const FrameBuffer &fbo)
-{
-    auto ptr = _mRenderer.lock();
-    if(ptr)
-        ptr->prepare(fbo);
-}
-
-void Renderer::finish(const FrameBuffer &fbo)
-{
-    auto ptr = _mRenderer.lock();
-    if(ptr)
-        ptr->finish(fbo);
-}
-
-void Renderer::renderFrameBuffers(std::queue<FrameBuffer> &fboQueue)
-{
-    auto ptr = _mRenderer.lock();
-    if(ptr)
-        ptr->renderFrameBuffers(fboQueue);
-}
-
-RenderContext Renderer::createRenderContext(const std::string& name, const RenderContextInfo& info)
-{
-    auto ptr = _mRenderer.lock();
-    if(ptr)
-        return ptr->createRenderContext(name, info, *this);
-    return RenderContext::Null;
-}
-
-void Renderer::onCurrentContextChanged(Gre::RenderContextPrivate *renderCtxt)
-{
-    auto ptr = _mRenderer.lock();
-    if(ptr)
-        ptr->onCurrentContextChanged(renderCtxt);
-}
-
-void Renderer::addRenderTarget(const RenderTarget &renderTarget)
-{
-    auto ptr = _mRenderer.lock();
-    if(ptr)
-        ptr->addRenderTarget(renderTarget);
-}
-
-void Renderer::addRenderTarget(Gre::Window &window, bool autoCreateContext)
-{
-    auto ptr = _mRenderer.lock();
-    if(ptr)
-        ptr->addRenderTarget(window, *this, autoCreateContext);
-}
-
-void Renderer::selectDefaultScene(const Gre::Scene &defScene)
-{
-    auto ptr = _mRenderer.lock();
-    if(ptr)
-        ptr->selectDefaultScene(defScene);
-}
-
-Scene Renderer::getDefaultScene()
-{
-    auto ptr = _mRenderer.lock();
-    if(ptr)
-        return ptr->getDefaultScene();
-    return Scene::Null;
-}
-
-void Renderer::render(Gre::RenderTarget &rtarget)
-{
-    auto ptr = _mRenderer.lock();
-    if(ptr)
-        ptr->render(rtarget);
-}
-
-void Renderer::launchDrawingThread()
-{
-    auto ptr = _mRenderer.lock();
-    if(ptr)
-        ptr->launchDrawingThread();
-}
-
-Renderer Renderer::Null = Renderer();
+Renderer Renderer::Null = Renderer(nullptr);
 
 // ---------------------------------------------------------------------------------------------------
 
@@ -1201,31 +863,267 @@ RendererLoader::~RendererLoader()
     
 }
 
-bool RendererLoader::isTypeSupported (Resource::Type type) const
-{
-    return type == Resource::Type::Renderer;
-}
-
-Resource* RendererLoader::load (Resource::Type type, const std::string& name) const
-{
-    return nullptr;
-}
-
-ResourceLoader* RendererLoader::clone() const
-{
-    return new RendererLoader();
-}
-
 // ---------------------------------------------------------------------------------------------------
 
-RendererLoaderFactory::RendererLoaderFactory()
+RendererManager::RendererManager()
 {
     
 }
 
-RendererLoaderFactory::~RendererLoaderFactory()
+RendererManager::~RendererManager()
 {
     
+}
+
+Renderer RendererManager::load(const RendererHolder &renderer)
+{
+    if ( !renderer.isInvalid() )
+    {
+        Renderer tmp = get(renderer->getName());
+        
+        if ( !tmp.isInvalid() )
+        {
+#ifdef GreIsDebugMode
+            GreDebugPretty() << "Renderer Resource '" << renderer->getName() << "' already loaded." << std::endl;
+#endif
+            return Renderer ( nullptr );
+        }
+        
+        iRenderers.add(renderer);
+        return Renderer ( renderer );
+    }
+    
+    else
+    {
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "'renderer' is invalid." << std::endl;
+#endif
+        return Renderer ( nullptr );
+    }
+}
+
+Renderer RendererManager::load(const std::string &name)
+{
+    if ( !name.empty() )
+    {
+        Renderer tmp = get(name);
+        
+        if ( !tmp.isInvalid() )
+        {
+#ifdef GreIsDebugMode
+            GreDebugPretty() << "Renderer Resource '" << name << "' already loaded." << std::endl;
+#endif
+            return Renderer ( nullptr );
+        }
+        
+        for ( auto it = iFactory.getLoaders().begin(); it != iFactory.getLoaders().end(); it++ )
+        {
+            auto loader = it->second;
+            
+            if ( loader )
+            {
+                RendererHolder rholder = loader->load(name);
+                
+                if ( rholder.isInvalid() )
+                {
+#ifdef GreIsDebugMode
+                    GreDebugPretty() << "Renderer Resource '" << name << "' could not be loaded by loader '" << it->first << "'." << std::endl;
+#endif
+                }
+                
+                else
+                {
+                    iRenderers.add(rholder);
+                    return Renderer ( rholder );
+                }
+            }
+        }
+        
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "Renderer Resource '" << name << "' could not be loaded by any installed Loader." << std::endl;
+#endif
+        return Renderer ( nullptr );
+    }
+    
+    else
+    {
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "'name' is empty." << std::endl;
+#endif
+        return Renderer ( nullptr );
+    }
+}
+
+Renderer RendererManager::load(const std::string &name, const Gre::RenderingApiDescriptor &apidescriptor)
+{
+    if ( !name.empty() )
+    {
+        Renderer tmp = get(name);
+        
+        if ( !tmp.isInvalid() )
+        {
+#ifdef GreIsDebugMode
+            GreDebugPretty() << "Renderer Resource '" << name << "' already loaded." << std::endl;
+#endif
+            return Renderer ( nullptr );
+        }
+        
+        for ( auto it = iFactory.getLoaders().begin(); it != iFactory.getLoaders().end(); it++ )
+        {
+            auto loader = it->second;
+            
+            if ( loader )
+            {
+                if ( loader->isCompatible(apidescriptor) )
+                {
+                    RendererHolder rholder = loader->load(name);
+                    
+                    if ( rholder.isInvalid() )
+                    {
+#ifdef GreIsDebugMode
+                        GreDebugPretty() << "Renderer Resource '" << name << "' could not be loaded by loader '" << it->first << "'." << std::endl;
+#endif
+                    }
+                    
+                    else
+                    {
+                        iRenderers.add(rholder);
+                        return Renderer ( rholder );
+                    }
+                }
+            }
+        }
+        
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "Renderer Resource '" << name << "' could not be loaded by any installed Loader." << std::endl;
+#endif
+        return Renderer ( nullptr );
+    }
+    
+    else
+    {
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "'name' is empty." << std::endl;
+#endif
+        return Renderer ( nullptr );
+    }
+}
+
+Renderer RendererManager::get(const std::string &name)
+{
+    if ( !name.empty() )
+    {
+        for ( RendererHolder& holder : iRenderers )
+        {
+            if ( !holder.isInvalid() )
+            {
+                if ( holder->getName() == name )
+                {
+                    return Renderer ( holder );
+                }
+            }
+        }
+        
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "Renderer Resource '" << name << "' not found." << std::endl;
+#endif
+        return Renderer ( nullptr );
+    }
+    
+    else
+    {
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "'name' is empty." << std::endl;
+#endif
+        return Renderer ( nullptr );
+    }
+}
+
+const Renderer RendererManager::get(const std::string &name) const
+{
+    if ( !name.empty() )
+    {
+        for ( const RendererHolder& holder : iRenderers )
+        {
+            if ( !holder.isInvalid() )
+            {
+                if ( holder->getName() == name )
+                {
+                    return Renderer ( holder );
+                }
+            }
+        }
+        
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "Renderer Resource '" << name << "' not found." << std::endl;
+#endif
+        return Renderer ( nullptr );
+    }
+    
+    else
+    {
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "'name' is empty." << std::endl;
+#endif
+        return Renderer ( nullptr );
+    }
+}
+
+const RendererHolderList& RendererManager::getRenderers() const
+{
+    return iRenderers;
+}
+
+void RendererManager::remove(const std::string &name)
+{
+    if ( !name.empty() )
+    {
+        for ( auto it = iRenderers.begin(); it != iRenderers.end(); it++ )
+        {
+            RendererHolder& holder = *it;
+            
+            if ( !holder.isInvalid() )
+            {
+                if ( holder->getName() == name )
+                {
+                    iRenderers.erase(it);
+                    return;
+                }
+            }
+        }
+        
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "Renderer Resource '" << name << "' not found." << std::endl;
+#endif
+    }
+    
+    else
+    {
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "'name' is empty." << std::endl;
+#endif
+    }
+}
+
+void RendererManager::clearRenderers()
+{
+    iRenderers.clear();
+}
+
+RendererLoaderFactory& RendererManager::getRendererLoaderFactory()
+{
+    return iFactory;
+}
+
+const RendererLoaderFactory& RendererManager::getRendererLoaderFactory() const
+{
+    return iFactory;
+}
+
+void RendererManager::clear()
+{
+    clearRenderers();
+    iFactory.clear();
 }
 
 GreEndNamespace

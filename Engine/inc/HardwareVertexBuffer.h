@@ -48,6 +48,12 @@ public:
     
     POOLED(Pools::HdwBuffer)
     
+    /// @brief SpecializedResourceHolder for HardwareVertexBufferPrivate.
+    typedef SpecializedResourceHolder<HardwareVertexBufferPrivate> HardwareVertexBufferHolder;
+    
+    /// @brief SpecializedResourceHolderList for HardwareVertexBufferPrivate.
+    typedef SpecializedResourceHolderList<HardwareVertexBufferPrivate> HardwareVertexBufferHolderList;
+    
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     HardwareVertexBufferPrivate(const std::string& name);
@@ -66,6 +72,12 @@ public:
     //////////////////////////////////////////////////////////////////////
     virtual void setVertexDescriptor(const VertexDescriptor& vdesc);
     
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Sets data from another HardwareVertexBuffer object, erasing
+    /// prior data and updating new one.
+    //////////////////////////////////////////////////////////////////////
+    virtual void setData ( const HardwareVertexBufferHolder& holder ) = 0;
+    
 protected:
     
     /// @brief Vertex's Descriptor map.
@@ -81,7 +93,7 @@ typedef SpecializedResourceHolderList<HardwareVertexBufferPrivate> HardwareVerte
 //////////////////////////////////////////////////////////////////////
 /// @brief Proxy to the HardwareVertexBufferPrivate object.
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC HardwareVertexBuffer : public HardwareBuffer /* , virtual public SpecializedResourceUser<HardwareVertexBufferPrivate> */
+class DLL_PUBLIC HardwareVertexBuffer : public HardwareBuffer
 {
 public:
     
@@ -122,6 +134,12 @@ public:
     /// @brief Changes the VertexDescriptor.
     //////////////////////////////////////////////////////////////////////
     virtual void setVertexDescriptor(const VertexDescriptor& vdesc);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Sets data from another HardwareVertexBuffer object, erasing
+    /// prior data and updating new one.
+    //////////////////////////////////////////////////////////////////////
+    virtual void setData ( const HardwareVertexBufferHolder& holder );
     
     /// @brief A Null HardwareVertexBuffer.
     static HardwareVertexBuffer Null;

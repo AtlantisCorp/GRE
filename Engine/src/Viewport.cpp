@@ -35,7 +35,7 @@
 GreBeginNamespace
 
 Viewport::Viewport(const std::string& name, float top, float left, float width, float height, bool activated)
-: _mName(name), _mBorderTop(top), _mBorderLeft(left), _mBorderWidth(width), _mBorderHeight(height), _mActivated(activated), _mScene(SceneManager::Null)
+: _mName(name), _mBorderTop(top), _mBorderLeft(left), _mBorderWidth(width), _mBorderHeight(height), _mActivated(activated), _mScene(RenderScene::Null)
 {
     _mSurface.height = 0;
     _mSurface.left = 0;
@@ -84,7 +84,7 @@ const Surface& Viewport::getSurface() const
     return _mSurface;
 }
 
-void Viewport::selectScene(const Gre::SceneManager &scene)
+void Viewport::selectScene(const Gre::RenderScene &scene)
 {
     _mScene = scene;
 }
@@ -94,7 +94,7 @@ bool Viewport::hasScene() const
     return !_mScene.isExpired();
 }
 
-const SceneManager& Viewport::getScene() const
+const RenderScene& Viewport::getScene() const
 {
     return _mScene;
 }

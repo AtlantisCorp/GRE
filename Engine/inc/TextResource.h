@@ -5,7 +5,7 @@
 //  Created by Jacques Tronconi on 28/10/2015.
 //  Copyright (c) 2015 Atlanti's Corporation. All rights reserved.
 //
-
+/*
 #ifndef GResource_TextResource_h
 #define GResource_TextResource_h
 
@@ -50,3 +50,4 @@ public:
 
 GreEndNamespace
 #endif
+*/

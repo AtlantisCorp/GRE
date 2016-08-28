@@ -5,7 +5,7 @@
 //  Created by Jacques Tronconi on 07/04/2016.
 //
 //
-
+/*
 #include "CustomScene.h"
 
 GreBeginNamespace
@@ -216,3 +216,4 @@ void ExampleUseCustomScene()
 }
 
 GreEndNamespace
+*/

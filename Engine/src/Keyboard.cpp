@@ -65,19 +65,22 @@ void KeyboardPrivate::onKeyDownEvent(const Gre::KeyDownEvent &e)
 // ---------------------------------------------------------------------------------------------------
 
 Keyboard::Keyboard(const KeyboardPrivate* resource)
-: SpecializedResourceUser<KeyboardPrivate>(resource)
+: Gre::ResourceUser(resource)
+, SpecializedResourceUser<KeyboardPrivate>(resource)
 {
     
 }
 
 Keyboard::Keyboard(const KeyboardHolder& holder)
-: SpecializedResourceUser<KeyboardPrivate>(holder)
+: Gre::ResourceUser(holder)
+, SpecializedResourceUser<KeyboardPrivate>(holder)
 {
     
 }
 
 Keyboard::Keyboard(const Keyboard& user)
-: SpecializedResourceUser<Gre::KeyboardPrivate>(user)
+: Gre::ResourceUser(user)
+, SpecializedResourceUser<Gre::KeyboardPrivate>(user)
 {
     
 }

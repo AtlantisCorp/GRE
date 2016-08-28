@@ -71,6 +71,11 @@ PassNumber PassPrivate::getPassNumber() const
     return iNumber;
 }
 
+bool PassPrivate::isAcceptable(const RenderNodeIdentifier &identifier) const
+{
+    return true;
+}
+
 // ---------------------------------------------------------------------------------------------------
 
 Pass::Pass(const PassPrivate* pointer)

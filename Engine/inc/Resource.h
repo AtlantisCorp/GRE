@@ -329,7 +329,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
     /// @brief Should add an object to the Manager.
     ////////////////////////////////////////////////////////////////////////
-    virtual void add(const SpecializedResourceHolder<BaseClass>& holder)
+    virtual void load(const SpecializedResourceHolder<BaseClass>& holder)
     {
         iHolders.add(holder);
     }
@@ -353,7 +353,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
     /// @brief Returns a Resource corresponding to given name.
     ////////////////////////////////////////////////////////////////////////
-    virtual SpecializedResourceHolder<BaseClass>& get(const std::string& name)
+    virtual SpecializedResourceHolder<BaseClass> get(const std::string& name)
     {
         auto it = iHolders.find(name);
         if(it != iHolders.end())
@@ -364,7 +364,7 @@ public:
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the Holder's list.
     //////////////////////////////////////////////////////////////////////
-    SpecializedResourceHolderList<BaseClass> getAll()
+    SpecializedResourceHolderList<BaseClass>& getAll()
     {
         return iHolders;
     }
@@ -375,6 +375,14 @@ public:
     const SpecializedResourceHolderList<BaseClass>& getAll() const
     {
         return iHolders;
+    }
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Clears every Holders.
+    //////////////////////////////////////////////////////////////////////
+    void clear()
+    {
+        iHolders.clear();
     }
     
 protected:

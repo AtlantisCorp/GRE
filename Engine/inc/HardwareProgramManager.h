@@ -129,6 +129,12 @@ public:
     virtual HardwareProgram createHardwareProgram(const std::string& name, const HardwareShader &vertexShader, const HardwareShader &fragmentShader);
     
     //////////////////////////////////////////////////////////////////////
+    /// @brief Creates a new HardwareProgram using the Shaders loaded from
+    /// given files.
+    //////////////////////////////////////////////////////////////////////
+    virtual HardwareProgram createHardwareProgramFromFiles ( const std::string& name , const std::string& vertexshaderpath , const std::string& fragmentshaderpath );
+    
+    //////////////////////////////////////////////////////////////////////
     /// @brief Retrieve a HardwareProgram from its name.
     //////////////////////////////////////////////////////////////////////
     virtual HardwareProgram getProgram(const std::string& name);

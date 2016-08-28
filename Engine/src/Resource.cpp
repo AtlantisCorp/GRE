@@ -39,7 +39,7 @@ Resource::Resource(const std::string& name)
 {
     iName = name;
     iType = Resource::Type::Null;
-    iShouldTransmit = false;
+    iShouldTransmit = true;
     iCounter = nullptr;
     iCounterInitialized = false;
 }
@@ -144,7 +144,7 @@ void Resource::onKeyDownEvent(const Gre::KeyDownEvent &e)
 
 ResourceUser& Resource::addListener(const std::string& name)
 {
-    ResourceUser pureListener = ResourceManager::Get().createPureListener(name);
+    ResourceUser pureListener = ResourceManager::Get().loadEmptyResource(name);
     return addListener(pureListener);
 }
 
@@ -228,7 +228,7 @@ Variant& Resource::getCustomData(const std::string &entry)
 
 const Variant& Resource::getCustomData(const std::string &entry) const
 {
-    return iCustomData[entry];
+    return iCustomData.at(entry);
 }
 
 void Resource::setCustomData(const std::string &entry, const Gre::Variant &data)

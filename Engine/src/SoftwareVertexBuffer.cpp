@@ -35,7 +35,10 @@
 GreBeginNamespace
 
 SoftwareVertexBufferPrivate::SoftwareVertexBufferPrivate(const std::string& name)
-: Gre::HardwareVertexBufferPrivate(name), iVertexData(nullptr), iSize(0)
+: HardwareVertexBufferPrivate(name)
+, iVertexData(nullptr)
+, iSize(0)
+, iBoundingBoxInvalid(false)
 {
     
 }
@@ -55,9 +58,12 @@ void SoftwareVertexBufferPrivate::unbind() const
     
 }
 
-void SoftwareVertexBufferPrivate::update() const
+void SoftwareVertexBufferPrivate::update()
 {
-    
+    if ( iBoundingBoxInvalid )
+    {
+        makeBoundingBox();
+    }
 }
 
 bool SoftwareVertexBufferPrivate::isDataInvalid() const
@@ -75,6 +81,7 @@ void SoftwareVertexBufferPrivate::addData(const char *vdata, size_t sz)
         
         iSize = iSize + sz;
         iVertexData = newdata;
+        iBoundingBoxInvalid = true;
     }
     
     else
@@ -83,6 +90,7 @@ void SoftwareVertexBufferPrivate::addData(const char *vdata, size_t sz)
         memcpy(iVertexData, vdata, sz);
         
         iSize = sz;
+        iBoundingBoxInvalid = true;
     }
 }
 
@@ -98,6 +106,8 @@ void SoftwareVertexBufferPrivate::clearData()
         free(iVertexData);
         iVertexData = nullptr;
         iSize = 0;
+        iBoundingBox.clear();
+        iBoundingBoxInvalid = false;
     }
     
     else if ( iVertexData )
@@ -108,6 +118,8 @@ void SoftwareVertexBufferPrivate::clearData()
         free(iVertexData);
         iVertexData = nullptr;
         iSize = 0;
+        iBoundingBox.clear();
+        iBoundingBoxInvalid = false;
     }
 }
 
@@ -129,28 +141,102 @@ size_t SoftwareVertexBufferPrivate::count() const
     }
 }
 
+const BoundingBox& SoftwareVertexBufferPrivate::getBoundingBox() const
+{
+    return iBoundingBox;
+}
+
+void SoftwareVertexBufferPrivate::makeBoundingBox()
+{
+    if ( iBoundingBoxInvalid || iBoundingBox.isInvalid() )
+    {
+        const VertexDescriptor& desc = getVertexDescriptor();
+        iBoundingBox.clear();
+        
+        if ( desc.getSize() && iVertexData && iSize )
+        {
+            int posloc = desc.getComponentLocation(VertexComponentType::Position);
+            
+            if ( posloc >= 0 )
+            {
+                // We have to iterates through each Vertex to get the position data.
+                // 1. Get position component pointer.
+                // 2. While another position is available, add the vertex stride to get
+                // next Position.
+                
+                const char* end = iVertexData + iSize;
+                const char* data = iVertexData + posloc;
+                size_t stride = desc.getStride(VertexComponentType::Position);
+                
+                do
+                {
+                    const Vector3& vec = * ( (const Vector3*) data );
+                    iBoundingBox.add(vec);
+                    data = data + stride;
+                    
+                } while ( data < end );
+            }
+            
+#ifdef GreIsDebugMode
+            else
+            {
+                GreDebugPretty() << "No 'VertexComponentType::Position' in VertexDescriptor." << std::endl;
+            }
+#endif
+            
+        }
+        
+        iBoundingBoxInvalid = false;
+    }
+    
+#ifdef GreIsDebugMode
+    else
+    {
+        GreDebugPretty() << "No need to update BoundingBox as 'iBoundingBoxInvalid' is false." << std::endl;
+    }
+#endif
+}
+
+void SoftwareVertexBufferPrivate::setData(const HardwareVertexBufferHolder &holder)
+{
+    clearData();
+    
+    if ( !holder.isInvalid() )
+    {
+        setVertexDescriptor(holder->getVertexDescriptor());
+        addData(holder->getData(), holder->getSize());
+    }
+}
+
+void SoftwareVertexBufferPrivate::onUpdateEvent(const Gre::UpdateEvent &e)
+{
+    HardwareVertexBufferPrivate::onUpdateEvent(e);
+    
+    if ( iBoundingBoxInvalid )
+    {
+        makeBoundingBox();
+    }
+}
+
 // ---------------------------------------------------------------------------------------------------
 
 SoftwareVertexBuffer::SoftwareVertexBuffer(const SoftwareVertexBufferPrivate* pointer)
 : ResourceUser(pointer)
-, Gre::HardwareVertexBuffer(pointer)
-// , SpecializedResourceUser<Gre::SoftwareVertexBufferPrivate>(pointer)
+, HardwareVertexBuffer(pointer)
 {
     
 }
 
 SoftwareVertexBuffer::SoftwareVertexBuffer(const SoftwareVertexBufferHolder& holder)
 : ResourceUser(holder)
-, Gre::HardwareVertexBuffer(holder.get())
-// , SpecializedResourceUser<Gre::SoftwareVertexBufferPrivate>(holder)
+, HardwareVertexBuffer(holder.get())
 {
     
 }
 
 SoftwareVertexBuffer::SoftwareVertexBuffer(const SoftwareVertexBuffer& user)
 : ResourceUser(user)
-, Gre::HardwareVertexBuffer(user)
-// , SpecializedResourceUser<Gre::SoftwareVertexBufferPrivate>(user)
+, HardwareVertexBuffer(user)
 {
     
 }
@@ -168,6 +254,21 @@ SoftwareVertexBufferHolder SoftwareVertexBuffer::lock()
 const SoftwareVertexBufferHolder SoftwareVertexBuffer::lock() const
 {
     return GreUserConstLockCast(SoftwareVertexBufferHolder, SoftwareVertexBufferPrivate, HardwareVertexBuffer);
+}
+
+const BoundingBox& SoftwareVertexBuffer::getBoundingBox() const
+{
+    auto ptr = lock();
+    if ( ptr )
+        return ptr->getBoundingBox();
+    throw GreInvalidUserException("SoftwareVertexBuffer");
+}
+
+void SoftwareVertexBuffer::makeBoundingBox()
+{
+    auto ptr = lock();
+    if ( ptr )
+        ptr->makeBoundingBox();
 }
 
 SoftwareVertexBuffer SoftwareVertexBuffer::Null = SoftwareVertexBuffer(nullptr);

@@ -38,6 +38,7 @@
 #include "HardwareShader.h"
 #include "HardwareProgramVariables.h"
 #include "VertexDescriptor.h"
+#include "Material.h"
 
 GreBeginNamespace
 
@@ -188,6 +189,29 @@ public:
     /// This should be called before linking the HardwareProgram.
     //////////////////////////////////////////////////////////////////////
     virtual void bindAttributeLocation ( const VertexComponentType& component, int index );
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Binds Material's data to the HardwareProgram.
+    //////////////////////////////////////////////////////////////////////
+    virtual void bindMaterial ( const Material& material ) const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Unbinds Materials' data from the HardwareProgram.
+    /// Basically, it is used to tell Material's Textures to unbind.
+    //////////////////////////////////////////////////////////////////////
+    virtual void unbindMaterial ( const Material& material ) const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the Location for given uniform, or -1.
+    //////////////////////////////////////////////////////////////////////
+    virtual int getUniformLocation ( const std::string& name ) const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Changes the value of a given uniform location.
+    /// This value is changed when the function is called, not when updating
+    /// the HardwareProgram.
+    //////////////////////////////////////////////////////////////////////
+    virtual void setUniformVariable ( const HardwareProgramVariable& var ) const;
     
 protected:
     

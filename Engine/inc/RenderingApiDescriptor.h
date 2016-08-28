@@ -1,11 +1,11 @@
 //////////////////////////////////////////////////////////////////////
 //
-//  Viewport.h
+//  RenderingApiDescriptor.h
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
 //  Copyright (c) 2015 - 2016 Luk2010
-//  Created on 09/03/2016.
+//  Created on 21/08/2016.
 //
 //////////////////////////////////////////////////////////////////////
 /*
@@ -30,110 +30,79 @@
  -----------------------------------------------------------------------------
  */
 
-#ifndef GRE_Viewport_h
-#define GRE_Viewport_h
+#ifndef RenderingApiDescriptor_h
+#define RenderingApiDescriptor_h
 
 #include "Pools.h"
-#include "Scene.h"
 
 GreBeginNamespace
 
 //////////////////////////////////////////////////////////////////////
-/// @brief A simple Viewport object.
+/// @brief Summarize all informations that can be passed to a
+/// RendererLoader or a RendererManager in order to provide the desired
+/// Renderer.
 ///
-/// The Viewport is defined using ratio. This means that for example,
-/// if you set a width ratio of 0.5f, when RenderContext calls
-/// onBordersChanged() with the RenderContext new width of 400 px, the
-/// width given by getSurface().width will be 400*0.5f = 200.
+/// This Object can be filled by a user and given to RendererLoader using
+/// 'RendererLoader::load()' function to certifiate the Loader will
+/// produce a Renderer with every desired options.
+///
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC Viewport
+class DLL_PUBLIC RenderingApiDescriptor
 {
 public:
     
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    Viewport(const std::string& name = "", float top = 0.0f, float left = 0.0f, float width = 1.0f, float height = 1.0f, bool activated = true);
+    POOLED(Pools::Default)
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    virtual ~Viewport();
+    RenderingApiDescriptor();
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    Viewport& operator = (const Viewport& rhs);
+    ~RenderingApiDescriptor();
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Updates the Viewport. This function should be called by the
-    /// RenderContext object.
+    /// @brief Returns the Name the Api should have.
     //////////////////////////////////////////////////////////////////////
-    virtual void onBordersChanged(const Surface& parentSurface);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Name of this Viewport.
-    //////////////////////////////////////////////////////////////////////
-    const std::string& getName() const;
+    const std::string& getApiName() const;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns true if this Viepwort should be rendered.
+    /// @brief Changes the 'iApiName' property.
     //////////////////////////////////////////////////////////////////////
-    bool isActivated() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Surface covered by this Viewport.
-    //////////////////////////////////////////////////////////////////////
-    const Surface& getSurface() const;
+    void setApiName ( const std::string& name );
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Selects a RenderScene for this Viewport.
+    /// @brief Returns the 'iMinVersion' property.
     //////////////////////////////////////////////////////////////////////
-    void selectScene(const RenderScene& scene);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns 'true' if this Viewport has a Scene object linked to.
-    //////////////////////////////////////////////////////////////////////
-    bool hasScene() const;
+    const std::string& getMinVersion() const;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Scene object linked to this Viewport if it has
-    /// one, or RenderScene::Null if not.
+    /// @brief Changes the 'iMinVersion' property.
     //////////////////////////////////////////////////////////////////////
-    const RenderScene& getScene() const;
+    void setMinVersion ( const std::string& minversion );
     
-    /// @brief An empty const vector of Viewport.
-    static const std::list<Viewport> EmptyList;
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the 'iMaxVersion' property.
+    //////////////////////////////////////////////////////////////////////
+    const std::string& getMaxVersion() const;
     
-protected:
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Changes the 'iMaxVersion' property.
+    //////////////////////////////////////////////////////////////////////
+    void setMaxVersion ( const std::string& maxversion );
     
-    /// @brief Name of this Viewport.
-    std::string _mName;
+private:
     
-    /// @brief Is this Viewport activated ?
-    /// Default value is 'true'.
-    bool _mActivated;
+    /// @brief Api name.
+    std::string iApiName;
     
-    /// @brief Width border ratio.
-    float _mBorderWidth;
+    /// @brief Api minimum Version.
+    std::string iMinVersion;
     
-    /// @brief Height border ratio.
-    float _mBorderHeight;
-    
-    /// @brief Top margin ratio.
-    float _mBorderTop;
-    
-    /// @brief Left margin ratio.
-    float _mBorderLeft;
-    
-    /// @brief Surface object updated with Viewport::onBordersChanged().
-    Surface _mSurface;
-    
-    /// @brief Holds the Scene that might have been selected by the User to draw this
-    /// Viewport object.
-    RenderScene _mScene;
+    /// @brief Api maximum Version.
+    std::string iMaxVersion;
 };
-
-/// @brief std::list<> for Viewport.
-typedef std::list<Viewport> ViewportList;
 
 GreEndNamespace
 
-#endif
+#endif /* RenderingApiDescriptor_h */

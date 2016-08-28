@@ -198,7 +198,7 @@ size_t VertexDescriptor::getSize() const
     return iSize;
 }
 
-size_t VertexDescriptor::getComponentLocation(const Gre::VertexComponentType &component) const
+int VertexDescriptor::getComponentLocation(const Gre::VertexComponentType &component) const
 {
     size_t loc = 0;
     
@@ -219,7 +219,7 @@ size_t VertexDescriptor::getComponentLocation(const Gre::VertexComponentType &co
     GreDebugPretty() << "Component '" << VertexComponentTypeToString(component) << "' not found in Vertex." << std::endl;
 #endif
     
-    return 0;
+    return -1;
 }
 
 size_t VertexDescriptor::getStride(const Gre::VertexComponentType &vtype) const

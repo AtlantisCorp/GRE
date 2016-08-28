@@ -35,7 +35,16 @@
 GreBeginNamespace
 
 MeshPrivate::MeshPrivate(const std::string& name)
-: Gre::Resource(name), iSoftVertexBuffer(nullptr), iSoftIndexBuffer(nullptr), iHardVertexBuffer(nullptr), iHardIndexBuffer(nullptr), iSoftBuffersChanged(false), iHardBuffersChanged(false), iUseHardwareBuffers(false)
+: Gre::Resource(name)
+, iSoftVertexBuffer(nullptr)
+, iSoftIndexBuffer(nullptr)
+, iHardVertexBuffer(nullptr)
+, iHardIndexBuffer(nullptr)
+, iSoftBuffersChanged(false)
+, iHardBuffersChanged(false)
+, iUseHardwareBuffers(false)
+, iSoftVertexBufferUpdate(false)
+, iSoftIndexBufferUpdate(false)
 {
     
 }
@@ -50,13 +59,32 @@ const SoftwareVertexBuffer MeshPrivate::getSoftwareVertexBuffer() const
     return SoftwareVertexBuffer(iSoftVertexBuffer);
 }
 
+SoftwareVertexBufferHolder& MeshPrivate::getSoftwareVertexBufferHolder()
+{
+    return iSoftVertexBuffer;
+}
+
 void MeshPrivate::setSoftwareVertexBuffer(const Gre::SoftwareVertexBuffer &softvertexbuffer)
 {
-    auto newbuf = softvertexbuffer.lock();
+    SoftwareVertexBufferHolder newbuf = softvertexbuffer.lock();
+    
     if ( newbuf != iSoftVertexBuffer )
     {
+        // We should remove old Software Vertex Buffer from listeners, then replace with new one.
+        
+        if ( !iSoftVertexBuffer.isInvalid() )
+        {
+            Resource::removeListener( iSoftVertexBuffer->getName() );
+        }
+        
         iSoftVertexBuffer = newbuf;
         iSoftBuffersChanged = true;
+        iSoftVertexBufferUpdate = true;
+        
+        if ( !newbuf.isInvalid() )
+        {
+            Resource::addListener( softvertexbuffer );
+        }
     }
 }
 
@@ -65,13 +93,32 @@ const SoftwareIndexBuffer MeshPrivate::getSoftwareIndexBuffer() const
     return SoftwareIndexBuffer(iSoftIndexBuffer);
 }
 
+SoftwareIndexBufferHolder& MeshPrivate::getSoftwareIndexBufferHolder()
+{
+    return iSoftIndexBuffer;
+}
+
 void MeshPrivate::setSoftwareIndexBuffer(const Gre::SoftwareIndexBuffer &softindexbuffer)
 {
-    auto newbuf = softindexbuffer.lock();
+    SoftwareIndexBufferHolder newbuf = softindexbuffer.lock();
+    
     if ( newbuf != iSoftIndexBuffer )
     {
+        // We should remove old Software Index Buffer from listeners, then replace with new one.
+        
+        if ( !iSoftIndexBuffer.isInvalid() )
+        {
+            Resource::removeListener( iSoftIndexBuffer->getName() );
+        }
+        
         iSoftIndexBuffer = newbuf;
         iSoftBuffersChanged = true;
+        iSoftIndexBufferUpdate = true;
+        
+        if ( !newbuf.isInvalid() )
+        {
+            Resource::addListener( softindexbuffer );
+        }
     }
 }
 
@@ -82,11 +129,22 @@ const HardwareVertexBuffer MeshPrivate::getVertexBuffer() const
 
 void MeshPrivate::setVertexBuffer(const HardwareVertexBuffer& vertexbuffer)
 {
-    auto newbuf = vertexbuffer.lock();
+    HardwareVertexBufferHolder newbuf = vertexbuffer.lock();
+    
     if ( newbuf != iHardVertexBuffer )
     {
+        if ( !iHardVertexBuffer.isInvalid() )
+        {
+            Resource::removeListener( iHardVertexBuffer->getName() );
+        }
+        
         iHardVertexBuffer = newbuf;
         iHardBuffersChanged = true;
+        
+        if ( !iHardVertexBuffer.isInvalid() )
+        {
+            Resource::addListener( vertexbuffer );
+        }
     }
 }
 
@@ -97,11 +155,22 @@ const HardwareIndexBuffer MeshPrivate::getIndexBuffer() const
 
 void MeshPrivate::setIndexBuffer(const HardwareIndexBuffer& indexbuffer)
 {
-    auto newbuf = indexbuffer.lock();
+    HardwareIndexBufferHolder newbuf = indexbuffer.lock();
+    
     if ( newbuf != iHardIndexBuffer )
     {
+        if ( !iHardIndexBuffer.isInvalid() )
+        {
+            Resource::removeListener( iHardIndexBuffer->getName() );
+        }
+        
         iHardIndexBuffer = newbuf;
         iHardBuffersChanged = true;
+        
+        if ( !iHardIndexBuffer.isInvalid() )
+        {
+            Resource::addListener( indexbuffer );
+        }
     }
 }
 
@@ -140,23 +209,63 @@ void MeshPrivate::clear()
     clearSoftwareBuffers();
     clearHardwareBuffers();
     
+    iBoundingBox.clear();
     iSoftBuffersChanged = false;
     iHardBuffersChanged = false;
     iUseHardwareBuffers = false;
+    iSoftVertexBufferUpdate = false;
+    iSoftIndexBufferUpdate = false;
 }
 
 void MeshPrivate::clearSoftwareBuffers()
 {
     iSoftVertexBuffer.reset();
     iSoftIndexBuffer.reset();
-    iSoftBuffersChanged = true;
+    iSoftBuffersChanged = false;
+    iSoftVertexBufferUpdate = false;
+    iSoftIndexBufferUpdate = false;
 }
 
 void MeshPrivate::clearHardwareBuffers()
 {
     iHardVertexBuffer.reset();
     iHardIndexBuffer.reset();
-    iHardBuffersChanged = true;
+    iHardBuffersChanged = false;
+}
+
+const BoundingBox& MeshPrivate::getBoundingBox() const
+{
+    return iBoundingBox;
+}
+
+void MeshPrivate::onUpdateEvent(const Gre::UpdateEvent &e)
+{
+    if ( iSoftVertexBufferUpdate )
+    {
+        if ( !iHardVertexBuffer.isInvalid() )
+        {
+            iHardVertexBuffer->setData( HardwareVertexBufferHolder(iSoftVertexBuffer.get()) );
+        }
+        
+        if ( !iIsBoundingBoxUser && !iSoftVertexBuffer.isInvalid() )
+        {
+            iBoundingBox = iSoftVertexBuffer->getBoundingBox();
+        }
+        
+        iSoftVertexBufferUpdate = false;
+    }
+    
+    if ( iSoftIndexBufferUpdate )
+    {
+        if ( !iHardIndexBuffer.isInvalid() )
+        {
+            iHardIndexBuffer->setData( HardwareIndexBufferHolder(iSoftIndexBuffer.get()) );
+        }
+        
+        iSoftIndexBufferUpdate = false;
+    }
+    
+    iSoftBuffersChanged = false;
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -313,6 +422,14 @@ void Mesh::clearHardwareBuffers()
         ptr->clearHardwareBuffers();
 }
 
+const BoundingBox& Mesh::getBoundingBox() const
+{
+    auto ptr = lock();
+    if ( ptr )
+        return ptr->getBoundingBox();
+    throw GreInvalidUserException("Mesh");
+}
+
 Mesh Mesh::Null = Mesh(nullptr);
 
 // ---------------------------------------------------------------------------------------------------
@@ -337,6 +454,94 @@ MeshManager::MeshManager()
 MeshManager::~MeshManager()
 {
     
+}
+
+Mesh MeshManager::createRectangle(const Gre::Surface &surface)
+{
+    if ( surface.height > 0 && surface.width > 0 )
+    {
+        std::string name = std::string ( "MeshRectangle#" ) + std::to_string(iMeshes.size());
+        std::string svbname = name + "/svb";
+        std::string sibname = name + "/sib";
+        
+        // To create a Mesh, we have to fill a SoftwareVertexBuffer.
+        
+        SoftwareVertexBufferHolder svbholder = SoftwareVertexBufferHolder ( new SoftwareVertexBufferPrivate(svbname) );
+        
+        if ( !svbholder.isInvalid() )
+        {
+            VertexDescriptor vdesc;
+            vdesc << VertexComponentType::Position;
+            svbholder->setVertexDescriptor(vdesc);
+            
+            VertexPosition* data = (VertexPosition*) new VertexPosition[4];
+            data[0] = VertexPosition ( surface.left ,                 surface.top ,                  0.0f );
+            data[1] = VertexPosition ( surface.left + surface.width , surface.top ,                  0.0f );
+            data[2] = VertexPosition ( surface.left + surface.width , surface.top - surface.height , 0.0f );
+            data[3] = VertexPosition ( surface.left ,                 surface.top - surface.height , 0.0f );
+            
+            svbholder->addData(data, sizeof(VertexPosition) * 4);
+        }
+        else
+        {
+#ifdef GreIsDebugMode
+            GreDebugPretty() << "SoftwareVertexBuffer '" << svbname << "' couldn't be created." << std::endl;
+#endif
+            return Mesh ( nullptr );
+        }
+        
+        // We also try to fill a SoftwareIndexBuffer.
+        
+        SoftwareIndexBufferHolder sibholder = SoftwareIndexBufferHolder ( new SoftwareIndexBufferHolder(sibname) );
+        
+        if ( !sibholder.isInvalid() )
+        {
+            IndexDescriptor idesc;
+            idesc.setType(IndexType::UnsignedInteger);
+            
+            unsigned int data[6] = { 0, 1, 2, 2, 3, 0 };
+            
+            sibholder->setIndexDescriptor(idesc, 0);
+            sibholder->addDataToIndexBatch(data, sizeof(unsigned int) * 6, 0);
+        }
+        else
+        {
+#ifdef GreIsDebugMode
+            GreDebugPretty() << "SoftwareIndexBuffer '" << sibname << "' couldn't be created." << std::endl;
+#endif
+            return Mesh ( nullptr );
+        }
+        
+        // Now we can add those two HardwareBuffer to a Mesh object.
+        
+        MeshHolder rectangle = MeshHolder ( new MeshPrivate(name) );
+        
+        if ( !rectangle.isInvalid() )
+        {
+            rectangle->setSoftwareVertexBuffer(SoftwareVertexBuffer(svbholder));
+            rectangle->setSoftwareIndexBuffer(SoftwareIndexBuffer(sibholder));
+            
+            // Everything is set, just add this Mesh to the list and return it.
+            
+            iMeshes.add(rectangle);
+            return Mesh ( rectangle );
+        }
+        else
+        {
+#ifdef GreIsDebugMode
+            GreDebugPretty() << "Mesh '" << name << "' couldn't be created." << std::endl;
+#endif
+            return Mesh ( nullptr );
+        }
+    }
+    
+    else
+    {
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "Can't create a Mesh Resource using null Surface." << std::endl;
+#endif
+        return Mesh ( nullptr );
+    }
 }
 
 Mesh MeshManager::load(const MeshHolder &holder)

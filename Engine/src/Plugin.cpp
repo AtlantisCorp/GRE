@@ -270,4 +270,225 @@ ResourceLoader* PluginLoader::clone() const
     return new PluginLoader();
 }
 
+// ---------------------------------------------------------------------------------------------------
+
+PluginManager::PluginManager()
+{
+    
+}
+
+PluginManager::~PluginManager()
+{
+    
+}
+
+Plugin PluginManager::load(const PluginHolder &holder)
+{
+    if ( !holder.isInvalid() )
+    {
+        Plugin tmp = get(holder->getName());
+        
+        if ( tmp.isInvalid() )
+        {
+#ifdef GreIsDebugMode 
+            GreDebugPretty() << "Plugin Resource '" << holder->getName() << "' already installed." << std::endl;
+#endif
+            return Plugin ( nullptr );
+        }
+        
+        iPlugins.add(holder);
+        return Plugin ( holder );
+    }
+    
+    else
+    {
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "'holder' is invalid." << std::endl;
+#endif
+        return Plugin ( nullptr );
+    }
+}
+
+Plugin PluginManager::load(const std::string &name, const std::string &filepath)
+{
+    if ( !name.empty() )
+    {
+        Plugin tmp = get(name);
+        
+        if ( tmp.isInvalid() )
+        {
+#ifdef GreIsDebugMode
+            GreDebugPretty() << "Plugin Resource '" << name << "' already installed." << std::endl;
+#endif
+            return Plugin ( nullptr );
+        }
+        
+        if ( !filepath.empty() )
+        {
+            for ( auto it = iFactory.getLoaders().begin(); it != iFactory.getLoaders().end(); it++ )
+            {
+                auto loader = it->second;
+                
+                if ( loader )
+                {
+                    if ( loader->isLoadable(filepath) )
+                    {
+                        PluginHolder plugin = loader->load(name, filepath);
+                        
+                        if ( !plugin.isInvalid() )
+                        {
+                            iPlugins.add(plugin);
+                            return Plugin ( plugin );
+                        }
+                        
+                        else
+                        {
+#ifdef GreIsDebugMode
+                            GreDebugPretty() << "Plugin Resource '" << name << "' can't be loaded by loader '" << it->first << "'." << std::endl;
+#endif
+                            return Plugin ( nullptr );
+                        }
+                    }
+                    
+                    else
+                    {
+#ifdef GreIsDebugMode 
+                        GreDebugPretty() << "Plugin Loader '" << it->first << "' can't load Plugin Resource '" << name << "'." << std::endl;
+#endif
+                    }
+                }
+            }
+            
+#ifdef GreIsDebugMode
+            GreDebugPretty() << "Plugin Resource '" << name << "' don't have any loadable Plugin Loader." << std::endl;
+#endif
+            return Plugin ( nullptr );
+        }
+        
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "'filepath' is empty." << std::endl;
+#endif
+        return Plugin ( nullptr );
+    }
+    
+    else
+    {
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "'name' is empty." << std::endl;
+#endif
+        return Plugin ( nullptr );
+    }
+}
+
+Plugin PluginManager::get(const std::string &name)
+{
+    if ( !name.empty() )
+    {
+        for ( PluginHolder& holder : iPlugins )
+        {
+            if ( !holder.isInvalid() )
+            {
+                if ( holder->getName() == name )
+                {
+                    return Plugin ( holder );
+                }
+            }
+        }
+        
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "Plugin Resource '" << name << "' not found." << std::endl;
+#endif
+        return Plugin ( nullptr );
+    }
+    
+    else
+    {
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "'name' is empty." << std::endl;
+#endif
+        return Plugin ( nullptr );
+    }
+}
+
+const Plugin PluginManager::get(const std::string &name) const
+{
+    if ( !name.empty() )
+    {
+        for ( const PluginHolder& holder : iPlugins )
+        {
+            if ( !holder.isInvalid() )
+            {
+                if ( holder->getName() == name )
+                {
+                    return Plugin ( holder );
+                }
+            }
+        }
+        
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "Plugin Resource '" << name << "' not found." << std::endl;
+#endif
+        return Plugin ( nullptr );
+    }
+    
+    else
+    {
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "'name' is empty." << std::endl;
+#endif
+        return Plugin ( nullptr );
+    }
+}
+
+void PluginManager::remove(const std::string &name)
+{
+    if ( !name.empty() )
+    {
+        for ( auto it = iPlugins.begin(); it != iPlugins.end(); it++ )
+        {
+            PluginHolder& holder = *it;
+            
+            if ( !holder.isInvalid() )
+            {
+                if ( holder->getName() == name )
+                {
+                    iPlugins.erase(it);
+                }
+            }
+        }
+        
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "Plugin Resource '" << name << "' not found." << std::endl;
+#endif
+    }
+    
+    else
+    {
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "'name' is empty." << std::endl;
+#endif
+    }
+}
+
+void PluginManager::clearPlugins()
+{
+    iPlugins.clear();
+}
+
+PluginLoaderFactory& PluginManager::getPluginLoaderFactory()
+{
+    return iFactory;
+}
+
+const PluginLoaderFactory& PluginManager::getPluginLoaderFactory() const
+{
+    return iFactory;
+}
+
+void PluginManager::clear()
+{
+    clearPlugins();
+    iFactory.clear();
+}
+
 GreEndNamespace

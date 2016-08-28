@@ -41,7 +41,7 @@ HardwareIndexBufferPrivate::HardwareIndexBufferPrivate(const std::string& name)
 , iElementsSize(0)
 , iDataChanged(false)
 {
-    Material defaultMat = ResourceManager::Get().findResource<Material>("Materials/Default");
+    Material defaultMat = ResourceManager::Get().findResource<Material>(ResourcePath("Materials/Default"));
     
     if ( !defaultMat.isInvalid() )
     {
@@ -71,6 +71,30 @@ HardwareIndexBufferPrivate::~HardwareIndexBufferPrivate()
 void HardwareIndexBufferPrivate::addData(const char *data, size_t sz)
 {
     addDataToIndexBatch(data, sz, 0);
+}
+
+void HardwareIndexBufferPrivate::setIndexDescriptor(const Gre::IndexDescriptor &desc, size_t index)
+{
+    if ( index < iBatches.size() )
+    {
+        IndexBatch& batch = iBatches.at(index);
+        batch.setDescriptor(desc);
+    }
+}
+
+void HardwareIndexBufferPrivate::setData(const HardwareIndexBufferHolder &holder)
+{
+    clearBatches();
+    
+    if ( !holder.isInvalid() )
+    {
+        // Add every Batches to this Hardware Buffer.
+        
+        for ( const IndexBatch& batch : holder->getIndexBatches() )
+        {
+            addIndexBatch(batch);
+        }
+    }
 }
 
 void HardwareIndexBufferPrivate::addIndexBatch(const Gre::IndexBatch &batch)

@@ -47,9 +47,9 @@ GreBeginNamespace
 /// has no Child, he is Leaf. If it has a Parent and one or more children,
 /// he is a Branch.
 ///
-/// The Node class is made to be customized. The SceneNode class is an
+/// The Node class is made to be customized. The RenderNode class is an
 /// example of a customization, for example to handle Mesh objects, and
-/// to be constructible by the SceneManager.
+/// to be constructible by the RenderScene.
 ///
 /// The Node class does not have any information like transformation about
 /// the Node, it only holds the Parent, the Children and the Type of Node,

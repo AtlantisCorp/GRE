@@ -5,7 +5,7 @@
 //  Created by Jacques Tronconi on 07/04/2016.
 //
 //
-
+/*
 #ifndef GRE_CustomScene_h
 #define GRE_CustomScene_h
 
@@ -111,3 +111,4 @@ private:
 GreEndNamespace
 
 #endif
+*/

@@ -48,7 +48,8 @@ enum class HdwProgVarType
     Mat4, ///< @brief mat4 GLSL type.
     Uint32, ///< @brief uint GLSL type.
     Sampler2D, ///< @brief sampler2d GLSL type.
-    Sampler3D ///< @brief sampler3d GLSL type.
+    Sampler3D, ///< @brief sampler3d GLSL type.
+    Float1 ///< @brief A Float variable.
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -87,6 +88,7 @@ struct HardwareProgramVariable
         Matrix4 mat4;
         uint32_t uint32;
         int textureunit;
+        float float1;
         
         _u() { memset(this, 0, sizeof(_u)); }
         

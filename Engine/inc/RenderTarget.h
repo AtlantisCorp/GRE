@@ -85,15 +85,15 @@ public:
     virtual void unbindFramebuffer();
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Select a SceneManager to be rendered when rendering on this
+    /// @brief Select a RenderScene to be rendered when rendering on this
     /// RenderTarget.
     //////////////////////////////////////////////////////////////////////
-    virtual void selectScene(const SceneManager& scene);
+    virtual void selectScene(const RenderScene& scene);
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Selected SceneManager to be rendered on this Target.
+    /// @brief Returns the Selected RenderScene to be rendered on this Target.
     //////////////////////////////////////////////////////////////////////
-    virtual SceneManager getSelectedScene();
+    virtual RenderScene getSelectedScene();
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns true if this RenderTarget contains a RenderContext
@@ -151,7 +151,7 @@ public:
 private:
     
     /// @brief The Selected Scene to render on this RenderTarget.
-    SceneManager iSelectedScene;
+    RenderScene iSelectedScene;
     
     /// @brief Must this RenderTarget be rendered ?
     mutable bool iNeedsDrawing;
@@ -217,15 +217,15 @@ public:
     virtual void unbindFramebuffer();
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Select a SceneManager to be rendered when rendering on this
+    /// @brief Select a RenderScene to be rendered when rendering on this
     /// RenderTarget.
     //////////////////////////////////////////////////////////////////////
-    virtual void selectScene(const SceneManager& scene);
+    virtual void selectScene(const RenderScene& scene);
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Selected SceneManager to be rendered on this Target.
+    /// @brief Returns the Selected RenderScene to be rendered on this Target.
     //////////////////////////////////////////////////////////////////////
-    virtual SceneManager getSelectedScene();
+    virtual RenderScene getSelectedScene();
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns true if this RenderTarget contains a RenderContext

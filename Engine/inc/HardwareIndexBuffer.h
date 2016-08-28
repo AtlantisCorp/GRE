@@ -64,6 +64,12 @@ public:
     
     POOLED(Pools::HdwBuffer)
     
+    /// @brief SpecializedResourceHolder for HardwareIndexBufferPrivate.
+    typedef SpecializedResourceHolder<HardwareIndexBufferPrivate> HardwareIndexBufferHolder;
+    
+    /// @brief SpecializedResourceHolderList for HardwareIndexBufferPrivate.
+    typedef SpecializedResourceHolderList<HardwareIndexBufferPrivate> HardwareIndexBufferHolderList;
+    
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     HardwareIndexBufferPrivate(const std::string& name);
@@ -76,6 +82,16 @@ public:
     /// @brief Adds raw Indexes to the default IndexBatch.
     //////////////////////////////////////////////////////////////////////
     virtual void addData ( const char* data , size_t sz );
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Changes the IndexDescriptor for given IndexBatch.
+    //////////////////////////////////////////////////////////////////////
+    virtual void setIndexDescriptor ( const IndexDescriptor& desc , size_t index );
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Copies data from given HardwareIndexBuffer to this one.
+    //////////////////////////////////////////////////////////////////////
+    virtual void setData ( const HardwareIndexBufferHolder& holder );
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Adds an IndexBatch to the list.

@@ -1,11 +1,11 @@
 //////////////////////////////////////////////////////////////////////
 //
-//  Viewport.h
+//  BoundingBox.h
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
 //  Copyright (c) 2015 - 2016 Luk2010
-//  Created on 09/03/2016.
+//  Created on 26/08/2016.
 //
 //////////////////////////////////////////////////////////////////////
 /*
@@ -30,110 +30,90 @@
  -----------------------------------------------------------------------------
  */
 
-#ifndef GRE_Viewport_h
-#define GRE_Viewport_h
+#ifndef BoundingBox_h
+#define BoundingBox_h
 
 #include "Pools.h"
-#include "Scene.h"
+#include "Transformation.h"
 
 GreBeginNamespace
 
 //////////////////////////////////////////////////////////////////////
-/// @brief A simple Viewport object.
-///
-/// The Viewport is defined using ratio. This means that for example,
-/// if you set a width ratio of 0.5f, when RenderContext calls
-/// onBordersChanged() with the RenderContext new width of 400 px, the
-/// width given by getSurface().width will be 400*0.5f = 200.
+/// @brief An Axis-Aligned Bounding Box.
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC Viewport
+class DLL_PUBLIC BoundingBox
 {
 public:
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    Viewport(const std::string& name = "", float top = 0.0f, float left = 0.0f, float width = 1.0f, float height = 1.0f, bool activated = true);
+    BoundingBox();
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    virtual ~Viewport();
+    BoundingBox ( const Vector3& minpoint , const Vector3& maxpoint );
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    Viewport& operator = (const Viewport& rhs);
+    BoundingBox ( const BoundingBox& rhs );
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Updates the Viewport. This function should be called by the
-    /// RenderContext object.
     //////////////////////////////////////////////////////////////////////
-    virtual void onBordersChanged(const Surface& parentSurface);
+    ~BoundingBox();
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Name of this Viewport.
+    /// @brief Modifies the BoundingBox in order to englobate the given
+    /// point.
     //////////////////////////////////////////////////////////////////////
-    const std::string& getName() const;
+    void add ( const Vector3& point );
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns true if this Viepwort should be rendered.
+    /// @brief Fusion this BoundingBox and given one.
     //////////////////////////////////////////////////////////////////////
-    bool isActivated() const;
+    void add ( const BoundingBox& rhs );
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Surface covered by this Viewport.
+    /// @brief Returns true if this BoundingBox contains given point.
     //////////////////////////////////////////////////////////////////////
-    const Surface& getSurface() const;
+    bool contains ( const Vector3& point ) const;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Selects a RenderScene for this Viewport.
+    /// @brief Returns true if this BoundingBox contains given BoundingBox.
     //////////////////////////////////////////////////////////////////////
-    void selectScene(const RenderScene& scene);
+    bool contains ( const BoundingBox rhs ) const;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns 'true' if this Viewport has a Scene object linked to.
+    /// @brief Reset the BoundingBox.
     //////////////////////////////////////////////////////////////////////
-    bool hasScene() const;
+    void clear();
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Scene object linked to this Viewport if it has
-    /// one, or RenderScene::Null if not.
+    /// @brief Apply given Transformation to this BoundingBox.
+    /// @note This is an Axis-Aligned BoundingBox. Only the 'scale' and
+    /// 'translation' property of the Transformation will be taken.
     //////////////////////////////////////////////////////////////////////
-    const RenderScene& getScene() const;
+    void apply ( const Transformation& transf );
     
-    /// @brief An empty const vector of Viewport.
-    static const std::list<Viewport> EmptyList;
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns 'true' if 'iIsSet' is false.
+    //////////////////////////////////////////////////////////////////////
+    bool isInvalid() const;
+    
+    /// @brief Setter operator.
+    BoundingBox& operator = ( const BoundingBox& rhs );
     
 protected:
     
-    /// @brief Name of this Viewport.
-    std::string _mName;
+    /// @brief Minimum Point of the BoundingBox.
+    Vector3 iMin;
     
-    /// @brief Is this Viewport activated ?
-    /// Default value is 'true'.
-    bool _mActivated;
+    /// @brief Maximum Point of the BoundingBox.
+    Vector3 iMax;
     
-    /// @brief Width border ratio.
-    float _mBorderWidth;
-    
-    /// @brief Height border ratio.
-    float _mBorderHeight;
-    
-    /// @brief Top margin ratio.
-    float _mBorderTop;
-    
-    /// @brief Left margin ratio.
-    float _mBorderLeft;
-    
-    /// @brief Surface object updated with Viewport::onBordersChanged().
-    Surface _mSurface;
-    
-    /// @brief Holds the Scene that might have been selected by the User to draw this
-    /// Viewport object.
-    RenderScene _mScene;
+    /// @brief Tells if the BoundingBox has been set once.
+    bool iIsSet;
 };
-
-/// @brief std::list<> for Viewport.
-typedef std::list<Viewport> ViewportList;
 
 GreEndNamespace
 
-#endif
+#endif /* BoundingBox_h */

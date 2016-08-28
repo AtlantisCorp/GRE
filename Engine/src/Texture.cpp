@@ -50,14 +50,33 @@ TexturePrivate::~TexturePrivate() noexcept(false)
     
 }
 
+void TexturePrivate::bindWithTextureUnit(int texunit) const
+{
+    activateTextureUnit(texunit);
+    bind();
+}
+
 void TexturePrivate::bind() const
 {
     iBinded = false;
+#ifdef GreIsDebugMode
+    GreDebugPretty() << "Not implemented." << std::endl;
+#endif
 }
 
 void TexturePrivate::unbind() const
 {
     iBinded = false;
+#ifdef GreIsDebugMode
+    GreDebugPretty() << "Not implemented." << std::endl;
+#endif
+}
+
+void TexturePrivate::activateTextureUnit(int texunit) const
+{
+#ifdef GreIsDebugMode
+    GreDebugPretty() << "Not implemented." << std::endl;
+#endif
 }
 
 void TexturePrivate::setPixelBuffer(const SoftwarePixelBuffer& pixelbuffer)
@@ -130,19 +149,22 @@ HardwareSampler TexturePrivate::getHardwareSampler()
 // ---------------------------------------------------------------------------------------------------
 
 Texture::Texture(const TexturePrivate* pointer)
-: SpecializedResourceUser<TexturePrivate>(pointer)
+: ResourceUser(pointer)
+, SpecializedResourceUser<TexturePrivate>(pointer)
 {
     
 }
 
 Texture::Texture(const TextureHolder& holder)
-: SpecializedResourceUser<TexturePrivate>(holder)
+: Gre::ResourceUser(holder)
+, SpecializedResourceUser<TexturePrivate>(holder)
 {
     
 }
 
 Texture::Texture(const Texture& user)
-: SpecializedResourceUser<TexturePrivate>(user)
+: Gre::ResourceUser(user)
+, SpecializedResourceUser<TexturePrivate>(user)
 {
     
 }
@@ -150,6 +172,13 @@ Texture::Texture(const Texture& user)
 Texture::~Texture()
 {
     
+}
+
+void Texture::bindWithTextureUnit(int texunit) const
+{
+    auto ptr = lock();
+    if ( ptr )
+        ptr->bindWithTextureUnit(texunit);
 }
 
 void Texture::bind() const
@@ -164,6 +193,13 @@ void Texture::unbind() const
     auto ptr = lock();
     if(ptr)
         ptr->unbind();
+}
+
+void Texture::activateTextureUnit(int texunit) const
+{
+    auto ptr = lock();
+    if ( ptr )
+        ptr->activateTextureUnit(texunit);
 }
 
 void Texture::setPixelBuffer(const SoftwarePixelBuffer& pixelbuffer)

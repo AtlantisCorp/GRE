@@ -13,6 +13,7 @@
 #include <cstring>
 #include <string>
 #include <algorithm>
+#include <sstream>
 
 template<size_t FL, size_t PFL>
 const char* computeMethodName(const char (&function)[FL], const char (&prettyFunction)[PFL]) {
@@ -25,5 +26,21 @@ const char* computeMethodName(const char (&function)[FL], const char (&prettyFun
     return result;
 }
 #define __COMPACT_PRETTY_FUNCTION__ computeMethodName(__FUNCTION__,__PRETTY_FUNCTION__)
+
+std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems) {
+    std::stringstream ss(s);
+    std::string item;
+    while (std::getline(ss, item, delim)) {
+        elems.push_back(item);
+    }
+    return elems;
+}
+
+
+std::vector<std::string> split(const std::string &s, char delim) {
+    std::vector<std::string> elems;
+    split(s, delim, elems);
+    return elems;
+}
 
 #endif

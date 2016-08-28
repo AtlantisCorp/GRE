@@ -1,11 +1,11 @@
 //////////////////////////////////////////////////////////////////////
 //
-//  Viewport.h
+//  ResourcePath.h
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
 //  Copyright (c) 2015 - 2016 Luk2010
-//  Created on 09/03/2016.
+//  Created on 21/08/2016.
 //
 //////////////////////////////////////////////////////////////////////
 /*
@@ -30,110 +30,111 @@
  -----------------------------------------------------------------------------
  */
 
-#ifndef GRE_Viewport_h
-#define GRE_Viewport_h
+#ifndef ResourcePath_h
+#define ResourcePath_h
 
 #include "Pools.h"
-#include "Scene.h"
 
 GreBeginNamespace
 
 //////////////////////////////////////////////////////////////////////
-/// @brief A simple Viewport object.
+/// @brief Enumerates the ResourceDirectory a Resource can be.
 ///
-/// The Viewport is defined using ratio. This means that for example,
-/// if you set a width ratio of 0.5f, when RenderContext calls
-/// onBordersChanged() with the RenderContext new width of 400 px, the
-/// width given by getSurface().width will be 400*0.5f = 200.
+/// When using ResourceDirectoryType::Custom , the ResourceManager
+/// will use the callback function 'iCustomFindFunction'. You can
+/// change this function by using ResourceManager::setCustomFindCallback().
+///
+/// Most of the objects that can be loaded by a Manager normally have
+/// a ResourceDirectoryType.
+///
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC Viewport
+enum class ResourceDirectoryType
+{
+    /// @brief Unknown ResourceDirectory. If this ResourceDirectoryType is used,
+    /// no manager will be used by the ResourceManager to find the Resource.
+    Unknown,
+    
+    /// @brief Custom ResourceDirectory.
+    Custom,
+    
+    /// @brief Used by Material's objects.
+    Material,
+    
+    /// @brief Used by Mesh's objects.
+    Mesh,
+    
+    /// @brief Windows objects.
+    Window,
+    
+    /// @brief RenderScene objects.
+    RenderScene,
+    
+    /// @brief Renderer objects.
+    Renderer
+};
+
+/// @brief Returns the String value of each ResourceDirectoryType.
+static std::string ResourceDirectoryTypeToString ( const ResourceDirectoryType& rdirtype );
+
+//////////////////////////////////////////////////////////////////////
+/// @brief A virtual path localizing a Resource in the Engine.
+//////////////////////////////////////////////////////////////////////
+class DLL_PUBLIC ResourcePath
 {
 public:
     
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    Viewport(const std::string& name = "", float top = 0.0f, float left = 0.0f, float width = 1.0f, float height = 1.0f, bool activated = true);
+    POOLED(Pools::Default)
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    virtual ~Viewport();
+    ResourcePath ( const std::string& path );
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    Viewport& operator = (const Viewport& rhs);
+    ResourcePath ( const ResourceDirectoryType& rdirtype , const std::string& name );
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Updates the Viewport. This function should be called by the
-    /// RenderContext object.
     //////////////////////////////////////////////////////////////////////
-    virtual void onBordersChanged(const Surface& parentSurface);
+    ResourcePath ( const ResourcePath& rhs );
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Name of this Viewport.
     //////////////////////////////////////////////////////////////////////
-    const std::string& getName() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns true if this Viepwort should be rendered.
-    //////////////////////////////////////////////////////////////////////
-    bool isActivated() const;
+    virtual ~ResourcePath();
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Surface covered by this Viewport.
+    /// @brief Returns the ResourceDirectoryType found for this ResourcePath.
     //////////////////////////////////////////////////////////////////////
-    const Surface& getSurface() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Selects a RenderScene for this Viewport.
-    //////////////////////////////////////////////////////////////////////
-    void selectScene(const RenderScene& scene);
+    virtual const ResourceDirectoryType& getDirectoryType() const;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns 'true' if this Viewport has a Scene object linked to.
+    /// @brief Returns the String value for the ResourceDirectoryType.
     //////////////////////////////////////////////////////////////////////
-    bool hasScene() const;
+    virtual std::string getStringType() const;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Scene object linked to this Viewport if it has
-    /// one, or RenderScene::Null if not.
+    /// @brief Returns the Resource Name found for this ResourcePath.
     //////////////////////////////////////////////////////////////////////
-    const RenderScene& getScene() const;
+    virtual const std::string& getName() const;
     
-    /// @brief An empty const vector of Viewport.
-    static const std::list<Viewport> EmptyList;
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns true if the ResourcePath has an empty name.
+    //////////////////////////////////////////////////////////////////////
+    virtual bool empty() const;
     
-protected:
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the String ResourcePath.
+    //////////////////////////////////////////////////////////////////////
+    virtual std::string toString() const;
     
-    /// @brief Name of this Viewport.
-    std::string _mName;
+private:
     
-    /// @brief Is this Viewport activated ?
-    /// Default value is 'true'.
-    bool _mActivated;
+    /// @brief ResourceDirectoryType.
+    ResourceDirectoryType iDirectoryType;
     
-    /// @brief Width border ratio.
-    float _mBorderWidth;
-    
-    /// @brief Height border ratio.
-    float _mBorderHeight;
-    
-    /// @brief Top margin ratio.
-    float _mBorderTop;
-    
-    /// @brief Left margin ratio.
-    float _mBorderLeft;
-    
-    /// @brief Surface object updated with Viewport::onBordersChanged().
-    Surface _mSurface;
-    
-    /// @brief Holds the Scene that might have been selected by the User to draw this
-    /// Viewport object.
-    RenderScene _mScene;
+    /// @brief Resource's Name.
+    std::string iName;
 };
-
-/// @brief std::list<> for Viewport.
-typedef std::list<Viewport> ViewportList;
 
 GreEndNamespace
 
-#endif
+#endif /* ResourcePath_h */

@@ -60,7 +60,6 @@ void HardwareVertexBufferPrivate::setVertexDescriptor(const Gre::VertexDescripto
 HardwareVertexBuffer::HardwareVertexBuffer(const HardwareVertexBufferPrivate* pointer)
 : ResourceUser(pointer)
 , HardwareBuffer(pointer)
-// , SpecializedResourceUser<Gre::HardwareVertexBufferPrivate>(pointer)
 {
     
 }
@@ -68,7 +67,6 @@ HardwareVertexBuffer::HardwareVertexBuffer(const HardwareVertexBufferPrivate* po
 HardwareVertexBuffer::HardwareVertexBuffer(const HardwareVertexBufferHolder& holder)
 : ResourceUser(holder)
 , HardwareBuffer(holder.get())
-// , SpecializedResourceUser<Gre::HardwareVertexBufferPrivate>(holder)
 {
     
 }
@@ -76,7 +74,6 @@ HardwareVertexBuffer::HardwareVertexBuffer(const HardwareVertexBufferHolder& hol
 HardwareVertexBuffer::HardwareVertexBuffer(const HardwareVertexBuffer& user)
 : ResourceUser(user)
 , HardwareBuffer(user)
-// , SpecializedResourceUser<Gre::HardwareVertexBufferPrivate>(user)
 {
     
 }
@@ -109,6 +106,13 @@ void HardwareVertexBuffer::setVertexDescriptor(const Gre::VertexDescriptor &vdes
     auto ptr = lock();
     if ( ptr )
         ptr->setVertexDescriptor(vdesc);
+}
+
+void HardwareVertexBuffer::setData(const HardwareVertexBufferHolder &holder)
+{
+    auto ptr = lock();
+    if ( ptr )
+        ptr->setData(holder);
 }
 
 HardwareVertexBuffer HardwareVertexBuffer::Null = HardwareVertexBuffer(nullptr);

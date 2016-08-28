@@ -77,6 +77,9 @@
 		414B6A1B1C1F603500D09D5E /* Node.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 414B6A1A1C1F603500D09D5E /* Node.cpp */; };
 		414BC0501BFD640100EA4A76 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 414BC04F1BFD640100EA4A76 /* main.cpp */; };
 		414BC0511BFD642600EA4A76 /* libgreengine.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 41877B591BEFADDE0024B643 /* libgreengine.dylib */; };
+		414F319A1D69ABD3007CB92B /* ResourcePath.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 414F31991D69ABD3007CB92B /* ResourcePath.cpp */; };
+		414F319D1D6A5D99007CB92B /* RenderingApiDescriptor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 414F319C1D6A5D99007CB92B /* RenderingApiDescriptor.cpp */; };
+		414F31A01D6FAFE6007CB92B /* BoundingBox.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 414F319F1D6FAFE6007CB92B /* BoundingBox.cpp */; };
 		41531FBE1CB58E7600E9B581 /* WindowEvent.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41531FBD1CB58E7600E9B581 /* WindowEvent.cpp */; };
 		41574C3B1CD7D17D00081A81 /* ResourceUser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41574C3A1CD7D17D00081A81 /* ResourceUser.cpp */; };
 		41797BF11CDE502D003F66C3 /* ResourceLoader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41797BF01CDE502D003F66C3 /* ResourceLoader.cpp */; };
@@ -312,6 +315,12 @@
 		414BC0321BFD63B400EA4A76 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		414BC04F1BFD640100EA4A76 /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; lineEnding = 0; name = main.cpp; path = ../../../../Example/main.cpp; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
 		414DD1CA1C51577800569E45 /* ThirdParty.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = ThirdParty.h; path = ../../../Engine/inc/ThirdParty.h; sourceTree = "<group>"; };
+		414F31981D69A8A5007CB92B /* ResourcePath.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = ResourcePath.h; path = ../../../Engine/inc/ResourcePath.h; sourceTree = "<group>"; };
+		414F31991D69ABD3007CB92B /* ResourcePath.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ResourcePath.cpp; path = ../../../Engine/src/ResourcePath.cpp; sourceTree = "<group>"; };
+		414F319B1D6A5BDD007CB92B /* RenderingApiDescriptor.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = RenderingApiDescriptor.h; path = ../../../Engine/inc/RenderingApiDescriptor.h; sourceTree = "<group>"; };
+		414F319C1D6A5D99007CB92B /* RenderingApiDescriptor.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = RenderingApiDescriptor.cpp; path = ../../../Engine/src/RenderingApiDescriptor.cpp; sourceTree = "<group>"; };
+		414F319E1D6FAB2C007CB92B /* BoundingBox.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = BoundingBox.h; path = ../../../Engine/inc/BoundingBox.h; sourceTree = "<group>"; };
+		414F319F1D6FAFE6007CB92B /* BoundingBox.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = BoundingBox.cpp; path = ../../../Engine/src/BoundingBox.cpp; sourceTree = "<group>"; };
 		41531FBC1CB58DC900E9B581 /* WindowEvent.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = WindowEvent.h; path = ../../../Engine/inc/WindowEvent.h; sourceTree = "<group>"; };
 		41531FBD1CB58E7600E9B581 /* WindowEvent.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = WindowEvent.cpp; path = ../../../Engine/src/WindowEvent.cpp; sourceTree = "<group>"; };
 		41574C3A1CD7D17D00081A81 /* ResourceUser.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ResourceUser.cpp; path = ../../../Engine/src/ResourceUser.cpp; sourceTree = "<group>"; };
@@ -671,6 +680,7 @@
 				41867F0B1C1B8D430096F198 /* Keyboard.cpp */,
 				419A86011C7A2F9E00E7407C /* LoopBehaviours.cpp */,
 				418A92641C07C93900806BA3 /* Material.cpp */,
+				414F31991D69ABD3007CB92B /* ResourcePath.cpp */,
 				418A92601C07B03F00806BA3 /* Mesh.cpp */,
 				4106A2E91CBBFD6800615B0B /* MeshCustomNode.cpp */,
 				418A92621C07B23E00806BA3 /* MeshLoader.cpp */,
@@ -689,9 +699,11 @@
 				413E53AC1CD7A1CF00316307 /* ResourceHolder.cpp */,
 				41797BF01CDE502D003F66C3 /* ResourceLoader.cpp */,
 				41877B6A1BEFAE8D0024B643 /* ResourceManager.cpp */,
+				414F319C1D6A5D99007CB92B /* RenderingApiDescriptor.cpp */,
 				41574C3A1CD7D17D00081A81 /* ResourceUser.cpp */,
 				414B6A161C1F359D00D09D5E /* Scene.cpp */,
 				41BB7F971D0F5F8200E18BF8 /* SceneNode.cpp */,
+				414F319F1D6FAFE6007CB92B /* BoundingBox.cpp */,
 				418AF0F11D28332400F21855 /* SoftwarePixelBuffer.cpp */,
 				41877B6B1BEFAE8D0024B643 /* TextResource.cpp */,
 				413F0A961C0FD98B0003F41F /* Texture.cpp */,
@@ -756,15 +768,18 @@
 				411B1E271C6E603300941DD0 /* RenderContext.h */,
 				411B1E241C6E513E00941DD0 /* RenderContextInfo.h */,
 				41877B7A1BEFAED10024B643 /* Renderer.h */,
+				414F319B1D6A5BDD007CB92B /* RenderingApiDescriptor.h */,
 				411B1E2B1C71626A00941DD0 /* RenderTarget.h */,
 				41877B7B1BEFAED10024B643 /* Resource_old.h */,
 				410A3C951CDD01FC006635C9 /* Resource.h */,
 				413E53981CD79D0F00316307 /* ResourceHolder.h */,
 				41797BEF1CDE4EBD003F66C3 /* ResourceLoader.h */,
 				41877B7C1BEFAED10024B643 /* ResourceManager.h */,
+				414F31981D69A8A5007CB92B /* ResourcePath.h */,
 				413E53AE1CD7ADFE00316307 /* ResourceUser.h */,
 				41B8C8441C1CD058000084F2 /* Scene.h */,
 				41BB7F951D0F5F5B00E18BF8 /* SceneNode.h */,
+				414F319E1D6FAB2C007CB92B /* BoundingBox.h */,
 				418AF0F01D28315500F21855 /* SoftwarePixelBuffer.h */,
 				41877B7D1BEFAED10024B643 /* TextResource.h */,
 				418A92461C0758A500806BA3 /* Texture.h */,
@@ -1199,10 +1214,12 @@
 				410C1C2F1C035C8100937366 /* Event.cpp in Sources */,
 				41531FBE1CB58E7600E9B581 /* WindowEvent.cpp in Sources */,
 				414B6A1B1C1F603500D09D5E /* Node.cpp in Sources */,
+				414F319A1D69ABD3007CB92B /* ResourcePath.cpp in Sources */,
 				4131D5401C41ED4900AB376A /* HardwareProgramManager.cpp in Sources */,
 				418A92651C07C93900806BA3 /* Material.cpp in Sources */,
 				41797BF41CDE6E74003F66C3 /* Camera.cpp in Sources */,
 				4106A2ED1CBBFE3000615B0B /* CameraCustomNode.cpp in Sources */,
+				414F31A01D6FAFE6007CB92B /* BoundingBox.cpp in Sources */,
 				418AF0F21D28332400F21855 /* SoftwarePixelBuffer.cpp in Sources */,
 				41877B6E1BEFAE8D0024B643 /* Plugin.cpp in Sources */,
 				41460A701D11D10E002B1185 /* Transformation.cpp in Sources */,
@@ -1239,6 +1256,7 @@
 				41877B741BEFAE8D0024B643 /* Window.cpp in Sources */,
 				413F0A971C0FD98B0003F41F /* Texture.cpp in Sources */,
 				414B6A171C1F359D00D09D5E /* Scene.cpp in Sources */,
+				414F319D1D6A5D99007CB92B /* RenderingApiDescriptor.cpp in Sources */,
 				41867F0C1C1B8D430096F198 /* Keyboard.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

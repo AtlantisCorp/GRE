@@ -31,231 +31,486 @@ THE SOFTWARE.
 */
 
 #include "SceneNode.h"
-#include "Scene.h"
 
 GreBeginNamespace
 
-SceneNodePrivate::Identifier SceneNodePrivate::Identificator::identifier = 0;
+RenderNodePrivate::Identifier RenderNodePrivate::Identificator::identifier = 0;
 
-SceneNodePrivate::Identifier SceneNodePrivate::Identificator::Create()
+RenderNodePrivate::Identifier RenderNodePrivate::Identificator::Create()
 {
 	return (identifier++);
 }
 
-SceneNodePrivate::Identifier SceneNodePrivate::Identificator::Last()
+RenderNodePrivate::Identifier RenderNodePrivate::Identificator::Last()
 {
 	return identifier;
 }
 
-bool SceneNodePrivate::Identificator::IsValid(SceneNodePrivate::Identifier id)
+bool RenderNodePrivate::Identificator::IsValid(RenderNodePrivate::Identifier id)
 {
 	return id > 0;
 }
 
 // ---------------------------------------------------------------------------------------------------
 
-SceneNodePrivate::SceneNodePrivate(const SceneManager& creator)
-: NodePrivate(std::string("SceneNodePrivate#") + std::to_string(Identificator::Create())), iRenderable(nullptr)
+RenderNodePrivate::RenderNodePrivate()
+: Gre::Resource(std::string("RenderNode#") + std::to_string(Identificator::Create()))
+, iIdentifier(Identificator::Last())
+, iRenderable(nullptr)
+, iTransformationChanged(false)
+, iParent(nullptr)
+, iRenderableChanged(false)
+, iModelMatrix(0.0f)
+, iBoundingBox()
 {
-	iCreator = new SceneManager(creator);
-	iIdentifier = Identificator::Last();
+    
 }
 
-SceneNodePrivate::SceneNodePrivate(const SceneManager& creator, const std::string& name)
-: NodePrivate(name), iRenderable(nullptr)
+RenderNodePrivate::RenderNodePrivate(const std::string& name)
+: Gre::Resource(name)
+, iIdentifier(Identificator::Create())
+, iRenderable(nullptr)
+, iTransformationChanged(false)
+, iParent(nullptr)
+, iRenderableChanged(false)
+, iModelMatrix(0.0f)
+, iBoundingBox()
 {
-	iCreator = new SceneManager(creator);
-	iIdentifier = Identificator::Create();
-    iRenderable = Mesh::Null;
+    
 }
 
-SceneNodePrivate::SceneNodePrivate(const SceneManager& creator, const std::string& name, const Mesh& renderable)
-: NodePrivate(name), iRenderable(nullptr)
+RenderNodePrivate::~RenderNodePrivate()
 {
-    iCreator = new SceneManager(creator);
-    iIdentifier = Identificator::Create();
-    iRenderable = renderable;
+    
 }
 
-SceneNodePrivate::~SceneNodePrivate()
+bool RenderNodePrivate::isRenderable() const
 {
-    if(iCreator)
+    return !iRenderable.isInvalid();
+}
+
+const Mesh& RenderNodePrivate::getMesh() const
+{
+    return iRenderable;
+}
+
+Mesh& RenderNodePrivate::getMesh()
+{
+    return iRenderable;
+}
+
+void RenderNodePrivate::setMesh(const Gre::Mesh &mesh)
+{
+    if ( !iRenderable.isInvalid() )
     {
-        delete iCreator;
+        Resource::removeListener( iRenderable.getName() );
+    }
+    
+    iRenderable = mesh;
+    iRenderableChanged = true;
+    
+    if ( !iRenderable.isInvalid() )
+    {
+        Resource::addListener( iRenderable );
     }
 }
 
-bool SceneNodePrivate::isRenderable() const
-{
-    return !iRenderable.isExpired();
-}
-
-const Mesh& SceneNodePrivate::getRenderable() const
-{
-    return iRenderable;
-}
-
-Mesh& SceneNodePrivate::getRenderable()
-{
-    return iRenderable;
-}
-
-void SceneNodePrivate::setRenderable(const Gre::Mesh &mesh)
-{
-    iRenderable = mesh;
-    iRenderableChanged = true;
-}
-
-bool SceneNodePrivate::isRenderableChanged() const
-{
-    return iRenderableChanged;
-}
-
-void SceneNodePrivate::setTransformation(const Gre::Transformation &transformation)
+void RenderNodePrivate::setTransformation(const Gre::Transformation &transformation)
 {
     iTransformation = transformation;
+    iTransformationChanged = true;
 }
 
-const Transformation& SceneNodePrivate::getTransformation() const
+const Transformation& RenderNodePrivate::getTransformation() const
 {
     return iTransformation;
 }
 
-Matrix4 SceneNodePrivate::getModelMatrix() const
+Matrix4 RenderNodePrivate::getModelMatrix() const
 {
-    if ( getParent() )
+    return iModelMatrix;
+}
+
+void RenderNodePrivate::addNode(const RenderNodeHolder &node)
+{
+    if ( !node.isInvalid() )
     {
-        Matrix4 modelmatrix = (reinterpret_cast<const SceneNodePrivate*>(getParent()))->getModelMatrix();
-        return iTransformation.get() * modelmatrix;
+        // First, check if this Node is not already one of our children. If this is the case,
+        // this is probably a check from 'RenderNodePrivate::onUpdateEvent' when 'iTransformationChanged' is
+        // true.
+        
+        auto it = iChilds.find(node);
+        
+        if ( it != iChilds.end() )
+        {
+            // We have to remove the Child from the list, and add it again. Removing the Node from the list
+            // lets us adding it as if it was a new Node. Also, we remove the node from the listeners.
+            
+            iChilds.erase(it);
+            Resource::removeListener( node->getName() );
+            
+            addNode(node);
+            return;
+        }
+        
+        if ( iBoundingBox.contains(node->getBoundingBox()) )
+        {
+            // We will add this Node as a Child. But, we must ensure any Child should have this Node as
+            // a Valid Parent. This way we can sort BoundingBox here.
+            
+            RenderNodeHolderList tmplist;
+            
+            for ( auto it = iChilds.begin(); it != iChilds.end(); it++ )
+            {
+                if ( !(*it).isInvalid() )
+                {
+                    if ( node->getBoundingBox().contains((*it)->getBoundingBox()) )
+                    {
+                        // Here, the futur Node also contains this Node Child. Add this child to the Node, and remove
+                        // this child from the listeners.
+                        
+                        Resource::removeListener( (*it)->getName() );
+                        RenderNodeHolder(node)->addNode((*it));
+                    }
+                    
+                    else
+                    {
+                        // We add this Child to the 'tmplist', in order to replace this Node's Child. Children in this
+                        // list already are listening to this Node.
+                        
+                        tmplist.add((*it));
+                    }
+                }
+            }
+            
+            // Replace the list with the correct one. This will destroy every RenderNodeHolder in the list, but
+            // we have other ones in this one. Also, add the RenderNode to this one and add it to the Listeners list.
+            
+            iChilds = tmplist;
+            iChilds.add(node);
+            Resource::addListener( RenderNode(node) );
+            RenderNodeHolder(node)->setParent(RenderNodeHolder(this));
+        }
+        
+        else
+        {
+            // If this RenderNode do not contains this Node, just add it to the Parent. Keep in mind that,
+            // when adding to a Parent, if 'node' contains this Node, it will replace this Node Parent.
+            
+            if ( !iParent.isInvalid() )
+            {
+                iParent->addNode(node);
+            }
+            
+            // If we don't have any Parent, this means we are Root, but Root::getBoundingBox() should return
+            // an infinite BoundingBox.
+        }
+    }
+}
+
+RenderNodeHolderList& RenderNodePrivate::getChilds()
+{
+    return iChilds;
+}
+
+const RenderNodeHolderList& RenderNodePrivate::getChilds() const
+{
+    return iChilds;
+}
+
+RenderNodeHolder RenderNodePrivate::find(RenderNodeIdentifier identifier)
+{
+    if ( Identificator::IsValid(identifier) )
+    {
+        for ( RenderNodeHolder& child : iChilds )
+        {
+            if ( !child.isInvalid() )
+            {
+                if ( child->getIdentifier() == identifier )
+                {
+                    return child;
+                }
+            }
+        }
+        
+        for ( RenderNodeHolder& child : iChilds )
+        {
+            if ( !child.isInvalid() )
+            {
+                RenderNodeHolder ret = child->find(identifier);
+                
+                if ( !ret.isInvalid() )
+                {
+                    return ret;
+                }
+            }
+        }
+        
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "'identifier' was not found in Children's list ('" << (int) identifier << "')." << std::endl;
+#endif
+        return RenderNodeHolder ( nullptr );
     }
     
     else
     {
-        return iTransformation.get();
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "'identifier' is invalid." << std::endl;
+#endif
+        return RenderNodeHolder ( nullptr );
+    }
+}
+
+const RenderNodeHolder RenderNodePrivate::find(RenderNodeIdentifier identifier) const
+{
+    if ( Identificator::IsValid(identifier) )
+    {
+        for ( const RenderNodeHolder& child : iChilds )
+        {
+            if ( !child.isInvalid() )
+            {
+                if ( child->getIdentifier() == identifier )
+                {
+                    return child;
+                }
+            }
+        }
+        
+        for ( const RenderNodeHolder& child : iChilds )
+        {
+            if ( !child.isInvalid() )
+            {
+                RenderNodeHolder ret = child->find(identifier);
+                
+                if ( !ret.isInvalid() )
+                {
+                    return ret;
+                }
+            }
+        }
+        
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "'identifier' was not found in Children's list ('" << (int) identifier << "')." << std::endl;
+#endif
+        return RenderNodeHolder ( nullptr );
+    }
+    
+    else
+    {
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "'identifier' is invalid." << std::endl;
+#endif
+        return RenderNodeHolder ( nullptr );
+    }
+}
+
+RenderNodeHolderList RenderNodePrivate::getVisibleChildren(const CameraHolder &camera) const
+{
+    if ( !camera.isInvalid() )
+    {
+        RenderNodeHolderList ret;
+        
+        for ( const RenderNodeHolder& child : iChilds )
+        {
+            if ( !child.isInvalid() )
+            {
+                if ( camera->isVisible(child->getBoundingBox()) )
+                {
+                    ret.add( child->getVisibleChildren(camera) );
+                    ret.add( child );
+                }
+            }
+        }
+        
+        return ret;
+    }
+    
+    return RenderNodeHolderList();
+}
+
+void RenderNodePrivate::remove(const RenderNodePrivate::Identifier& identifier)
+{
+    if ( Identificator::IsValid(identifier) )
+    {
+        for ( auto it = iChilds.begin(); it != iChilds.end(); it++ )
+        {
+            if ( !(*it).isInvalid() )
+            {
+                if ( (*it)->getIdentifier() == identifier )
+                {
+                    Resource::removeListener( (*it)->getName() );
+                    iChilds.erase(it);
+                    return;
+                }
+            }
+        }
+        
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "RenderNode Resource 'RenderNode#" << std::to_string(identifier) << "' not found." << std::endl;
+#endif
+    }
+    
+    else
+    {
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "'identifier' is invalid." << std::endl;
+#endif
+    }
+}
+
+void RenderNodePrivate::removeNotRecursive(const RenderNodePrivate::Identifier& identifier)
+{
+    if ( RenderNodePrivate::Identificator::IsValid(identifier) )
+    {
+        for ( auto it = iChilds.begin(); it != iChilds.end(); it++ )
+        {
+            if ( !(*it).isInvalid() )
+            {
+                if ( (*it)->getIdentifier() == identifier )
+                {
+                    // Save Children.
+                    
+                    RenderNodeHolderList children = (*it)->getChilds();
+                    
+                    // Erase Child.
+                    
+                    Resource::removeListener( (*it)->getName() );
+                    iChilds.erase(it);
+                    
+                    // Adds every Children to this Node.
+                    
+                    for ( RenderNodeHolder& holder : children )
+                    {
+                        if ( !holder.isInvalid() )
+                        {
+                            addNode(holder);
+                        }
+                    }
+                    
+                    return;
+                }
+            }
+        }
+        
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "RenderNode Resource 'RenderNode#" << std::to_string(identifier) << "' not found." << std::endl;
+#endif
+    }
+    
+    else
+    {
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "'identifier' is invalid." << std::endl;
+#endif
+    }
+}
+
+void RenderNodePrivate::clear()
+{
+    iChilds.clear();
+    iRenderable.reset();
+    iTransformation = Transformation();
+    iParent.reset();
+    iBoundingBox.clear();
+    iModelMatrix = Matrix4(0);
+    iTransformationChanged = true;
+    iRenderableChanged = true;
+}
+
+const BoundingBox& RenderNodePrivate::getBoundingBox() const
+{
+    return iBoundingBox;
+}
+
+void RenderNodePrivate::translate(const Vector3 &vec)
+{
+    iTransformation.translate(vec);
+    iTransformationChanged = true;
+}
+
+void RenderNodePrivate::rotate(float angle, const Vector3 &axis)
+{
+    iTransformation.rotate(angle, axis);
+    iTransformationChanged = true;
+}
+
+void RenderNodePrivate::scale(float value)
+{
+    iTransformation.scale( Vector3(value, value, value) );
+    iTransformationChanged = true;
+}
+
+RenderNodePrivate::Identifier RenderNodePrivate::getIdentifier() const
+{
+    return iIdentifier;
+}
+
+void RenderNodePrivate::setParent(const RenderNodeHolder &parent)
+{
+    iParent = parent;
+}
+
+void RenderNodePrivate::onUpdateEvent(const Gre::UpdateEvent &e)
+{
+    if ( iTransformationChanged )
+    {
+        iModelMatrix = iTransformation.get();
+        iTransformationChanged = false;
+        
+        if ( !iRenderableChanged )
+        {
+            iBoundingBox.apply(iTransformation);
+        }
+        
+        // If the Transformation has changed, we must check if this Node should behave at the same place
+        // or not. So, we must add it again to its parent.
+        
+        if ( !iParent.isInvalid() )
+        {
+            iParent->addNode(RenderNodeHolder(this));
+        }
+    }
+    
+    if ( iRenderableChanged )
+    {
+        if ( !iRenderable.isInvalid() )
+        {
+            iBoundingBox = iRenderable.getBoundingBox();
+            iBoundingBox.apply(iTransformation);
+        }
+        
+        iRenderableChanged = false;
     }
 }
 
 // ---------------------------------------------------------------------------------------------------
 
-SceneNode::SceneNode(SceneNodePrivate* node)
-: ResourceUser(node)
-, Node(node)
-, SpecializedResourceUser<Gre::SceneNodePrivate>(node)
+RenderNode::RenderNode(const RenderNodePrivate* pointer)
+: Gre::ResourceUser(pointer)
+, SpecializedResourceUser<Gre::RenderNodePrivate>(pointer)
 {
     
 }
 
-SceneNode::SceneNode(const SceneNodeHolder& holder)
-: ResourceUser(holder)
-, Node(holder.get())
-, SpecializedResourceUser<Gre::SceneNodePrivate>(holder)
+RenderNode::RenderNode(const RenderNodeHolder& holder)
+: Gre::ResourceUser(holder)
+, SpecializedResourceUser<Gre::RenderNodePrivate>(holder)
 {
     
 }
 
-SceneNode::SceneNode(const SceneNode& user)
-: ResourceUser(user)
-, Node(user)
-, SpecializedResourceUser<Gre::SceneNodePrivate>(user)
+RenderNode::RenderNode(const RenderNode& user)
+: Gre::ResourceUser(user)
+, SpecializedResourceUser<Gre::RenderNodePrivate>(user)
 {
     
 }
 
-SceneNode::~SceneNode()
+RenderNode::~RenderNode()
 {
     
 }
 
-SpecializedResourceHolder<SceneNodePrivate> SceneNode::lock()
-{
-    return SpecializedResourceUser<SceneNodePrivate>::lock();
-}
-
-const SpecializedResourceHolder<SceneNodePrivate> SceneNode::lock() const
-{
-    return SpecializedResourceUser<SceneNodePrivate>::lock();
-}
-
-bool SceneNode::isRenderable() const
-{
-    auto ptr = lock();
-    if(ptr)
-    {
-        return ptr->isRenderable();
-    }
-    
-    return false;
-}
-
-const Mesh& SceneNode::getRenderable() const
-{
-    auto ptr = lock();
-    if(ptr)
-    {
-        return ptr->getRenderable();
-    }
-    
-    return Mesh::Null;
-}
-
-Mesh& SceneNode::getRenderable()
-{
-    auto ptr = lock();
-    if(ptr)
-    {
-        return ptr->getRenderable();
-    }
-    
-    return Mesh::Null;
-}
-
-void SceneNode::setRenderable(const Gre::Mesh &mesh)
-{
-    auto ptr = lock();
-    if(ptr)
-    {
-        ptr->setRenderable(mesh);
-    }
-}
-
-bool SceneNode::isRenderableChanged() const
-{
-    auto ptr = lock();
-    if(ptr)
-    {
-        return ptr->isRenderableChanged();
-    }
-    
-    return false;
-}
-
-void SceneNode::setTransformation(const Gre::Transformation &transformation)
-{
-    auto ptr = lock();
-    if(ptr)
-    {
-        ptr->setTransformation(transformation);
-    }
-}
-
-const Transformation& SceneNode::getTransformation() const
-{
-    auto ptr = lock();
-    if(ptr)
-    {
-        return ptr->getTransformation();
-    }
-    return Transformation::Default;
-}
-
-Matrix4 SceneNode::getModelMatrix() const
-{
-    auto ptr = lock();
-    if ( ptr )
-        return ptr->getModelMatrix();
-    return Matrix4(0);
-}
-
-SceneNode SceneNode::Null = SceneNode(nullptr);
+RenderNode RenderNode::Null = RenderNode(nullptr);
 
 GreEndNamespace

@@ -40,170 +40,198 @@ THE SOFTWARE.
 GreBeginNamespace
 
 //////////////////////////////////////////////////////////////////////
+/// @brief A Filter to sort RenderSceneNode.
+//////////////////////////////////////////////////////////////////////
+class DLL_PUBLIC RenderSceneFilter
+{
+public:
+    
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    RenderSceneFilter() { }
+    
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    virtual ~RenderSceneFilter() { }
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Sorts every RenderNode in given RenderNodeHolderList.
+    //////////////////////////////////////////////////////////////////////
+    virtual void sort ( RenderNodeHolderList& rnode ) const = 0;
+};
+
+//////////////////////////////////////////////////////////////////////
+/// @brief Non-sorting RenderSceneFilter.
+//////////////////////////////////////////////////////////////////////
+class DLL_PUBLIC DefaultRenderSceneFilter : public RenderSceneFilter
+{
+public:
+    
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    DefaultRenderSceneFilter() { }
+    
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    ~DefaultRenderSceneFilter() { }
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Do nothing.
+    //////////////////////////////////////////////////////////////////////
+    void sort ( RenderNodeHolderList& rnode ) const { }
+};
+
+//////////////////////////////////////////////////////////////////////
 /// @brief A Generic Base Scene object.
 ///
-/// The default implementation does nothing. You should create
-/// or use a plugin that register a correct SceneManagerPrivate object,
-/// and load it to your Renderer object.
-///
-/// Pass Management : The Scene object automaticaly creates a Default
+/// Pass Management : The RenderScene object automaticaly creates a Default
 /// PassPurpose::First Pass object. This Pass normally should only draws
 /// every objects in the Scene, according to the active Camera, with a
 /// pass-through HardwareProgram. But this behaviour is not guaranteed.
 ///
-/// Nodes Management : The Scene should be able to create Nodes. Those
-/// Nodes may have different purpose. Normally, each Nodes has a Parent, 
-/// but this is not guaranteed and obviously implementation-dependent.
-/// 
-/// Nodes should be created using `SceneManager::createNode(Type, Name, Other args).`
-/// Then they should be added to the Scene or directly to a Node object
-/// using SceneManager::addChild() after setting every informations required (like
-/// positions and others).
-///
-/// Nodes Update : Nodes are updated by the SceneManager. The SceneManager
-/// only updates Nodes with flag 'iNeedsUpdate' set to true. A Node should
-/// be updated when one of its parameters has changed.
-///
 /// Rendering Notes : Render is done by giving the Renderer the list of Pass
 /// the Renderer should render. Those Pass have all required informations 
-/// for the Renderer to render the Scene. A Node can customize its Rendering,
-/// overriding the function SceneNode::onSettingPass().
+/// for the Renderer to render the RenderScene.
 ///
-/// Camera Management : Cameras can be created as freestanding objects. You
-/// can register your own Camera using SceneManager::addCamera(). You can attach
-/// a Camera to a SceneNode using SceneNode::addCamera().
+/// Camera Management : Cameras can be created as freestanding objects. You can
+/// connect a Camera to a RenderNode using 'Camera::connectRenderNode()',
+/// this RenderNode will be available as a RenderNodeHolder in your Camera
+/// class.
+///
+/// You should create a RenderNode using 'RenderScene::createNode()'. This
+/// RenderNode will not be connected to any other RenderNode. Set a Mesh,
+/// set its position ( and other Transformation properties ), and add it
+/// to the RenderScene using 'RenderScene::addNode()'. This will add the
+/// RenderNode to the Root RenderNode. If the RenderNode given is not
+/// acceptable to the Root Node ( 'iParent' property is still invalid ),
+/// you can change the Root Node by using 'RenderScene::setRoot()'.
+///
+/// RenderNodes updating is managed by the RenderScene object. The
+/// RenderSceneManager updates each RenderScene, those will update only
+/// the Root Node which will update its children, ... Add some custom
+/// behaviours when updating a RenderNode using 'Resource::addAction()'
+/// functions, or 'Resource::onNextEvent()'.
+///
+/// Rendering particular RenderNode for a particular Pass : Overwrite the
+/// 'Pass::isRenderNodeDrawable()' function to filter RenderNodes returned
+/// by the 'RenderScene::findNodesForPass()' function.
 ///
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC SceneManagerPrivate : public Resource
+class DLL_PUBLIC RenderScenePrivate : public Resource
 {
 public:
     
     POOLED(Pools::Scene)
     
-    SceneManagerPrivate(const std::string& name);
-    virtual ~SceneManagerPrivate();
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    RenderScenePrivate(const std::string& name);
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Root node from the node tree.
     //////////////////////////////////////////////////////////////////////
-	virtual SceneNode& getRoot();
+    virtual ~RenderScenePrivate();
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Root node from the node tree.
+    /// @brief Returns the Root RenderNode.
     //////////////////////////////////////////////////////////////////////
-	virtual const SceneNode& getRoot() const;
+    virtual const RenderNodeHolder& getRootNode() const;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Creates a new unnamed SceneNode.
+    /// @brief Changes the Root RenderNode and returns the new Root.
+    /// Check the return value with the given RenderNode to check if the
+    /// Root Node has been successfully changed to your RenderNode.
     //////////////////////////////////////////////////////////////////////
-    virtual SceneNode createNode();
+    virtual const RenderNodeHolder& setRootNode ( const RenderNodeHolder& rendernode );
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Creates a new named SceneNode.
+    /// @brief Creates a new RenderNode.
     //////////////////////////////////////////////////////////////////////
-    virtual SceneNode createNode(const std::string& name);
+    virtual RenderNodeHolder createNode() const;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Destroys a SceneNode using its name.
+    /// @brief Creates a new RenderNode with given name.
     //////////////////////////////////////////////////////////////////////
-    virtual void destroyNode(const std::string& name);
+    virtual RenderNodeHolder createNodeWithName ( const std::string& name ) const;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Destroys a SceneNode.
+    /// @brief Add a RenderNode to this Scene.
+    /// If the RenderNode couldn't be added, its 'iParent' property will
+    /// still be invalid.
     //////////////////////////////////////////////////////////////////////
-    virtual void destroyNode(SceneNode& node);
+    virtual void addNode ( const RenderNodeHolder& rendernode );
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Destroys every SceneNode.
+    /// @brief Removes the given RenderNode from this Scene.
     //////////////////////////////////////////////////////////////////////
-	virtual void destroyEveryNode();
+    virtual void removeNode ( RenderNodeIdentifier identifier );
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Empty the Scene and destroy every Node objects.
+    /// @brief Finds a RenderNode with its identifier.
     //////////////////////////////////////////////////////////////////////
-	virtual void clear();
-	
-	//////////////////////////////////////////////////////////////////////
-    /// @brief Adds a Camera.
-    //////////////////////////////////////////////////////////////////////
-    virtual Camera& addCamera(const Camera& camera);
+    virtual RenderNodeHolder findNode ( RenderNodeIdentifier identifier );
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Creates a default Camera and adds it to the SceneManager.
+    /// @brief Finds a RenderNode with its identifier.
     //////////////////////////////////////////////////////////////////////
-    virtual Camera& addCamera(const std::string& name);
+    virtual const RenderNodeHolder findNode ( RenderNodeIdentifier identifier ) const;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the currently active camera.
+    /// @brief Returns a list of RenderNode, visible by the given Camera
+    /// object, and sorted with the given filter.
     //////////////////////////////////////////////////////////////////////
-    virtual Camera& getCurrentCamera();
+    virtual RenderNodeHolderList findNodes ( const CameraHolder& camera , const RenderSceneFilter& filter ) const;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the currently active camera.
-    //////////////////////////////////////////////////////////////////////
-    virtual const Camera& getCurrentCamera() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Sets the active Camera given its Node.
-    //////////////////////////////////////////////////////////////////////
-    virtual void setActiveCamera(const Camera& camera);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns a list of the Nodes, sorted by given filter.
-    /// @param filter   A filter defined by the Node to sort them.
-    /// If the filter given is not implemented, Node::Filter::Default is
-    /// used as a fallback generally, but this behaviour can be undefined.
-    /// @note By default, not implemented function return an empty vector.
-    //////////////////////////////////////////////////////////////////////
-    virtual std::vector<const Node> getNodesByFilter(NodePrivate::Filter filter) const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns a list of SceneNode, that can be directly passed to
-    /// a Pass object for rendering. The Nodes can be sorted if necessary,
-    /// and the PassPurpose is to know the Pass we should point.
+    /// @brief Returns a list of RenderNode, visible by the given Camera
+    /// object, sorted with the given filter and by the given Pass.
     ///
-    /// @note
-    /// If the given filter is not available, Node::Filter::None is always 
-    /// used.
+    /// This is a slow function , because it has to get RenderNodes visible
+    /// by the CameraHolder, throw objects not for given pass , and then
+    /// sort those objects.
     //////////////////////////////////////////////////////////////////////
-    virtual SceneNodeHolderList getNodesForPass(Gre::PassPurpose pass, NodePrivate::Filter filter = NodePrivate::Filter::None) const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Nodes from given point of view.
-    //////////////////////////////////////////////////////////////////////
-    virtual SceneNodeList getNodesFrom(const Camera& camera) const;
+    virtual RenderNodeHolderList findNodesForPass ( PassNumber passnumber , const CameraHolder& camera , const RenderSceneFilter& filter ) const;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Create a Default Pass given its name and number.
     /// If passNumber is already taken, return Pass::Null.
     //////////////////////////////////////////////////////////////////////
-    virtual Pass createAndAddPass(const std::string& name, const PassNumber& passNumber);
+    virtual Pass createAndAddPass ( const std::string& name , const PassNumber& passNumber );
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Adds given custom created pass.
     /// It may return Pass::Null if an error occured.
     //////////////////////////////////////////////////////////////////////
-    virtual Pass addPass(PassHolder& customPass);
+    virtual Pass addPass ( const PassHolder& customPass );
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the first Pass with given name.
     //////////////////////////////////////////////////////////////////////
-    virtual Pass getPassByName(const std::string& name);
+    virtual Pass getPassByName ( const std::string& name );
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the pass at given number.
     //////////////////////////////////////////////////////////////////////
-    virtual Pass getPassByNumber(const PassNumber& passNumber);
+    virtual Pass getPassByNumber ( const PassNumber& passNumber );
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns a PassHolder from given PassNumber.
+    //////////////////////////////////////////////////////////////////////
+    virtual PassHolder getPassHolder ( const PassNumber& passnumber );
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns a PassHolder from given PassNumber.
+    //////////////////////////////////////////////////////////////////////
+    virtual const PassHolder getPassHolder ( const PassNumber& passnumber ) const;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Removes the first Pass with given name.
     //////////////////////////////////////////////////////////////////////
-    virtual void removePassByName(const std::string& name);
+    virtual void removePassByName ( const std::string& name );
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Removes the Pass with given number.
     //////////////////////////////////////////////////////////////////////
-    virtual void removePassByNumber(const PassNumber& passNumber);
+    virtual void removePassByNumber ( const PassNumber& passNumber );
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns every active Pass, sorted by PassNumber from first
@@ -216,215 +244,72 @@ protected:
     /// @brief Holds every Pass in the Scene.
     PassHolderList iPasses;
     
-    typedef std::map<Gre::PassNumber, Gre::Pass> PassesByPurpose;
-    
-    /// @brief Catalog to Pass objects by name.
-    PassesByPurpose iPassesByNumber;
-    
-    /// @brief The Root SceneNode.
-    SceneNode iRootNode;
-    
-    /// @brief SceneNode's List.
-    SceneNodeHolderList iSceneNodes;
-    
-    /// @brief Holds a List of Camera.
-    CameraHolderList iCameras;
-    
-    /// @brief Hold the Current Camera.
-    Camera iCurrentCamera;
+    /// @brief The Root RenderNode.
+    RenderNodeHolder iRootNode;
 };
 
 /// @brief Common typedef to Specialize ResourceHolder.
-typedef SpecializedResourceHolder<SceneManagerPrivate> SceneManagerHolder;
+typedef SpecializedResourceHolder<RenderScenePrivate> RenderSceneHolder;
 
-/// @brief Common typedef to make SceneManagerHolder List.
-typedef SpecializedResourceHolderList<SceneManagerPrivate> SceneManagerHolderList;
+/// @brief Common typedef to make RenderSceneHolder List.
+typedef SpecializedResourceHolderList<RenderScenePrivate> RenderSceneHolderList;
 
 //////////////////////////////////////////////////////////////////////
-/// @brief ResourceUser specialized for SceneManager.
+/// @brief SpecializedResourceUser for RenderScenePrivate.
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC SceneManager : public SpecializedResourceUser<SceneManagerPrivate>
+class DLL_PUBLIC RenderScene : public SpecializedResourceUser<RenderScenePrivate>
 {
 public:
     
-    POOLED(Pools::Scene)
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    RenderScene ( const RenderScenePrivate* pointer );
     
     //////////////////////////////////////////////////////////////////////
-	/// @brief Constructs a SceneManager from raw pointer.
-	//////////////////////////////////////////////////////////////////////
-    SceneManager(SceneManagerPrivate* scene);
+    //////////////////////////////////////////////////////////////////////
+    RenderScene ( const RenderSceneHolder& holder );
     
     //////////////////////////////////////////////////////////////////////
-	/// @brief Constructs a SceneManager from Holder.
-	//////////////////////////////////////////////////////////////////////
-	SceneManager(const SceneManagerHolder& holder);
-	
-	//////////////////////////////////////////////////////////////////////
-	/// @brief Constructs a SceneManager from User.
-	//////////////////////////////////////////////////////////////////////
-	SceneManager(const SceneManager& user);
-	
-	//////////////////////////////////////////////////////////////////////
-	/// @brief Destroys the SceneManager.
-	//////////////////////////////////////////////////////////////////////
-	~SceneManager();
-	
-	//////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Root node from the node tree.
     //////////////////////////////////////////////////////////////////////
-	SceneNode& getRoot();
+    RenderScene ( const RenderScene& user );
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Root node from the node tree.
     //////////////////////////////////////////////////////////////////////
-	const SceneNode& getRoot() const;
+    virtual ~RenderScene();
     
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Creates a new unnamed SceneNode.
-    //////////////////////////////////////////////////////////////////////
-	SceneNode createNode();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Creates a new named SceneNode.
-    //////////////////////////////////////////////////////////////////////
-	SceneNode createNode(const std::string& name);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Destroys a SceneNode using its name.
-    //////////////////////////////////////////////////////////////////////
-	void destroyNode(const std::string& name);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Destroys a SceneNode.
-    //////////////////////////////////////////////////////////////////////
-	void destroyNode(SceneNode& node);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Destroys every SceneNode.
-    //////////////////////////////////////////////////////////////////////
-	void destroyEveryNode();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Empty the Scene and destroy every Node objects.
-    //////////////////////////////////////////////////////////////////////
-	void clear();
-	
-	//////////////////////////////////////////////////////////////////////
-    /// @brief Adds a Camera.
-    //////////////////////////////////////////////////////////////////////
-	Camera& addCamera(const Camera& camera);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Creates a default Camera and adds it to the SceneManager.
-    //////////////////////////////////////////////////////////////////////
-	Camera& addCamera(const std::string& name);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the currently active camera.
-    //////////////////////////////////////////////////////////////////////
-	Camera& getCurrentCamera();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the currently active camera.
-    //////////////////////////////////////////////////////////////////////
-	const Camera& getCurrentCamera() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Sets the active Camera given its Node.
-    //////////////////////////////////////////////////////////////////////
-	void setActiveCamera(const Camera& camera);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns a list of the Nodes, sorted by given filter.
-    /// @param filter   A filter defined by the Node to sort them.
-    /// If the filter given is not implemented, Node::Filter::Default is
-    /// used as a fallback generally, but this behaviour can be undefined.
-    /// @note By default, not implemented function return an empty vector.
-    //////////////////////////////////////////////////////////////////////
-	std::vector<const Node> getNodesByFilter(NodePrivate::Filter filter) const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns a list of SceneNode, that can be directly passed to
-    /// a Pass object for rendering. The Nodes can be sorted if necessary,
-    /// and the PassPurpose is to know the Pass we should point.
-    ///
-    /// @note
-    /// If the given filter is not available, Node::Filter::None is always 
-    /// used.
-    //////////////////////////////////////////////////////////////////////
-	std::vector<const SceneNode> getNodesForPass(Gre::PassPurpose pass, NodePrivate::Filter filter = NodePrivate::Filter::None) const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Create a Default Pass given its name and number.
-    /// If passNumber is already taken, return Pass::Null.
-    //////////////////////////////////////////////////////////////////////
-	Pass createAndAddPass(const std::string& name, const PassNumber& passNumber);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Adds given custom created pass.
-    /// It may return Pass::Null if an error occured.
-    //////////////////////////////////////////////////////////////////////
-	Pass addPass(PassHolder& customPass);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the first Pass with given name.
-    //////////////////////////////////////////////////////////////////////
-	Pass getPassByName(const std::string& name);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the pass at given number.
-    //////////////////////////////////////////////////////////////////////
-	Pass getPassByNumber(const PassNumber& passNumber);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Removes the first Pass with given name.
-    //////////////////////////////////////////////////////////////////////
-	void removePassByName(const std::string& name);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Removes the Pass with given number.
-    //////////////////////////////////////////////////////////////////////
-	void removePassByNumber(const PassNumber& passNumber);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns every active Pass, sorted by PassNumber from first
-    /// to last.
-    //////////////////////////////////////////////////////////////////////
-	PassHolderList getActivePasses() const;
-    
-    /// @brief Null Object.
-    static SceneManager Null;
+    /// @brief Null RenderScene.
+    static RenderScene Null;
 };
 
 //////////////////////////////////////////////////////////////////////
-/// @brief A basic loader to load SceneManager Objects.
+/// @brief A basic loader to load RenderScene Objects.
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC SceneManagerLoader : public ResourceLoader
+class DLL_PUBLIC RenderSceneLoader : public ResourceLoader
 {
 public:
     
     POOLED(Pools::Loader)
     
-    SceneManagerLoader();
-    virtual ~SceneManagerLoader();
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    RenderSceneLoader();
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns true if Resource::Type is ::Scene.
     //////////////////////////////////////////////////////////////////////
-    virtual bool isTypeSupported(Resource::Type type) const;
+    virtual ~RenderSceneLoader();
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Loads a scene.
-    /// Default implementation returns a null pointer.
     //////////////////////////////////////////////////////////////////////
-    virtual Resource* load(Resource::Type type, const std::string& name) const;
+    virtual RenderSceneHolder load ( const std::string& name ) const = 0;
     
 };
 
-typedef ResourceLoaderFactory<SceneManagerLoader> SceneManagerLoaderFactory;
+/// @brief ResourceLoaderFactory for RenderSceneLoader.
+typedef ResourceLoaderFactory<RenderSceneLoader> RenderSceneLoaderFactory;
 
-/// @brief SpecializedResourceManager for SceneManagerPrivate.
-typedef SpecializedResourceManager<SceneManagerPrivate> SceneManagerManager;
+/// @brief SpecializedResourceManager for RenderScenePrivate.
+typedef SpecializedResourceManager<RenderScenePrivate> RenderSceneManager;
 
 GreEndNamespace
 

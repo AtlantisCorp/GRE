@@ -35,6 +35,7 @@
 
 #include "Resource.h"
 #include "Frustrum.h"
+#include "BoundingBox.h"
 
 GreBeginNamespace
 
@@ -100,6 +101,11 @@ public:
     /// Camera.
     //////////////////////////////////////////////////////////////////////
     virtual bool contains (const Vector3& object) const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns true if given BoundingBox is visible by this Camera.
+    //////////////////////////////////////////////////////////////////////
+    virtual bool isVisible ( const BoundingBox& bbox ) const;
     
 protected:
     
