@@ -488,9 +488,29 @@ void WindowManager::remove(const std::string &name)
         }
         
 #ifdef GreIsDebugMode
-        GreDebugPretty() << "";
+        GreDebugPretty() << "Window Resource '" << name << "' not found." << std::endl;
 #endif
+        return;
     }
+    
+#ifdef GreIsDebugMode
+    GreDebugPretty() << "'name' is invalid." << std::endl;
+#endif
+}
+
+void WindowManager::clearWindows()
+{
+    iWindows.clear();
+}
+
+WindowLoaderFactory& WindowManager::getWindowLoaderFactory()
+{
+    return iFactory;
+}
+
+const WindowLoaderFactory& WindowManager::getWindowLoaderFactory() const
+{
+    return iFactory;
 }
 
 GreEndNamespace
