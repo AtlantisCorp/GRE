@@ -461,5 +461,37 @@ Window WindowManager::getFirstActive()
     return Window ( nullptr );
 }
 
+WindowHolderList& WindowManager::getWindows()
+{
+    return iWindows;
+}
+
+const WindowHolderList& WindowManager::getWindows() const
+{
+    return iWindows;
+}
+
+void WindowManager::remove(const std::string &name)
+{
+    if ( !name.empty() )
+    {
+        for ( auto it = iWindows.begin(); it != iWindows.end(); it++ )
+        {
+            if ( !(*it).isInvalid() )
+            {
+                if ( (*it)->getName() == name )
+                {
+                    iWindows.erase(it);
+                    return;
+                }
+            }
+        }
+        
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "";
+#endif
+    }
+}
+
 GreEndNamespace
 
