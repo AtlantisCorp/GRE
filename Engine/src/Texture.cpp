@@ -35,6 +35,48 @@
 
 GreBeginNamespace
 
+std::string TextureTypeToString(const TextureType& type)
+{
+    if ( type == TextureType::OneDimension )
+    {
+        return "TextureType::1D";
+    }
+    
+    if ( type == TextureType::TwoDimension )
+    {
+        return "TextureType::2D";
+    }
+    
+    if ( type == TextureType::ThreeDimension )
+    {
+        return "TextureType::3D";
+    }
+    
+    if ( type == TextureType::CubeMap )
+    {
+        return "TextureType::Cubemap";
+    }
+    
+    return "TextureType::Null";
+}
+
+HdwProgVarType TextureTypeToHdwProgVarType(const TextureType& type)
+{
+    if ( type == TextureType::TwoDimension )
+    {
+        return HdwProgVarType::Sampler2D;
+    }
+    
+    if ( type == TextureType::ThreeDimension )
+    {
+        return HdwProgVarType::Sampler3D;
+    }
+    
+    return HdwProgVarType::None;
+}
+
+// ---------------------------------------------------------------------------------------------------
+
 TexturePrivate::TexturePrivate(const std::string& name)
 : Resource(name), iSampler(nullptr)
 {

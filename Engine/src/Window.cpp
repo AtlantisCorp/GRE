@@ -513,5 +513,11 @@ const WindowLoaderFactory& WindowManager::getWindowLoaderFactory() const
     return iFactory;
 }
 
+void WindowManager::clear()
+{
+    iWindows.clear();
+    iFactory.clear();
+}
+
 GreEndNamespace
 

@@ -480,7 +480,7 @@ Mesh MeshManager::createRectangle(const Gre::Surface &surface)
             data[2] = VertexPosition ( surface.left + surface.width , surface.top - surface.height , 0.0f );
             data[3] = VertexPosition ( surface.left ,                 surface.top - surface.height , 0.0f );
             
-            svbholder->addData(data, sizeof(VertexPosition) * 4);
+            svbholder->addData((const char*) data, sizeof(VertexPosition) * 4);
         }
         else
         {
@@ -492,7 +492,7 @@ Mesh MeshManager::createRectangle(const Gre::Surface &surface)
         
         // We also try to fill a SoftwareIndexBuffer.
         
-        SoftwareIndexBufferHolder sibholder = SoftwareIndexBufferHolder ( new SoftwareIndexBufferHolder(sibname) );
+        SoftwareIndexBufferHolder sibholder = SoftwareIndexBufferHolder ( new SoftwareIndexBufferPrivate(sibname) );
         
         if ( !sibholder.isInvalid() )
         {
@@ -502,7 +502,7 @@ Mesh MeshManager::createRectangle(const Gre::Surface &surface)
             unsigned int data[6] = { 0, 1, 2, 2, 3, 0 };
             
             sibholder->setIndexDescriptor(idesc, 0);
-            sibholder->addDataToIndexBatch(data, sizeof(unsigned int) * 6, 0);
+            sibholder->addDataToIndexBatch((const char*) data, sizeof(unsigned int) * 6, 0);
         }
         else
         {

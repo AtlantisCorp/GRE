@@ -206,7 +206,7 @@ int VertexDescriptor::getComponentLocation(const Gre::VertexComponentType &compo
     {
         if ( comp == component )
         {
-            return loc;
+            return (int) loc;
         }
         
         else
