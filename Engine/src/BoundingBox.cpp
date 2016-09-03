@@ -71,6 +71,16 @@ BoundingBox::~BoundingBox()
     
 }
 
+const Vector3& BoundingBox::getMax() const
+{
+    return iMax;
+}
+
+const Vector3& BoundingBox::getMin() const
+{
+    return iMin;
+}
+
 void BoundingBox::add(const Vector3 &point)
 {
     if ( iIsSet )

@@ -44,7 +44,7 @@ typedef std::chrono::high_resolution_clock Clock;
 RendererPrivate::RendererPrivate (const std::string& name)
 : Resource(name), iLastRenderContext(nullptr), iProgramManager(nullptr)
 {
-    
+    iTextureManager.setRenderer(this);
 }
 
 RendererPrivate::~RendererPrivate() noexcept ( false )
@@ -674,31 +674,140 @@ void RendererPrivate::loadMesh(Mesh& mesh, bool deleteCache)
     
     if(deleteCache)
     {
-        meshholder->onNextEvent(EventType::Update , [&] (const Event& e) {
-            
+        meshholder->onNextEvent(EventType::Update , [meshholder, deleteVertexBuffer, deleteIndexBuffer] (const Event& e)
+        {
+            MeshHolder holder (meshholder);
             if ( deleteVertexBuffer )
             {
-                meshholder->getSoftwareVertexBufferHolder().reset();
+                holder->getSoftwareVertexBufferHolder().reset();
             }
             
             if ( deleteIndexBuffer )
             {
-                meshholder->getSoftwareIndexBufferHolder().reset();
+                holder->getSoftwareIndexBufferHolder().reset();
             }
         });
     }
 }
 
-TextureHolder RendererPrivate::createEmptyTexture(int width, int height)
+TextureHolder RendererPrivate::createTexture(const std::string &name)
 {
-    GreDebugFunctionNotImplemented();
-    return TextureHolder(nullptr);
+    if ( !name.empty() )
+    {
+        // Check if Texture already exists.
+        
+        if ( iTextureManager.isLoaded(name) )
+        {
+#ifdef GreIsDebugMode
+            GreDebugPretty() << "Texture Resource '" << name << "' already loaded." << std::endl;
+#endif
+            return TextureHolder ( nullptr );
+        }
+        
+        // Load the Texture using private function.
+        
+        TextureHolder ret = iCreateTexturePrivate ( name );
+        
+        if ( ret.isInvalid() )
+        {
+#ifdef GreIsDebugMode
+            GreDebugPretty() << "Texture Resource '" << name << "' couldn't be loaded." << std::endl;
+#endif
+            return TextureHolder ( nullptr );
+        }
+        
+        return ret;
+    }
+    
+    else
+    {
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "'name' is invalid." << std::endl;
+#endif
+        return TextureHolder ( nullptr );
+    }
 }
 
 TextureHolder RendererPrivate::createTexture(const std::string &name, const std::string &file)
 {
-    GreDebugFunctionNotImplemented();
-    return TextureHolder(nullptr);
+    if ( !name.empty() )
+    {
+        // Try to load the Texture using TextureManager::load() . This will call RendererPrivate::createTexture(name).
+        
+        Texture loaded = iTextureManager.load(name, file);
+        TextureHolder ret ( loaded.lock() );
+        
+        if ( ret.isInvalid() )
+        {
+#ifdef GreIsDebugMode
+            GreDebugPretty() << "Texture Resource '" << name << "' can't be loaded." << std::endl;
+#endif
+            return TextureHolder ( nullptr );
+        }
+        
+        // Once loaded, the Texture Objet will be sent by the TextureManager UpdateEvent . Texture::onUpdateEvent() should
+        // check that the SoftwarePixelBuffer is loaded but the HardwareBuffer is not loaded, so it should create it.
+        
+        return ret;
+    }
+    
+    else
+    {
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "'name' is invalid." << std::endl;
+#endif
+        return TextureHolder ( nullptr );
+    }
+}
+
+TextureHolder RendererPrivate::createEmptyTexture(int width, int height)
+{
+    static unsigned EmptyTextureCount = 0;
+    
+    // Check if width and height are valid.
+    
+    if ( width > 0 && height > 0 )
+    {
+        std::string tname = std::string("EmptyTexture#") + std::to_string(EmptyTextureCount) + "[" + std::to_string(width) + "/" + std::to_string(height) + "]";
+        
+        // Creates a new Texture, and changes its Surface.
+        
+        TextureHolder tex = iCreateTexturePrivate(tname);
+        tex->setSurface({0, 0, width, height});
+        
+        // Load it to the TextureManager.
+        
+        iTextureManager.load(tex);
+        return tex;
+    }
+    
+    else
+    {
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "'width' or 'height' is invalid." << std::endl;
+#endif
+        return TextureHolder ( nullptr );
+    }
+}
+
+TextureManager& RendererPrivate::getTextureManager()
+{
+    return iTextureManager;
+}
+
+const TextureManager& RendererPrivate::getTextureManager() const
+{
+    return iTextureManager;
+}
+
+HardwareProgramManager RendererPrivate::getHardwareProgramManager()
+{
+    return HardwareProgramManager ( iProgramManager );
+}
+
+const HardwareProgramManager RendererPrivate::getHardwareProgramManager() const
+{
+    return HardwareProgramManager ( iProgramManager );
 }
 
 HardwareProgram RendererPrivate::createHardwareProgram(const std::string& name, const HardwareShader &vertexShader, const HardwareShader &fragmentShader)
@@ -739,7 +848,7 @@ HardwareProgram RendererPrivate::createHardwareProgram(const std::string &name, 
 
 RenderFramebufferHolderList RendererPrivate::getFramebuffers(int sz)
 {
-    if( iFrameContext.Framebuffers.size() >= sz )
+    if( iFrameContext.Framebuffers.size() >= (size_t) sz )
     {
         // We have enough Framebuffers, returns the first ones.
         
@@ -819,6 +928,12 @@ RenderContextHolder RendererPrivate::createRenderContext(const std::string&, con
 {
     GreDebugFunctionNotImplemented();
     return RenderContextHolder(nullptr);
+}
+
+HardwareVertexBufferHolder RendererPrivate::createVertexBufferWithSize(const std::string &name, size_t sz) const
+{
+    // These function is just a helper to use ::iCreateVertexBuffer().
+    return iCreateVertexBuffer(name, sz);
 }
 
 // ---------------------------------------------------------------------------------------------------

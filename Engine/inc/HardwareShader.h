@@ -123,6 +123,17 @@ public:
     //////////////////////////////////////////////////////////////////////
     virtual void clear();
     
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the origin filepath this HardwareShader was loaded,
+    /// if it was provided.
+    //////////////////////////////////////////////////////////////////////
+    virtual const std::string& getFilepath() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Changes the origin filepath.
+    //////////////////////////////////////////////////////////////////////
+    virtual void setFilepath ( const std::string& filepath );
+    
 protected:
     
     /// @brief Holds the Shader's type.
@@ -130,6 +141,9 @@ protected:
     
     /// @brief Holds the source text of this Shader.
     std::string iSource;
+    
+    /// @brief Holds the origin Filepath, if provided.
+    std::string iFilepath;
     
     /// @brief Flag 'Is the Shader compiled ?'
     mutable bool iCompiled;

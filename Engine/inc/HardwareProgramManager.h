@@ -135,6 +135,13 @@ public:
     virtual HardwareProgram createHardwareProgramFromFiles ( const std::string& name , const std::string& vertexshaderpath , const std::string& fragmentshaderpath );
     
     //////////////////////////////////////////////////////////////////////
+    /// @brief Loads a HardwareShader from a file and returns a holder.
+    /// If 'name' is already registered, it returns this Shader only if
+    /// 'filepath' is corresponding.
+    //////////////////////////////////////////////////////////////////////
+    virtual HardwareShaderHolder loadShaderHolder ( const ShaderType& stype , const std::string& name , const std::string& filepath );
+    
+    //////////////////////////////////////////////////////////////////////
     /// @brief Retrieve a HardwareProgram from its name.
     //////////////////////////////////////////////////////////////////////
     virtual HardwareProgram getProgram(const std::string& name);
@@ -179,6 +186,18 @@ public:
     /// @brief Unset every Global Variables.
     //////////////////////////////////////////////////////////////////////
     virtual void clearGlobals();
+    
+protected:
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Internal method to create HardwareShader.
+    //////////////////////////////////////////////////////////////////////
+    virtual HardwareShaderHolder iCreateHardwareShader ( const ShaderType& stype , const std::string& name , const std::string& source ) const = 0;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Internal method to create HardwareProgram.
+    //////////////////////////////////////////////////////////////////////
+    virtual HardwareProgramHolder iCreateHardwareProgram ( const std::string& name , const HardwareShaderHolder& vshader , const HardwareShaderHolder& fshader ) const = 0;
     
 protected:
     

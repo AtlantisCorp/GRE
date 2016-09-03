@@ -60,7 +60,7 @@ std::string TextureTypeToString(const TextureType& type)
     return "TextureType::Null";
 }
 
-HdwProgVarType TextureTypeToHdwProgVarType(const TextureType& type)
+HdwProgVarType TextureTypeToHdwProgType(const TextureType& type)
 {
     if ( type == TextureType::TwoDimension )
     {
@@ -289,6 +289,13 @@ Surface& Texture::getSurface()
     if(ptr)
         return ptr->getSurface();
     return Surface::Null;
+}
+
+void Texture::setSurface(const Gre::Surface &surface)
+{
+    auto ptr = lock();
+    if ( ptr )
+        ptr->setSurface(surface);
 }
 
 const TextureType Texture::getType() const

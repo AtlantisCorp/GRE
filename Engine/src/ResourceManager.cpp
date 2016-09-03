@@ -324,6 +324,36 @@ void ResourceManager::_updateElapsedTime()
     }
 }
 
+MaterialManager& ResourceManager::getMaterialManager()
+{
+    return iMaterialManager;
+}
+
+const MaterialManager& ResourceManager::getMaterialManager() const
+{
+    return iMaterialManager;
+}
+
+RendererManager& ResourceManager::getRendererManager()
+{
+    return iRendererManager;
+}
+
+const RendererManager& ResourceManager::getRendererManager() const
+{
+    return iRendererManager;
+}
+
+RenderSceneManager& ResourceManager::getRenderSceneManager()
+{
+    return iRenderSceneManager;
+}
+
+const RenderSceneManager& ResourceManager::getRenderSceneManager() const
+{
+    return iRenderSceneManager;
+}
+
 // ---------------------------------------------------------------------------------------------------
 
 std::string ResourceManager::Helper::ChooseRenderer(RendererLoaderFactory& rFactory)

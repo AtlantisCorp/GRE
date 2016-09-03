@@ -57,11 +57,13 @@ RenderNodePrivate::RenderNodePrivate()
 : Gre::Resource(std::string("RenderNode#") + std::to_string(Identificator::Create()))
 , iIdentifier(Identificator::Last())
 , iRenderable(nullptr)
-, iTransformationChanged(false)
+, iTransformation()
+, iChilds()
 , iParent(nullptr)
-, iRenderableChanged(false)
-, iModelMatrix(0.0f)
 , iBoundingBox()
+, iModelMatrix(0.0f)
+, iTransformationChanged(false)
+, iRenderableChanged(false)
 {
     
 }
@@ -70,11 +72,13 @@ RenderNodePrivate::RenderNodePrivate(const std::string& name)
 : Gre::Resource(name)
 , iIdentifier(Identificator::Create())
 , iRenderable(nullptr)
-, iTransformationChanged(false)
+, iTransformation()
+, iChilds()
 , iParent(nullptr)
-, iRenderableChanged(false)
-, iModelMatrix(0.0f)
 , iBoundingBox()
+, iModelMatrix(0.0f)
+, iTransformationChanged(false)
+, iRenderableChanged(false)
 {
     
 }

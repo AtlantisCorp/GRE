@@ -74,7 +74,7 @@ enum class ResourceDirectoryType
 };
 
 /// @brief Returns the String value of each ResourceDirectoryType.
-static std::string ResourceDirectoryTypeToString ( const ResourceDirectoryType& rdirtype );
+/*static*/ std::string ResourceDirectoryTypeToString ( const ResourceDirectoryType& rdirtype );
 
 //////////////////////////////////////////////////////////////////////
 /// @brief A virtual path localizing a Resource in the Engine.

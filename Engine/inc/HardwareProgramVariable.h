@@ -60,6 +60,9 @@ struct HardwareProgramVariable
     /// @brief Constructs a default variable with type 'none'.
     HardwareProgramVariable();
     
+    /// @brief Copy Constructor.
+    HardwareProgramVariable ( const HardwareProgramVariable& rhs );
+    
     /// @brief Name of the Variable. This should be the same as the one
     /// in the shader file, or you can set a location.
     std::string name;
@@ -91,6 +94,12 @@ struct HardwareProgramVariable
         float float1;
         
         _u() { memset(this, 0, sizeof(_u)); }
+        
+        _u(const _u& rhs) 
+        {
+        	memset(this, 0, sizeof(_u));
+        	memcpy(this, &rhs, sizeof(_u));
+        }
         
     } value;
     

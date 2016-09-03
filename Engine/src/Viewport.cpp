@@ -63,10 +63,10 @@ Viewport& Viewport::operator= (const Viewport& rhs)
 
 void Viewport::onBordersChanged(const Surface &parentSurface)
 {
-    _mSurface.height = (typeof(_mSurface.height)) (_mBorderHeight * parentSurface.height);
-    _mSurface.width = (typeof(_mSurface.width)) (_mBorderWidth * parentSurface.width);
-    _mSurface.top = (typeof(_mSurface.top)) (_mBorderTop * parentSurface.top);
-    _mSurface.left = (typeof(_mSurface.left)) (_mBorderLeft * parentSurface.left);
+    _mSurface.height = (int) (_mBorderHeight * parentSurface.height);
+    _mSurface.width = (int) (_mBorderWidth * parentSurface.width);
+    _mSurface.top = (int) (_mBorderTop * parentSurface.top);
+    _mSurface.left = (int) (_mBorderLeft * parentSurface.left);
 }
 
 const std::string& Viewport::getName() const

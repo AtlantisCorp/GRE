@@ -83,6 +83,16 @@ void HardwareShaderPrivate::clear()
     iCompiled = false;
 }
 
+const std::string& HardwareShaderPrivate::getFilepath() const
+{
+    return iFilepath;
+}
+
+void HardwareShaderPrivate::setFilepath(const std::string &filepath)
+{
+    iFilepath = filepath;
+}
+
 // ---------------------------------------------------------------------------------------------------
 
 HardwareShader::HardwareShader(const HardwareShaderPrivate* pointer)

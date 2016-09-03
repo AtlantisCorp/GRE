@@ -15,7 +15,7 @@
 GreBeginNamespace
 
 /// @brief Enumerate every Pools available in the Engine.
-enum class DLL_PUBLIC Pools
+enum class Pools
 {
     Default   = 0x1,    ///< @brief The default one.
     Resource  = 0x2,    ///< @brief Reserved to Resource objects.

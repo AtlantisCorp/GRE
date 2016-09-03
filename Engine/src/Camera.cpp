@@ -127,6 +127,11 @@ bool CameraPrivate::contains(const Vector3 &object) const
     return iFrustrum.contains(object);
 }
 
+bool CameraPrivate::isVisible(const Gre::BoundingBox &bbox) const
+{
+    return iFrustrum.intersect(bbox) != IntersectionResult::Outside;
+}
+
 // ---------------------------------------------------------------------------------------------------
 
 Camera::Camera(const CameraPrivate* pointer)

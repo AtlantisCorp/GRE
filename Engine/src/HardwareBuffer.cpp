@@ -195,4 +195,12 @@ void HardwareBuffer::clearData()
         ptr->clearData();
 }
 
+bool HardwareBuffer::isDataInvalid() const
+{
+    auto ptr = lock();
+    if ( ptr )
+        return ptr->isDataInvalid();
+    throw GreInvalidUserException("HardwareBuffer");
+}
+
 GreEndNamespace

@@ -27,20 +27,12 @@ const char* computeMethodName(const char (&function)[FL], const char (&prettyFun
 }
 #define __COMPACT_PRETTY_FUNCTION__ computeMethodName(__FUNCTION__,__PRETTY_FUNCTION__)
 
-std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems) {
-    std::stringstream ss(s);
-    std::string item;
-    while (std::getline(ss, item, delim)) {
-        elems.push_back(item);
-    }
-    return elems;
-}
+// For those two functions, 'extern "C"' is needed only for the second because it uses the first, so the first
+// is compiled. Making the second 'extern "C"' able it to be bundled in the library even if the Compiler tells
+// it's unused.
 
+std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems);
 
-std::vector<std::string> split(const std::string &s, char delim) {
-    std::vector<std::string> elems;
-    split(s, delim, elems);
-    return elems;
-}
+extern "C" std::vector<std::string> split(const std::string &s, char delim);
 
 #endif

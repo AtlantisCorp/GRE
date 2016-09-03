@@ -95,12 +95,258 @@ void HardwareProgramManagerPrivate::clearShaders()
 
 HardwareProgram HardwareProgramManagerPrivate::createHardwareProgram(const std::string &name)
 {
-    return HardwareProgram::Null;
+    if ( !name.empty() )
+    {
+        // Check if the HardwareProgram currently exists.
+        
+        auto it = iPrograms.find(name);
+        
+        if ( it != iPrograms.end() )
+        {
+#ifdef GreIsDebugMode
+            GreDebugPretty() << "HardwareProgram '" << name << "' already loaded." << std::endl;
+#endif
+            return HardwareProgram ( nullptr );
+        }
+        
+        // Here we want to create a HardwareProgram but without HardwareShader. By this we mean that the
+        // HardwareProgram will not be linked untill HardwareProgramPrivate::link() has been called. Property
+        // iProgramIsLinked is so false.
+        // Notes that not every implementation should support this creation's way.
+        
+        HardwareProgramHolder program = iCreateHardwareProgram(name, HardwareShaderHolder(nullptr), HardwareShaderHolder(nullptr));
+        
+        if ( program.isInvalid() )
+        {
+#ifdef GreIsDebugMode
+            GreDebugPretty() << "Invalid HardwareProgram '" << name << "' creation." << std::endl;
+#endif
+            return HardwareProgram ( nullptr );
+        }
+        
+        // Load the HardwareProgram to the database.
+        
+        iPrograms.add(program);
+        return HardwareProgram ( program );
+    }
+    
+    else
+    {
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "'name' is invalid." << std::endl;
+#endif
+        return HardwareProgram ( nullptr );
+    }
 }
 
 HardwareProgram HardwareProgramManagerPrivate::createHardwareProgram(const std::string& name, const HardwareShader &vertexShader, const HardwareShader &fragmentShader)
 {
-    return HardwareProgram::Null;
+    if ( !name.empty() )
+    {
+        // Check if the HardwareProgram currently exists.
+        
+        auto it = iPrograms.find(name);
+        
+        if ( it != iPrograms.end() )
+        {
+#ifdef GreIsDebugMode
+            GreDebugPretty() << "HardwareProgram '" << name << "' already loaded." << std::endl;
+#endif
+            return HardwareProgram ( nullptr );
+        }
+        
+        // Check Vertex shader.
+        
+        if ( vertexShader.isInvalid() )
+        {
+#ifdef GreIsDebugMode
+            GreDebugPretty() << "Vertex shader is invalid." << std::endl;
+#endif
+            return HardwareProgram ( nullptr );
+        }
+        
+        // Check Fragment shader.
+        
+        if ( fragmentShader.isInvalid() )
+        {
+#ifdef GreIsDebugMode
+            GreDebugPretty() << "Fragment shader is invalid." << std::endl;
+#endif
+            return HardwareProgram ( nullptr );
+        }
+        
+        // Holds shaders and create HardwareProgram.
+        
+        HardwareShaderHolder vholder = vertexShader.lock();
+        HardwareShaderHolder fholder = fragmentShader.lock();
+        
+        HardwareProgramHolder program = iCreateHardwareProgram(name, vholder, fholder);
+        
+        if ( program.isInvalid() )
+        {
+#ifdef GreIsDebugMode
+            GreDebugPretty() << "Invalid HardwareProgram '" << name << "' creation." << std::endl;
+#endif
+            return HardwareProgram ( nullptr );
+        }
+        
+        // Load the HardwareProgram to the database.
+        
+        iPrograms.add(program);
+        return HardwareProgram ( program );
+    }
+    
+    else
+    {
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "'name' is invalid." << std::endl;
+#endif
+        return HardwareProgram ( nullptr );
+    }
+}
+
+HardwareProgram HardwareProgramManagerPrivate::createHardwareProgramFromFiles(const std::string &name, const std::string &vertexshaderpath, const std::string &fragmentshaderpath)
+{
+    if ( !name.empty() )
+    {
+        // Check if the HardwareProgram currently exists.
+        
+        auto it = iPrograms.find(name);
+        
+        if ( it != iPrograms.end() )
+        {
+#ifdef GreIsDebugMode
+            GreDebugPretty() << "HardwareProgram '" << name << "' already loaded." << std::endl;
+#endif
+            return HardwareProgram ( nullptr );
+        }
+        
+        // Try to load the first Shader.
+        
+        HardwareShaderHolder vshader = loadShaderHolder(ShaderType::Vertex, name + "/vertexshader", vertexshaderpath);
+        
+        if ( vshader.isInvalid() )
+        {
+#ifdef GreIsDebugMode
+            GreDebugPretty() << "Invalid Vertex Shader path '" << vertexshaderpath << "'." << std::endl;
+#endif
+            return HardwareProgram ( nullptr );
+        }
+        
+        // Try to load Fragment shader.
+        
+        HardwareShaderHolder fshader = loadShaderHolder(ShaderType::Fragment, name + "/fragmentshader", fragmentshaderpath);
+        
+        if ( fshader.isInvalid() )
+        {
+#ifdef GreIsDebugMode
+            GreDebugPretty() << "Invalid Fragment Shader path '" << fragmentshaderpath << "'." << std::endl;
+#endif
+            return HardwareProgram ( nullptr );
+        }
+        
+        // Create the HardwareProgram.
+        
+        HardwareProgramHolder program = iCreateHardwareProgram(name, vshader, fshader);
+        
+        if ( program.isInvalid() )
+        {
+#ifdef GreIsDebugMode
+            GreDebugPretty() << "Invalid HardwareProgram '" << name << "' creation." << std::endl;
+#endif
+            return HardwareProgram ( nullptr );
+        }
+        
+        // Load the HardwareProgram to the database.
+        
+        iPrograms.add(program);
+        return HardwareProgram ( program );
+    }
+    
+    else
+    {
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "'name' is invalid." << std::endl;
+#endif
+        return HardwareProgram ( nullptr );
+    }
+}
+
+HardwareShaderHolder HardwareProgramManagerPrivate::loadShaderHolder(const Gre::ShaderType &stype, const std::string &name, const std::string &filepath)
+{
+    if ( !name.empty() )
+    {
+        auto it = iShaders.find(name);
+        
+        if ( it != iShaders.end() )
+        {
+            if ( !(*it).isInvalid() )
+            {
+                if ( (*it)->getFilepath() == filepath )
+                {
+                    return (*it);
+                }
+                
+                else
+                {
+#ifdef GreIsDebugMode
+                    GreDebugPretty() << "HardwareShader '" << (*it)->getName() << "' has different filepath." << std::endl;
+#endif
+                    return HardwareShaderHolder ( nullptr );
+                }
+            }
+            else
+            {
+                iShaders.erase(it);
+                return loadShaderHolder(stype, name, filepath);
+            }
+        }
+        
+        // Loading the source from file.
+        // http://stackoverflow.com/questions/2602013/read-whole-ascii-file-into-c-stdstring
+        
+        std::ifstream srcstream ( filepath );
+        
+        if ( !srcstream )
+        {
+#ifdef GreIsDebugMode
+            GreDebugPretty() << "Can't open file '" << filepath << "'." << std::endl;
+#endif
+            return HardwareShaderHolder ( nullptr );
+        }
+        
+        std::string src;
+        
+        srcstream.seekg(0, std::ios::end);
+        src.reserve(srcstream.tellg());
+        srcstream.seekg(0, std::ios::beg);
+        
+        src.assign( (std::istreambuf_iterator<char>(srcstream)), std::istreambuf_iterator<char>() );
+        
+        // Create the shader from source.
+        
+        HardwareShaderHolder shader = iCreateHardwareShader(stype , name , src);
+        
+        if ( shader.isInvalid() )
+        {
+#ifdef GreIsDebugMode
+            GreDebugPretty() << "HardwareShader '" << name << "' can't be created." << std::endl;
+#endif
+            return HardwareShaderHolder ( nullptr );
+        }
+        
+        shader->setFilepath(filepath);
+        iShaders.add(shader);
+        return shader;
+    }
+    
+    else
+    {
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "'name' is invalid." << std::endl;
+#endif
+        return HardwareShaderHolder ( nullptr );
+    }
 }
 
 HardwareProgram HardwareProgramManagerPrivate::getProgram(const std::string &name)

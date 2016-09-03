@@ -34,6 +34,7 @@
 #define Frustrum_h
 
 #include "Pools.h"
+#include "BoundingBox.h"
 
 GreBeginNamespace
 
@@ -116,6 +117,11 @@ public:
     /// the point.
     //////////////////////////////////////////////////////////////////////
     virtual bool contains(const Vector3& point) const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns an IntersectionResult.
+    //////////////////////////////////////////////////////////////////////
+    virtual IntersectionResult intersect ( const BoundingBox& bbox ) const;
     
 protected:
     

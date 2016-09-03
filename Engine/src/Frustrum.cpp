@@ -142,5 +142,46 @@ bool Frustrum::contains(const Vector3 &pt) const
     return true;
 }
 
+IntersectionResult Frustrum::intersect(const Gre::BoundingBox &bbox) const
+{
+    // Bounding Box Frustrum Culling algorithm.
+    // http://www.txutxi.com/?p=584 and http://www.cescg.org/CESCG-2002/DSykoraJJelinek/
+    
+    float m, n;
+    IntersectionResult result = IntersectionResult::Inside;
+    
+    const Vector3& bmax = bbox.getMax();
+    const Vector3& bmin = bbox.getMin();
+    
+    for ( int i = 0; i < 6; ++i )
+    {
+        const Plane& p = iPlanes[i];
+        
+        // The Plane normal is { p.x, p.y, p.z }. We can populate the p-vertex and n-vertex depending on this.
+        // See table 1.
+        
+        Vector3 pv, nv;
+        
+        if ( p.x >= 0 ) { pv.x = bmax.x; nv.x = bmin.x; }
+        else { pv.x = bmin.x; nv.x = bmax.x; }
+        
+        if ( p.y >= 0 ) { pv.y = bmax.y; nv.y = bmin.y; }
+        else { pv.y = bmin.y; nv.y = bmax.y; }
+        
+        if ( p.z >= 0 ) { pv.z = bmax.z; nv.z = bmin.z; }
+        else { pv.z = bmin.z; nv.z = bmax.z; }
+        
+        // Calculate m and n.
+        
+        m = (p.x * nv.x) + (p.y * nv.y) + (p.z * nv.z);
+        if ( m > - p.w ) return IntersectionResult::Outside;
+        
+        n = (p.x * pv.x) + (p.y * pv.y) + (p.z * pv.z);
+        if ( n > - p.w ) result = IntersectionResult::Between;
+    }
+    
+    return result;
+}
+
 GreEndNamespace
 

@@ -72,7 +72,7 @@ void MaterialPrivate::setTexture(const Gre::Texture &tex, size_t index)
     
     else
     {
-        for ( int i = (int) iTextures.size(); i < index; ++i )
+        for ( size_t i = iTextures.size(); i < index; ++i )
         {
             iTextures.push_back(Texture(nullptr));
         }

@@ -69,16 +69,16 @@ enum class VertexComponentType
 };
 
 /// @brief A VertexPosition.
-typedef glm::tvec3<float> VertexPosition;
+typedef TVector3<float> VertexPosition;
 
 /// @brief A VertexColor.
-typedef glm::tvec4<uint32_t> VertexColor;
+typedef TVector4<uint32_t> VertexColor;
 
 /// @brief A VertexNormal.
-typedef glm::tvec3<float> VertexNormal;
+typedef TVector3<float> VertexNormal;
 
 /// @brief A VertexTexture.
-typedef glm::tvec2<float> VertexTexture;
+typedef TVector2<float> VertexTexture;
 
 /// @brief A List of Component.
 typedef std::vector<VertexComponentType> VertexComponents;

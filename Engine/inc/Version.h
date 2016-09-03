@@ -96,6 +96,7 @@
 #   include <atomic>
 #   include <mutex>
 #   include <list>
+#   include <streambuf>
 
 #if defined _WIN32
 //  Windows 32 bits
@@ -138,11 +139,28 @@
 #   include <sys/time.h>
 #endif
 
-// The glm library should always be present when compiling the
-// Gre Engine.
+// The glm library should always be present when compiling GRE. On linux distributions, we could note that
+// 'glm::tvec3' classes where 'glm::details::tvec3' and so on for every templated classes.
 
+#define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
 #include <glm/ext.hpp>
+
+#ifdef GrePlatformUnix
+    template<typename T> using TVector2 = glm::details::tvec2<T, glm::highp>;
+    template<typename T> using TVector3 = glm::details::tvec3<T, glm::highp>;
+    template<typename T> using TVector4 = glm::details::tvec4<T, glm::highp>;
+#else
+    template<typename T> using TVector2 = glm::tvec2<T, glm::highp>;
+    template<typename T> using TVector3 = glm::tvec3<T, glm::highp>;
+    template<typename T> using TVector4 = glm::tvec4<T, glm::highp>;
+#endif
+
+typedef TVector2<float> Vector2;
+typedef TVector3<float> Vector3;
+typedef TVector4<float> Vector4;
+typedef glm::mat4 Matrix4;
+typedef glm::quat Quaternion;
 
 // This file is here to includes some third-party code help.
 #include "ThirdParty.h"
@@ -202,6 +220,12 @@ enum class StorageType
     UnsignedByte    = 0x01,
     UnsignedShort   = 0x02,
     UnsignedInt     = 0x03
+};
+
+/// @brief Intersection possible results.
+enum class IntersectionResult
+{
+    Outside, Inside, Between
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -301,6 +325,10 @@ public:
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
+    ~GreIndexException();
+    
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
     const char* what() const throw();
     
 private:
@@ -313,14 +341,12 @@ private:
     
     /// @brief Maximum index that could be reached.
     size_t iMaxIndex;
+    
+    /// @brief Sentence returned by 'what' function.
+    std::string iWhat;
 };
 
 typedef std::vector<std::string> StringList;
-typedef glm::vec2 Vector2;
-typedef glm::vec3 Vector3;
-typedef glm::vec4 Vector4;
-typedef glm::mat4 Matrix4;
-typedef glm::quat Quaternion;
 
 class MatrixUtils
 {

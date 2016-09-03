@@ -40,6 +40,17 @@ HardwareProgramVariable::HardwareProgramVariable()
     location = -1;
 }
 
+HardwareProgramVariable::HardwareProgramVariable(const HardwareProgramVariable& rhs)
+: name (rhs.name)
+, location (rhs.location)
+, type (rhs.type)
+, isArrayElement (rhs.isArrayElement)
+, elementNumber (rhs.elementNumber)
+, value (rhs.value)
+{
+	
+}
+
 HardwareProgramVariable HardwareProgramVariable::Null = HardwareProgramVariable();
 
 GreEndNamespace

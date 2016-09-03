@@ -57,10 +57,10 @@ enum class TextureType
 };
 
 /// @brief Translates the TextureType value to a String.
-static std::string TextureTypeToString(const TextureType& type);
+/*static*/ std::string TextureTypeToString(const TextureType& type);
 
 /// @brief Translates the TextureType value to HdwProgVarType.
-static HdwProgVarType TextureTypeToHdwProgType(const TextureType& type);
+/*static*/ HdwProgVarType TextureTypeToHdwProgType(const TextureType& type);
 
 //////////////////////////////////////////////////////////////////////
 /// @brief Represents a Texture Resource object.

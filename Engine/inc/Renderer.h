@@ -173,12 +173,12 @@ public:
     //////////////////////////////////////////////////////////////////////
     /// @brief Calls the API - dependent 'drawVertexBuffer' stuff.
     //////////////////////////////////////////////////////////////////////
-    virtual void drawVertexBufferPrivate(const HardwareVertexBuffer& vbuf, const HardwareProgramHolder& program);
+    virtual void drawVertexBufferPrivate(const HardwareVertexBuffer& vbuf, const HardwareProgramHolder& program) = 0;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Calls the API - dependent 'drawIndexBuffer' stuff.
     //////////////////////////////////////////////////////////////////////
-    virtual void drawIndexBufferPrivate(const HardwareIndexBuffer& ibuf, const HardwareVertexBuffer& vbuf, const HardwareProgramHolder& program);
+    virtual void drawIndexBufferPrivate(const HardwareIndexBuffer& ibuf, const HardwareVertexBuffer& vbuf, const HardwareProgramHolder& program) = 0;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Draw given Vertex Buffer using Index Buffer and Hardware
@@ -190,23 +190,23 @@ public:
     /// @brief Sets the buffer's base color when clearing it.
     /// @sa glSetClearColor()
     //////////////////////////////////////////////////////////////////////
-    virtual void setClearColor(const Color& color);
+    virtual void setClearColor(const Color& color) = 0;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Sets the buffer's base depth when clearing it.
     /// @sa glSetClearDepth()
     //////////////////////////////////////////////////////////////////////
-    virtual void setClearDepth(float depth);
+    virtual void setClearDepth(float depth) = 0;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the HardwareProgramManager for this Renderer.
     //////////////////////////////////////////////////////////////////////
-    virtual HardwareProgramManager& getHardwareProgramManager();
+    virtual HardwareProgramManager getHardwareProgramManager();
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the HardwareProgramManager for this Renderer.
     //////////////////////////////////////////////////////////////////////
-    virtual const HardwareProgramManager& getHardwareProgramManager() const;
+    virtual const HardwareProgramManager getHardwareProgramManager() const;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Constructs a HardwareProgram using the HardwareProgramManager
@@ -238,10 +238,8 @@ public:
     virtual void loadMesh(Mesh& mesh, bool deleteCache);
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Creates a new Texture object.
-    /// This function is here to let API - dependent Texture objects to
-    /// be created directly. The newly - created Texture should not be
-    /// bindable or drawable.
+    /// @brief Creates a new Texture object, with given name and null
+    /// data.
     //////////////////////////////////////////////////////////////////////
     virtual TextureHolder createTexture(const std::string& name);
     
@@ -287,6 +285,19 @@ public:
     /// 'HardwareVertexBufferHolder(nullptr)' if invalid.
     //////////////////////////////////////////////////////////////////////
     virtual HardwareVertexBufferHolder createVertexBufferWithSize ( const std::string& name , size_t sz ) const;
+    
+protected:
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Internal method to create a Vertex buffer.
+    //////////////////////////////////////////////////////////////////////
+    virtual HardwareVertexBufferHolder iCreateVertexBuffer ( const std::string& name , size_t sz ) const = 0;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Creates a Texture Object with given name, initialize it
+    /// using API calls. ( like glGenTextures )
+    //////////////////////////////////////////////////////////////////////
+    virtual TextureHolder iCreateTexturePrivate ( const std::string& name ) const = 0;
     
 protected:
     

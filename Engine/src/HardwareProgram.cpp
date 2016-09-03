@@ -228,7 +228,7 @@ void HardwareProgramPrivate::bindMaterial(const Gre::Material &material) const
     {
         // First, we see if the Material has Texture to bind.
         
-        if ( material.hasTexture() )
+        if ( material.hasTexture() && !material.hasMultitexture() )
         {
             const Texture& tex = material.getTexture();
             
@@ -259,7 +259,7 @@ void HardwareProgramPrivate::bindMaterial(const Gre::Material &material) const
         if ( material.hasMultitexture() )
         {
             auto texvec = material.getTextures();
-            int loc = 1;
+            int loc = 0;
             
             for ( auto& tex : texvec )
             {
@@ -350,6 +350,40 @@ void HardwareProgramPrivate::bindMaterial(const Gre::Material &material) const
             shininessvar.type = HdwProgVarType::Float1;
             shininessvar.value.float1 = shininess;
             setUniformVariable(shininessvar);
+        }
+    }
+}
+
+void HardwareProgramPrivate::unbindMaterial(const Gre::Material &material) const
+{
+    if ( !material.isInvalid() )
+    {
+        // Here, we just unbind the Texture's unit.
+        
+        if ( material.hasTexture() && !material.hasMultitexture() )
+        {
+            const Texture& tex = material.getTexture();
+            
+            if ( !tex.isInvalid() )
+            {
+                tex.activateTextureUnit(0);
+                tex.unbind();
+            }
+        }
+        
+        if ( material.hasMultitexture() )
+        {
+            int texunit = 0;
+            for ( const Texture& tex : material.getTextures() )
+            {
+                if ( !tex.isInvalid() )
+                {
+                    tex.activateTextureUnit(texunit);
+                    tex.unbind();
+                }
+                
+                texunit++;
+            }
         }
     }
 }

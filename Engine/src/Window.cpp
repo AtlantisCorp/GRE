@@ -251,6 +251,14 @@ RenderContextHolder Window::getRenderContext()
     throw GreInvalidUserException("Window");
 }
 
+const RenderContextHolder Window::getRenderContext() const
+{
+    auto ptr = lock();
+    if ( ptr )
+        return ptr->getRenderContext();
+    throw GreInvalidUserException("Window");
+}
+
 void Window::addLoopBehaviour(LoopBehaviour behaviour)
 {
     auto ptr = lock();
