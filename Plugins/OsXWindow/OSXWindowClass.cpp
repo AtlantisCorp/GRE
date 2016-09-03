@@ -7,33 +7,36 @@
 //
 
 #include "OSXWindow.h"
+#include "WindowEvent.h"
 
-OsXWindow::OsXWindow(const std::string & name, int x0, int y0, int wid, int hei)
-: WindowResource(name)
+DarwinWindow::DarwinWindow(const std::string & name, int x0, int y0, int wid, int hei)
+: WindowPrivate(name)
+, iWindow ( NULL )
+, iHasBeenClosed( false )
 {
-    _nsWindow = NULL;
-    _mClosed = false;
-    _hasBeenClosed = false;
-    NsCreateWindow(&_nsWindow, x0, y0, wid, hei);
+    // As soon as possible, we try to create the Window.
+    NsCreateWindow(&iWindow, x0, y0, wid, hei);
     
-    if(_nsWindow == NULL)
+    if(iWindow == NULL)
     {
         GreDebugPretty() << "Impossible to create Window (Os X Plugin)." << std::endl;
     }
 }
 
-OsXWindow::~OsXWindow ()
+DarwinWindow::~DarwinWindow() noexcept (false)
 {
-    NsDestroyWindow(&_nsWindow);
-    _nsWindow = NULL;
+    NsDestroyWindow(&iWindow);
+    iWindow = NULL;
 }
 
-bool OsXWindow::pollEvent()
+bool DarwinWindow::pollEvent()
 {
-    if(!_mClosed)
+    bool ret = WindowPrivate::pollEvent();
+    
+    if(!iClosed)
     {
-        bool ret = NsPollEvent();
-        WindowBufEntry* nsWindowEntry = NsGetWindowBufEntry(&_nsWindow);
+        ret = NsPollEvent();
+        WindowBufEntry* nsWindowEntry = NsGetWindowBufEntry(&iWindow);
         
         if(nsWindowEntry)
         {
@@ -52,123 +55,114 @@ bool OsXWindow::pollEvent()
             
             if(nsWindowEntry->sizeChanged)
             {
-                _mSurface.width = nsWindowEntry->newWidth;
-                _mSurface.height = nsWindowEntry->newHeight;
-                _mSurface.left = nsWindowEntry->newX;
-                _mSurface.top = nsWindowEntry->newY;
+                iSurface.width = nsWindowEntry->newWidth;
+                iSurface.height = nsWindowEntry->newHeight;
+                iSurface.left = nsWindowEntry->newX;
+                iSurface.top = nsWindowEntry->newY;
                 nsWindowEntry->sizeChanged = false;
                 
-                WindowSizedEvent e;
-                e.surface = _mSurface;
+                WindowSizedEvent e (Window(this), iSurface);
                 onEvent(e);
             }
             
-            _hasBeenClosed = _mExposed && nsWindowEntry->closed;
-            _mClosed = nsWindowEntry->closed;
-            _mExposed = nsWindowEntry->exposed;
+            iHasBeenClosed = iExposed && nsWindowEntry->closed;
+            iClosed = nsWindowEntry->closed;
+            iExposed = nsWindowEntry->exposed;
             
             // We must double-check visibility because i don't find any notification
             // to indicate Exposure.
-            if(!_mExposed)
-                _mExposed = NsWindowIsVisible(&_nsWindow);
+            if(!iExposed)
+                iExposed = NsWindowIsVisible(&iWindow);
         }
         
         return ret;
     }
     
-    return true;
+    return true || ret;
 }
 
-bool OsXWindow::hasBeenClosed() const
+bool DarwinWindow::hasBeenClosed() const
 {
-    return _hasBeenClosed;
+    return iHasBeenClosed;
 }
 
-const std::string OsXWindow::recommendedRenderer() const
+void DarwinWindow::setTitle(const std::string& title)
 {
-    // This is not just an information. For now, the RenderContext must
-    // have an CGlId field in order for this Window to draw something
-    // on screen.
-    // In other words, i don't know any other method to draw on screen ^^...
-    return "OpenGl";
+    WindowPrivate::setTitle(title);
+    NsSetWindowTitle(&iWindow, title.c_str());
 }
 
-void OsXWindow::setTitle(const std::string& title)
+/*
+void DarwinWindow::swapBuffers ()
 {
-    NsSetWindowTitle(&_nsWindow, title.c_str());
+    
+    NsWindowSwapBuffers(&iWindow);
 }
+ */
 
-void OsXWindow::swapBuffers ()
+void DarwinWindow::bind()
 {
-    NsWindowSwapBuffers(&_nsWindow);
-}
-
-void OsXWindow::setVerticalSync (bool vsync)
-{
-    NsWindowSetVertSync(&_nsWindow, vsync);
-}
-
-bool OsXWindow::hasVerticalSync () const
-{
-    return NsWindowIsVertSync(&_nsWindow);
-}
-
-void OsXWindow::bind()
-{
-    if(!getRenderContext().expired())
+    if( !getRenderContext().isInvalid() )
     {
-        getRenderContext().bind();
+        getRenderContext()->bind();
     }
 }
 
-void OsXWindow::bindFramebuffer()
+void DarwinWindow::bindFramebuffer()
 {
     
 }
 
-void OsXWindow::unbind()
+void DarwinWindow::unbind()
 {
-    if(!getRenderContext().expired())
+    if( !getRenderContext().isInvalid() )
     {
-        getRenderContext().flush();
-        getRenderContext().unbind();
+        getRenderContext()->flush();
+        getRenderContext()->unbind();
     }
 }
 
-void OsXWindow::unbindFramebuffer()
+void DarwinWindow::unbindFramebuffer()
 {
     
 }
 
-void OsXWindow::onRenderContextChanged()
+void DarwinWindow::setRenderContext(const Gre::RenderContext &renderCtxt)
 {
-    if(!getRenderContext().expired())
+    WindowPrivate::setRenderContext(renderCtxt);
+    
+    if( !iRenderContext.isInvalid() )
     {
-        uintptr_t* _mContext = (uintptr_t*) ((const CGLContextObj*)getRenderContext().getCustomData("CGLContext"));
+        uintptr_t* _mContext = (uintptr_t*) ( (const CGLContextObj*) iRenderContext->getProperty("CGLContext") );
         // When RenderContext is changed, we must notifiate the CustomWindow
         // for it to change the OpenGlCustomView.
-        NsWindowSetRenderContext(&_nsWindow, *((CGLContextObj*)_mContext));
+        NsWindowSetRenderContext(&iWindow, *((CGLContextObj*)_mContext));
     }
 }
 
 // ---------------------------------------------------------------------------------------------------
 
-OsXWindowLoader::OsXWindowLoader ()
+DarwinWindowLoader::DarwinWindowLoader()
 {
     
 }
 
-OsXWindowLoader::~OsXWindowLoader ()
+DarwinWindowLoader::~DarwinWindowLoader()
 {
     
 }
 
-ResourceLoader* OsXWindowLoader::clone() const
+WindowHolder DarwinWindowLoader::load(const std::string &name, int x0, int y0, int wid, int height) const
 {
-    return (ResourceLoader*) new OsXWindowLoader;
+    return WindowHolder ( new DarwinWindow(name, x0, y0, wid, height) );
 }
 
-Resource* OsXWindowLoader::load (Resource::Type type, const std::string& name, int x0, int y0, int wid, int height) const
+ResourceLoader* DarwinWindowLoader::clone() const
 {
-    return (Resource*) new OsXWindow (name, x0, y0, wid, height);
+    return new DarwinWindowLoader();
+}
+
+bool DarwinWindowLoader::isLoadable(const std::string &filepath) const
+{
+    return false;
 }

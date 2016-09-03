@@ -5,7 +5,7 @@
 //  Created by Jacques Tronconi on 10/12/2015.
 //
 //
-
+/*
 #ifndef GRE_OSXImage_h
 #define GRE_OSXImage_h
 
@@ -148,3 +148,4 @@ public:
 };
 
 #endif
+*/

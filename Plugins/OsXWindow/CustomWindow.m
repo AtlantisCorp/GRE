@@ -6,11 +6,11 @@
 //
 //
 
-#include "CustomWindow.h"
+#import "CustomWindow.h"
 
 @implementation CustomWindow
 
-/// @brief Returns the YsOpenGlView associated.
+/// @brief Returns the OpenGlCustomView associated.
 - (OpenGlCustomView*) getGlView
 {
     return _nsGlView;
@@ -24,6 +24,7 @@
         [_nsGlView release];
         _nsGlView = nil;
     }
+    
     _nsGlView = [glView retain];
     [self setContentView:_nsGlView];
     [self makeFirstResponder:_nsGlView];
@@ -159,10 +160,8 @@
             _nsWindowEntry->keybuf_sz++;
         }
     }
-    else
-    {
-        [super keyDown:theEvent];
-    }
+    
+    [super keyDown:theEvent];
 }
 
 /// @brief When a Key is up, we add it to the Entry key queue.
@@ -181,10 +180,8 @@
             _nsWindowEntry->keybuf_sz++;
         }
     }
-    else
-    {
-        [super keyUp:theEvent];
-    }
+    
+    [super keyUp:theEvent];
 }
 
 @end

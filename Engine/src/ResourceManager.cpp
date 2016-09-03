@@ -156,6 +156,8 @@ int ResourceManager::loadPluginsIn(const std::string &dirname)
                 continue;
             }
 #endif
+            
+            plugin.start();
         }
         
         closedir (dir);

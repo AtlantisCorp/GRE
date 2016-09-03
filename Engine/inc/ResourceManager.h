@@ -34,11 +34,9 @@
 #define GResource_ResourceManager_h
 
 #include "Resource.h"
-#include "TextResource.h"
 #include "Plugin.h"
 #include "Window.h"
 #include "Renderer.h"
-#include "MeshLoader.h"
 #include "Scene.h"
 #include "FrameBuffer.h"
 #include "LoopBehaviours.h"

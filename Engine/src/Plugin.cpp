@@ -274,7 +274,8 @@ ResourceLoader* PluginLoader::clone() const
 
 PluginManager::PluginManager()
 {
-    
+    // Register basic PluginLoader.
+    iFactory.registers("DefaultPluginLoader", new PluginLoader());
 }
 
 PluginManager::~PluginManager()
@@ -315,7 +316,7 @@ Plugin PluginManager::load(const std::string &name, const std::string &filepath)
     {
         Plugin tmp = get(name);
         
-        if ( tmp.isInvalid() )
+        if ( !tmp.isInvalid() )
         {
 #ifdef GreIsDebugMode
             GreDebugPretty() << "Plugin Resource '" << name << "' already installed." << std::endl;

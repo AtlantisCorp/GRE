@@ -5,7 +5,7 @@
 //  Created by Jacques Tronconi on 01/04/2016.
 //
 //
-
+/*
 #define OSXFUNCTIONS_OBJC
 #include "OSXFunctions.h"
 
@@ -81,3 +81,4 @@ int GImageGetSamples(const CFTypeRef* cref)
     [bitmap release];
     return samples;
 }
+*/

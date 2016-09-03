@@ -1,35 +1,73 @@
+//////////////////////////////////////////////////////////////////////
 //
 //  OSXWindow.h
-//  GRE
+//  This source file is part of Gre
+//		(Gang's Resource Engine)
 //
-//  Created by Jacques Tronconi on 10/12/2015.
+//  Copyright (c) 2015 - 2016 Luk2010
+//  Created on 10/12/2015.
 //
-//
+//////////////////////////////////////////////////////////////////////
+/*
+ -----------------------------------------------------------------------------
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal
+ in the Software without restriction, including without limitation the rights
+ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
+ 
+ The above copyright notice and this permission notice shall be included in
+ all copies or substantial portions of the Software.
+ 
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ THE SOFTWARE.
+ -----------------------------------------------------------------------------
+ */
 
 #ifndef GRE_OSXWindow_h
 #define GRE_OSXWindow_h
 
 #include "OSXFunctions.h"
 
-class DLL_PUBLIC OsXWindow : public WindowResource
+class DLL_PUBLIC DarwinWindow : public WindowPrivate
 {
 public:
     
-    /// @brief This contructor is the real one.
-    /// WindowPrivateData is deprecated, as it does not contain any data and
-    /// is not used by anything.
-    /// Currently creates the Window with given parameter and show it on the screen.
-    OsXWindow (const std::string & name, int x0, int y0, int wid, int height);
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Currently creates the Window with given parameter and show
+    /// it on the screen.
+    //////////////////////////////////////////////////////////////////////
+    DarwinWindow (const std::string & name, int x0, int y0, int wid, int height);
     
-    /// @brief Destroys the Window.
-    ~OsXWindow ();
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    virtual ~DarwinWindow () noexcept (false);
     
-    bool pollEvent();
-    const std::string recommendedRenderer() const;
-    void setTitle(const std::string& title);
-    void swapBuffers ();
-    void setVerticalSync (bool vsync);
-    bool hasVerticalSync () const;
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Treat Event in the Event Queue, if it has one.
+    /// @return True if an Event has been treated. The return value of this
+    /// function is not an Error check.
+    //////////////////////////////////////////////////////////////////////
+    virtual bool pollEvent();
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Set a new title for this Window.
+    //////////////////////////////////////////////////////////////////////
+    virtual void setTitle(const std::string& title);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Change the RenderContext used by this Window.
+    //////////////////////////////////////////////////////////////////////
+    virtual void setRenderContext(const RenderContext& renderCtxt);
+    
+    // DEPRECATED
+    // void swapBuffers ();
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Bind the RenderTarget.
@@ -60,35 +98,44 @@ public:
     //////////////////////////////////////////////////////////////////////
     bool hasBeenClosed() const;
     
-protected:
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Called by Window::setRenderContext() when a new RenderContext
-    /// is linked to the Window.
-    /// The object hold by _mRenderContext is the NEW RenderContext.
-    //////////////////////////////////////////////////////////////////////
-    void onRenderContextChanged();
-    
 private:
     
     /// @brief True if the Window object has been closed, after being exposed.
-    bool _hasBeenClosed;
+    bool iHasBeenClosed;
     
     /// @brief A reference to the Obj-C NsWindow object.
-    CFTypeRef _nsWindow;
-    
-    
+    CFTypeRef iWindow;
 };
 
-class DLL_PUBLIC OsXWindowLoader : public WindowLoader
+//////////////////////////////////////////////////////////////////////
+/// @brief WindowLoader for DarwinWindow.
+//////////////////////////////////////////////////////////////////////
+class DLL_PUBLIC DarwinWindowLoader : public WindowLoader
 {
 public:
     
-    OsXWindowLoader ();
-    ~OsXWindowLoader ();
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    DarwinWindowLoader();
     
-    ResourceLoader* clone() const;
-    Resource* load (Resource::Type type, const std::string& name, int x0, int y0, int wid, int height) const;
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    virtual ~DarwinWindowLoader();
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Creates a Window.
+    //////////////////////////////////////////////////////////////////////
+    virtual WindowHolder load ( const std::string& name , int x0 , int y0 , int wid , int height ) const;
+    
+    ////////////////////////////////////////////////////////////////////////
+    /// @brief Returns a clone of this object.
+    ////////////////////////////////////////////////////////////////////////
+    virtual ResourceLoader* clone() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns true if the file given is loadable by this loader.
+    //////////////////////////////////////////////////////////////////////
+    virtual bool isLoadable( const std::string& filepath ) const;
 };
 
 #endif

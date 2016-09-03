@@ -34,7 +34,6 @@
 #define GRE_Mesh_h
 
 #include "Resource.h"
-#include "Vertex.h"
 #include "BoundingBox.h"
 
 #include "SoftwareVertexBuffer.h"

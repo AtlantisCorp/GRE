@@ -236,4 +236,24 @@ void Resource::setCustomData(const std::string &entry, const Gre::Variant &data)
     iCustomData[entry] = data;
 }
 
+const void* Resource::getProperty(const std::string &name) const
+{
+    if ( name == "iName" )
+    {
+        return &iName;
+    }
+    
+    if ( name == "iType" )
+    {
+        return &iType;
+    }
+    
+    if ( name == "iActions" )
+    {
+        return &iActions;
+    }
+    
+    return nullptr;
+}
+
 GreEndNamespace

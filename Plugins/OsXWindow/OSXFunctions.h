@@ -1,15 +1,40 @@
+//////////////////////////////////////////////////////////////////////
 //
 //  OSXFunctions.h
-//  GRE
+//  This source file is part of Gre
+//		(Gang's Resource Engine)
 //
-//  Created by Jacques Tronconi on 10/12/2015.
+//  Copyright (c) 2015 - 2016 Luk2010
+//  Created on 10/12/2015.
 //
-//
+//////////////////////////////////////////////////////////////////////
+/*
+ -----------------------------------------------------------------------------
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal
+ in the Software without restriction, including without limitation the rights
+ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
+ 
+ The above copyright notice and this permission notice shall be included in
+ all copies or substantial portions of the Software.
+ 
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ THE SOFTWARE.
+ -----------------------------------------------------------------------------
+ */
 
 #ifndef GRE_OSXFunctions_h
 #define GRE_OSXFunctions_h
 
 #ifndef OSXFUNCTIONS_OBJC
+
 #   include <stdio.h>
 #   include <stdlib.h>
 #   include <stddef.h>
@@ -17,7 +42,7 @@
 #
 #   define BUILDING_DLL
 #   include "ResourceManager.h"
-#   include "WindowResource.h"
+
 #endif // OSXFUNCTIONS_OBJC
 
 #ifdef OSXFUNCTIONS_OBJC
@@ -28,8 +53,10 @@
 #include <OpenGL/OpenGL.h>
 
 #ifndef OSXFUNCTIONS_OBJC
+
 using namespace Gre;
 typedef const void* CFTypeRef;
+
 #endif
 
 // Maximum number of Windows.
@@ -44,12 +71,6 @@ struct keybuf_t
     int key;
     int pressed;
 };
-
-// ----------------------------------------------------------------------------------------------------------------------------------
-
-// WindowBufEntry API 1
-
-// ----------------------------------------------------------------------------------------------------------------------------------
 
 /// @brief A C-style structure which contains every buffered properties
 /// that might have changed in a Window object.
@@ -102,12 +123,6 @@ WindowBufEntry* FindNextAvailableWindowEntry();
 
 #ifndef OSXFUNCTIONS_OBJC
 
-// ----------------------------------------------------------------------------------------------------------------------------------
-
-// OsXWindow API 2
-
-// ----------------------------------------------------------------------------------------------------------------------------------
-
 /// @brief The base function that must be called in StartPlugin.
 extern "C" DLL_PUBLIC void NsLoadPluginApp();
 
@@ -147,12 +162,13 @@ extern "C" DLL_PUBLIC void NsWindowSetVertSync(CFTypeRef* nsWindow, bool arg);
 /// @brief Changes the RenderContext from the Window.
 extern "C" DLL_PUBLIC void NsWindowSetRenderContext(CFTypeRef* nsWindow, CGLContextObj ctxt);
 
-// ----------------------------------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------
 
 // OSXImage API 1
 
-// ----------------------------------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------------
 
+/*
 extern "C" DLL_PUBLIC void GImageLoad(CFTypeRef* crefreturn, const char* filename);
 extern "C" DLL_PUBLIC void GImageUnload(CFTypeRef* crefreturn);
 extern "C" DLL_PUBLIC int  GImageIsEmpty(const CFTypeRef* cref);
@@ -160,6 +176,7 @@ extern "C" DLL_PUBLIC size_t GImageGetWidth(const CFTypeRef* cref);
 extern "C" DLL_PUBLIC size_t GImageGetHeight(const CFTypeRef* cref);
 extern "C" DLL_PUBLIC unsigned char* GImageGetData(const CFTypeRef* cref);
 extern "C" DLL_PUBLIC int GImageGetSamples(const CFTypeRef* cref);
+*/
 
 extern bool windowExposed;
 

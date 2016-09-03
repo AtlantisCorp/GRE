@@ -31,7 +31,6 @@
  */
 
 #include "Window.h"
-#include "WindowResource.h"
 
 GreBeginNamespace
 

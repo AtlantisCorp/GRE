@@ -303,10 +303,13 @@ void NsWindowSetRenderContext(CFTypeRef* nsWindow, CGLContextObj ctxt)
     if(nsWindow && ctxt)
     {
         CustomWindow* nsCustomWindow = (__bridge CustomWindow*) *nsWindow;
+        
         OpenGlCustomView* nsCustomView = [OpenGlCustomView alloc];
         NSRect nsFrame = NSMakeRect(0, 0, 800, 600);
         [nsCustomView initWithFrame:nsFrame pixelFormat:[OpenGlCustomView defaultPixelFormat]];
+        
         [nsCustomWindow setGlView:nsCustomView];
+        
         [nsCustomView setCustomOpenGLContext:ctxt];
         [[nsCustomView openGLContext] setView:nsCustomView];
     }
