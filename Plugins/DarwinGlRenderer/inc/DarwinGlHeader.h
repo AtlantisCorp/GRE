@@ -1,11 +1,11 @@
 //////////////////////////////////////////////////////////////////////
 //
-//  PluginMain.cpp
+//  DarwinGlHeader.h
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
 //  Copyright (c) 2015 - 2016 Luk2010
-//  Created on 07/11/2015.
+//  Created on 04/09/2016.
 //
 //////////////////////////////////////////////////////////////////////
 /*
@@ -30,27 +30,22 @@
  -----------------------------------------------------------------------------
  */
 
-#include "OSXWindow.h"
-#include "OSXImage.h"
+#ifndef DarwinGlHeader_h
+#define DarwinGlHeader_h
 
-WindowBufEntry nsWindowBufs [WINDOW_MAX];
+// DarwinGlRenderer is an OpenGl3 only Renderer. This decision was made because OpenGl3
+// is natively supported since last version of MacOs, so there is no need to support
+// old legacy profile.
 
-extern "C" DLL_PUBLIC void* GetPluginName (void)
+#include <OpenGL/OpenGL.h>
+#include <OpenGL/gl3.h>
+
+namespace DarwinGl
 {
-    return (void*) "Darwin OS Window system";
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Should Initialize the OpenGl Framework.
+    //////////////////////////////////////////////////////////////////////
+    bool InitializeOpenGl();
 }
 
-extern "C" DLL_PUBLIC void StartPlugin (void)
-{
-    NsLoadPluginApp();
-    
-    ResourceManager::Get().getWindowManager().getWindowLoaderFactory().registers( "DarwinWindowLoader", new DarwinWindowLoader() );
-//  ResourceManager::Get().getImageLoaderFactory().registers("OSXImage", new OSXImageLoader);
-    
-    GreDebugPretty() << (const char*) GetPluginName() << " installed." << std::endl;
-}
-
-extern "C" DLL_PUBLIC void StopPlugin (void)
-{
-    
-}
+#endif /* DarwinGlHeader_h */

@@ -186,6 +186,12 @@
 		41BD72FC1D3A5C57003CEC4F /* SoftwareIndexBuffer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41BD72FB1D3A5C57003CEC4F /* SoftwareIndexBuffer.cpp */; };
 		41CEB00B1C86762400F9246C /* OpenGlRenderContext.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41CEB0091C86617E00F9246C /* OpenGlRenderContext.cpp */; };
 		41CFF7EB1D79AFA100AF3606 /* HardwareSampler.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41CFF7EA1D79AFA000AF3606 /* HardwareSampler.cpp */; };
+		41CFF7FC1D7C98BE00AF3606 /* DarwinGlRendererMain.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41CFF7FB1D7C98BE00AF3606 /* DarwinGlRendererMain.cpp */; };
+		41CFF7FD1D7C995600AF3606 /* libgreengine.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 41877B591BEFADDE0024B643 /* libgreengine.dylib */; };
+		41CFF7FF1D7C9C4F00AF3606 /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 41877BEA1BEFB60D0024B643 /* OpenGL.framework */; };
+		41CFF8011D7C9EE700AF3606 /* DarwinGlHeader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41CFF8001D7C9EE700AF3606 /* DarwinGlHeader.cpp */; };
+		41CFF8041D7D860500AF3606 /* DarwinGlRenderer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41CFF8031D7D860500AF3606 /* DarwinGlRenderer.cpp */; };
+		41CFF8071D7D9B2200AF3606 /* DarwinGlContext.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41CFF8061D7D9B2200AF3606 /* DarwinGlContext.cpp */; };
 		41D1216D1C4473B7009E5B0F /* HardwareProgramVariables.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41D1216C1C4473B7009E5B0F /* HardwareProgramVariables.cpp */; };
 		41D1216F1C44759E009E5B0F /* HardwareProgramVariable.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41D1216E1C44759E009E5B0F /* HardwareProgramVariable.cpp */; };
 		41D121711C447681009E5B0F /* OpenGlHardwareVariable.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41D121701C447681009E5B0F /* OpenGlHardwareVariable.cpp */; };
@@ -367,6 +373,14 @@
 		41CEB0081C86608100F9246C /* OpenGlRenderContext.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = OpenGlRenderContext.h; path = ../../../Plugins/OpenGlRenderer/OpenGlRenderContext.h; sourceTree = "<group>"; };
 		41CEB0091C86617E00F9246C /* OpenGlRenderContext.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = OpenGlRenderContext.cpp; path = ../../../Plugins/OpenGlRenderer/OpenGlRenderContext.cpp; sourceTree = "<group>"; };
 		41CFF7EA1D79AFA000AF3606 /* HardwareSampler.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = HardwareSampler.cpp; path = ../../../Engine/src/HardwareSampler.cpp; sourceTree = "<group>"; };
+		41CFF7F01D7C96FF00AF3606 /* libDarwinGlRenderer.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libDarwinGlRenderer.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
+		41CFF7FB1D7C98BE00AF3606 /* DarwinGlRendererMain.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = DarwinGlRendererMain.cpp; path = ../../../../Plugins/DarwinGlRenderer/src/DarwinGlRendererMain.cpp; sourceTree = "<group>"; };
+		41CFF7FE1D7C9A3800AF3606 /* DarwinGlHeader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = DarwinGlHeader.h; path = ../../../../Plugins/DarwinGlRenderer/inc/DarwinGlHeader.h; sourceTree = "<group>"; };
+		41CFF8001D7C9EE700AF3606 /* DarwinGlHeader.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = DarwinGlHeader.cpp; path = ../../../../Plugins/DarwinGlRenderer/src/DarwinGlHeader.cpp; sourceTree = "<group>"; };
+		41CFF8021D7CA0CC00AF3606 /* DarwinGlRenderer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = DarwinGlRenderer.h; path = ../../../../Plugins/DarwinGlRenderer/inc/DarwinGlRenderer.h; sourceTree = "<group>"; };
+		41CFF8031D7D860500AF3606 /* DarwinGlRenderer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = DarwinGlRenderer.cpp; path = ../../../../Plugins/DarwinGlRenderer/src/DarwinGlRenderer.cpp; sourceTree = "<group>"; };
+		41CFF8051D7D990900AF3606 /* DarwinGlContext.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = DarwinGlContext.h; path = ../../../../Plugins/DarwinGlRenderer/inc/DarwinGlContext.h; sourceTree = "<group>"; };
+		41CFF8061D7D9B2200AF3606 /* DarwinGlContext.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = DarwinGlContext.cpp; path = ../../../../Plugins/DarwinGlRenderer/src/DarwinGlContext.cpp; sourceTree = "<group>"; };
 		41D1216A1C446F03009E5B0F /* HardwareProgramVariable.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = HardwareProgramVariable.h; path = ../../../Engine/inc/HardwareProgramVariable.h; sourceTree = "<group>"; };
 		41D1216B1C447246009E5B0F /* OpenGlHardwareVariable.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = OpenGlHardwareVariable.h; path = ../../../Plugins/OpenGlRenderer/OpenGlHardwareVariable.h; sourceTree = "<group>"; };
 		41D1216C1C4473B7009E5B0F /* HardwareProgramVariables.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = HardwareProgramVariables.cpp; path = ../../../Engine/src/HardwareProgramVariables.cpp; sourceTree = "<group>"; };
@@ -441,6 +455,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		41CFF7ED1D7C96FE00AF3606 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				41CFF7FF1D7C9C4F00AF3606 /* OpenGL.framework in Frameworks */,
+				41CFF7FD1D7C995600AF3606 /* libgreengine.dylib in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -482,6 +505,7 @@
 				41877BFA1BEFB64C0024B643 /* example */,
 				414BC0301BFD63B400EA4A76 /* example2 */,
 				4140129A1C1094E2007375ED /* jpegloader */,
+				41CFF7F11D7C96FF00AF3606 /* DarwinGlRenderer */,
 				41877B5A1BEFADDE0024B643 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -497,6 +521,7 @@
 				414BC02F1BFD63B400EA4A76 /* example2.app */,
 				414012991C1094E2007375ED /* libjpegloader.dylib */,
 				41B8C81B1C1C5F71000084F2 /* libObjLoader.dylib */,
+				41CFF7F01D7C96FF00AF3606 /* libDarwinGlRenderer.dylib */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -714,6 +739,20 @@
 			name = inc;
 			sourceTree = "<group>";
 		};
+		41CFF7F11D7C96FF00AF3606 /* DarwinGlRenderer */ = {
+			isa = PBXGroup;
+			children = (
+				41CFF7FB1D7C98BE00AF3606 /* DarwinGlRendererMain.cpp */,
+				41CFF7FE1D7C9A3800AF3606 /* DarwinGlHeader.h */,
+				41CFF8001D7C9EE700AF3606 /* DarwinGlHeader.cpp */,
+				41CFF8021D7CA0CC00AF3606 /* DarwinGlRenderer.h */,
+				41CFF8031D7D860500AF3606 /* DarwinGlRenderer.cpp */,
+				41CFF8051D7D990900AF3606 /* DarwinGlContext.h */,
+				41CFF8061D7D9B2200AF3606 /* DarwinGlContext.cpp */,
+			);
+			path = DarwinGlRenderer;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
@@ -849,6 +888,13 @@
 				41B8C83F1C1C601C000084F2 /* Window.h in Headers */,
 				41B8C8411C1C601C000084F2 /* Camera_old.h in Headers */,
 				41B8C8421C1C601C000084F2 /* Keyboard.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		41CFF7EE1D7C96FE00AF3606 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -991,6 +1037,23 @@
 			productReference = 41B8C81B1C1C5F71000084F2 /* libObjLoader.dylib */;
 			productType = "com.apple.product-type.library.dynamic";
 		};
+		41CFF7EF1D7C96FE00AF3606 /* DarwinGlRenderer */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 41CFF7F81D7C96FF00AF3606 /* Build configuration list for PBXNativeTarget "DarwinGlRenderer" */;
+			buildPhases = (
+				41CFF7EC1D7C96FE00AF3606 /* Sources */,
+				41CFF7ED1D7C96FE00AF3606 /* Frameworks */,
+				41CFF7EE1D7C96FE00AF3606 /* Headers */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = DarwinGlRenderer;
+			productName = DarwinGlRenderer;
+			productReference = 41CFF7F01D7C96FF00AF3606 /* libDarwinGlRenderer.dylib */;
+			productType = "com.apple.product-type.library.dynamic";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -1023,6 +1086,9 @@
 					41B8C81A1C1C5F71000084F2 = {
 						CreatedOnToolsVersion = 6.4;
 					};
+					41CFF7EF1D7C96FE00AF3606 = {
+						CreatedOnToolsVersion = 7.3.1;
+					};
 				};
 			};
 			buildConfigurationList = 41877B521BEFADB00024B643 /* Build configuration list for PBXProject "GRE" */;
@@ -1046,6 +1112,7 @@
 				41877BF81BEFB64C0024B643 /* example */,
 				414BC02E1BFD63B300EA4A76 /* example2 */,
 				414012981C1094E1007375ED /* jpegloader */,
+				41CFF7EF1D7C96FE00AF3606 /* DarwinGlRenderer */,
 			);
 		};
 /* End PBXProject section */
@@ -1195,6 +1262,17 @@
 			buildActionMask = 2147483647;
 			files = (
 				41B8C8221C1C5F71000084F2 /* ObjLoader.cp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		41CFF7EC1D7C96FE00AF3606 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				41CFF8011D7C9EE700AF3606 /* DarwinGlHeader.cpp in Sources */,
+				41CFF8071D7D9B2200AF3606 /* DarwinGlContext.cpp in Sources */,
+				41CFF8041D7D860500AF3606 /* DarwinGlRenderer.cpp in Sources */,
+				41CFF7FC1D7C98BE00AF3606 /* DarwinGlRendererMain.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1934,6 +2012,97 @@
 			};
 			name = Release;
 		};
+		41CFF7F91D7C96FF00AF3606 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				EXECUTABLE_PREFIX = lib;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_CPP_EXCEPTIONS = YES;
+				GCC_ENABLE_CPP_RTTI = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		41CFF7FA1D7C96FF00AF3606 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				EXECUTABLE_PREFIX = lib;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_ENABLE_CPP_EXCEPTIONS = YES;
+				GCC_ENABLE_CPP_RTTI = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -2017,6 +2186,14 @@
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
+		};
+		41CFF7F81D7C96FF00AF3606 /* Build configuration list for PBXNativeTarget "DarwinGlRenderer" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				41CFF7F91D7C96FF00AF3606 /* Debug */,
+				41CFF7FA1D7C96FF00AF3606 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
 		};
 /* End XCConfigurationList section */
 	};

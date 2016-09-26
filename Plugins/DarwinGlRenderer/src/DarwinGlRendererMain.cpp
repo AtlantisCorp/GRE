@@ -1,11 +1,11 @@
 //////////////////////////////////////////////////////////////////////
 //
-//  PluginMain.cpp
+//  DarwinGlRendererMain.cpp
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
 //  Copyright (c) 2015 - 2016 Luk2010
-//  Created on 07/11/2015.
+//  Created on 04/09/2016.
 //
 //////////////////////////////////////////////////////////////////////
 /*
@@ -30,27 +30,33 @@
  -----------------------------------------------------------------------------
  */
 
-#include "OSXWindow.h"
-#include "OSXImage.h"
+#include "ResourceManager.h"
+#include "DarwinGlRenderer.h"
 
-WindowBufEntry nsWindowBufs [WINDOW_MAX];
+using namespace Gre;
 
-extern "C" DLL_PUBLIC void* GetPluginName (void)
+extern "C" void* GetPluginName ( void )
 {
-    return (void*) "Darwin OS Window system";
+    return (void*) "Darwin OS OpenGl Renderer";
 }
 
-extern "C" DLL_PUBLIC void StartPlugin (void)
+extern "C" void StartPlugin ( void )
 {
-    NsLoadPluginApp();
+    // We have to initialize OpenGl library on this Computer.
     
-    ResourceManager::Get().getWindowManager().getWindowLoaderFactory().registers( "DarwinWindowLoader", new DarwinWindowLoader() );
-//  ResourceManager::Get().getImageLoaderFactory().registers("OSXImage", new OSXImageLoader);
+    if ( DarwinGl::InitializeOpenGl() )
+    {
+        GreDebugPretty() << (const char*) GetPluginName() << " initialized." << std::endl;
+    }
     
-    GreDebugPretty() << (const char*) GetPluginName() << " installed." << std::endl;
+    // Register a RendererLoader in the RendererManager.
+    
+    ResourceManager::Get().getRendererManager().getRendererLoaderFactory().
+        registers( "DarwinGlRendererLoader", new DarwinGl::DarwinGlRendererLoader() );
 }
 
-extern "C" DLL_PUBLIC void StopPlugin (void)
+extern "C" void StopPlugin ( void )
 {
     
 }
+

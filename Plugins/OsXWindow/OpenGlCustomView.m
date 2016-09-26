@@ -7,6 +7,8 @@
 //
 
 #include "OpenGlCustomView.h"
+#include <OpenGL/OpenGL.h>
+#include <OpenGL/gl3.h>
 
 @implementation OpenGlCustomView
 
@@ -23,33 +25,67 @@
 - (id) initWithFrame:(NSRect)frameRect pixelFormat:(NSOpenGLPixelFormat *)format
 {
     self = [super initWithFrame:frameRect];
-    if(self != nil)
+    
+    if( self != nil )
     {
-        _pixelFormat = [format retain];
-        [[NSNotificationCenter defaultCenter] addObserver:self
-                                                 selector:@selector(_surfaceNeedsUpdate:)
-                                                     name:NSViewGlobalFrameDidChangeNotification
-                                                   object:self];
+        iPixelFormat = format;
+        iOpenGlContext = nil;
+        
+        [[NSNotificationCenter defaultCenter]
+         addObserver:self
+         selector:@selector(_surfaceNeedsUpdate:)
+         name:NSViewGlobalFrameDidChangeNotification
+         object:self];
     }
     
     return self;
 }
 
-- (void) clearGLContext
+- (void) setOpenGlContext:(NSOpenGLContext *)context
 {
-    if(_openGlContext != nil)
+    if ( iOpenGlContext != nil )
     {
-        [_openGlContext clearDrawable];
-        [_openGlContext release];
-        _openGlContext = nil;
+        [self clearGlContext];
     }
+    
+    iOpenGlContext = context;
+}
+
+- (NSOpenGLContext*) openGlContext
+{
+    return iOpenGlContext;
+}
+
+- (void) clearGlContext
+{
+    if( iOpenGlContext != nil )
+    {
+        [iOpenGlContext release];
+        iOpenGlContext = nil;
+    }
+}
+
+- (void) setPixelFormat:(NSOpenGLPixelFormat *)pixelFormat
+{
+    if( iPixelFormat != nil )
+    {
+        [iPixelFormat release];
+        iPixelFormat = nil;
+    }
+    
+    iPixelFormat = pixelFormat;
+}
+
+- (NSOpenGLPixelFormat*) pixelFormat
+{
+    return iPixelFormat;
 }
 
 - (void) update
 {
-    if(_openGlContext != nil)
+    if ( iOpenGlContext != nil )
     {
-        [_openGlContext update];
+        [iOpenGlContext update];
     }
 }
 
@@ -58,45 +94,42 @@
     [self update];
 }
 
-- (void) setPixelFormat:(NSOpenGLPixelFormat *)pixelFormat
+- (void) lockFocus
 {
-    if(_pixelFormat != nil)
-    {
-        [_pixelFormat release];
-        _pixelFormat = nil;
+    NSOpenGLContext* context = [self openGlContext];
+    
+    [super lockFocus];
+    if ( [context view] != self ) {
+        [context setView:self];
     }
     
-    _pixelFormat = [pixelFormat retain];
-}
-
-- (NSOpenGLPixelFormat*) pixelFormat
-{
-    return _pixelFormat;
-}
-
-- (void) setCustomOpenGLContext:(CGLContextObj)cglContext
-{
-    if(_openGlContext != nil)
-    {
-        [self clearGLContext];
-    }
+    [context makeCurrentContext];
     
-    _openGlContext = [[NSOpenGLContext alloc] initWithCGLContextObj:cglContext];
+    // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    // The 'lockFocus' method is responsible for setting the OpenGl clear states.
 }
 
-- (void) setOpenGLContext:(NSOpenGLContext *)context
+- (void) drawRect:(NSRect)dirtyRect
 {
-    if(_openGlContext != nil)
-    {
-        [self clearGLContext];
-    }
+    // 'drawRect' is actually responsible for flushing the Buffer.
+    // The actual drawing is done by the Renderer object. The Renderer draw every RenderTarget, in a loop,
+    // then call 'RenderTarget::draw()' in order to draw the RenderTarget. For example, DarwinWindow::draw()
+    // calls 'NSWindow::setNeedsDisplay(true)'.
     
-    _openGlContext = [context retain];
+    NSOpenGLContext* context = [self openGlContext];
+    
+    [context makeCurrentContext];
+    [context flushBuffer];
 }
 
-- (NSOpenGLContext*) openGLContext
+- (void) viewDidMoveToWindow
 {
-    return _openGlContext;
+    [super viewDidMoveToWindow];
+/*
+    if ( [self window] == nil ) {
+        [[self openGlContext] clearDrawable];
+    }
+*/
 }
 
 -(NSMenu *)menuForEvent: (NSEvent *)theEvent

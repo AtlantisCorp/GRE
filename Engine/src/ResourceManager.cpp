@@ -204,20 +204,11 @@ void ResourceManager::loop()
         UpdateEvent updateEvent;
         updateEvent.elapsedTime = iElapsedTime;
         
-        // Normally, the ResourceManager's loop should take place in a different thread,
-        // in order to update the Windows and the Scenes objects separately.
+        // The 'ResourceManager::loop()' function only updates the 'logical' objects. Renderers are updated
+        // using the 'Renderer::launch()' function. To draw a RenderTarget, use 'Renderer::registerTarget()' to
+        // enable it to drawing.
         
-        // Every object can be accepted as a Listener to listen for update event from this
-        // class, but take in mind that, for example, RenderScene will send this event to
-        // every RenderNode, Camera, etc... and Window object will send it to RenderContext
-        // which will send it to Renderer.
-        
-        // THEORY : The Render loop should be done in the main thread (i.e. this function). This
-        // is done by updating every Window objects. The update of its surface should update the
-        // Renderer object and thus re-draw the Scene.
-        //     The logical loop (which is, for now, only the RenderScene updating), should take
-        // place in another thread.
-        // NOTES : The Render loop's time should not excess 16,6 ms (60FPS).
+        // This loop only updates every Windows, and every RenderSceneManager.
         
         // First, we update every Windows objects.
         WindowHolderList whlist = iWindowManager.getWindows();
@@ -235,22 +226,25 @@ void ResourceManager::loop()
                 {
                     if(wholder)
                     {
-                        /*
-                         
-                         This should be done in WindowPrivate::onUpdateEvent()
-                         
-                        wholder->pollEvent();
-                        wholder->update();
-                        
                         if(wholder->hasBeenClosed())
                         {
                             // Window has been closed, we can destroy it.
-                            iWindowManager.remove(wholder.getName());
+                            iWindowManager.remove(wholder->getName());
                         }
-                         */
                         
-                        wholder->onEvent(updateEvent);
-                        iPerWindowBehaviours.call();
+                        else
+                        {
+                            // For now , we have to lock the mutex here to be sure any operations are made
+                            // within a valid mutex.
+                            
+                            wholder->lockGuard();
+                            
+                            wholder->onEvent(updateEvent);
+                            
+                            wholder->unlockGuard();
+                            
+                            iPerWindowBehaviours.call();
+                        }
                     }
                 }
             }
@@ -258,32 +252,7 @@ void ResourceManager::loop()
             iLoopBehaviours.call();
         }
         
-        
-                        /* This should be done by the renderer. 
-                         The Renderer should draw every Window object as RenderTarget.
-                         
-                        // We begin updating the Window.
-                        // This permits pollEvent, and Context binding.
-                        // The Context should notifiate the Renderer that the Current Context
-                        // has changed.
-                        windowUser.beginUpdate();
-                        
-                        // Then we use the Window's Context to render the Scene defined for
-                        // the renderer. Renderer object renders the Window as a normal RenderTarget.
-#ifndef GreIsDebugMode
-                        windowUser.getRenderContext().getRenderer().render(windowUser);
-#else
-                        RenderContext ctxt = windowUser.getRenderContext();
-                        Renderer renderer = ctxt.getRenderer();
-                        renderer.render(windowUser);
-#endif
-                        
-                        // Finally we end the Window's update.
-                        windowUser.endUpdate();
-                         
-                         */
-        
-        // Then, we update also the RenderScene's objects.
+        // Update also the RenderScene's objects.
         RenderSceneHolderList smhlist = iRenderSceneManager.getAll();
         
         if( !smhlist.empty() )

@@ -53,10 +53,7 @@ void NsSetWindowTitle(CFTypeRef* nsWindow, const char* cTitle)
     if(nsWindow)
     {
         const CustomWindow* nsGlWindow = (__bridge const CustomWindow*) *nsWindow;
-        
-        NSString* nsTitle = [NSString stringWithCString:cTitle encoding:NSASCIIStringEncoding];
         [nsGlWindow setTitle:[NSString stringWithCString:cTitle encoding:NSASCIIStringEncoding]];
-        [nsTitle dealloc];
     }
 }
 
@@ -65,7 +62,7 @@ void NsWindowSwapBuffers(CFTypeRef* nsWindow)
     if(nsWindow)
     {
         const CustomWindow* nsGlWindow = (__bridge const CustomWindow*) *nsWindow;
-        [[[nsGlWindow getGlView] openGLContext] flushBuffer];
+        [[[nsGlWindow getGlView] openGlContext] flushBuffer];
     }
 }
 
@@ -86,7 +83,7 @@ bool NsWindowIsVisible(CFTypeRef* nsWindow)
     if(nsWindow)
     {
         CustomWindow* nsGlWindow = (__bridge CustomWindow*) *nsWindow;
-        return [nsGlWindow isVisible];
+        return [nsGlWindow isVisible] ;
     }
     
     return false;
@@ -207,12 +204,15 @@ void NsLoadPluginApp()
     // the older loadNibNamed:owner: method. If your app does not support Lion, then
     // you can go with strictly the newer one and not deal with the if/else conditional.
     
-    if ([[NSBundle mainBundle] respondsToSelector:@selector(loadNibNamed:owner:topLevelObjects:)]) {
+    if ([[NSBundle mainBundle] respondsToSelector:@selector(loadNibNamed:owner:topLevelObjects:)])
+    {
         // We're running on Mountain Lion or higher
         [[NSBundle mainBundle] loadNibNamed:@"MainMenu"
                                       owner:NSApp
                             topLevelObjects:nil];
-    } else {
+    }
+    else
+    {
         // We're running on Lion
         [NSBundle loadNibNamed:@"MainMenu"
                          owner:NSApp];
@@ -230,7 +230,7 @@ void NsCreateWindow(CFTypeRef* cfretreturn, int x0,int y0,int wid,int hei)
     if(app == nil)
         return;
     
-    if(!NSIsAppLoaded)
+    if( !NSIsAppLoaded )
         NsLoadPluginApp();
     
     CustomWindow* nsNewWindow = nil;
@@ -247,17 +247,29 @@ void NsCreateWindow(CFTypeRef* cfretreturn, int x0,int y0,int wid,int hei)
     nsNewWindow = [CustomWindow alloc];
     nsNewWindow = [nsNewWindow initWithContentRect:contRect styleMask:winStyle backing:NSBackingStoreBuffered defer:NO];
     
-    [nsNewWindow makeKeyAndOrderFront:nsNewWindow];
-    [nsNewWindow makeMainWindow];
+    // [nsNewWindow makeKeyAndOrderFront:nsNewWindow];
+    // [nsNewWindow makeMainWindow];
     
     [app activateIgnoringOtherApps:YES];
     
     [nsNewWindow setTitle:@"Default Title"];
-    [nsNewWindow display];
     [nsNewWindow makeKeyWindow];
+    [nsNewWindow orderFront: nsNewWindow];
+    [nsNewWindow makeMainWindow];
+    
+    [nsNewWindow display];
     [app updateWindows];
     
     *cfretreturn = CFBridgingRetain(nsNewWindow);
+}
+
+void NsPollEventForWindow ( CFTypeRef* window )
+{
+    if ( window != nil )
+    {
+        CustomWindow* glwindow = (__bridge CustomWindow*) *window;
+        [glwindow update];
+    }
 }
 
 bool NsPollEvent()
@@ -269,22 +281,19 @@ bool NsPollEvent()
     
     @try
     {
-        //NSEvent *event = [NSEvent alloc];
         NSEvent* event = [app nextEventMatchingMask:NSAnyEventMask untilDate: [NSDate distantPast] inMode: NSDefaultRunLoopMode dequeue:YES];
         
-        if(event!=nil)
+        if( event!=nil )
         {
-            if([event type]==NSRightMouseDown)
+            if( [event type] == NSRightMouseDown )
             {
                 printf("R mouse down event\n");
             }
             
             [app sendEvent:event];
-            [app updateWindows];
         }
         else
         {
-            [app updateWindows];
             return false;
         }
         
@@ -304,15 +313,60 @@ void NsWindowSetRenderContext(CFTypeRef* nsWindow, CGLContextObj ctxt)
     {
         CustomWindow* nsCustomWindow = (__bridge CustomWindow*) *nsWindow;
         
-        OpenGlCustomView* nsCustomView = [OpenGlCustomView alloc];
-        NSRect nsFrame = NSMakeRect(0, 0, 800, 600);
-        [nsCustomView initWithFrame:nsFrame pixelFormat:[OpenGlCustomView defaultPixelFormat]];
+        NSRect nsFrame = [[nsCustomWindow contentView] frame];
+        NSOpenGLPixelFormat* pixelformat = [[NSOpenGLPixelFormat alloc] initWithCGLPixelFormatObj:CGLGetPixelFormat(ctxt)];
+        NSOpenGLContext* context = [[NSOpenGLContext alloc] initWithCGLContextObj:ctxt];
         
-        [nsCustomWindow setGlView:nsCustomView];
+        OpenGlCustomView* customview = [[OpenGlCustomView alloc] initWithFrame:nsFrame pixelFormat:pixelformat];
+        [customview setOpenGlContext:context];
         
-        [nsCustomView setCustomOpenGLContext:ctxt];
-        [[nsCustomView openGLContext] setView:nsCustomView];
+        [nsCustomWindow setGlView:customview];
+        [nsCustomWindow update];
     }
+}
+
+void NsWindowSetNeedsDisplay(CFTypeRef* window, bool value)
+{
+    if ( window )
+    {
+        CustomWindow* nsWindow = (__bridge CustomWindow*) *window;
+        [[nsWindow getGlView] setNeedsDisplay:(BOOL)value];
+    }
+}
+
+void NsWindowDisplay(CFTypeRef* window)
+{
+    if ( window )
+    {
+        CustomWindow* nsWindow = (__bridge CustomWindow*) *window;
+        
+        if ( [nsWindow isOnActiveSpace] && [nsWindow isVisible] )
+        {
+            [[nsWindow getGlView] display];
+        }
+    }
+}
+
+bool NsWindowPropertyIsVisible ( const CFTypeRef* window )
+{
+    if ( window )
+    {
+        const CustomWindow* nsWindow = ( __bridge const CustomWindow* ) *window;
+        return [nsWindow isVisible];
+    }
+    
+    return false;
+}
+
+bool NsWindowPropertyIsOnActiveSpace ( const CFTypeRef* window )
+{
+    if ( window )
+    {
+        const CustomWindow* nsWindow = ( __bridge const CustomWindow* ) *window;
+        return [nsWindow isOnActiveSpace];
+    }
+    
+    return false;
 }
 
 

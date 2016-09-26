@@ -34,6 +34,31 @@
 
 GreBeginNamespace
 
+char KeyToChar ( const Key& key )
+{
+    if ( key == Key::A )
+        return 'A';
+    
+    if ( key == Key::S )
+        return 'S';
+    
+    if ( key == Key::D )
+        return 'D';
+    
+    if ( key == Key::V )
+        return 'V';
+    
+    if ( key == Key::W )
+        return 'W';
+    
+    if ( key == Key::T )
+        return 'T';
+
+    return '\0';
+}
+
+// ---------------------------------------------------------------------------------------------------
+
 KeyboardPrivate::KeyboardPrivate(const std::string& name)
 : Resource(name)
 {

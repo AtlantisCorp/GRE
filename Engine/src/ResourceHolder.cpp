@@ -34,11 +34,32 @@
 
 GreBeginNamespace
 
+#ifdef GreExtraResourceHolder
+bool CheckHolderMagic ( Resource* pointer )
+{
+    return *( reinterpret_cast<int*>(pointer) - 1 ) == 0xBAD007;
+}
+#endif
+
 ResourceHolder::ResourceHolder(Resource* resource)
 {
     iResource = resource;
     iCounter = nullptr;
-    if(iResource)
+    
+//  This constructor is very bad because, at many times, one could use a null 'resource' object
+//  to initialize this one with a bad adress. If 'GreExtraResourceHolder' is defined, we make a
+//  simple check for the 'iHolderMagic' property in Resource. This property is added by the POOL
+//  functions.
+    
+#ifdef GreExtraResourceHolder
+    if ( !CheckHolderMagic(resource) )
+    {
+        iResource = nullptr;
+        iCounter = nullptr;
+    }
+#endif
+    
+    if( iResource != nullptr )
     {
         iResource->acquire();
         iCounter = iResource->getReferenceCounter();
@@ -50,17 +71,27 @@ ResourceHolder::ResourceHolder(Resource* resource, ReferenceCounter* counter)
     iResource = resource;
     iCounter = counter;
     
-    // Prevents acquiring a Resource with invalid pointer.
-    if(iCounter)
+//  Prevents acquiring a Resource with invalid pointer. This function is used, for example, by
+//  'ResourceUser' when locking although it's null.
+    
+#ifdef GreExtraResourceHolder
+    if ( !CheckHolderMagic(resource) )
     {
-        if(iCounter->getHolderCount() == 0)
+        iResource = nullptr;
+        iCounter = nullptr;
+    }
+#endif
+    
+    if( iCounter != nullptr )
+    {
+        if( iCounter->getHolderCount() <= 0 )
         {
             iResource = nullptr;
             iCounter = nullptr;
         }
     }
     
-    if(iResource)
+    if( iResource )
     {
         iResource->acquire();
         iCounter = iResource->getReferenceCounter();
@@ -70,9 +101,29 @@ ResourceHolder::ResourceHolder(Resource* resource, ReferenceCounter* counter)
 ResourceHolder::ResourceHolder(const ResourceHolder& holder)
 {
     iResource = holder.iResource;
-    iCounter = nullptr;
+    iCounter = holder.iCounter;
     
-    if(iResource)
+//  Prevents acquiring a Resource with invalid pointer. This function is used, for example, by
+//  'ResourceUser' when locking although it's null.
+    
+#ifdef GreExtraResourceHolder
+    if ( !CheckHolderMagic(holder.iResource) )
+    {
+        iResource = nullptr;
+        iCounter = nullptr;
+    }
+#endif
+    
+    if( iCounter != nullptr )
+    {
+        if( iCounter->getHolderCount() == 0 )
+        {
+            iResource = nullptr;
+            iCounter = nullptr;
+        }
+    }
+    
+    if( iCounter )
     {
         iResource->acquire();
         iCounter = iResource->getReferenceCounter();
@@ -132,6 +183,20 @@ void ResourceHolder::reset()
         iResource = nullptr;
         iCounter = nullptr;
     }
+}
+
+ResourceHolder& ResourceHolder::operator= (const ResourceHolder& rhs)
+{
+    reset();
+    iResource = rhs.iResource;
+    iCounter = rhs.iCounter;
+    
+    if ( iResource && iCounter )
+    {
+        iCounter->hold();
+    }
+    
+    return *this;
 }
 
 GreEndNamespace

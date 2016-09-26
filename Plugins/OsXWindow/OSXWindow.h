@@ -39,6 +39,8 @@ class DLL_PUBLIC DarwinWindow : public WindowPrivate
 {
 public:
     
+    POOLED(Pools::Resource)
+    
     //////////////////////////////////////////////////////////////////////
     /// @brief Currently creates the Window with given parameter and show
     /// it on the screen.
@@ -65,9 +67,6 @@ public:
     /// @brief Change the RenderContext used by this Window.
     //////////////////////////////////////////////////////////////////////
     virtual void setRenderContext(const RenderContext& renderCtxt);
-    
-    // DEPRECATED
-    // void swapBuffers ();
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Bind the RenderTarget.
@@ -98,6 +97,34 @@ public:
     //////////////////////////////////////////////////////////////////////
     bool hasBeenClosed() const;
     
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Draw immediately the surface from this RenderTarget.
+    //////////////////////////////////////////////////////////////////////
+    void draw();
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns true if the RenderTarget is ready to be drawn on.
+    /// For example , this should be true for a Window object if the Window
+    /// is directly visible by the user on the screen ( 'isVisible' and
+    /// 'isOnActiveSpace' properties on macOs ).
+    /// @return True if 'isVisible' and 'isOnActiveSpace' properties are
+    /// true.
+    //////////////////////////////////////////////////////////////////////
+    bool isAvailableForDrawing () const;
+    
+protected:
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Called when receiving Update Event.
+    /// [thread-safe]
+    //////////////////////////////////////////////////////////////////////
+    virtual void onUpdateEvent(const UpdateEvent& e);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Called by 'onUpdateEvent', treat MacOS Event.
+    //////////////////////////////////////////////////////////////////////
+    virtual void iPollEvent();
+    
 private:
     
     /// @brief True if the Window object has been closed, after being exposed.
@@ -113,6 +140,8 @@ private:
 class DLL_PUBLIC DarwinWindowLoader : public WindowLoader
 {
 public:
+    
+    POOLED(Pools::Loader)
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////

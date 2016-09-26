@@ -52,6 +52,8 @@ enum class Pools
     Render    = 0x9     ///< @brief Reserved to Render's related objects.
 };
 
+#ifndef GreExtraResourceHolder
+
 /// @brief Declares an object as part of the pool system.
 /// A Pooled object is created and destroyed using the Pool
 /// system. You can select the right pool using this macro.
@@ -66,6 +68,18 @@ return ptr; } \
 void  operator delete (void* p) noexcept { \
 if(p) free (p); \
 Pool< pooltype > :: Get().detach(p); }
+
+#else
+
+#define POOLED(pooltype) \
+    void* operator new ( size_t sz ) { \
+        if ( Pool< pooltype > ::Get().canAttach(sz) == false ) throw std::bad_alloc(); \
+        void* ptr = malloc ( sz + sizeof(int32_t) ); \
+        *( (int*) ptr) = 0xBAD007; \
+        return (void*) ( ( (char*) ptr ) + sizeof(int32_t) ); \
+    }
+
+#endif
 
 /// @class Pool
 /// @brief A Basic memory pool.

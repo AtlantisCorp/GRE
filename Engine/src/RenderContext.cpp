@@ -44,7 +44,7 @@ RenderContextPrivate::RenderContextPrivate(const std::string& name, const Render
 RenderContextPrivate::~RenderContextPrivate()
 {
     if(isBinded()) {
-        unbind();
+        //unbind();
     }
 }
 
@@ -56,21 +56,6 @@ const RenderContextInfo& RenderContextPrivate::getInfo() const
 bool RenderContextPrivate::isBinded() const
 {
     return iIsBinded;
-}
-
-void RenderContextPrivate::bind()
-{
-    GreDebugFunctionNotImplemented();
-}
-
-void RenderContextPrivate::unbind()
-{
-    GreDebugFunctionNotImplemented();
-}
-
-void RenderContextPrivate::flush()
-{
-    GreDebugFunctionNotImplemented();
 }
 
 void RenderContextPrivate::addViewport(const Gre::Viewport &viewport)

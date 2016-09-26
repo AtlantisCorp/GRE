@@ -46,15 +46,19 @@ Resource::Resource(const std::string& name)
 
 Resource::~Resource() noexcept(false)
 {
-    if(iCounterInitialized)
     {
-        iCounter->unuse();
+        GreResourceAutolock ;
         
-        if(iCounter->getUserCount() == 0)
+        if(iCounterInitialized)
         {
-            delete iCounter;
-            iCounter = nullptr;
-            iCounterInitialized = false;
+            iCounter->unuse();
+            
+            if(iCounter->getUserCount() == 0)
+            {
+                delete iCounter;
+                iCounter = nullptr;
+                iCounterInitialized = false;
+            }
         }
     }
 }
@@ -71,11 +75,13 @@ const Resource::Type& Resource::getType() const
 
 void Resource::addAction(Gre::EventType etype, std::function<void (const Event &)> eaction)
 {
+    GreResourceAutolock ;
     iActions[etype].push_back(eaction);
 }
 
 void Resource::resetActions()
 {
+    GreResourceAutolock ;
     iActions.clear();
 }
 
@@ -92,6 +98,11 @@ void Resource::onEvent(const Event &e)
     else if(e.getType() == EventType::KeyDown) {
         onKeyDownEvent(e.to<KeyDownEvent>());
     }
+    
+    // As those functions are not certainly locked , we must ensure multithread availability and lock
+    // the recursive mutex.
+    
+    GreResourceAutolock ;
     
     auto actions = iActions[e.getType()];
     if(!actions.empty())
@@ -124,6 +135,7 @@ void Resource::onEvent(const Event &e)
 
 void Resource::onNextEvent(const Gre::EventType &etype, EventCallback callback)
 {
+    GreResourceAutolock ;
     iNextCallbacks[etype].push_back(callback);
 }
 
@@ -144,23 +156,27 @@ void Resource::onKeyDownEvent(const Gre::KeyDownEvent &e)
 
 ResourceUser& Resource::addListener(const std::string& name)
 {
+    GreResourceAutolock ;
     ResourceUser pureListener = ResourceManager::Get().loadEmptyResource(name);
     return addListener(pureListener);
 }
 
 ResourceUser& Resource::addListener(const ResourceUser& listener)
 {
+    GreResourceAutolock ;
     iListeners.insert(std::pair<std::string, ResourceUser>(listener.getName(), listener));
     return iListeners.at(listener.getName());
 }
 
 ResourceUser Resource::getListener(const std::string &name)
 {
+    GreResourceAutolock ;
     return iListeners.at(name);
 }
 
 void Resource::removeListener(const std::string &name)
 {
+    GreResourceAutolock ;
     auto it = iListeners.find(name);
     if(it != iListeners.end())
     {
@@ -170,6 +186,7 @@ void Resource::removeListener(const std::string &name)
 
 void Resource::sendEvent(const Event &e)
 {
+    GreResourceAutolock ;
     for(auto itr = iListeners.begin(); itr != iListeners.end(); itr++)
     {
         itr->second.onEvent(e);
@@ -178,6 +195,7 @@ void Resource::sendEvent(const Event &e)
 
 void Resource::setShouldTransmitEvents(bool p)
 {
+    GreResourceAutolock ;
     iShouldTransmit = p;
 }
 
@@ -188,6 +206,8 @@ bool Resource::shouldTransmitEvents() const
 
 void Resource::acquire()
 {
+    GreResourceAutolock ;
+    
     if(!iCounterInitialized)
     {
         iCounter = new ReferenceCounter;
@@ -200,44 +220,63 @@ void Resource::acquire()
 
 void Resource::release()
 {
+    // Notes ( 26.09.2016 ) : We can't use GreResourceAutolock in this function , because it would cause the
+    // 'iMutex' property to be destroyed two times when 'deleting this;' is called.
+    // As 'Resource::~Resource()' use GreResourceAutolock , we don't need to check for Mutex locking in this
+    // function ( 'delete this' ).
+    
+    lockGuard();
+    
     if(iCounterInitialized)
     {
         iCounter->unhold();
         
         if(iCounter->getHolderCount() == 0)
         {
+            unlockGuard();
+            
             delete this;
+            return;
         }
     }
+    
+    unlockGuard();
 }
 
 int Resource::getCounterValue() const
 {
+    GreResourceAutolock ;
     return iCounter->getHolderCount();
 }
 
 ReferenceCounter* Resource::getReferenceCounter()
 {
+    GreResourceAutolock ;
     return iCounter;
 }
 
 Variant& Resource::getCustomData(const std::string &entry)
 {
+    GreResourceAutolock ;
     return iCustomData[entry];
 }
 
 const Variant& Resource::getCustomData(const std::string &entry) const
 {
+    GreResourceAutolock ;
     return iCustomData.at(entry);
 }
 
 void Resource::setCustomData(const std::string &entry, const Gre::Variant &data)
 {
+    GreResourceAutolock ;
     iCustomData[entry] = data;
 }
 
 const void* Resource::getProperty(const std::string &name) const
 {
+    GreResourceAutolock ;
+    
     if ( name == "iName" )
     {
         return &iName;
@@ -254,6 +293,29 @@ const void* Resource::getProperty(const std::string &name) const
     }
     
     return nullptr;
+}
+
+void Resource::lockGuard() const
+{
+    iMutex.lock();
+}
+
+void Resource::unlockGuard() const
+{
+    iMutex.unlock();
+}
+
+// ---------------------------------------------------------------------------------------------------
+
+ResourceAutolock::ResourceAutolock ( std::recursive_mutex& mutex )
+: iMutexReference( &mutex )
+{
+    iMutexReference->lock();
+}
+
+ResourceAutolock::~ResourceAutolock()
+{
+    iMutexReference->unlock();
 }
 
 GreEndNamespace

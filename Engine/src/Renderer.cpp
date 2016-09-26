@@ -49,7 +49,7 @@ RendererPrivate::RendererPrivate (const std::string& name)
 
 RendererPrivate::~RendererPrivate() noexcept ( false )
 {
-    
+    stop();
 }
 
 void RendererPrivate::drawRenderTarget(const Gre::RenderTarget &rendertarget)
@@ -65,6 +65,8 @@ void RendererPrivate::drawRenderTarget(const Gre::RenderTarget &rendertarget)
     
     else
     {
+        holder->lockGuard();
+        
         if(holder->holdsRenderContext())
         {
             // If RenderTarget has a RenderContext, this means we should leave the last RenderContext
@@ -99,23 +101,36 @@ void RendererPrivate::drawRenderTarget(const Gre::RenderTarget &rendertarget)
                 // Sets the RenderScene to the FrameContext.
                 iFrameContext.RenderedScene = smholder;
                 
+                // We don't need to keep the locking on the RenderTarget's mutex, because next step
+                // has nothing to do with it. So just unlock it and relock it when we need it.
+                
+                holder->unlockGuard();
+                
                 // Now Render the selected RenderScene.
                 drawRenderScene(iFrameContext.RenderedScene);
                 
-                // After rendering the RenderScene, just unbind the RenderContext.
-                iLastRenderContext->unbind();
+                holder->lockGuard();
             }
             
             else
             {
                 // If we don't have any RenderScene to render, abort.
 #ifdef GreIsDebugMode
-                GreDebugPretty() << "No RenderScene selected for RenderTarget '" << holder->getName() << "'." << std::endl;
+               // GreDebugPretty() << "No RenderScene selected for RenderTarget '" << holder->getName() << "'." << std::endl;
 #endif
-                
-                iLastRenderContext->unbind();
-                return;
             }
+            
+            // The RenderScene has been drew to the Buffer, now call the 'RenderTarget::draw' function
+            // to redraw the surface.
+            //
+            // Notes ( 26.09.2016 ) : Normally this function should be avoided. This is the WindowManager's job
+            // to update the rendering surface, not the Renderer. Alternatively we could swap buffers , but forcing
+            // a Surface rendering is surely not the best way to draw our RenderTarget.
+            
+//          holder->draw();
+            
+            // After rendering the RenderScene, just unbind the RenderContext.
+            iLastRenderContext->unbind();
         }
         
         else
@@ -124,8 +139,9 @@ void RendererPrivate::drawRenderTarget(const Gre::RenderTarget &rendertarget)
 #ifdef GreIsDebugMode
             GreDebugPretty() << "No RenderContext selected for RenderTarget '" << holder->getName() << "'." << std::endl;
 #endif
-            return;
         }
+        
+        holder->unlockGuard();
     }
 }
 
@@ -567,16 +583,16 @@ void RendererPrivate::drawIndexBuffer(const HardwareIndexBuffer& ibuf, const Har
     }
 }
 
-HardwareVertexBuffer RendererPrivate::createVertexBuffer()
+HardwareVertexBufferHolder RendererPrivate::createVertexBuffer()
 {
     GreDebugFunctionNotImplemented();
-    return HardwareVertexBuffer::Null;
+    return HardwareVertexBufferHolder ( nullptr );
 }
 
-HardwareIndexBuffer RendererPrivate::createIndexBuffer()
+HardwareIndexBufferHolder RendererPrivate::createIndexBuffer()
 {
     GreDebugFunctionNotImplemented();
-    return HardwareIndexBuffer::Null;
+    return HardwareIndexBufferHolder ( nullptr );
 }
 
 void RendererPrivate::loadMesh(Mesh& mesh, bool deleteCache)
@@ -601,7 +617,7 @@ void RendererPrivate::loadMesh(Mesh& mesh, bool deleteCache)
         
         else
         {
-            HardwareVertexBuffer gpuvbuf = createVertexBufferWithSize(meshholder->getName() + "/HdwVertexBuffer" , softvbuf.getSize());
+            HardwareVertexBufferHolder gpuvbuf = createVertexBufferWithSize(meshholder->getName() + "/HdwVertexBuffer" , softvbuf.getSize());
             
             if ( gpuvbuf.isInvalid() )
             {
@@ -612,8 +628,8 @@ void RendererPrivate::loadMesh(Mesh& mesh, bool deleteCache)
             
             else
             {
-                gpuvbuf.setVertexDescriptor(softvbuf.getVertexDescriptor());
-                gpuvbuf.addData(softvbuf.getData(), softvbuf.getSize());
+                gpuvbuf->setVertexDescriptor(softvbuf.getVertexDescriptor());
+                gpuvbuf->addData(softvbuf.getData(), softvbuf.getSize());
                 meshholder->setVertexBuffer(gpuvbuf);
                 
                 if ( deleteCache )
@@ -630,7 +646,7 @@ void RendererPrivate::loadMesh(Mesh& mesh, bool deleteCache)
         
         if ( !softibuf.isInvalid() )
         {
-            HardwareIndexBuffer gpuibuf = createIndexBuffer();
+            HardwareIndexBufferHolder gpuibuf = createIndexBuffer();
             
             if ( gpuibuf.isInvalid() )
             {
@@ -649,7 +665,7 @@ void RendererPrivate::loadMesh(Mesh& mesh, bool deleteCache)
                 
                 for ( auto batch : softibuf.getIndexBatches() )
                 {
-                    gpuibuf.addIndexBatch(batch);
+                    gpuibuf->addIndexBatch(batch);
                 }
                 
                 meshholder->setIndexBuffer(gpuibuf);
@@ -924,16 +940,96 @@ RenderFramebufferHolder RendererPrivate::createFramebuffer() const
     */
 }
 
-RenderContextHolder RendererPrivate::createRenderContext(const std::string&, const RenderContextInfo&, Renderer)
+RenderContextHolder RendererPrivate::createRenderContext(const std::string &name, const Gre::RenderContextInfo &info)
 {
-    GreDebugFunctionNotImplemented();
-    return RenderContextHolder(nullptr);
+    // Here we just call the private 'iCreateRenderContext()' method, and register the newly created context.
+    
+    RenderContextHolder newctxt = iCreateRenderContext(name, info);
+    
+    if ( !newctxt.isInvalid() )
+    {
+        iRenderContexts.add(newctxt);
+        return newctxt;
+    }
+    
+    return RenderContextHolder ( nullptr );
 }
 
 HardwareVertexBufferHolder RendererPrivate::createVertexBufferWithSize(const std::string &name, size_t sz) const
 {
     // These function is just a helper to use ::iCreateVertexBuffer().
     return iCreateVertexBuffer(name, sz);
+}
+
+void RendererPrivate::clearRenderContexts()
+{
+    iRenderContexts.clear();
+}
+
+void RendererPrivate::registerTarget(const RenderTargetHolder &holder)
+{
+    if ( !holder.isInvalid() )
+    {
+        iTargets.add(holder);
+    }
+}
+
+void RendererPrivate::launch()
+{
+    if ( iLaunchThread.joinable() )
+    {
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "Launch thread for Renderer '" << getName() << "' has already been launched." << std::endl;
+#endif
+        return;
+    }
+    
+    iLaunchThread = std::thread ( [] (RendererPrivate* renderer) {
+        
+        if ( renderer )
+        {
+            while ( !renderer->getLaunchMustStop() )
+            {
+                RenderTargetHolderList& targets = renderer->getRegisteredTargets();
+                
+                if ( !targets.empty() )
+                {
+                    for ( RenderTargetHolder& holder : targets )
+                    {
+                        if ( holder->isAvailableForDrawing() )
+                        {
+                            renderer->drawRenderTarget( RenderTarget(holder) );
+                        }
+                    }
+                }
+            }
+        }
+        
+    } , this );
+}
+
+bool RendererPrivate::getLaunchMustStop() const
+{
+    return iLaunchMustStop;
+}
+
+RenderTargetHolderList& RendererPrivate::getRegisteredTargets()
+{
+    return iTargets;
+}
+
+const RenderTargetHolderList& RendererPrivate::getRegisteredTargets() const
+{
+    return iTargets;
+}
+
+void RendererPrivate::stop()
+{
+    if ( iLaunchThread.joinable() )
+    {
+        iLaunchMustStop = true;
+        iLaunchThread.join();
+    }
 }
 
 // ---------------------------------------------------------------------------------------------------

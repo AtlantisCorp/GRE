@@ -120,6 +120,11 @@ public:
     //////////////////////////////////////////////////////////////////////
     virtual void reset();
     
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Copies given ResourceHolder.
+    //////////////////////////////////////////////////////////////////////
+    ResourceHolder& operator = ( const ResourceHolder& rhs );
+    
 private:
     
     /// @brief The Holded Resource.
@@ -138,7 +143,15 @@ public:
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    SpecializedResourceHolder(Class* resource, ReferenceCounter* counter = nullptr)
+    SpecializedResourceHolder ( Class* resource )
+    : ResourceHolder ( resource )
+    {
+        iClass = resource;
+    }
+    
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    SpecializedResourceHolder(Class* resource, ReferenceCounter* counter)
     : ResourceHolder(resource, counter)
     {
         iClass = resource;
@@ -181,9 +194,8 @@ public:
     //////////////////////////////////////////////////////////////////////
     SpecializedResourceHolder<Class>& operator = (const SpecializedResourceHolder<Class>& rhs)
     {
-        reset();
-        iClass = rhs.iClass;
         ResourceHolder::operator=(rhs);
+        iClass = rhs.iClass;
         return *this;
     }
     

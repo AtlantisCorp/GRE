@@ -27,25 +27,41 @@
     @private
     
     /// @brief NSOpenGLContext normal context.
-    NSOpenGLContext* _openGlContext;
+    NSOpenGLContext* iOpenGlContext;
     
     /// @brief NSOpenGLPixelFormat describe the used PixelFormat.
-    NSOpenGLPixelFormat* _pixelFormat;
+    NSOpenGLPixelFormat* iPixelFormat;
 }
 
+/// @brief Allocates and initialize the NSOpenGLPixelFormat object.
 + (NSOpenGLPixelFormat*) defaultPixelFormat;
+
+/// @brief Retains the pixel format and sets up the notification NSViewGlobalFrameDidChangeNotification.
 - (id) initWithFrame:(NSRect)frameRect pixelFormat:(NSOpenGLPixelFormat*)format;
-- (void) _surfaceNeedsUpdate:(NSNotification*)notification;
 
-- (void) clearGLContext;
-- (void) update;
+/// @brief Changes the 'iOpenGlContext' property.
+- (void) setOpenGlContext: (NSOpenGLContext*) context;
+/// @brief Returns the 'iOpenGlContext' property.
+- (NSOpenGLContext*)openGlContext;
 
-- (void) setPixelFormat:(NSOpenGLPixelFormat*)pixelFormat;
+/// @brief Clears the OpenGl Context.
+- (void) clearGlContext;
+
+/// @brief Changes the 'iPixelFormat' property.
+- (void) setPixelFormat: (NSOpenGLPixelFormat*) pixelformat;
+/// @brief Returns the 'iPixelFormat' property.
 - (NSOpenGLPixelFormat*) pixelFormat;
 
-- (void) setCustomOpenGLContext:(CGLContextObj)cglContext;
-- (void) setOpenGLContext:(NSOpenGLContext*)context;
-- (NSOpenGLContext*)openGLContext;
+/// @brief Calls the update method of the NSOpenGLContext class.
+- (void) update;
+- (void) _surfaceNeedsUpdate: (NSNotification*) notification;
+
+/// @brief Makes sure that the view is locked prior to drawing and that the context is the current one.
+- (void) lockFocus;
+- (void) drawRect:(NSRect)dirtyRect;
+
+/// @brief Detaches the context from the drawable object when the custom view is moved from the window.
+- (void) viewDidMoveToWindow;
 
 @end
 

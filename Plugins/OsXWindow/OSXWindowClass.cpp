@@ -14,6 +14,8 @@ DarwinWindow::DarwinWindow(const std::string & name, int x0, int y0, int wid, in
 , iWindow ( NULL )
 , iHasBeenClosed( false )
 {
+    lockGuard();
+    
     // As soon as possible, we try to create the Window.
     NsCreateWindow(&iWindow, x0, y0, wid, hei);
     
@@ -21,62 +23,76 @@ DarwinWindow::DarwinWindow(const std::string & name, int x0, int y0, int wid, in
     {
         GreDebugPretty() << "Impossible to create Window (Os X Plugin)." << std::endl;
     }
+    else
+    {
+        iClosed = false;
+    }
+    
+    unlockGuard();
 }
 
 DarwinWindow::~DarwinWindow() noexcept (false)
 {
+    lockGuard();
+    
     NsDestroyWindow(&iWindow);
     iWindow = NULL;
+    
+    unlockGuard();
 }
 
 bool DarwinWindow::pollEvent()
 {
     bool ret = WindowPrivate::pollEvent();
     
-    if(!iClosed)
+    if( !iClosed )
     {
-        ret = NsPollEvent();
-        WindowBufEntry* nsWindowEntry = NsGetWindowBufEntry(&iWindow);
-        
-        if(nsWindowEntry)
+        lockGuard();
         {
-            while(nsWindowEntry->keybuf_sz)
+            ret = NsPollEvent();
+            WindowBufEntry* nsWindowEntry = NsGetWindowBufEntry(&iWindow);
+            
+            if( nsWindowEntry )
             {
-                if(nsWindowEntry->keybufs[0].pressed > 0) {
-                    KeyDownEvent e(Key(nsWindowEntry->keybufs[0].key));
-                    sendEvent(e);
-                    nsWindowEntry->keybuf_sz--;
-                } else {
-                    KeyUpEvent e(Key(nsWindowEntry->keybufs[0].key));
-                    sendEvent(e);
-                    nsWindowEntry->keybuf_sz--;
+                while( nsWindowEntry->keybuf_sz )
+                {
+                    if(nsWindowEntry->keybufs[0].pressed > 0) {
+                        KeyDownEvent e(Key(nsWindowEntry->keybufs[0].key));
+                        sendEvent(e);
+                        nsWindowEntry->keybuf_sz--;
+                    } else {
+                        KeyUpEvent e(Key(nsWindowEntry->keybufs[0].key));
+                        sendEvent(e);
+                        nsWindowEntry->keybuf_sz--;
+                    }
                 }
-            }
-            
-            if(nsWindowEntry->sizeChanged)
-            {
-                iSurface.width = nsWindowEntry->newWidth;
-                iSurface.height = nsWindowEntry->newHeight;
-                iSurface.left = nsWindowEntry->newX;
-                iSurface.top = nsWindowEntry->newY;
-                nsWindowEntry->sizeChanged = false;
                 
-                WindowSizedEvent e (Window(this), iSurface);
-                onEvent(e);
+                if( nsWindowEntry->sizeChanged )
+                {
+                    iSurface.width = nsWindowEntry->newWidth;
+                    iSurface.height = nsWindowEntry->newHeight;
+                    iSurface.left = nsWindowEntry->newX;
+                    iSurface.top = nsWindowEntry->newY;
+                    nsWindowEntry->sizeChanged = false;
+                    
+                    WindowSizedEvent e (Window(this), iSurface);
+                    onEvent(e);
+                }
+                
+                iHasBeenClosed = iExposed && nsWindowEntry->closed;
+                iClosed = nsWindowEntry->closed;
+                iExposed = nsWindowEntry->exposed;
+                
+                // We must double-check visibility because i don't find any notification
+                // to indicate Exposure.
+                if(!iExposed)
+                    iExposed = NsWindowIsVisible(&iWindow);
             }
-            
-            iHasBeenClosed = iExposed && nsWindowEntry->closed;
-            iClosed = nsWindowEntry->closed;
-            iExposed = nsWindowEntry->exposed;
-            
-            // We must double-check visibility because i don't find any notification
-            // to indicate Exposure.
-            if(!iExposed)
-                iExposed = NsWindowIsVisible(&iWindow);
         }
-        
-        return ret;
+        unlockGuard();
     }
+    
+//  NsWindowSwapBuffers(&iWindow);
     
     return true || ret;
 }
@@ -88,24 +104,24 @@ bool DarwinWindow::hasBeenClosed() const
 
 void DarwinWindow::setTitle(const std::string& title)
 {
+    lockGuard();
+    
     WindowPrivate::setTitle(title);
     NsSetWindowTitle(&iWindow, title.c_str());
-}
-
-/*
-void DarwinWindow::swapBuffers ()
-{
     
-    NsWindowSwapBuffers(&iWindow);
+    unlockGuard();
 }
- */
 
 void DarwinWindow::bind()
 {
+    lockGuard();
+    
     if( !getRenderContext().isInvalid() )
     {
         getRenderContext()->bind();
     }
+    
+    unlockGuard();
 }
 
 void DarwinWindow::bindFramebuffer()
@@ -115,11 +131,15 @@ void DarwinWindow::bindFramebuffer()
 
 void DarwinWindow::unbind()
 {
+    lockGuard();
+    
     if( !getRenderContext().isInvalid() )
     {
         getRenderContext()->flush();
         getRenderContext()->unbind();
     }
+    
+    unlockGuard();
 }
 
 void DarwinWindow::unbindFramebuffer()
@@ -133,14 +153,116 @@ void DarwinWindow::setRenderContext(const Gre::RenderContext &renderCtxt)
     
     if( !iRenderContext.isInvalid() )
     {
+        lockGuard();
+        
         uintptr_t* _mContext = (uintptr_t*) ( (const CGLContextObj*) iRenderContext->getProperty("CGLContext") );
         // When RenderContext is changed, we must notifiate the CustomWindow
         // for it to change the OpenGlCustomView.
         NsWindowSetRenderContext(&iWindow, *((CGLContextObj*)_mContext));
+        
+        unlockGuard();
     }
 }
 
-// ---------------------------------------------------------------------------------------------------
+void DarwinWindow::draw()
+{
+    if ( iWindow )
+    {
+        lockGuard();
+        
+        NsWindowDisplay(&iWindow);
+        
+        unlockGuard();
+    }
+}
+
+bool DarwinWindow::isAvailableForDrawing() const
+{
+    lockGuard();
+    
+    bool ret = NsWindowPropertyIsVisible ( &iWindow ) && NsWindowPropertyIsOnActiveSpace ( &iWindow );
+    
+    unlockGuard();
+    
+    return ret;
+}
+
+void DarwinWindow::onUpdateEvent(const Gre::UpdateEvent &e)
+{
+    // Poll Event only for this Window.
+    
+    iPollEvent();
+    
+    // When receiving an update Event, we should first call 'Window::onUpdateEvent'. This
+    // should also call 'RenderContext::onUpdateEvent', but the DarwinWindow would not be
+    // updated. So call this later.
+    
+    WindowPrivate::onUpdateEvent(e);
+}
+
+void DarwinWindow::iPollEvent()
+{
+    if(!iClosed)
+    {
+        // First lock the Resource's mutex in order to be sure anyone disturb us.
+        
+        lockGuard();
+        {
+            // Calls the NSPollEvent for this Window object.
+            
+            NsPollEvent();
+//          NsPollEventForWindow(&iWindow);
+            
+            // Treat the Events for this Window.
+            
+            WindowBufEntry* nsWindowEntry = NsGetWindowBufEntry(&iWindow);
+            
+            if(nsWindowEntry)
+            {
+                while(nsWindowEntry->keybuf_sz)
+                {
+                    if(nsWindowEntry->keybufs[0].pressed > 0) {
+                        KeyDownEvent e(Key(nsWindowEntry->keybufs[0].key));
+                        sendEvent(e);
+                        nsWindowEntry->keybuf_sz--;
+                    } else {
+                        KeyUpEvent e(Key(nsWindowEntry->keybufs[0].key));
+                        sendEvent(e);
+                        nsWindowEntry->keybuf_sz--;
+                    }
+                }
+                
+                if(nsWindowEntry->sizeChanged)
+                {
+                    iSurface.width = nsWindowEntry->newWidth;
+                    iSurface.height = nsWindowEntry->newHeight;
+                    iSurface.left = nsWindowEntry->newX;
+                    iSurface.top = nsWindowEntry->newY;
+                    nsWindowEntry->sizeChanged = false;
+                    
+                    WindowSizedEvent e (Window(this), iSurface);
+                    onEvent(e);
+                }
+                
+                iHasBeenClosed = iExposed && nsWindowEntry->closed;
+                iClosed = nsWindowEntry->closed;
+                iExposed = nsWindowEntry->exposed;
+                
+                // We must double-check visibility because i don't find any notification
+                // to indicate Exposure.
+                if(!iExposed)
+                    iExposed = NsWindowIsVisible(&iWindow);
+            }
+        }
+        
+        // Unlock Resource's mutex.
+        
+        unlockGuard();
+        
+    }
+}
+
+// ---------------------------------------------------------------------------------------
 
 DarwinWindowLoader::DarwinWindowLoader()
 {

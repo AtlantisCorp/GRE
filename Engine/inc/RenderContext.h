@@ -42,6 +42,23 @@ GreBeginNamespace
 class WindowSizedEvent;
 
 //////////////////////////////////////////////////////////////////////
+/// @brief List the Buffer's bits the RenderContext can clear between
+/// each render.
+/// @see https://www.opengl.org/sdk/docs/man2/xhtml/glClear.xml for
+/// meaning of those values. Notes those values are from OpenGl.
+//////////////////////////////////////////////////////////////////////
+enum class RenderContextClearBuffer
+{
+    ColorBufferBit ,
+    DepthBufferBit ,
+    AccumBufferBit ,
+    StencilBufferBit
+};
+
+/// @brief Array of RenderContextClearBuffer.
+typedef std::vector < RenderContextClearBuffer > RenderContextClearBuffers;
+
+//////////////////////////////////////////////////////////////////////
 /// @brief Defines a Context which, when binded, enables the Renderer
 /// to draw on it.
 ///
@@ -87,18 +104,18 @@ public:
     //////////////////////////////////////////////////////////////////////
     /// @brief Bind the RenderContext.
     //////////////////////////////////////////////////////////////////////
-    virtual void bind();
+    virtual void bind() = 0;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Unbind this Object (make it unusable).
     //////////////////////////////////////////////////////////////////////
-    virtual void unbind();
+    virtual void unbind() = 0;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Send every operations remaining to Hardware, and generally
     /// swap buffers.
     //////////////////////////////////////////////////////////////////////
-    virtual void flush();
+    virtual void flush() = 0;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Adds a Viewport in this Context.
@@ -138,6 +155,18 @@ public:
     /// @brief Treats Events then calls Actions.
     //////////////////////////////////////////////////////////////////////
     virtual void onEvent(const Event& e);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Sets the buffers the RenderContext should clear at each
+    /// loop. Buffers available for clearing are listed in 'RenderContextClearBuffer'
+    /// enum. Notes one instance of any RenderContextClearBuffer should be listed.
+    //////////////////////////////////////////////////////////////////////
+    virtual void setClearBuffers ( const RenderContextClearBuffers& clearbuffs ) = 0;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Sets a Color used when clearing the ColorBufferBit.
+    //////////////////////////////////////////////////////////////////////
+    virtual void setClearColor ( const Color& color ) = 0;
     
 protected:
     

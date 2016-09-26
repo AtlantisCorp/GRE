@@ -3,7 +3,7 @@
 
 //////////////////////////////////////////////////////////////////////
 //
-// Example2 - Simple Program for Gre 0.0.16
+// Example2 - Simple Program for Gre 0.0.17
 //
 // Shows how to initialize an Application using GRE, and using the
 // ResourceManager to see if any Window loader is installed.
@@ -45,6 +45,40 @@ int main ( int argc, char* argv[] )
             
             else
             {
+                bool typing = false;
+                std::string title;
+                // float color = 0;
+                KeyboardHolder kbd = KeyboardHolder ( new KeyboardPrivate("MyKBD") );
+                
+                if ( kbd.isInvalid() )
+                {
+                    GreDebugPretty() << "Can't initialize Keyboard." << std::endl;
+                }
+                else
+                {
+                    win.addListener( Keyboard(kbd) );
+                    kbd->addAction(EventType::KeyUp, [&] (const Event& e) {
+                        const KeyUpEvent& kue = e.to<KeyUpEvent>();
+                        
+                        if ( kue.key == Key::Esc && !typing ) {
+                            typing = true;
+                            title.clear();
+                            GreDebugPretty() << "Please begin typing new title." << std::endl;
+                        }
+                        
+                        else if ( kue.key == Key::Esc && typing ) {
+                            typing = false;
+                            GreDebugPretty() << "New title : " << title << std::endl;
+                            win.setTitle(title);
+                        }
+                        
+                        else if ( typing ) {
+                            title.push_back( KeyToChar(kue.key) );
+                        }
+                        
+                    });
+                }
+                
                 RendererManager& rmanager = ResourceManager::Get().getRendererManager();
                 
                 if ( rmanager.getRendererLoaderFactory().getLoaders().empty() )
@@ -63,9 +97,35 @@ int main ( int argc, char* argv[] )
                     
                     else
                     {
+                        WindowHolder wholder = win.lock();
                         RendererHolder rholder = renderer.lock();
+                        
+                        RenderContextInfo ctxtinfo;
+                        RenderContextHolder rctxt = rholder->createRenderContext("myctxt", ctxtinfo);
+                        
+                        rctxt->setClearColor( Color(1.0f, 0.4f, 0.4f, 1.0f) );
+                        RenderContextClearBuffers bufs;
+                        bufs.push_back ( RenderContextClearBuffer::ColorBufferBit );
+                        bufs.push_back ( RenderContextClearBuffer::DepthBufferBit );
+                        rctxt->setClearBuffers( bufs );
+                        
+                        if ( rctxt.isInvalid() )
+                        {
+                            GreDebugPretty() << "RenderContext is invalid." << std::endl;
+                        }
+                        
+                        else
+                        {
+                            wholder->setRenderContext( RenderContext(rctxt) );
+                        }
+                        
+                        rholder->registerTarget( RenderTargetHolder(wholder.get()) );
+                        rholder->launch();
                     }
                 }
+                
+                ResourceManager::Get().setCloseBehaviour(CloseBehaviour::AllWindowClosed);
+                ResourceManager::Get().loop();
             }
         }
         

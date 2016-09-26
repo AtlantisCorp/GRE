@@ -222,14 +222,16 @@ public:
     virtual HardwareProgram createHardwareProgram(const std::string& name, const std::string& vertexShaderPath, const std::string& fragmentShaderPath);
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Creates a VertexBuffer using the HardwareProgramManager.
+    /// @brief Creates an empty HardwareVertexBuffer configured to run on
+    /// user GPU.
     //////////////////////////////////////////////////////////////////////
-    virtual HardwareVertexBuffer createVertexBuffer();
+    virtual HardwareVertexBufferHolder createVertexBuffer();
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Creates an IndexBuffer using the HardwareProgramManager.
+    /// @brief Creates an empty HardwareIndexBuffer configured to run on
+    /// user GPU.
     //////////////////////////////////////////////////////////////////////
-    virtual HardwareIndexBuffer createIndexBuffer();
+    virtual HardwareIndexBufferHolder createIndexBuffer();
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Loads a Mesh to GPU memory, organize its Vertex Buffers and
@@ -278,13 +280,57 @@ public:
     //////////////////////////////////////////////////////////////////////
     /// @brief Creates a RenderContext using given Info.
     //////////////////////////////////////////////////////////////////////
-    virtual RenderContextHolder createRenderContext(const std::string& name, const RenderContextInfo& info, Renderer caller);
+    virtual RenderContextHolder createRenderContext ( const std::string& name , const RenderContextInfo& info );
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Creates a HardwareVertexBuffer of given size, or
     /// 'HardwareVertexBufferHolder(nullptr)' if invalid.
     //////////////////////////////////////////////////////////////////////
     virtual HardwareVertexBufferHolder createVertexBufferWithSize ( const std::string& name , size_t sz ) const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Clears every RenderContext in this Renderer.
+    //////////////////////////////////////////////////////////////////////
+    virtual void clearRenderContexts();
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Adds a RenderTarget for rendering.
+    //////////////////////////////////////////////////////////////////////
+    virtual void registerTarget ( const RenderTargetHolder& holder );
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Launch the Drawing Thread for this Renderer.
+    /// The Drawing Thread draws every registered RenderTarget.
+    /// Considering if the drew RenderTarget has a specific RenderContext,
+    /// this RenderTarget can be rendered using a specific thread. Every
+    /// RenderTarget that do not have a specific thread ( drawing in
+    /// global context ) are drew in the launch thread loop.
+    ///
+    /// @note At the end of the loop, every launched thread are joined before
+    /// entering a new loop.
+    ///
+    //////////////////////////////////////////////////////////////////////
+    virtual void launch();
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the 'iLaunchMustStop' boolean.
+    //////////////////////////////////////////////////////////////////////
+    virtual bool getLaunchMustStop() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns 'iTargets' property.
+    //////////////////////////////////////////////////////////////////////
+    virtual RenderTargetHolderList& getRegisteredTargets();
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns 'iTargets' property.
+    //////////////////////////////////////////////////////////////////////
+    virtual const RenderTargetHolderList& getRegisteredTargets() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Attempts to join the launch thread.
+    //////////////////////////////////////////////////////////////////////
+    virtual void stop();
     
 protected:
     
@@ -299,10 +345,18 @@ protected:
     //////////////////////////////////////////////////////////////////////
     virtual TextureHolder iCreateTexturePrivate ( const std::string& name ) const = 0;
     
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Creates a RenderContext object.
+    //////////////////////////////////////////////////////////////////////
+    virtual RenderContextHolder iCreateRenderContext ( const std::string& name , const RenderContextInfo& info ) const = 0;
+    
 protected:
     
     /// @brief The Last binded / used RenderContext.
     RenderContextHolder iLastRenderContext;
+    
+    /// @brief A list of RenderContextHolder in order to manage them.
+    RenderContextHolderList iRenderContexts;
     
     /// @brief A structure representing a FrameContext.
     typedef struct _framecontext {
@@ -335,6 +389,15 @@ protected:
     
     /// @brief The Texture Manager.
     TextureManager iTextureManager;
+    
+    /// @brief Holds the RenderTarget this Renderer should draw.
+    RenderTargetHolderList iTargets;
+    
+    /// @brief 'true' if the launch loop should stop.
+    bool iLaunchMustStop;
+    
+    /// @brief The Launch thread.
+    std::thread iLaunchThread;
 };
 
 /// @brief SpecializedResourceHolder for RendererPrivate.

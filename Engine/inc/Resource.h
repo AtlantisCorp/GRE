@@ -156,6 +156,7 @@ protected:
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Called when receiving Update Event.
+    /// [thread-safe]
     ///
     /// The UpdateEvent can be emitted when Window objects themself, using
     /// ResourceManager::loop() or Window::update().
@@ -261,6 +262,16 @@ public:
     //////////////////////////////////////////////////////////////////////
     virtual const void* getProperty ( const std::string& name ) const;
     
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Locks the internal mutex to prevent multithreading.
+    //////////////////////////////////////////////////////////////////////
+    void lockGuard() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Unlocks the internal mutex.
+    //////////////////////////////////////////////////////////////////////
+    void unlockGuard() const;
+    
 private:
     
     /// @brief Resource's Name.
@@ -290,7 +301,38 @@ private:
     /// @brief Holds Variant Data for custom use, or platform specific use.
     std::map<std::string, Variant> iCustomData;
     
+protected:
+    
+    /// @brief A Mutex to prevent this Resource to conflict when multithreaded.
+    mutable std::recursive_mutex iMutex;
 };
+
+//////////////////////////////////////////////////////////////////////
+/// @brief Simple Autolocker Class.
+//////////////////////////////////////////////////////////////////////
+class ResourceAutolock
+{
+public:
+    
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    ResourceAutolock ( std::recursive_mutex& mutex );
+    
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    ~ResourceAutolock ();
+    
+private:
+    
+    /// @brief Reference to the Mutex we must lock and unlock.
+    std::recursive_mutex* iMutexReference;
+};
+
+/// @brief Use this macro inside a Resource's subclass to generate an auto-mutex locker.
+/// The ResourceAutolock objects lock the mutex until destruction of this object. Use the
+/// brackets to make locked blocks.
+#define GreResourceAutolock \
+    Gre::ResourceAutolock __autolock ( iMutex ) 
 
 GreEndNamespace
 

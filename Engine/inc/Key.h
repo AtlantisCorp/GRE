@@ -32,5 +32,8 @@ enum class Key
 #endif
 };
 
+/// @brief Translate given Key to char.
+char KeyToChar ( const Key& key );
+
 GreEndNamespace
 #endif

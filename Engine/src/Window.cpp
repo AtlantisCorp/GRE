@@ -77,23 +77,7 @@ Surface WindowPrivate::getSurface() const
 
 void WindowPrivate::update()
 {
-    // Here we send an update event to listeners.
-    if(iLastUpdate != iLastUpdate.min())
-    {
-        UpdateEvent ue; UpdateTime now = UpdateChrono::now();
-        ue.elapsedTime = std::chrono::duration_cast<std::chrono::nanoseconds>(now - iLastUpdate);
-        
-        sendEvent(ue);
-        
-        iLastUpdate = now;
-    }
-    else
-    {
-        iLastUpdate = UpdateChrono::now();
-    }
     
-    // Then, we must call every LoopBehaviour functions.
-    iLoopBehaviours.call();
 }
 
 bool WindowPrivate::isExposed() const
@@ -115,7 +99,7 @@ void WindowPrivate::setRenderContext(const RenderContext &renderCtxt)
     }
     
     iRenderContext = renderCtxt.lock();
-    addListener(iRenderContext);
+    addListener( renderCtxt );
 }
 
 RenderContextHolder WindowPrivate::getRenderContext()
@@ -141,6 +125,46 @@ void WindowPrivate::clearLoopBehaviour()
 bool WindowPrivate::hasBeenClosed() const
 {
     return true;
+}
+
+void WindowPrivate::onUpdateEvent(const Gre::UpdateEvent &e)
+{
+    RenderTargetPrivate::onUpdateEvent(e);
+    
+    // Should be overriden by subclass in order to treat Window Events, Key Events,
+    // and Window's Frame update. The RenderContext listens to this Class and should have
+    // 'onUpdateEvent' called.
+    
+    iUpdateTimerAndBehaviours();
+}
+
+void WindowPrivate::iUpdateTimerAndBehaviours()
+{
+    // We are modifying the 'iLastUpdate' property, so lock the Resource's mutex.
+    
+    lockGuard();
+    {
+//      Here we send an update event to listeners.
+        if( iLastUpdate != iLastUpdate.min() )
+        {
+            UpdateEvent ue; UpdateTime now = UpdateChrono::now();
+            ue.elapsedTime = std::chrono::duration_cast<std::chrono::nanoseconds>(now - iLastUpdate);
+            
+//          'sendEvent' will be called when calling 'onEvent' from this object.
+//          sendEvent(ue);
+            
+            iLastUpdate = now;
+            
+        }
+        else
+        {
+            iLastUpdate = UpdateChrono::now();
+        }
+        
+        // Then, we must call every LoopBehaviour functions.
+        iLoopBehaviours.call();
+    }
+    unlockGuard();
 }
 
 // ---------------------------------------------------------------------------------------------------

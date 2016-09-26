@@ -25,7 +25,7 @@
         _nsGlView = nil;
     }
     
-    _nsGlView = [glView retain];
+    _nsGlView = glView;
     [self setContentView:_nsGlView];
     [self makeFirstResponder:_nsGlView];
 }
@@ -48,6 +48,7 @@
 - (id) initWithContentRect: (NSRect)rect styleMask:(NSUInteger)wndStyle backing:(NSBackingStoreType)bufferingType defer:(BOOL)deferFlg
 {
     self = [super initWithContentRect:rect styleMask:wndStyle backing:bufferingType defer:deferFlg];
+    _nsGlView = nil;
     
     [[NSNotificationCenter defaultCenter]
      addObserver:self
@@ -182,6 +183,19 @@
     }
     
     [super keyUp:theEvent];
+}
+
+- (void) update
+{
+    if ( [self isOnActiveSpace] && [self isVisible] )
+    {
+        if ( _nsGlView != nil )
+        {
+            [_nsGlView update];
+        }
+        
+        [super update];
+    }
 }
 
 @end

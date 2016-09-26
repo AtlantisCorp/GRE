@@ -1,11 +1,11 @@
 //////////////////////////////////////////////////////////////////////
 //
-//  PluginMain.cpp
+//  DarwinGlHeader.cpp
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
 //  Copyright (c) 2015 - 2016 Luk2010
-//  Created on 07/11/2015.
+//  Created on 04/09/2016.
 //
 //////////////////////////////////////////////////////////////////////
 /*
@@ -30,27 +30,13 @@
  -----------------------------------------------------------------------------
  */
 
-#include "OSXWindow.h"
-#include "OSXImage.h"
+#include "DarwinGlHeader.h"
 
-WindowBufEntry nsWindowBufs [WINDOW_MAX];
-
-extern "C" DLL_PUBLIC void* GetPluginName (void)
+namespace DarwinGl
 {
-    return (void*) "Darwin OS Window system";
-}
-
-extern "C" DLL_PUBLIC void StartPlugin (void)
-{
-    NsLoadPluginApp();
-    
-    ResourceManager::Get().getWindowManager().getWindowLoaderFactory().registers( "DarwinWindowLoader", new DarwinWindowLoader() );
-//  ResourceManager::Get().getImageLoaderFactory().registers("OSXImage", new OSXImageLoader);
-    
-    GreDebugPretty() << (const char*) GetPluginName() << " installed." << std::endl;
-}
-
-extern "C" DLL_PUBLIC void StopPlugin (void)
-{
-    
+    bool InitializeOpenGl ()
+    {
+        // Considering there is no need to load a dynamic library or else, return always true.
+        return true;
+    }
 }

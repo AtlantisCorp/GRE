@@ -120,6 +120,26 @@ void RenderTargetPrivate::onRenderFinished() const
     iNeedsDrawing = false;
 }
 
+bool RenderTargetPrivate::isAvailableForDrawing() const
+{
+    return true;
+}
+
+void RenderTargetPrivate::onUpdateEvent(const Gre::UpdateEvent &e)
+{
+    Resource::onUpdateEvent(e);
+}
+
+void RenderTargetPrivate::onKeyUpEvent(const Gre::KeyUpEvent &e)
+{
+    Resource::onKeyUpEvent(e);
+}
+
+void RenderTargetPrivate::onKeyDownEvent(const Gre::KeyDownEvent &e)
+{
+    Resource::onKeyDownEvent(e);
+}
+
 // ---------------------------------------------------------------------------------------------------
 
 RenderTarget::RenderTarget(const RenderTargetPrivate* pointer)

@@ -108,10 +108,10 @@ public:
 private:
     
     /// @brief Stores Holder's count. When it reach 0, the Object must be deleted.
-    std::atomic<int> iHolderCount;
+    int iHolderCount;
     
     /// @brief Stores User's + Holder's count. When it reach 0, this Counter must be deleted.
-    std::atomic<int> iUserCount;
+    int iUserCount;
 };
 
 GreEndNamespace

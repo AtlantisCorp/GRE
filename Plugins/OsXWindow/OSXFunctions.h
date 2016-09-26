@@ -162,7 +162,22 @@ extern "C" DLL_PUBLIC void NsWindowSetVertSync(CFTypeRef* nsWindow, bool arg);
 /// @brief Changes the RenderContext from the Window.
 extern "C" DLL_PUBLIC void NsWindowSetRenderContext(CFTypeRef* nsWindow, CGLContextObj ctxt);
 
-// ----------------------------------------------------------------------------------------------------------
+/// @brief Updates given Window.
+extern "C" DLL_PUBLIC void NsPollEventForWindow ( CFTypeRef* window );
+
+/// @brief Replaces the NSWindow::setNeedsDisplay function.
+extern "C" DLL_PUBLIC void NsWindowSetNeedsDisplay ( CFTypeRef* window , bool value );
+
+/// @brief Calls NSWindow::display function.
+extern "C" DLL_PUBLIC void NsWindowDisplay ( CFTypeRef* window );
+
+/// @brief Calls [window isVisible] .
+extern "C" DLL_PUBLIC bool NsWindowPropertyIsVisible ( const CFTypeRef* window );
+
+/// @brief Calls [window isOnActiveSpace] .
+extern "C" DLL_PUBLIC bool NsWindowPropertyIsOnActiveSpace ( const CFTypeRef* window );
+
+// ---------------------------------------------------------------------------------------
 
 // OSXImage API 1
 

@@ -79,6 +79,9 @@
 /// @brief Defines this Macro if you do not want any deprecated features.
 // #define GreWithoutDeprecatedFunctions
 
+/// @brief Defines this if you want extra care with Resource objects.
+// #define GreExtraResourceHolder
+
 // Platforms headers
 
 #   include <iostream>
@@ -171,7 +174,7 @@ GreBeginNamespace
 
 #define GreVersionMajor 0             ///< @brief GRE Major version.
 #define GreVersionMinor 0             ///< @brief GRE Minor version.
-#define GreVersionBuild 16            ///< @brief GRE Build number.
+#define GreVersionBuild 17            ///< @brief GRE Build number.
 
 /// @brief Defines the Version structure.
 typedef struct Version
@@ -186,7 +189,7 @@ DLL_PUBLIC Version GetLibVersion ();
 
 /// @brief Debug using an intro (should use __COMPACT_PRETTY_FUNCTION__ macro) and the body message.
 DLL_PUBLIC std::ostream& GreDebug(const std::string& func);
-#define GreDebugPretty() GreDebug( __COMPACT_PRETTY_FUNCTION__ )
+#define GreDebugPretty() Gre::GreDebug( __COMPACT_PRETTY_FUNCTION__ )
 
 #define _GreDebugNotImplemented( message , arg ) \
     static std::string __message##__arg = std::string( message ); \
