@@ -27,3 +27,15 @@ The Engine is completly written in C++11. You, obviously, need a compiler that c
 - C++11 Compiler,
 - std library,
 - Dynamic Library loader.
+
+### Directory structure 
+
+- Engine   : GRE sources files .
+- Plugins  : Plugins sources files .
+- Example  : Examples sources files .
+- Projects : Deprecated projects files for some IDE. This directory should not be used as CMakeFiles are now present.
+- Sdk      : Sdk files . 
+    - Resources : Resources files , like shaders , models , ...
+    - Plugins : Every Plugins should be in this directory.
+
+Examples and Engine library goes to Sdk/ directory. Plugins builds to Sdk/Plugins directory. CMakeFiles are used to generate the build system. 

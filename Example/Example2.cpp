@@ -1,4 +1,4 @@
-#define GreExample2
+// #define GreExample2
 #ifdef GreExample2
 
 //////////////////////////////////////////////////////////////////////
@@ -60,20 +60,20 @@ int main ( int argc, char* argv[] )
                     kbd->addAction(EventType::KeyUp, [&] (const Event& e) {
                         const KeyUpEvent& kue = e.to<KeyUpEvent>();
                         
-                        if ( kue.key == Key::Esc && !typing ) {
+                        if ( kue.iKey == Key::Escape && !typing ) {
                             typing = true;
                             title.clear();
                             GreDebugPretty() << "Please begin typing new title." << std::endl;
                         }
                         
-                        else if ( kue.key == Key::Esc && typing ) {
+                        else if ( kue.iKey == Key::Escape && typing ) {
                             typing = false;
                             GreDebugPretty() << "New title : " << title << std::endl;
                             win.setTitle(title);
                         }
                         
                         else if ( typing ) {
-                            title.push_back( KeyToChar(kue.key) );
+                            title.push_back( KeyToChar(kue.iKey) );
                         }
                         
                     });
@@ -100,6 +100,9 @@ int main ( int argc, char* argv[] )
                         WindowHolder wholder = win.lock();
                         RendererHolder rholder = renderer.lock();
                         
+                        // Set the 'RendererFeature::LoadDefaultProgram' , for test only.
+                        rholder->setFeature(RendererFeature::LoadDefaultProgram);
+                        
                         RenderContextInfo ctxtinfo;
                         RenderContextHolder rctxt = rholder->createRenderContext("myctxt", ctxtinfo);
                         
@@ -117,6 +120,36 @@ int main ( int argc, char* argv[] )
                         else
                         {
                             wholder->setRenderContext( RenderContext(rctxt) );
+                        }
+                        
+                        // We try to load a Wavefront OBJ model.
+                        
+                        Mesh mycube = ResourceManager::Get().getMeshManager().load("Cube1", "Resources/obj/Cube.obj");
+                        
+                        if ( mycube.isInvalid() )
+                        {
+                            GreDebugPretty() << "'mycube' is invalid." << std::endl;
+                        }
+                        
+                        // Try to load a RenderScene .
+                        
+                        RenderScene scene = ResourceManager::Get().getRenderSceneManager().load ( "CubeScene" );
+                        
+                        if ( scene.isInvalid() )
+                        {
+                            GreDebugPretty() << "'scene' is invalid." << std::endl;
+                        }
+                        
+                        else
+                        {
+                            RenderSceneHolder sceneholder = scene.lock();
+                            
+                            RenderNodeHolder node = sceneholder->createNodeWithName( "CubeNode" );
+                            node->translate( Vector3(0.0f, 0.0f, 1.0f) );
+                            node->setMesh(mycube);
+                            sceneholder->addNode(node);
+                            
+                            wholder->selectScene(scene);
                         }
                         
                         rholder->registerTarget( RenderTargetHolder(wholder.get()) );

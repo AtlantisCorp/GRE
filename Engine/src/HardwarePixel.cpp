@@ -44,7 +44,25 @@ HardwarePixelFormatDescriptor::HardwarePixelFormatDescriptor()
 
 HardwarePixelFormatDescriptorManager::HardwarePixelFormatDescriptorManager()
 {
+    // Register Core HardwarePixelFormat .
     
+    HardwarePixelFormatDescriptor s1;
+    s1.iFormat = HardwarePixelFormat::RGBAShort;
+    s1.iSize = sizeof ( short );
+    s1.iName = "GL_SHORT GL_RGBA";
+    registerDescriptor(s1);
+    
+    HardwarePixelFormatDescriptor s2;
+    s2.iFormat = HardwarePixelFormat::RGBAInt;
+    s2.iSize = sizeof ( int );
+    s2.iName = "GL_INT GL_RGBA";
+    registerDescriptor(s2);
+    
+    HardwarePixelFormatDescriptor s3;
+    s3.iFormat = HardwarePixelFormat::RGBAFloat;
+    s3.iSize = sizeof ( float );
+    s3.iName = "GL_FLOAT GL_RGBA";
+    registerDescriptor(s3);
 }
 
 HardwarePixelFormatDescriptorManager::~HardwarePixelFormatDescriptorManager()

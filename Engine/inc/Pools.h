@@ -59,15 +59,16 @@ enum class Pools
 /// system. You can select the right pool using this macro.
 /// @note You must set every subclasses as Pooled too, in order
 /// to correctly overwrite the new/delete operators.
-#define POOLED(pooltype) \
-void* operator new (size_t sz) { \
-if(Pool< pooltype > ::Get().canAttach(sz) == false) throw std::bad_alloc(); \
-void* ptr = malloc (sz) ; \
-Pool< pooltype > :: Get().attach(ptr, sz); \
-return ptr; } \
-void  operator delete (void* p) noexcept { \
-if(p) free (p); \
-Pool< pooltype > :: Get().detach(p); }
+#define POOLED(pooltype)                                                                    \
+    void* operator new (size_t sz) {                                                        \
+        if( Gre:: Pool< pooltype > ::Get().canAttach(sz) == false) throw std::bad_alloc();  \
+        void* ptr = malloc (sz) ;                                                           \
+        Gre:: Pool< pooltype > :: Get().attach(ptr, sz);                                    \
+    return ptr; }                                                                           \
+                                                                                            \
+    void  operator delete (void* p) noexcept {                                              \
+        if(p) free (p);                                                                     \
+        Gre:: Pool< pooltype > :: Get().detach(p); }
 
 #else
 

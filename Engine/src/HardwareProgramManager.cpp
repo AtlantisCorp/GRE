@@ -48,7 +48,7 @@ HardwareProgramManagerPrivate::~HardwareProgramManagerPrivate()
 
 HardwareShader HardwareProgramManagerPrivate::loadShader(const ShaderType& stype, const std::string &name, const std::string &filepath)
 {
-    return HardwareShader::Null;
+    return HardwareShader ( loadShaderHolder(stype, name, filepath) );
 }
 
 HardwareShader HardwareProgramManagerPrivate::getShaderByName(const std::string &name)
@@ -233,6 +233,8 @@ HardwareProgram HardwareProgramManagerPrivate::createHardwareProgramFromFiles(co
             return HardwareProgram ( nullptr );
         }
         
+        vshader->compile();
+        
         // Try to load Fragment shader.
         
         HardwareShaderHolder fshader = loadShaderHolder(ShaderType::Fragment, name + "/fragmentshader", fragmentshaderpath);
@@ -245,6 +247,8 @@ HardwareProgram HardwareProgramManagerPrivate::createHardwareProgramFromFiles(co
             return HardwareProgram ( nullptr );
         }
         
+        fshader->compile();
+        
         // Create the HardwareProgram.
         
         HardwareProgramHolder program = iCreateHardwareProgram(name, vshader, fshader);
@@ -256,6 +260,8 @@ HardwareProgram HardwareProgramManagerPrivate::createHardwareProgramFromFiles(co
 #endif
             return HardwareProgram ( nullptr );
         }
+        
+        program->finalize();
         
         // Load the HardwareProgram to the database.
         
@@ -347,6 +353,11 @@ HardwareShaderHolder HardwareProgramManagerPrivate::loadShaderHolder(const Gre::
 #endif
         return HardwareShaderHolder ( nullptr );
     }
+}
+
+const HardwareProgramHolder HardwareProgramManagerPrivate::getDefaultProgram() const
+{
+    return getProgram("Default").lock();
 }
 
 HardwareProgram HardwareProgramManagerPrivate::getProgram(const std::string &name)

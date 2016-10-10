@@ -36,6 +36,7 @@
 #include "RenderContextInfo.h"
 #include "Resource.h"
 #include "Viewport.h"
+#include "FrameBuffer.h"
 
 GreBeginNamespace
 
@@ -104,12 +105,12 @@ public:
     //////////////////////////////////////////////////////////////////////
     /// @brief Bind the RenderContext.
     //////////////////////////////////////////////////////////////////////
-    virtual void bind() = 0;
+    virtual void bind() const = 0;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Unbind this Object (make it unusable).
     //////////////////////////////////////////////////////////////////////
-    virtual void unbind() = 0;
+    virtual void unbind() const = 0;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Send every operations remaining to Hardware, and generally
@@ -168,7 +169,24 @@ public:
     //////////////////////////////////////////////////////////////////////
     virtual void setClearColor ( const Color& color ) = 0;
     
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Creates a new RenderFramebuffer for this RenderContext. Also
+    /// appends this RenderFramebuffer to the RenderFramebuffer's list.
+    //////////////////////////////////////////////////////////////////////
+    virtual RenderFramebufferHolder createFramebuffer ( const std::string& name = std::string() ) ;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns a list of RenderFramebuffers. This list is populated
+    /// with newly-created RenderFramebuffer if its size is not big enough.
+    //////////////////////////////////////////////////////////////////////
+    virtual RenderFramebufferHolderList getFramebuffers ( int sz ) ;
+    
 protected:
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Internal method that creates a RenderFramebuffer.
+    //////////////////////////////////////////////////////////////////////
+    virtual RenderFramebufferHolder iCreateFramebuffer ( const std::string& name ) const = 0;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Called when the attached Window changed its size.
@@ -181,12 +199,15 @@ protected:
     RenderContextInfo iContextInfo;
     
     /// @brief True if this Context is currently binded.
-    bool iIsBinded;
+    mutable bool iIsBinded;
     
     /// @brief Holds the Viewport objects.
     /// Those objects should be updated when the Window object changes its size,
     /// using Listener/Emitter system to handle EventType::WindowSizeChanged.
     ViewportList iViewports;
+    
+    /// @brief Holds every RenderFramebuffer created for this RenderContext.
+    RenderFramebufferHolderList iFramebuffers;
 };
 
 /// @brief SpecializedResourceHolder for RenderContext.

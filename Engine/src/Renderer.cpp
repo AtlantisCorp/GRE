@@ -55,6 +55,7 @@ RendererPrivate::~RendererPrivate() noexcept ( false )
 void RendererPrivate::drawRenderTarget(const Gre::RenderTarget &rendertarget)
 {
     RenderTargetHolder holder = rendertarget.lock();
+    GreResourceAutolock ;
    
     if( !holder )
     {
@@ -129,7 +130,8 @@ void RendererPrivate::drawRenderTarget(const Gre::RenderTarget &rendertarget)
             
 //          holder->draw();
             
-            // After rendering the RenderScene, just unbind the RenderContext.
+            // After rendering the RenderScene, just unbind the RenderContext and also swap buffers.
+            iLastRenderContext->flush();
             iLastRenderContext->unbind();
         }
         
@@ -161,7 +163,11 @@ void RendererPrivate::drawRenderScene(const Gre::RenderScene &scenemanager)
         }
         
         // We have to draw every Pass objects. First, prepare the Framebuffer objects.
-        RenderFramebufferHolderList fbolist = getFramebuffers((int)passlist.size());
+        // As the RenderFramebuffer objects should not be shared between RenderContext , we have to rely on
+        // the RenderContext object to create RenderFramebuffer.
+        
+        // RenderFramebufferHolderList fbolist = getFramebuffers((int)passlist.size());
+        RenderFramebufferHolderList fbolist = iLastRenderContext->getFramebuffers ( (int) passlist.size() );
         
         if( fbolist.size() == 0 )
         {
@@ -172,7 +178,18 @@ void RendererPrivate::drawRenderScene(const Gre::RenderScene &scenemanager)
         }
         
         // TODO : Handle multiple viewports. For now we only use the default viewport from the RenderContext.
+        // We also check the Viewport's size. If it is 0 , we can't draw it ^^ .
+        
         Viewport view = iLastRenderContext->getDefaultViewport();
+        
+        if ( view.getSurface().width == 0 || view.getSurface().height == 0 )
+        {
+#ifdef GreIsDebugMode
+            GreDebugPretty() << "Invalid Viewport Surface '" << view.getName() << "'." << std::endl;
+#endif
+            return;
+        }
+        
         iFrameContext.RenderedViewport = view;
         
         // Set the FBO's size to those from the Pass object, in percent. (As default value is '1.0f', one not
@@ -189,9 +206,9 @@ void RendererPrivate::drawRenderScene(const Gre::RenderScene &scenemanager)
         {
             if( fbo )
             {
-                if( fbo->getAttachementSurface(RenderFramebufferAttachement::Color) != view.getSurface() )
+                if( fbo->getAttachementSurface(RenderFramebufferAttachement::Color0) != view.getSurface() )
                 {
-                    TextureHolder texholder = createEmptyTexture(view.getSurface().height, view.getSurface().width);
+                    TextureHolder texholder = createEmptyTexture(view.getSurface().width, view.getSurface().height);
                     
                     if( !texholder )
                     {
@@ -201,7 +218,7 @@ void RendererPrivate::drawRenderScene(const Gre::RenderScene &scenemanager)
                         return;
                     }
                     
-                    fbo->setAttachement(RenderFramebufferAttachement::Color, texholder);
+                    fbo->setAttachement(RenderFramebufferAttachement::Color0, texholder);
                 }
             }
         }
@@ -266,6 +283,52 @@ void RendererPrivate::drawPassWithFramebuffer(const PassHolder& passholder, Rend
     
     // In order to set Shaders, we must check that this one has a correct location output (at least 0).
     HardwareProgramHolder program = passholder->getHardwareProgram().lock();
+    
+    if ( program.isInvalid() )
+    {
+        // No HardwareProgram has been set by either the Pass object or the user. So , we have to see the
+        // 'RendererFeature::LoadDefaultProgram' . If this Feature is true , we should load now a new default
+        // HardwareProgram.
+        
+        if ( hasFeature(RendererFeature::LoadDefaultProgram) && !iProgramManager.isInvalid() )
+        {
+            HardwareProgramHolder prog = iProgramManager->getDefaultProgram() ;
+            
+            if ( prog.isInvalid() )
+            {
+                // If the Default Program is invalid , we must exit this function and set the
+                // 'RendererFeature::LoadDefaultProgram' as unset.
+                
+                removeFeature ( RendererFeature::LoadDefaultProgram );
+                fboholder->unbind();
+                
+#ifdef GreIsDebugMode
+                GreDebugPretty() << "No Default HardwareProgram found." << std::endl;
+#endif
+                
+                return;
+            }
+            
+            else
+            {
+                PassHolder holdernocst ( passholder );
+                holdernocst->setHardwareProgram ( HardwareProgram(prog) );
+                
+#ifdef GreIsDebugMode
+                GreDebugPretty() << "Default HardwareProgram set for Pass '" << passholder->getName() << "'." << std::endl;
+#endif
+            }
+        }
+    }
+    
+    // Check again the HardwareProgram.
+    program = passholder->getHardwareProgram().lock();
+    
+    if ( program.isInvalid() )
+    {
+        fboholder->unbind();
+        return;
+    }
     
     if( !program->hasOutputLocation(0) )
     {
@@ -335,9 +398,47 @@ void RendererPrivate::drawFramebufferList(RenderFramebufferHolderList& fbolist)
 {
     if( !fbolist.empty() )
     {
+        // Now we get the Plane's Mesh. We get the Rectangle Mesh before binding anything in order to ensure
+        // everything will be unbinded. We also check the validity of the LastRectangleMesh.
+        
+        MeshManager& iMeshManager = ResourceManager::Get().getMeshManager();
+        Mesh myplane ( nullptr ) ;
+        
+        if ( iFrameContext.RenderedViewport.getSurface() == iFrameContext.LastRectangleSurface )
+        {
+            myplane = iFrameContext.LastRectangleMesh;
+        }
+        
+        else
+        {
+            myplane = iMeshManager.createRectangle(iFrameContext.RenderedViewport.getSurface());
+            
+            if ( myplane.isInvalid() )
+            {
+#ifdef GreIsDebugMode
+                GreDebugPretty() << "Can't create Rectangle Mesh to draw Framebuffers." << std::endl;
+#endif
+                return;
+            }
+            
+            else
+            {
+                iFrameContext.LastRectangleMesh = myplane;
+                iFrameContext.LastRectangleSurface = iFrameContext.RenderedViewport.getSurface();
+            }
+        }
+        
+        if ( myplane.isInvalid() )
+        {
+#ifdef GreIsDebugMode
+            GreDebugPretty() << "'Mesh/Rectangle' was not found in database, and couldn't be created." << std::endl;
+#endif
+            return;
+        }
+        
         // Get the HardwareProgram to use.
         
-        HardwareProgram multitexturing = getHardwareProgramManager().getProgram("Shader/Multitexturing");
+        HardwareProgram multitexturing = getHardwareProgramManager().getProgram("DefaultMultitexturing2D");
         
         if ( multitexturing.isInvalid() )
         {
@@ -365,7 +466,7 @@ void RendererPrivate::drawFramebufferList(RenderFramebufferHolderList& fbolist)
         // binded from the first to the last.
         
         // The Sampler's name in the Shader is as follow :
-        // 'u' + Sampler's type to string + The Array index.
+        // 'uTexture' + The Array index.
         
         int i = 0;
         for ( auto it = fbolist.begin(); it != fbolist.end(); it++ )
@@ -384,7 +485,7 @@ void RendererPrivate::drawFramebufferList(RenderFramebufferHolderList& fbolist)
             
             // Bind the Framebuffer Texture.
             
-            Texture iTexture = fbo->getTextureAttachement(RenderFramebufferAttachement::Color);
+            Texture iTexture = fbo->getTextureAttachement(RenderFramebufferAttachement::Color0);
             
             if ( iTexture.isInvalid() )
             {
@@ -407,7 +508,7 @@ void RendererPrivate::drawFramebufferList(RenderFramebufferHolderList& fbolist)
             // Create the uniform and set it to the shader.
             
             HardwareProgramVariable textureVar;
-            textureVar.name = std::string("u") + TextureTypeToString(iTexture.getType());
+            textureVar.name = std::string("uTexture") + std::to_string(i);
             textureVar.isArrayElement = true;
             textureVar.elementNumber = i;
             textureVar.type = TextureTypeToHdwProgType(iTexture.getType());
@@ -419,23 +520,9 @@ void RendererPrivate::drawFramebufferList(RenderFramebufferHolderList& fbolist)
             i += 1;
         }
         
-        // Now we get the Plane's Mesh.
-        
-        Mesh myplane = iMeshManager.createRectangle(iFrameContext.RenderedViewport.getSurface());
-        
-        if ( myplane.isInvalid() )
-        {
-#ifdef GreIsDebugMode
-            GreDebugPretty() << "'Mesh/Rectangle' was not found in database." << std::endl;
-#endif
-        }
-        
-        else
-        {
-            // Draw the Plane.
+        // Draw the Rectangle Mesh. ( It has already been checked before, so no need to re-check here. )
             
-            drawSimpleMesh(myplane, multitexturing);
-        }
+        drawSimpleMesh(myplane, multitexturing);
             
         // Unbind the HardwareProgram and the Texture's units.
         
@@ -446,7 +533,7 @@ void RendererPrivate::drawFramebufferList(RenderFramebufferHolderList& fbolist)
         {
             // Unbind the Texture unit.
             
-            Texture iTexture = (*it)->getTextureAttachement(RenderFramebufferAttachement::Color);
+            Texture iTexture = (*it)->getTextureAttachement(RenderFramebufferAttachement::Color0);
             
             if ( iTexture.isInvalid() )
             {
@@ -789,6 +876,16 @@ TextureHolder RendererPrivate::createEmptyTexture(int width, int height)
         // Creates a new Texture, and changes its Surface.
         
         TextureHolder tex = iCreateTexturePrivate(tname);
+        
+        if ( tex.isInvalid() )
+        {
+#ifdef GreIsDebugMode 
+            GreDebugPretty() << "Couldn't create Texture object '" << tname << "'." << std::endl;
+#endif
+            return TextureHolder ( nullptr );
+        }
+        
+        tex->setType(TextureType::TwoDimension);
         tex->setSurface({0, 0, width, height});
         
         // Load it to the TextureManager.
@@ -906,8 +1003,23 @@ RenderFramebufferHolderList RendererPrivate::getFramebuffers(int sz)
         for ( int i = 0; i < numtocreate; i++ )
         {
             RenderFramebufferHolder fbo = createFramebuffer();
-            iFrameContext.Framebuffers.add(fbo);
-            fbolist.add(fbo);
+            
+            if ( fbo.isInvalid() )
+            {
+#ifdef GreIsDebugMode 
+                GreDebugPretty() << "Can't create Framebuffer object. ( n = " << i + iFrameContext.Framebuffers.size() << " )." << std::endl;
+#endif
+                i = numtocreate;
+            }
+            
+            else
+            {
+#ifdef GreIsDebugMode
+                GreDebugPretty() << "Created Framebuffer object. ( n = " << i + iFrameContext.Framebuffers.size() << " )." << std::endl;
+#endif
+                iFrameContext.Framebuffers.add(fbo);
+                fbolist.add(fbo);
+            }
         }
         
         return fbolist;
@@ -1008,6 +1120,22 @@ void RendererPrivate::launch()
     } , this );
 }
 
+void RendererPrivate::onUpdateEvent(const Gre::UpdateEvent &e)
+{
+    RenderTargetHolderList& targets = getRegisteredTargets() ;
+    
+    if ( !targets.empty() )
+    {
+        for ( RenderTargetHolder& holder : targets )
+        {
+            if ( holder->isAvailableForDrawing() )
+            {
+                drawRenderTarget( RenderTarget(holder) ) ;
+            }
+        }
+    }
+}
+
 bool RendererPrivate::getLaunchMustStop() const
 {
     return iLaunchMustStop;
@@ -1030,6 +1158,47 @@ void RendererPrivate::stop()
         iLaunchMustStop = true;
         iLaunchThread.join();
     }
+}
+
+bool RendererPrivate::hasFeature(const RendererFeature& feature) const
+{
+    GreResourceAutolock ;
+    
+    for ( auto& f : iFeatures )
+    {
+        if ( f == feature )
+            return true;
+    }
+    
+    return false;
+}
+
+void RendererPrivate::setFeature ( const RendererFeature& feature )
+{
+    if ( !hasFeature(feature) )
+    {
+        GreResourceAutolock ;
+        iFeatures.push_back(feature);
+    }
+}
+
+void RendererPrivate::removeFeature ( const RendererFeature& feature )
+{
+    GreResourceAutolock ;
+    
+    for ( auto it = iFeatures.begin() ; it != iFeatures.end() ; it++ )
+    {
+        if ( (*it) == feature )
+        {
+            iFeatures.erase(it);
+            break;
+        }
+    }
+}
+
+const std::vector < RendererFeature > & RendererPrivate::getFeatures () const
+{
+    return iFeatures;
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -1076,12 +1245,13 @@ RendererLoader::~RendererLoader()
 
 // ---------------------------------------------------------------------------------------------------
 
-RendererManager::RendererManager()
+RendererManager::RendererManager( const std::string& name )
+: Gre::Resource(name)
 {
     
 }
 
-RendererManager::~RendererManager()
+RendererManager::~RendererManager() noexcept ( false )
 {
     
 }
@@ -1100,6 +1270,7 @@ Renderer RendererManager::load(const RendererHolder &renderer)
             return Renderer ( nullptr );
         }
         
+        addListener( renderer ) ;
         iRenderers.add(renderer);
         return Renderer ( renderer );
     }
@@ -1144,6 +1315,7 @@ Renderer RendererManager::load(const std::string &name)
                 
                 else
                 {
+                    addListener(rholder);
                     iRenderers.add(rholder);
                     return Renderer ( rholder );
                 }
@@ -1198,6 +1370,7 @@ Renderer RendererManager::load(const std::string &name, const Gre::RenderingApiD
                     
                     else
                     {
+                        addListener(rholder);
                         iRenderers.add(rholder);
                         return Renderer ( rholder );
                     }
@@ -1297,6 +1470,7 @@ void RendererManager::remove(const std::string &name)
             {
                 if ( holder->getName() == name )
                 {
+                    removeListener( holder->getName() ) ;
                     iRenderers.erase(it);
                     return;
                 }
@@ -1319,6 +1493,7 @@ void RendererManager::remove(const std::string &name)
 void RendererManager::clearRenderers()
 {
     iRenderers.clear();
+    clearListeners();
 }
 
 RendererLoaderFactory& RendererManager::getRendererLoaderFactory()
@@ -1335,6 +1510,7 @@ void RendererManager::clear()
 {
     clearRenderers();
     iFactory.clear();
+    Resource::clear();
 }
 
 GreEndNamespace

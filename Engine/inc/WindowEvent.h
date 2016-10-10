@@ -8,7 +8,7 @@
 
 #ifndef GRE_WindowEvents_h
 #define GRE_WindowEvents_h
-
+/*
 #include "Event.h"
 #include "Window.h"
 
@@ -80,5 +80,5 @@ private:
 };
 
 GreEndNamespace
-
+*/
 #endif

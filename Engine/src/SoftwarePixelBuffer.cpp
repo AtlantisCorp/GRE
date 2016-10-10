@@ -89,7 +89,13 @@ void SoftwarePixelBufferPrivate::setData(const char *data, size_t sz)
     
     iSize = sz;
     iPixBuffer = (char*) malloc(sz);
-    memcpy(iPixBuffer, data, sz);
+    
+    // We must check for data validity , because one can create an empty buffer.
+    
+    if ( data )
+    {
+        memcpy(iPixBuffer, data, sz);
+    }
 }
 
 // ---------------------------------------------------------------------------------------------------

@@ -31,6 +31,7 @@
  */
 
 #include "DarwinGlContext.h"
+#include "DarwinGlRenderFramebuffer.h"
 
 namespace DarwinGl
 {
@@ -44,6 +45,12 @@ namespace DarwinGl
         {
             GreDebugPretty() << "Initializing 'DarwinGlContext' with null 'cglcontext' has undefined behaviour." << std::endl;
         }
+        
+        // Check the 'iContextStack' at least has one null CGLContextObj.
+        if ( iContextStack.size() == 0 )
+        {
+            iContextStack.push(nullptr);
+        }
     }
     
     DarwinGlContext::~DarwinGlContext() noexcept ( false )
@@ -55,45 +62,58 @@ namespace DarwinGl
         }
     }
     
-    void DarwinGlContext::bind()
+    void DarwinGlContext::bind() const
     {
         if ( iContext )
         {
             GreResourceAutolock ;
             
-            if ( CGLSetCurrentContext(iContext) != kCGLNoError )
+            // Check the iContextStack. If another CGLContextObj is binded , we should save it for later.
+            if ( iGetCurrentBindedContext() != iContext )
             {
-                GreDebugPretty() << "Can't bind CGLContext '" << getName() << "'." << std::endl;
-                iIsBinded = false;
-            }
-            
-            else
-            {
-                // Sets clearing state.
+                if ( CGLSetCurrentContext(iContext) != kCGLNoError )
+                {
+                    GreDebugPretty() << "Can't bind CGLContext '" << getName() << "'." << std::endl;
+                    iIsBinded = false;
+                }
                 
-                glClearColor(iClearColor.getRed(), iClearColor.getGreen(), iClearColor.getBlue(), iClearColor.getAlpha());
-                glClear(iClearBuffers);
-                
-                // Modifiate property 'iIsBinded'.
-                
-                iIsBinded = true;
+                else
+                {
+                    CGLLockContext( iContext ) ;
+                    
+                    // Sets clearing state.
+                    
+                    glClearColor(iClearColor.getRed(), iClearColor.getGreen(), iClearColor.getBlue(), iClearColor.getAlpha());
+                    glClear(iClearBuffers);
+                    
+                    // Modifiate property 'iIsBinded'.
+                    
+                    iIsBinded = true;
+                    iContextStack.push(iContext);
+                }
             }
         }
     }
     
-    void DarwinGlContext::unbind()
+    void DarwinGlContext::unbind() const
     {
         if ( iContext )
         {
             GreResourceAutolock ;
             
-            if ( CGLSetCurrentContext(NULL) != kCGLNoError )
+            if ( iGetCurrentBindedContext() == iContext )
             {
-                GreDebugPretty() << "Can't unbind CGLContext '" << getName() << "'." << std::endl;
-            }
-            else
-            {
-                iIsBinded = false;
+                iContextStack.pop();
+                CGLUnlockContext( iContext ) ;
+                
+                if ( CGLSetCurrentContext(iContextStack.top()) != kCGLNoError )
+                {
+                    GreDebugPretty() << "Can't unbind CGLContext '" << getName() << "'." << std::endl;
+                }
+                else
+                {
+                    iIsBinded = false;
+                }
             }
         }
     }
@@ -147,6 +167,28 @@ namespace DarwinGl
         iClearColor = color;
     }
     
+    Gre::RenderFramebufferHolder DarwinGlContext::iCreateFramebuffer(const std::string &name) const
+    {
+        // We create a DarwinGlRenderFramebuffer object here, using this object as the binded
+        // RenderContext. This allows us to be sure the RenderFramebuffer is created under the
+        // correct RenderContext , and not another RenderContext ( like the global one ).
+        
+        if ( iGetCurrentBindedContext() == iContext )
+        {
+            return Gre::RenderFramebufferHolder ( new DarwinGlRenderFramebuffer(name) );
+        }
+        
+        else
+        {
+            bind();
+            
+            Gre::RenderFramebufferHolder fbo ( new DarwinGlRenderFramebuffer(name) );
+            
+            unbind();
+            return fbo;
+        }
+    }
+    
     void DarwinGlContext::onUpdateEvent(const Gre::UpdateEvent& e)
     {
         Gre::RenderContextPrivate::onUpdateEvent(e);
@@ -154,6 +196,13 @@ namespace DarwinGl
         // Here we just flush the CGLContext. Flush normally just swap
         // the two buffers.
         
-        flush();
+        // flush();
     }
+    
+    CGLContextObj DarwinGlContext::iGetCurrentBindedContext()
+    {
+        return iContextStack.top();
+    }
+    
+    std::stack < CGLContextObj > DarwinGlContext::iContextStack = std::stack < CGLContextObj > ();
 }

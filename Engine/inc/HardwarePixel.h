@@ -45,6 +45,15 @@ enum class HardwarePixelFormat
     /// @brief Invalid HardwarePixelFormat value.
     Null = 0,
     
+    /// @brief Every Pixel component has a Value between 0 and 255
+    RGBAShort = 1,
+    
+    /// @brief Every Pixel component is sizeof ( int ).
+    RGBAInt = 2,
+    
+    /// @brief Every Pixel component is sizeof ( float ) .
+    RGBAFloat = 3,
+    
     /// @brief Every registered HardwarePixelFormat not added by the Core
     /// Engine should have this type.
     Custom = 999

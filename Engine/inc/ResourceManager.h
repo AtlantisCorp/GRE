@@ -43,6 +43,7 @@
 #include "Keyboard.h"
 #include "ResourcePath.h"
 #include "Material.h"
+#include "Application.h"
 
 GreBeginNamespace
 
@@ -163,19 +164,26 @@ protected:
     UpdateTime iLastUpdate;
     
     /// @brief Window Manager.
-    WindowManager iWindowManager;
+    WindowManagerHolder iWindowManager;
     
     /// @brief Renderer Manager.
-    RendererManager iRendererManager;
+    RendererManagerHolder iRendererManager;
     
     /// @brief RenderScene's Manager.
-    RenderSceneManager iRenderSceneManager;
+    RenderSceneManagerHolder iRenderSceneManager;
     
     /// @brief Material Manager.
     MaterialManager iMaterialManager;
     
     /// @brief Plugin Manager.
     PluginManager iPluginManager;
+    
+    /// @brief Mesh Manager.
+    MeshManager iMeshManager;
+    
+    /// @brief Application Loaders. As there can be only one Application by process, there is no need to have
+    /// an ApplicationManager.
+    ApplicationLoaderFactory iApplicationFactory ;
     
 public:
     
@@ -397,6 +405,21 @@ public:
     /// @brief Returns the RenderSceneManager.
     //////////////////////////////////////////////////////////////////////
     virtual const RenderSceneManager& getRenderSceneManager() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the MeshManager.
+    //////////////////////////////////////////////////////////////////////
+    virtual MeshManager& getMeshManager();
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the MeshManager.
+    //////////////////////////////////////////////////////////////////////
+    virtual const MeshManager& getMeshManager() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the ApplicationLoaderFactory.
+    //////////////////////////////////////////////////////////////////////
+    virtual ApplicationLoaderFactory& getApplicationFactory() ;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Find a Resource given its 'ResourcePath'.

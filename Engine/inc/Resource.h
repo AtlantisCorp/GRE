@@ -204,6 +204,16 @@ public:
     virtual void sendEvent(const Event& e);
     
     //////////////////////////////////////////////////////////////////////
+    /// @brief Send an Event pointed object to every Listeners.
+    /// If 'destroy' flag is true , the event is deleted after being sent
+    /// to every Listeners. This is the default behaviour when launching a
+    /// new event , but transmitting an event from the '::onEvent()' function
+    /// should not destroy the event as there may be other objects that will
+    /// use this event.
+    //////////////////////////////////////////////////////////////////////
+    virtual void sendEvent ( Event* e , bool destroy = true ) ;
+    
+    //////////////////////////////////////////////////////////////////////
     /// @brief Sets this property to true if the Resource object should
     /// transmit its received Event to its listeners.
     //////////////////////////////////////////////////////////////////////
@@ -271,6 +281,16 @@ public:
     /// @brief Unlocks the internal mutex.
     //////////////////////////////////////////////////////////////////////
     void unlockGuard() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Removes every listeners.
+    //////////////////////////////////////////////////////////////////////
+    void clearListeners() ;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Reset the Resource.
+    //////////////////////////////////////////////////////////////////////
+    virtual void clear () ;
     
 private:
     
@@ -358,8 +378,8 @@ GreBeginNamespace
 /// typedef SpecializedResourceHolderList<MyResourcePrivate> MyResourcePrivateHolderList;
 /// ```
 ////////////////////////////////////////////////////////////////////////
-template<typename BaseClass>
-class DLL_PUBLIC SpecializedResourceManager
+template< typename BaseClass , typename LoaderBaseClass >
+class DLL_PUBLIC SpecializedResourceManager : public Resource
 {
 public:
     
@@ -367,18 +387,22 @@ public:
     
     ////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////
-    SpecializedResourceManager() { }
+    SpecializedResourceManager( const std::string& name ) : Resource ( name ) { }
     
     ////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////
     virtual ~SpecializedResourceManager() { }
     
     ////////////////////////////////////////////////////////////////////////
-    /// @brief Should add an object to the Manager.
+    /// @brief Should add an object to the Manager , if this object is not
+    /// already loaded.
     ////////////////////////////////////////////////////////////////////////
     virtual void load(const SpecializedResourceHolder<BaseClass>& holder)
     {
-        iHolders.add(holder);
+        if ( iHolders.find(holder) == iHolders.end() )
+        {
+            iHolders.add(holder);
+        }
     }
     
     ////////////////////////////////////////////////////////////////////////
@@ -435,7 +459,10 @@ public:
 protected:
     
     /// @brief Holds SpecializedResourceHolder objects.
-    SpecializedResourceHolderList<BaseClass> iHolders;
+    SpecializedResourceHolderList < BaseClass > iHolders;
+    
+    /// @brief Holds the SpecializedLoaderFactory.
+    ResourceLoaderFactory < LoaderBaseClass > iFactory;
 };
 
 GreEndNamespace

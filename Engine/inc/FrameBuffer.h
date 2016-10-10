@@ -43,9 +43,17 @@ GreBeginNamespace
 /// the Texture object to a Material to use this Texture in the Engine.
 enum class RenderFramebufferAttachement
 {
-    Color = 0, 
+    Color0 = 0,   Color1 = 1,   Color2 = 2,   Color3 = 3,   Color4 = 4,   Color5 = 5,
+    Color6 = 6,   Color7 = 7,   Color8 = 8,   Color9 = 9,   Color10 = 10, Color11 = 11,
+    Color12 = 12, Color13 = 13, Color14 = 14, Color15 = 15, Color16 = 16, Color17 = 17,
+    Color18 = 18, Color19 = 19, Color20 = 20, Color21 = 21, Color22 = 22, Color23 = 23,
+    Color24 = 24, Color25 = 25, Color26 = 26, Color27 = 27, Color28 = 28, Color29 = 29,
+    Color30 = 30, Color31 = 31,
+    
     // [...] Normally this value is up to Renderer::getCapacity(Capacity::MaxFrameBufferColorAttachement) .
     // We support up to 32 Color Attachement. Default value for OpenGl is 4.
+    // Notes 'Renderer::getCapacity()' function is not yet implemented. You can use
+    // 'RenderFramebuffer::getMaximumColorAttachement()' to get the same result.
   
     Depth = 32,
     Stencil = 33, 

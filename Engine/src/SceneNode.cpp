@@ -90,6 +90,7 @@ RenderNodePrivate::~RenderNodePrivate()
 
 bool RenderNodePrivate::isRenderable() const
 {
+    GreResourceAutolock ;
     return !iRenderable.isInvalid();
 }
 
@@ -105,6 +106,8 @@ Mesh& RenderNodePrivate::getMesh()
 
 void RenderNodePrivate::setMesh(const Gre::Mesh &mesh)
 {
+    GreResourceAutolock ;
+    
     if ( !iRenderable.isInvalid() )
     {
         Resource::removeListener( iRenderable.getName() );
@@ -121,6 +124,7 @@ void RenderNodePrivate::setMesh(const Gre::Mesh &mesh)
 
 void RenderNodePrivate::setTransformation(const Gre::Transformation &transformation)
 {
+    GreResourceAutolock ;
     iTransformation = transformation;
     iTransformationChanged = true;
 }
@@ -139,6 +143,8 @@ void RenderNodePrivate::addNode(const RenderNodeHolder &node)
 {
     if ( !node.isInvalid() )
     {
+        GreResourceAutolock ;
+        
         // First, check if this Node is not already one of our children. If this is the case,
         // this is probably a check from 'RenderNodePrivate::onUpdateEvent' when 'iTransformationChanged' is
         // true.
@@ -226,6 +232,8 @@ RenderNodeHolder RenderNodePrivate::find(RenderNodeIdentifier identifier)
 {
     if ( Identificator::IsValid(identifier) )
     {
+        GreResourceAutolock;
+        
         for ( RenderNodeHolder& child : iChilds )
         {
             if ( !child.isInvalid() )
@@ -269,6 +277,8 @@ const RenderNodeHolder RenderNodePrivate::find(RenderNodeIdentifier identifier) 
 {
     if ( Identificator::IsValid(identifier) )
     {
+        GreResourceAutolock ;
+        
         for ( const RenderNodeHolder& child : iChilds )
         {
             if ( !child.isInvalid() )
@@ -312,6 +322,7 @@ RenderNodeHolderList RenderNodePrivate::getVisibleChildren(const CameraHolder &c
 {
     if ( !camera.isInvalid() )
     {
+        GreResourceAutolock ;
         RenderNodeHolderList ret;
         
         for ( const RenderNodeHolder& child : iChilds )
@@ -336,6 +347,8 @@ void RenderNodePrivate::remove(const RenderNodePrivate::Identifier& identifier)
 {
     if ( Identificator::IsValid(identifier) )
     {
+        GreResourceAutolock ;
+        
         for ( auto it = iChilds.begin(); it != iChilds.end(); it++ )
         {
             if ( !(*it).isInvalid() )
@@ -366,6 +379,8 @@ void RenderNodePrivate::removeNotRecursive(const RenderNodePrivate::Identifier& 
 {
     if ( RenderNodePrivate::Identificator::IsValid(identifier) )
     {
+        GreResourceAutolock ;
+        
         for ( auto it = iChilds.begin(); it != iChilds.end(); it++ )
         {
             if ( !(*it).isInvalid() )
@@ -411,6 +426,8 @@ void RenderNodePrivate::removeNotRecursive(const RenderNodePrivate::Identifier& 
 
 void RenderNodePrivate::clear()
 {
+    GreResourceAutolock ;
+    
     iChilds.clear();
     iRenderable.reset();
     iTransformation = Transformation();
@@ -419,6 +436,7 @@ void RenderNodePrivate::clear()
     iModelMatrix = Matrix4(0);
     iTransformationChanged = true;
     iRenderableChanged = true;
+    Resource::clear();
 }
 
 const BoundingBox& RenderNodePrivate::getBoundingBox() const
@@ -428,18 +446,21 @@ const BoundingBox& RenderNodePrivate::getBoundingBox() const
 
 void RenderNodePrivate::translate(const Vector3 &vec)
 {
+    GreResourceAutolock ;
     iTransformation.translate(vec);
     iTransformationChanged = true;
 }
 
 void RenderNodePrivate::rotate(float angle, const Vector3 &axis)
 {
+    GreResourceAutolock ;
     iTransformation.rotate(angle, axis);
     iTransformationChanged = true;
 }
 
 void RenderNodePrivate::scale(float value)
 {
+    GreResourceAutolock ;
     iTransformation.scale( Vector3(value, value, value) );
     iTransformationChanged = true;
 }
@@ -451,11 +472,16 @@ RenderNodePrivate::Identifier RenderNodePrivate::getIdentifier() const
 
 void RenderNodePrivate::setParent(const RenderNodeHolder &parent)
 {
+    GreResourceAutolock ;
     iParent = parent;
 }
 
 void RenderNodePrivate::onUpdateEvent(const Gre::UpdateEvent &e)
 {
+    Resource::onUpdateEvent(e);
+    
+    GreResourceAutolock ;
+    
     if ( iTransformationChanged )
     {
         iModelMatrix = iTransformation.get();

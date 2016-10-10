@@ -36,25 +36,13 @@ GreBeginNamespace
 
 char KeyToChar ( const Key& key )
 {
-    if ( key == Key::A )
-        return 'A';
-    
-    if ( key == Key::S )
-        return 'S';
-    
-    if ( key == Key::D )
-        return 'D';
-    
-    if ( key == Key::V )
-        return 'V';
-    
-    if ( key == Key::W )
-        return 'W';
-    
-    if ( key == Key::T )
-        return 'T';
+    // As Key is based on ASCII , just convert it to char .
+    return (char) key ;
+}
 
-    return '\0';
+Key KeyFromChar ( char key )
+{
+    return (Key) key ;
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -79,12 +67,12 @@ bool KeyboardPrivate::isKeyDown(Key k) const
 
 void KeyboardPrivate::onKeyUpEvent(const Gre::KeyUpEvent &e)
 {
-    ikeyDown[e.key] = false;
+    ikeyDown[e.iKey] = false;
 }
 
 void KeyboardPrivate::onKeyDownEvent(const Gre::KeyDownEvent &e)
 {
-    ikeyDown[e.key] = true;
+    ikeyDown[e.iKey] = true;
 }
 
 // ---------------------------------------------------------------------------------------------------

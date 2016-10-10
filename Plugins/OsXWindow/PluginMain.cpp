@@ -32,6 +32,7 @@
 
 #include "OSXWindow.h"
 #include "OSXImage.h"
+#include "DarwinApplication.h"
 
 WindowBufEntry nsWindowBufs [WINDOW_MAX];
 
@@ -42,10 +43,19 @@ extern "C" DLL_PUBLIC void* GetPluginName (void)
 
 extern "C" DLL_PUBLIC void StartPlugin (void)
 {
-    NsLoadPluginApp();
-    
     ResourceManager::Get().getWindowManager().getWindowLoaderFactory().registers( "DarwinWindowLoader", new DarwinWindowLoader() );
+    ResourceManager::Get().getApplicationFactory().registers( "DarwinApplicationLoader" , new DarwinApplicationLoader() ) ;
 //  ResourceManager::Get().getImageLoaderFactory().registers("OSXImage", new OSXImageLoader);
+    
+    // Create a new WindowEventQueue , for global events .
+    
+    WindowGlobalQueue = EventQueueCreate() ;
+    
+    if ( !WindowGlobalQueue )
+    {
+        GreDebugPretty() << "'WindowGlobalQueue' couldn't be initialized." << std::endl;
+        throw GreExceptionWithText("'WindowGlobalQueue' couldn't be initialized.") ;
+    }
     
     GreDebugPretty() << (const char*) GetPluginName() << " installed." << std::endl;
 }

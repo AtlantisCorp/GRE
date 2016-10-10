@@ -32,6 +32,8 @@
 
 #include "DarwinGlRenderer.h"
 #include "DarwinGlContext.h"
+#include "DarwinGlTexture.h"
+#include "DarwinGlHardwareProgramManager.h"
 
 namespace DarwinGl
 {
@@ -103,6 +105,13 @@ namespace DarwinGl
             GreDebugPretty() << "This Renderer needs at least OpenGl 3.2 Core profile." << std::endl;
             throw Gre::GreExceptionWithText("No OpenGl 3.2 detected.");
         }
+        
+        else
+        {
+            // Create the HardwareProgramManager and bind the GlobalContext.
+            CGLSetCurrentContext(iGlobalContext);
+            iProgramManager = HardwareProgramManagerHolder ( new DarwinGlHardwareProgramManager("GlProgramManager") );
+        }
     }
     
     DarwinGlRenderer::~DarwinGlRenderer() noexcept ( false )
@@ -151,7 +160,7 @@ namespace DarwinGl
     
     Gre::TextureHolder DarwinGlRenderer::iCreateTexturePrivate(const std::string &name) const
     {
-        return Gre::TextureHolder ( nullptr );
+        return Gre::TextureHolder ( new DarwinGlTexture(name) );
     }
     
     Gre::RenderContextHolder DarwinGlRenderer::iCreateRenderContext(const std::string &name, const Gre::RenderContextInfo &info) const

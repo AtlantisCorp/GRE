@@ -73,7 +73,7 @@ public:
     /// This function should permit the HardwareBuffer to upload unuploaded
     /// data to the GPU, or whatever.
     //////////////////////////////////////////////////////////////////////
-    virtual void update() const;
+    virtual void update();
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns true if Buffer is invalid.
@@ -135,7 +135,7 @@ typedef SpecializedResourceHolderList<HardwareBufferPrivate> HardwareBufferHolde
 /// @brief Describes a proxy interface to use correctly the HardwareBufferPrivate
 /// object.
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC HardwareBuffer : virtual public SpecializedResourceUser<HardwareBufferPrivate>
+class DLL_PUBLIC HardwareBuffer : public SpecializedResourceUser<HardwareBufferPrivate>
 {
 public:
     

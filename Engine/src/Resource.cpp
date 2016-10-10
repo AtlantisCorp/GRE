@@ -127,7 +127,7 @@ void Resource::onEvent(const Event &e)
     
     // Send events to listener if it has to.
     
-    if(shouldTransmitEvents())
+    if( shouldTransmitEvents() )
     {
         sendEvent(e);
     }
@@ -187,9 +187,35 @@ void Resource::removeListener(const std::string &name)
 void Resource::sendEvent(const Event &e)
 {
     GreResourceAutolock ;
+    
     for(auto itr = iListeners.begin(); itr != iListeners.end(); itr++)
     {
         itr->second.onEvent(e);
+    }
+}
+
+void Resource::sendEvent(Event* e , bool destroy)
+{
+    if ( e )
+    {
+        GreResourceAutolock ;
+        
+        // Send this Event to every Listeners we have.
+        
+        for ( auto it = iListeners.begin() ; it != iListeners.end() ; it++ )
+        {
+            // As '::onEvent()' use only the reference function '::sendEvent()' , we don't have to pay attention
+            // on deleting or not the event.
+            
+            it->second.onEvent( *e );
+        }
+        
+        // If we have to , also delete this event.
+        
+        if ( destroy )
+        {
+            delete e ;
+        }
     }
 }
 
@@ -303,6 +329,22 @@ void Resource::lockGuard() const
 void Resource::unlockGuard() const
 {
     iMutex.unlock();
+}
+
+void Resource::clearListeners()
+{
+    iListeners.clear();
+}
+
+void Resource::clear()
+{
+    iName.clear();
+    iType = Resource::Type::Null;
+    iActions.clear();
+    iNextCallbacks.clear();
+    iListeners.clear();
+    iShouldTransmit = true;
+    iCustomData.clear();
 }
 
 // ---------------------------------------------------------------------------------------------------

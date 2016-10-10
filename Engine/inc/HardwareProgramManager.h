@@ -142,6 +142,12 @@ public:
     virtual HardwareShaderHolder loadShaderHolder ( const ShaderType& stype , const std::string& name , const std::string& filepath );
     
     //////////////////////////////////////////////////////////////////////
+    /// @brief Returns a Default Hardware Program , if has one .
+    /// This HardwareProgram is loaded under the name 'Default' .
+    //////////////////////////////////////////////////////////////////////
+    virtual const HardwareProgramHolder getDefaultProgram () const ;
+    
+    //////////////////////////////////////////////////////////////////////
     /// @brief Retrieve a HardwareProgram from its name.
     //////////////////////////////////////////////////////////////////////
     virtual HardwareProgram getProgram(const std::string& name);

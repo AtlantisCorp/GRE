@@ -31,6 +31,7 @@
  */
 
 #include "ResourceManager.h"
+#include "../inc/ResourceManager.h"
 
 GreBeginNamespace
 
@@ -90,6 +91,9 @@ ResourceManager& ResourceManager::Get()
 
 ResourceManager::ResourceManager()
 : Gre::Resource("DefaultResourceManager")
+, iWindowManager( new WindowManager() )
+, iRendererManager( new RendererManager() )
+, iRenderSceneManager( new RenderSceneManager() )
 {
     
 }
@@ -115,9 +119,9 @@ ResourceHolder ResourceManager::loadEmptyResource(const std::string& name)
 
 void ResourceManager::clear ()
 {
-    iWindowManager.clear();
-    iRendererManager.clear();
-    iRenderSceneManager.clear();
+    iWindowManager->clear();
+    iRendererManager->clear();
+    iRenderSceneManager->clear();
     iMaterialManager.clear();
     iPluginManager.clear();
 }
@@ -201,8 +205,7 @@ void ResourceManager::loop()
     {
         _updateElapsedTime();
         
-        UpdateEvent updateEvent;
-        updateEvent.elapsedTime = iElapsedTime;
+        UpdateEvent updateEvent(this, iElapsedTime);
         
         // The 'ResourceManager::loop()' function only updates the 'logical' objects. Renderers are updated
         // using the 'Renderer::launch()' function. To draw a RenderTarget, use 'Renderer::registerTarget()' to
@@ -211,7 +214,7 @@ void ResourceManager::loop()
         // This loop only updates every Windows, and every RenderSceneManager.
         
         // First, we update every Windows objects.
-        WindowHolderList whlist = iWindowManager.getWindows();
+        WindowHolderList whlist = iWindowManager->getWindows();
         
         if(whlist.empty() && iCloseBehaviour == CloseBehaviour::AllWindowClosed)
         {
@@ -229,7 +232,7 @@ void ResourceManager::loop()
                         if(wholder->hasBeenClosed())
                         {
                             // Window has been closed, we can destroy it.
-                            iWindowManager.remove(wholder->getName());
+                            iWindowManager->remove(wholder->getName());
                         }
                         
                         else
@@ -253,7 +256,7 @@ void ResourceManager::loop()
         }
         
         // Update also the RenderScene's objects.
-        RenderSceneHolderList smhlist = iRenderSceneManager.getAll();
+        RenderSceneHolderList smhlist = iRenderSceneManager->getAll();
         
         if( !smhlist.empty() )
         {
@@ -307,22 +310,37 @@ const MaterialManager& ResourceManager::getMaterialManager() const
 
 RendererManager& ResourceManager::getRendererManager()
 {
-    return iRendererManager;
+    return * iRendererManager.get();
 }
 
 const RendererManager& ResourceManager::getRendererManager() const
 {
-    return iRendererManager;
+    return * iRendererManager.get();
 }
 
 RenderSceneManager& ResourceManager::getRenderSceneManager()
 {
-    return iRenderSceneManager;
+    return * iRenderSceneManager.get();
 }
 
 const RenderSceneManager& ResourceManager::getRenderSceneManager() const
 {
-    return iRenderSceneManager;
+    return * iRenderSceneManager.get();
+}
+
+MeshManager& ResourceManager::getMeshManager()
+{
+    return iMeshManager;
+}
+
+const MeshManager& ResourceManager::getMeshManager() const
+{
+    return iMeshManager;
+}
+
+ApplicationLoaderFactory& ResourceManager::getApplicationFactory()
+{
+    return iApplicationFactory ;
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -414,12 +432,12 @@ Window ResourceManager::Helper::LoadWindow(const std::string& wname, const std::
 
 WindowManager& ResourceManager::getWindowManager()
 {
-    return iWindowManager;
+    return * iWindowManager.get();
 }
 
 const WindowManager& ResourceManager::getWindowManager() const
 {
-    return iWindowManager;
+    return * iWindowManager.get();
 }
 
 GreEndNamespace

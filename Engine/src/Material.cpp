@@ -389,7 +389,20 @@ MaterialLoader::~MaterialLoader()
 
 MaterialManager::MaterialManager()
 {
+    // Always add a 'Default' Material object. This object can be used to create SoftwareIndexBuffer without
+    // specific Materials.
     
+    MaterialHolder holder ( new MaterialPrivate("Default") );
+    
+    if ( holder.isInvalid() )
+    {
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "Can't load Material 'Default'." << std::endl;
+#endif
+        throw GreConstructorException ( "MaterialManager" , "'Default' Material can't be loaded." );
+    }
+    
+    load(holder);
 }
 
 MaterialManager::~MaterialManager()
@@ -405,7 +418,7 @@ MaterialVector MaterialManager::load(const std::string &filepath)
         
         for ( auto it = iFactory.getLoaders().begin(); it != iFactory.getLoaders().end(); it++ )
         {
-            auto loader = it->second;
+            MaterialLoader* loader = it->second.get();
             
             if ( loader )
             {

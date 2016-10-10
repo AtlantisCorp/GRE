@@ -1,3 +1,4 @@
+/* 
 //
 //  mypluginmain.cpp
 //  GResource
@@ -264,4 +265,31 @@ extern "C" DLL_PUBLIC void* GetPluginName (void)
     return (void*) "ObjModelLoader";
 }
 
+*/
+
+// ObjLoader.cpp : Main Plugin file to load Wavefront OBJ Meshes files.
+// Author : Luk2010
+// Copyright : Atlanti's Corporation , 2016
+
+#include "ResourceManager.h"
+#include "WavefrontLoader.h"
+
+extern "C" DLL_PUBLIC void* GetPluginName ( void )
+{
+    return ( void* ) "Wavefront OBJ Mesh Loader";
+}
+
+extern "C" DLL_PUBLIC void StartPlugin ( void )
+{
+    Gre::MeshManager& meshmanager = Gre::ResourceManager::Get().getMeshManager();
+    WavefrontLoader* loader = new WavefrontLoader ( );
+    meshmanager.getLoaderFactory().registers("WavefrontLoader", loader);
+    
+    GreDebugPretty() << "WavefrontLoader Plugin ready." << std::endl;
+}
+
+extern "C" DLL_PUBLIC void StopPlugin ( void )
+{
+    
+}
 

@@ -71,6 +71,14 @@ typedef struct
     
 } RenderContextData;
 
+/// @brief Experimental Enumeration for Renderer's Features.
+enum class RendererFeature
+{
+    /// @brief Renderer auto-load default HardwareProgram for Pass objects, if those do not already
+    /// have one valid. This feature ignore the 'const' of Pass objects when drawing them.
+    LoadDefaultProgram
+};
+
 //////////////////////////////////////////////////////////////////////
 /// @class RendererPrivate
 /// @brief Base class for Renderer Objects.
@@ -332,6 +340,36 @@ public:
     //////////////////////////////////////////////////////////////////////
     virtual void stop();
     
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns true if the Renderer has given feature.
+    //////////////////////////////////////////////////////////////////////
+    virtual bool hasFeature ( const RendererFeature& feature ) const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Forces given feature to be enabled.
+    //////////////////////////////////////////////////////////////////////
+    virtual void setFeature ( const RendererFeature& feature ) ;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Forces given feature to be disabled.
+    //////////////////////////////////////////////////////////////////////
+    virtual void removeFeature ( const RendererFeature& feature ) ;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns every feature.
+    //////////////////////////////////////////////////////////////////////
+    virtual const std::vector < RendererFeature > & getFeatures () const;
+    
+protected:
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Called when receiving Update Event.
+    /// [thread-safe]
+    /// Renders the registered RenderTarget using their RenderContext, if
+    /// they are visible.
+    //////////////////////////////////////////////////////////////////////
+    virtual void onUpdateEvent(const UpdateEvent& e);
+    
 protected:
     
     //////////////////////////////////////////////////////////////////////
@@ -373,8 +411,14 @@ protected:
         /// @brief Framebuffers used to draw Pass objects.
         RenderFramebufferHolderList Framebuffers;
         
+        /// @brief Last Rectangle Mesh used to draw the Frame.
+        Mesh LastRectangleMesh;
+        
+        /// @brief Last Rectangle Surface used.
+        Surface LastRectangleSurface;
+        
         /// @brief Constructs the FrameContext.
-        _framecontext() : SpecialFramebuffer(nullptr), RenderedScene(nullptr) { }
+        _framecontext() : SpecialFramebuffer(nullptr), RenderedScene(nullptr), LastRectangleMesh(nullptr), LastRectangleSurface({0,0,0,0}) { }
         
     } FrameContext;
     
@@ -383,9 +427,6 @@ protected:
     
     /// @brief The Hardware Program Manager for this Renderer.
     HardwareProgramManagerHolder iProgramManager;
-    
-    /// @brief The Mesh Manager.
-    MeshManager iMeshManager;
     
     /// @brief The Texture Manager.
     TextureManager iTextureManager;
@@ -398,6 +439,9 @@ protected:
     
     /// @brief The Launch thread.
     std::thread iLaunchThread;
+    
+    /// @brief Holds every features.
+    std::vector < RendererFeature > iFeatures;
 };
 
 /// @brief SpecializedResourceHolder for RendererPrivate.
@@ -472,7 +516,7 @@ typedef ResourceLoaderFactory<RendererLoader> RendererLoaderFactory;
 //////////////////////////////////////////////////////////////////////
 /// @brief Renderer Manager.
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC RendererManager
+class DLL_PUBLIC RendererManager : public Resource
 {
 public:
     
@@ -480,11 +524,11 @@ public:
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    RendererManager();
+    RendererManager( const std::string& name = "DefaultRendererManager" );
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    virtual ~RendererManager();
+    virtual ~RendererManager() noexcept ( false ) ;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Loads a Renderer into the Manager.
@@ -550,6 +594,9 @@ protected:
     /// @brief RendererLoaderFactory.
     RendererLoaderFactory iFactory;
 };
+
+/// @brief SpecializedResourceHolder for RendererManager.
+typedef SpecializedResourceHolder < RendererManager > RendererManagerHolder ;
 
 GreEndNamespace
 #endif

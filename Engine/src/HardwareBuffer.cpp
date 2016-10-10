@@ -65,7 +65,7 @@ void HardwareBufferPrivate::unbind() const
 
 }
 
-void HardwareBufferPrivate::update() const
+void HardwareBufferPrivate::update()
 {
 
 }

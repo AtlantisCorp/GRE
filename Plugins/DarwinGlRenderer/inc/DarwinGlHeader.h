@@ -40,6 +40,8 @@
 #include <OpenGL/OpenGL.h>
 #include <OpenGL/gl3.h>
 
+#include <stack>
+
 namespace DarwinGl
 {
     //////////////////////////////////////////////////////////////////////
@@ -47,5 +49,8 @@ namespace DarwinGl
     //////////////////////////////////////////////////////////////////////
     bool InitializeOpenGl();
 }
+
+namespace Gre {}
+using namespace Gre;
 
 #endif /* DarwinGlHeader_h */

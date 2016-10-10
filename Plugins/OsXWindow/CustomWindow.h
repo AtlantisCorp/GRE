@@ -45,6 +45,9 @@
 {
     @private
     
+    /// @brief The WindowEventQueue used by DarwinWindow to get events.
+    WindowEventQueue* iEventQueue ;
+    
     /// @brief The OpenGlCustomView. This View can change its OpenGlContext whenever we want.
     OpenGlCustomView* _nsGlView;
     
@@ -53,6 +56,9 @@
     
     /// @brief True if this Window is closed.
     bool _nsIsClosed;
+    
+    /// @brief True if Window was not visible.
+    bool iIsInvisible ;
 }
 
 - (OpenGlCustomView*) getGlView;
@@ -60,6 +66,11 @@
 
 - (WindowBufEntry*) getWindowEntry;
 - (bool) isClosed;
+
+- (void) setWindowEventQueue: (WindowEventQueue*) queue ;
+- (void) setTitle:(NSString *)title ;
+
+- (void) windowExposed:(NSNotification*) notification ;
 
 @end
 

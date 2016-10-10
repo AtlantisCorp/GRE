@@ -5,7 +5,7 @@
 //  Created by Jacques Tronconi on 06/04/2016.
 //
 //
-
+/*
 #include "WindowEvent.h"
 
 GreBeginNamespace
@@ -62,3 +62,4 @@ const Surface& WindowSizedEvent::getSurface() const
 }
 
 GreEndNamespace
+*/

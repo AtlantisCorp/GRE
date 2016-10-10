@@ -62,7 +62,7 @@ void NsWindowSwapBuffers(CFTypeRef* nsWindow)
     if(nsWindow)
     {
         const CustomWindow* nsGlWindow = (__bridge const CustomWindow*) *nsWindow;
-        [[[nsGlWindow getGlView] openGlContext] flushBuffer];
+        [[[nsGlWindow getGlView] openGLContext] flushBuffer];
     }
 }
 
@@ -219,7 +219,6 @@ void NsLoadPluginApp()
     }
     
     NsAddMenu();
-    [app finishLaunching];
     
     NSIsAppLoaded = true;
 }
@@ -312,6 +311,7 @@ void NsWindowSetRenderContext(CFTypeRef* nsWindow, CGLContextObj ctxt)
     if(nsWindow && ctxt)
     {
         CustomWindow* nsCustomWindow = (__bridge CustomWindow*) *nsWindow;
+        /*
         
         NSRect nsFrame = [[nsCustomWindow contentView] frame];
         NSOpenGLPixelFormat* pixelformat = [[NSOpenGLPixelFormat alloc] initWithCGLPixelFormatObj:CGLGetPixelFormat(ctxt)];
@@ -319,9 +319,19 @@ void NsWindowSetRenderContext(CFTypeRef* nsWindow, CGLContextObj ctxt)
         
         OpenGlCustomView* customview = [[OpenGlCustomView alloc] initWithFrame:nsFrame pixelFormat:pixelformat];
         [customview setOpenGlContext:context];
+        [context setView:customview];
         
         [nsCustomWindow setGlView:customview];
         [nsCustomWindow update];
+         */
+        
+        NSRect nsFrame = [[nsCustomWindow contentView] frame];
+        NSOpenGLPixelFormat* pixelformat = [[NSOpenGLPixelFormat alloc] initWithCGLPixelFormatObj:CGLGetPixelFormat(ctxt)];
+        NSOpenGLContext* context = [[NSOpenGLContext alloc] initWithCGLContextObj:ctxt];
+        
+        OpenGlCustomView* glview = [[OpenGlCustomView alloc] initWithFrame:nsFrame];
+        [glview setOpenGLContext:context];
+        [nsCustomWindow setGlView:glview];
     }
 }
 
@@ -367,6 +377,27 @@ bool NsWindowPropertyIsOnActiveSpace ( const CFTypeRef* window )
     }
     
     return false;
+}
+
+void NsWindowSetEventQueue ( CFTypeRef* window , WindowEventQueue* queue )
+{
+    if ( window && queue )
+    {
+        CustomWindow* nsWindow = ( __bridge CustomWindow* ) *window ;
+        [nsWindow setWindowEventQueue:queue];
+    }
+}
+
+void NSGlobalApplicationRun ( )
+{
+    NSApplication* app = [NSApplication sharedApplication];
+    [app performSelectorOnMainThread:@selector(run) withObject:nil waitUntilDone:TRUE];
+}
+
+void NSGlobalApplicationTerminate ( )
+{
+    NSApplication* app = [NSApplication sharedApplication];
+    [app terminate:nil];
 }
 
 

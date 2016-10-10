@@ -67,7 +67,7 @@ const std::string& HardwareShaderPrivate::getSource() const
     return iSource;
 }
 
-bool HardwareShaderPrivate::compile() const
+bool HardwareShaderPrivate::compile()
 {
     return iCompiled;
 }

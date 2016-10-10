@@ -55,11 +55,6 @@ WindowPrivate::~WindowPrivate() noexcept(false)
     // destruction.
 }
 
-bool WindowPrivate::pollEvent()
-{
-    return false;
-}
-
 bool WindowPrivate::isClosed() const
 {
     return iClosed;
@@ -147,8 +142,8 @@ void WindowPrivate::iUpdateTimerAndBehaviours()
 //      Here we send an update event to listeners.
         if( iLastUpdate != iLastUpdate.min() )
         {
-            UpdateEvent ue; UpdateTime now = UpdateChrono::now();
-            ue.elapsedTime = std::chrono::duration_cast<std::chrono::nanoseconds>(now - iLastUpdate);
+            UpdateTime now = UpdateChrono::now();
+            UpdateEvent ue ( this , std::chrono::duration_cast<std::chrono::nanoseconds>(now - iLastUpdate) );
             
 //          'sendEvent' will be called when calling 'onEvent' from this object.
 //          sendEvent(ue);
@@ -320,7 +315,8 @@ WindowLoader::~WindowLoader()
 
 // ---------------------------------------------------------------------------------------------------
 
-WindowManager::WindowManager()
+WindowManager::WindowManager( const std::string& name )
+: Gre::Resource(name)
 {
     
 }
@@ -358,6 +354,7 @@ Window WindowManager::load(const std::string &name, int x0, int y0, int wid, int
             
             if ( !loaded.isInvalid() )
             {
+                addListener( loaded ) ;
                 iWindows.add(loaded);
                 return Window ( loaded );
             }
@@ -400,6 +397,7 @@ Window WindowManager::load(const WindowHolder &holder)
             return Window ( nullptr );
         }
         
+        addListener( holder ) ;
         iWindows.add(holder);
         return Window ( holder );
     }
@@ -512,6 +510,7 @@ void WindowManager::remove(const std::string &name)
             {
                 if ( (*it)->getName() == name )
                 {
+                    removeListener( (*it)->getName() );
                     iWindows.erase(it);
                     return;
                 }
@@ -532,6 +531,7 @@ void WindowManager::remove(const std::string &name)
 void WindowManager::clearWindows()
 {
     iWindows.clear();
+    Resource::clearListeners();
 }
 
 WindowLoaderFactory& WindowManager::getWindowLoaderFactory()
@@ -548,6 +548,7 @@ void WindowManager::clear()
 {
     iWindows.clear();
     iFactory.clear();
+    Resource::clear();
 }
 
 GreEndNamespace

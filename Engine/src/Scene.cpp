@@ -38,6 +38,8 @@ RenderScenePrivate::RenderScenePrivate(const std::string& name)
 : Gre::Resource(name)
 , iRootNode(nullptr)
 {
+    GreResourceAutolock ;
+    
     // Add the default normal Pass with PassPurpose::First.
     createAndAddPass("Default", (PassNumber) PassPurpose::First);
 }
@@ -54,6 +56,8 @@ const RenderNodeHolder& RenderScenePrivate::getRootNode() const
 
 const RenderNodeHolder& RenderScenePrivate::setRootNode(const RenderNodeHolder &rendernode)
 {
+    GreResourceAutolock ;
+    
     if ( !iRootNode.isInvalid() )
     {
         Resource::removeListener( iRootNode->getName() );
@@ -81,6 +85,8 @@ RenderNodeHolder RenderScenePrivate::createNodeWithName(const std::string &name)
 
 void RenderScenePrivate::addNode(const RenderNodeHolder &rendernode)
 {
+    GreResourceAutolock ;
+    
     if ( !iRootNode.isInvalid() )
     {
         iRootNode->addNode(rendernode);
@@ -96,6 +102,8 @@ void RenderScenePrivate::removeNode(RenderNodeIdentifier identifier)
 {
     if ( RenderNodePrivate::Identificator::IsValid(identifier) )
     {
+        GreResourceAutolock ;
+        
         if ( !iRootNode.isInvalid() )
         {
             if ( iRootNode->getIdentifier() == identifier )
@@ -129,6 +137,8 @@ RenderNodeHolder RenderScenePrivate::findNode(RenderNodeIdentifier identifier)
 {
     if ( RenderNodePrivate::Identificator::IsValid(identifier) )
     {
+        GreResourceAutolock ;
+        
         if ( !iRootNode.isInvalid() )
         {
             if ( iRootNode->getIdentifier() == identifier )
@@ -164,6 +174,8 @@ const RenderNodeHolder RenderScenePrivate::findNode(RenderNodeIdentifier identif
 {
     if ( RenderNodePrivate::Identificator::IsValid(identifier) )
     {
+        GreResourceAutolock ;
+        
         if ( !iRootNode.isInvalid() )
         {
             if ( iRootNode->getIdentifier() == identifier )
@@ -199,6 +211,8 @@ RenderNodeHolderList RenderScenePrivate::findNodes(const CameraHolder &camera, c
 {
     if ( !camera.isInvalid() )
     {
+        GreResourceAutolock ;
+        
         if ( !iRootNode.isInvalid() )
         {
             RenderNodeHolderList ret;
@@ -233,6 +247,8 @@ RenderNodeHolderList RenderScenePrivate::findNodesForPass(PassNumber passnumber,
 {
     if ( !camera.isInvalid() )
     {
+        GreResourceAutolock ;
+        
         if ( !iRootNode.isInvalid() )
         {
             RenderNodeHolderList ret;
@@ -283,6 +299,8 @@ Pass RenderScenePrivate::createAndAddPass(const std::string &name, const PassNum
 {
     if ( !name.empty() )
     {
+        GreResourceAutolock ;
+        
         PassHolder tmp = getPassHolder(passNumber);
         
         if ( !tmp.isInvalid() )
@@ -323,6 +341,8 @@ Pass RenderScenePrivate::addPass(const PassHolder &customPass)
 {
     if ( !customPass.isInvalid() )
     {
+        GreResourceAutolock ;
+        
         PassHolder tmp = getPassHolder(customPass->getPassNumber());
         
         if ( !tmp.isInvalid() )
@@ -350,6 +370,8 @@ Pass RenderScenePrivate::getPassByName(const std::string &name)
 {
     if ( !name.empty() )
     {
+        GreResourceAutolock ;
+        
         for ( PassHolder& holder : iPasses )
         {
             if ( !holder.isInvalid() )
@@ -377,6 +399,8 @@ Pass RenderScenePrivate::getPassByNumber(const PassNumber &passNumber)
 {
     if ( passNumber > 0 )
     {
+        GreResourceAutolock ;
+        
         for ( PassHolder& holder : iPasses )
         {
             if ( !holder.isInvalid() )
@@ -402,6 +426,8 @@ Pass RenderScenePrivate::getPassByNumber(const PassNumber &passNumber)
 
 PassHolder RenderScenePrivate::getPassHolder(const PassNumber &passnumber)
 {
+    GreResourceAutolock ;
+    
     for ( PassHolder& holder : iPasses )
     {
         if ( !holder.isInvalid() )
@@ -418,6 +444,8 @@ PassHolder RenderScenePrivate::getPassHolder(const PassNumber &passnumber)
 
 const PassHolder RenderScenePrivate::getPassHolder(const PassNumber &passnumber) const
 {
+    GreResourceAutolock ;
+    
     for ( const PassHolder& holder : iPasses )
     {
         if ( !holder.isInvalid() )
@@ -436,6 +464,8 @@ void RenderScenePrivate::removePassByName(const std::string &name)
 {
     if ( !name.empty() )
     {
+        GreResourceAutolock ;
+        
         for ( auto it = iPasses.begin(); it != iPasses.end(); it++ )
         {
             if ( !(*it).isInvalid() )
@@ -465,6 +495,8 @@ void RenderScenePrivate::removePassByNumber(const PassNumber &passNumber)
 {
     if ( passNumber > 0 )
     {
+        GreResourceAutolock ;
+        
         for ( auto it = iPasses.begin(); it != iPasses.end(); it++ )
         {
             if ( !(*it).isInvalid() )
@@ -492,6 +524,7 @@ void RenderScenePrivate::removePassByNumber(const PassNumber &passNumber)
 
 PassHolderList RenderScenePrivate::getActivePasses() const
 {
+    GreResourceAutolock ;
     PassHolderList ret;
     
     for ( const PassHolder& holder : iPasses )
@@ -548,6 +581,287 @@ RenderSceneLoader::RenderSceneLoader()
 RenderSceneLoader::~RenderSceneLoader()
 {
     
+}
+
+ResourceLoader* RenderSceneLoader::clone() const
+{
+    return new RenderSceneLoader () ;
+}
+
+bool RenderSceneLoader::isLoadable(const std::string &filepath) const
+{
+    return false;
+}
+
+RenderSceneHolder RenderSceneLoader::load ( const std::string &name , const std::string& filepath ) const
+{
+    return RenderSceneHolder ( new RenderScenePrivate(name) );
+}
+
+// ---------------------------------------------------------------------------------------------------
+
+RenderSceneManager::RenderSceneManager ( const std::string& name )
+: Gre::Resource(name)
+{
+    GreResourceAutolock ;
+    iFactory.registers( "Default", new RenderSceneLoader() );
+}
+
+RenderSceneManager::~RenderSceneManager() noexcept ( false )
+{
+    
+}
+
+RenderScene RenderSceneManager::load(const std::string &name, const std::string &filename)
+{
+    if ( !name.empty() )
+    {
+        
+        {
+            GreResourceAutolock ;
+            RenderSceneHolder tmp = getHolder(name);
+            
+            if ( !tmp.isInvalid() )
+            {
+#ifdef GreIsDebugMode
+                GreDebugPretty() << "RenderScene '" << name << "' already registered." << std::endl;
+#endif
+                return RenderSceneHolder ( nullptr );
+            }
+        }
+        
+        if ( filename.empty() )
+        {
+            // Loads a RenderScene using default RenderSceneLoader.
+            
+            GreResourceAutolock ;
+            
+            RenderSceneLoader* ptrloader = iFactory.get( "Default" );
+            
+            if ( ptrloader )
+            {
+                RenderSceneHolder holder = ptrloader->load(name);
+                
+                if ( holder.isInvalid() )
+                {
+#ifdef GreIsDebugMode
+                    GreDebugPretty() << "'holder' can't be initialized." << std::endl;
+#endif
+                    return RenderSceneHolder ( nullptr );
+                }
+                
+                else
+                {
+#ifdef GreIsDebugMode
+                    GreDebugPretty() << "RenderScene '" << name << "' initialized." << std::endl;
+#endif
+                    iRenderScenes.add(holder);
+                    return holder;
+                }
+            }
+            
+            else
+            {
+#ifdef GreIsDebugMode
+                GreDebugPretty() << "RenderSceneLoader 'Default' not found." << std::endl;
+#endif
+                return RenderSceneHolder ( nullptr );
+            }
+        }
+        
+        else
+        {
+            GreResourceAutolock ;
+            
+            // Try to find the first available RenderSceneLoader for given filename.
+            
+            for ( auto it = iFactory.getLoaders().begin(); it != iFactory.getLoaders().end(); it++ )
+            {
+                auto & loader = (*it).second;
+                
+                if ( loader )
+                {
+                    if ( loader->isLoadable(filename) )
+                    {
+                        RenderSceneHolder holder = loader->load(name, filename);
+                        
+                        if ( !holder.isInvalid() )
+                        {
+#ifdef GreIsDebugMode
+                            GreDebugPretty() << "RenderScene '" << name << "' initialized." << std::endl;
+#endif
+                            iRenderScenes.add(holder);
+                            return holder;
+                        }
+                        
+                        else
+                        {
+#ifdef GreIsDebugMode
+                            GreDebugPretty() << "RenderScene '" << name << "' not initialized." << std::endl;
+#endif
+                            return RenderSceneHolder ( nullptr );
+                        }
+                    }
+                }
+            }
+            
+#ifdef GreIsDebugMode
+            GreDebugPretty() << "RenderScene '" << name << "' has no RenderSceneLoader ready to load." << std::endl;
+#endif
+            return RenderSceneHolder ( nullptr );
+        }
+    }
+    
+#ifdef GreIsDebugMode
+    else
+    {
+        GreDebugPretty() << "'name' is invalid." << std::endl;
+    }
+#endif
+    
+    return RenderScene ( nullptr );
+}
+
+RenderScene RenderSceneManager::load(const RenderSceneHolder &holder)
+{
+    if ( !holder.isInvalid() )
+    {
+        GreResourceAutolock ;
+        
+        {
+            RenderSceneHolder tmp = getHolder(holder->getName());
+            
+            if ( !tmp.isInvalid() )
+            {
+#ifdef GreIsDebugMode
+                GreDebugPretty() << "RenderScene '" << holder->getName() << "' already registered." << std::endl;
+#endif
+                return RenderSceneHolder ( nullptr );
+            }
+        }
+        
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "RenderScene '" << holder->getName() << "' registered." << std::endl;
+#endif
+        
+        iRenderScenes.add(holder);
+        return holder;
+    }
+    
+    return RenderScene ( nullptr );
+}
+
+RenderScene RenderSceneManager::get(const std::string &name)
+{
+    if ( !name.empty() )
+    {
+        GreResourceAutolock ;
+        
+        for ( auto it = iRenderScenes.begin(); it != iRenderScenes.end(); it++ )
+        {
+            if ( !(*it).isInvalid() )
+            {
+                if ( (*it)->getName() == name )
+                {
+                    return (*it);
+                }
+            }
+        }
+    }
+    
+    return RenderScene ( nullptr );
+}
+
+const RenderScene RenderSceneManager::get(const std::string &name) const
+{
+    if ( !name.empty() )
+    {
+        GreResourceAutolock ;
+        
+        for ( auto it = iRenderScenes.begin(); it != iRenderScenes.end(); it++ )
+        {
+            if ( !(*it).isInvalid() )
+            {
+                if ( (*it)->getName() == name )
+                {
+                    return (*it);
+                }
+            }
+        }
+    }
+    
+    return RenderScene ( nullptr );
+}
+
+const RenderSceneHolder RenderSceneManager::getHolder(const std::string &name) const
+{
+    if ( !name.empty() )
+    {
+        GreResourceAutolock ;
+        
+        for ( auto it = iRenderScenes.begin(); it != iRenderScenes.end(); it++ )
+        {
+            if ( !(*it).isInvalid() )
+            {
+                if ( (*it)->getName() == name )
+                {
+                    return (*it);
+                }
+            }
+        }
+    }
+    
+    return RenderSceneHolder ( nullptr );
+}
+
+RenderSceneHolderList& RenderSceneManager::getAll()
+{
+    return iRenderScenes;
+}
+
+bool RenderSceneManager::isLoaded(const std::string &name) const
+{
+    return !getHolder(name).isInvalid();
+}
+
+void RenderSceneManager::remove(const std::string &name)
+{
+    if ( !name.empty() )
+    {
+        GreResourceAutolock ;
+        
+        for ( auto it = iRenderScenes.begin(); it != iRenderScenes.end(); it++ )
+        {
+            if ( !(*it).isInvalid() )
+            {
+                if ( (*it)->getName() == name )
+                {
+                    iRenderScenes.erase(it);
+                    return;
+                }
+            }
+        }
+        
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "RenderScene '" << name << "' not found." << std::endl;
+#endif
+    }
+}
+
+void RenderSceneManager::clear()
+{
+    iRenderScenes.clear();
+    iFactory.clear();
+}
+
+RenderSceneLoaderFactory& RenderSceneManager::getLoaderFactory()
+{
+    return iFactory;
+}
+
+const RenderSceneLoaderFactory& RenderSceneManager::getLoaderFactory() const
+{
+    return iFactory;
 }
 
 GreEndNamespace

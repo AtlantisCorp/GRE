@@ -31,12 +31,17 @@
 		412194921CAEDDBD00F6E0E4 /* CustomWindow.m in Sources */ = {isa = PBXBuildFile; fileRef = 412194911CAEDDBD00F6E0E4 /* CustomWindow.m */; };
 		412194961CAEDFAF00F6E0E4 /* WindowBufEntry.m in Sources */ = {isa = PBXBuildFile; fileRef = 412194951CAEDFAF00F6E0E4 /* WindowBufEntry.m */; };
 		4121949C1CAEE44900F6E0E4 /* ImageApi.m in Sources */ = {isa = PBXBuildFile; fileRef = 4121949B1CAEE44900F6E0E4 /* ImageApi.m */; };
+		4121E08A1D99C7EE00C30EA3 /* WavefrontLoader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4121E0891D99C7EE00C30EA3 /* WavefrontLoader.cpp */; };
 		4131D53D1C41715600AB376A /* HardwareShader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4131D53C1C41715600AB376A /* HardwareShader.cpp */; };
 		4131D5401C41ED4900AB376A /* HardwareProgramManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4131D53F1C41ED4900AB376A /* HardwareProgramManager.cpp */; };
 		4131D5431C43506900AB376A /* OpenGlHardwareProgramManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4131D5421C43506900AB376A /* OpenGlHardwareProgramManager.cpp */; };
 		4131D5461C43DCE300AB376A /* OpenGlHardwareProgram.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4131D5451C43DCE300AB376A /* OpenGlHardwareProgram.cpp */; };
 		4131D5481C43EBD900AB376A /* OpenGlHardwareShader.h in Headers */ = {isa = PBXBuildFile; fileRef = 4131D5471C43EBD900AB376A /* OpenGlHardwareShader.h */; };
 		4131D54A1C43ECB500AB376A /* OpenGlHardwareShader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4131D5491C43ECB500AB376A /* OpenGlHardwareShader.cpp */; };
+		413C5BEC1DA525EE0058FDE4 /* DarwinGlTexture.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 413C5BEB1DA525EE0058FDE4 /* DarwinGlTexture.cpp */; };
+		413C5BEF1DA53EFC0058FDE4 /* DarwinGlHardwareProgramManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 413C5BEE1DA53EFC0058FDE4 /* DarwinGlHardwareProgramManager.cpp */; };
+		413C5BF21DA55A5B0058FDE4 /* DarwinGlHardwareShader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 413C5BF11DA55A5B0058FDE4 /* DarwinGlHardwareShader.cpp */; };
+		413C5BF51DA56A9C0058FDE4 /* DarwinGlHardwareProgram.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 413C5BF41DA56A9C0058FDE4 /* DarwinGlHardwareProgram.cpp */; };
 		413E53AD1CD7A1CF00316307 /* ResourceHolder.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 413E53AC1CD7A1CF00316307 /* ResourceHolder.cpp */; };
 		413F0A971C0FD98B0003F41F /* Texture.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 413F0A961C0FD98B0003F41F /* Texture.cpp */; };
 		414012A51C1095A3007375ED /* jpegloader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 414012A41C1095A3007375ED /* jpegloader.cpp */; };
@@ -59,6 +64,10 @@
 		414012BC1C109605007375ED /* ResourceManager.h in Headers */ = {isa = PBXBuildFile; fileRef = 41877B7C1BEFAED10024B643 /* ResourceManager.h */; };
 		414012BE1C109605007375ED /* Window.h in Headers */ = {isa = PBXBuildFile; fileRef = 41877B7E1BEFAED10024B643 /* Window.h */; };
 		414012C01C1097B1007375ED /* libgreengine.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 41877B591BEFADDE0024B643 /* libgreengine.dylib */; };
+		414359931DA9182100ADC7EE /* MacEventQueue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 414359921DA9182100ADC7EE /* MacEventQueue.cpp */; };
+		414359951DA94E0B00ADC7EE /* Example3.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 414359941DA94E0B00ADC7EE /* Example3.cpp */; };
+		414359981DA9559000ADC7EE /* Application.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 414359971DA9559000ADC7EE /* Application.cpp */; };
+		4143599B1DA95BD300ADC7EE /* DarwinApplication.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4143599A1DA95BD300ADC7EE /* DarwinApplication.cpp */; };
 		41460A701D11D10E002B1185 /* Transformation.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41460A6F1D11D10E002B1185 /* Transformation.cpp */; };
 		414B6A171C1F359D00D09D5E /* Scene.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 414B6A161C1F359D00D09D5E /* Scene.cpp */; };
 		414B6A191C1F386F00D09D5E /* Node.h in Headers */ = {isa = PBXBuildFile; fileRef = 414B6A181C1F386F00D09D5E /* Node.h */; };
@@ -69,6 +78,8 @@
 		414F319D1D6A5D99007CB92B /* RenderingApiDescriptor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 414F319C1D6A5D99007CB92B /* RenderingApiDescriptor.cpp */; };
 		414F31A01D6FAFE6007CB92B /* BoundingBox.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 414F319F1D6FAFE6007CB92B /* BoundingBox.cpp */; };
 		41531FBE1CB58E7600E9B581 /* WindowEvent.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41531FBD1CB58E7600E9B581 /* WindowEvent.cpp */; };
+		4155AAAE1DA2BC95008BFB0F /* DarwinGlRenderFramebuffer.h in Headers */ = {isa = PBXBuildFile; fileRef = 4155AAAD1DA2BC95008BFB0F /* DarwinGlRenderFramebuffer.h */; };
+		4155AAB01DA2BCA4008BFB0F /* DarwinGlRenderFramebuffer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4155AAAF1DA2BCA4008BFB0F /* DarwinGlRenderFramebuffer.cpp */; };
 		41574C3B1CD7D17D00081A81 /* ResourceUser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41574C3A1CD7D17D00081A81 /* ResourceUser.cpp */; };
 		41797BF11CDE502D003F66C3 /* ResourceLoader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41797BF01CDE502D003F66C3 /* ResourceLoader.cpp */; };
 		41797BF41CDE6E74003F66C3 /* Camera.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41797BF31CDE6E74003F66C3 /* Camera.cpp */; };
@@ -247,6 +258,9 @@
 		412194911CAEDDBD00F6E0E4 /* CustomWindow.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = CustomWindow.m; path = ../../../Plugins/OsXWindow/CustomWindow.m; sourceTree = "<group>"; };
 		412194951CAEDFAF00F6E0E4 /* WindowBufEntry.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = WindowBufEntry.m; sourceTree = "<group>"; };
 		4121949B1CAEE44900F6E0E4 /* ImageApi.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ImageApi.m; sourceTree = "<group>"; };
+		4121E0881D99C7AE00C30EA3 /* WavefrontLoader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = WavefrontLoader.h; sourceTree = "<group>"; };
+		4121E0891D99C7EE00C30EA3 /* WavefrontLoader.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WavefrontLoader.cpp; sourceTree = "<group>"; };
+		4121E08B1D9A72E300C30EA3 /* WavefrontStructs.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = WavefrontStructs.h; sourceTree = "<group>"; };
 		4131D53C1C41715600AB376A /* HardwareShader.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = HardwareShader.cpp; path = ../../../Engine/src/HardwareShader.cpp; sourceTree = "<group>"; };
 		4131D53E1C41E87B00AB376A /* HardwareProgramManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = HardwareProgramManager.h; path = ../../../Engine/inc/HardwareProgramManager.h; sourceTree = "<group>"; };
 		4131D53F1C41ED4900AB376A /* HardwareProgramManager.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = HardwareProgramManager.cpp; path = ../../../Engine/src/HardwareProgramManager.cpp; sourceTree = "<group>"; };
@@ -256,6 +270,14 @@
 		4131D5451C43DCE300AB376A /* OpenGlHardwareProgram.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = OpenGlHardwareProgram.cpp; path = ../../../Plugins/OpenGlRenderer/OpenGlHardwareProgram.cpp; sourceTree = "<group>"; };
 		4131D5471C43EBD900AB376A /* OpenGlHardwareShader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = OpenGlHardwareShader.h; path = ../../../Plugins/OpenGlRenderer/OpenGlHardwareShader.h; sourceTree = "<group>"; };
 		4131D5491C43ECB500AB376A /* OpenGlHardwareShader.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = OpenGlHardwareShader.cpp; path = ../../../Plugins/OpenGlRenderer/OpenGlHardwareShader.cpp; sourceTree = "<group>"; };
+		413C5BEA1DA5236E0058FDE4 /* DarwinGlTexture.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = DarwinGlTexture.h; path = ../../../../Plugins/DarwinGlRenderer/inc/DarwinGlTexture.h; sourceTree = "<group>"; };
+		413C5BEB1DA525EE0058FDE4 /* DarwinGlTexture.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = DarwinGlTexture.cpp; path = ../../../../Plugins/DarwinGlRenderer/src/DarwinGlTexture.cpp; sourceTree = "<group>"; };
+		413C5BED1DA53E410058FDE4 /* DarwinGlHardwareProgramManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = DarwinGlHardwareProgramManager.h; path = ../../../../Plugins/DarwinGlRenderer/inc/DarwinGlHardwareProgramManager.h; sourceTree = "<group>"; };
+		413C5BEE1DA53EFC0058FDE4 /* DarwinGlHardwareProgramManager.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = DarwinGlHardwareProgramManager.cpp; path = ../../../../Plugins/DarwinGlRenderer/src/DarwinGlHardwareProgramManager.cpp; sourceTree = "<group>"; };
+		413C5BF01DA5583A0058FDE4 /* DarwinGlHardwareShader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = DarwinGlHardwareShader.h; path = ../../../../Plugins/DarwinGlRenderer/inc/DarwinGlHardwareShader.h; sourceTree = "<group>"; };
+		413C5BF11DA55A5B0058FDE4 /* DarwinGlHardwareShader.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = DarwinGlHardwareShader.cpp; path = ../../../../Plugins/DarwinGlRenderer/src/DarwinGlHardwareShader.cpp; sourceTree = "<group>"; };
+		413C5BF31DA568B20058FDE4 /* DarwinGlHardwareProgram.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = DarwinGlHardwareProgram.h; path = ../../../../Plugins/DarwinGlRenderer/inc/DarwinGlHardwareProgram.h; sourceTree = "<group>"; };
+		413C5BF41DA56A9C0058FDE4 /* DarwinGlHardwareProgram.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = DarwinGlHardwareProgram.cpp; path = ../../../../Plugins/DarwinGlRenderer/src/DarwinGlHardwareProgram.cpp; sourceTree = "<group>"; };
 		413E53981CD79D0F00316307 /* ResourceHolder.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = ResourceHolder.h; path = ../../../Engine/inc/ResourceHolder.h; sourceTree = "<group>"; };
 		413E53AC1CD7A1CF00316307 /* ResourceHolder.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ResourceHolder.cpp; path = ../../../Engine/src/ResourceHolder.cpp; sourceTree = "<group>"; };
 		413E53AE1CD7ADFE00316307 /* ResourceUser.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = ResourceUser.h; path = ../../../Engine/inc/ResourceUser.h; sourceTree = "<group>"; };
@@ -263,6 +285,13 @@
 		414012991C1094E2007375ED /* libjpegloader.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libjpegloader.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		414012A41C1095A3007375ED /* jpegloader.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = jpegloader.cpp; path = ../../../../Plugins/JPEGLoader/jpegloader.cpp; sourceTree = "<group>"; };
 		414012C11C1326B4007375ED /* Pixel.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Pixel.h; path = ../../../Engine/inc/Pixel.h; sourceTree = "<group>"; };
+		414359911DA915F100ADC7EE /* MacEventQueue.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = MacEventQueue.h; path = ../../../Plugins/OsXWindow/MacEventQueue.h; sourceTree = "<group>"; };
+		414359921DA9182100ADC7EE /* MacEventQueue.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = MacEventQueue.cpp; path = ../../../Plugins/OsXWindow/MacEventQueue.cpp; sourceTree = "<group>"; };
+		414359941DA94E0B00ADC7EE /* Example3.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Example3.cpp; path = ../../../../Example/Example3.cpp; sourceTree = "<group>"; };
+		414359961DA952C000ADC7EE /* Application.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Application.h; path = ../../../Engine/inc/Application.h; sourceTree = "<group>"; };
+		414359971DA9559000ADC7EE /* Application.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Application.cpp; path = ../../../Engine/src/Application.cpp; sourceTree = "<group>"; };
+		414359991DA95AF500ADC7EE /* DarwinApplication.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = DarwinApplication.h; path = ../../../Plugins/OsXWindow/DarwinApplication.h; sourceTree = "<group>"; };
+		4143599A1DA95BD300ADC7EE /* DarwinApplication.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = DarwinApplication.cpp; path = ../../../Plugins/OsXWindow/DarwinApplication.cpp; sourceTree = "<group>"; };
 		41460A6E1D11CD52002B1185 /* Transformation.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Transformation.h; path = ../../../Engine/inc/Transformation.h; sourceTree = "<group>"; };
 		41460A6F1D11D10E002B1185 /* Transformation.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Transformation.cpp; path = ../../../Engine/src/Transformation.cpp; sourceTree = "<group>"; };
 		414B6A161C1F359D00D09D5E /* Scene.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Scene.cpp; path = ../../../Engine/src/Scene.cpp; sourceTree = "<group>"; };
@@ -280,6 +309,8 @@
 		414F319F1D6FAFE6007CB92B /* BoundingBox.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = BoundingBox.cpp; path = ../../../Engine/src/BoundingBox.cpp; sourceTree = "<group>"; };
 		41531FBC1CB58DC900E9B581 /* WindowEvent.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = WindowEvent.h; path = ../../../Engine/inc/WindowEvent.h; sourceTree = "<group>"; };
 		41531FBD1CB58E7600E9B581 /* WindowEvent.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = WindowEvent.cpp; path = ../../../Engine/src/WindowEvent.cpp; sourceTree = "<group>"; };
+		4155AAAD1DA2BC95008BFB0F /* DarwinGlRenderFramebuffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = DarwinGlRenderFramebuffer.h; path = ../../../../Plugins/DarwinGlRenderer/inc/DarwinGlRenderFramebuffer.h; sourceTree = "<group>"; };
+		4155AAAF1DA2BCA4008BFB0F /* DarwinGlRenderFramebuffer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = DarwinGlRenderFramebuffer.cpp; path = ../../../../Plugins/DarwinGlRenderer/src/DarwinGlRenderFramebuffer.cpp; sourceTree = "<group>"; };
 		41574C3A1CD7D17D00081A81 /* ResourceUser.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ResourceUser.cpp; path = ../../../Engine/src/ResourceUser.cpp; sourceTree = "<group>"; };
 		41797BEF1CDE4EBD003F66C3 /* ResourceLoader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = ResourceLoader.h; path = ../../../Engine/inc/ResourceLoader.h; sourceTree = "<group>"; };
 		41797BF01CDE502D003F66C3 /* ResourceLoader.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ResourceLoader.cpp; path = ../../../Engine/src/ResourceLoader.cpp; sourceTree = "<group>"; };
@@ -488,6 +519,7 @@
 			children = (
 				414BC04F1BFD640100EA4A76 /* main.cpp */,
 				41153B6C1CA2E4B700757AC3 /* Example2.cpp */,
+				414359941DA94E0B00ADC7EE /* Example3.cpp */,
 				41153B6A1CA2E48E00757AC3 /* Example1.cpp */,
 				414BC0321BFD63B400EA4A76 /* Info.plist */,
 			);
@@ -549,10 +581,14 @@
 			children = (
 				412194951CAEDFAF00F6E0E4 /* WindowBufEntry.m */,
 				41877BBE1BEFB0730024B643 /* PluginMain.cpp */,
+				414359991DA95AF500ADC7EE /* DarwinApplication.h */,
+				4143599A1DA95BD300ADC7EE /* DarwinApplication.cpp */,
 				418D20161C19F24C005E00AE /* OSXWindow.h */,
 				418D201C1C19F37A005E00AE /* OSXWindowClass.cpp */,
 				418D201A1C19F30B005E00AE /* OSXImage.h */,
 				418D20181C19F2E1005E00AE /* OSXFunctions.h */,
+				414359911DA915F100ADC7EE /* MacEventQueue.h */,
+				414359921DA9182100ADC7EE /* MacEventQueue.cpp */,
 				4121949B1CAEE44900F6E0E4 /* ImageApi.m */,
 				41877BBF1BEFB0740024B643 /* WindowApi.m */,
 				412194911CAEDDBD00F6E0E4 /* CustomWindow.m */,
@@ -607,6 +643,9 @@
 			isa = PBXGroup;
 			children = (
 				41B8C8211C1C5F71000084F2 /* ObjLoader.cp */,
+				4121E08B1D9A72E300C30EA3 /* WavefrontStructs.h */,
+				4121E0881D99C7AE00C30EA3 /* WavefrontLoader.h */,
+				4121E0891D99C7EE00C30EA3 /* WavefrontLoader.cpp */,
 			);
 			path = ObjLoader;
 			sourceTree = "<group>";
@@ -614,6 +653,7 @@
 		41BB7F991D0F5FA400E18BF8 /* src */ = {
 			isa = PBXGroup;
 			children = (
+				414359971DA9559000ADC7EE /* Application.cpp */,
 				4186FF911CBC2AF20036559B /* AxisAlignedBoundingBox.cpp */,
 				418C1AB91C2786BB005FF276 /* BinaryTreeScene.cpp */,
 				41867F0F1C1B96FF0096F198 /* Camera_old.cpp */,
@@ -676,6 +716,7 @@
 		41BB7F9A1D0F5FC600E18BF8 /* inc */ = {
 			isa = PBXGroup;
 			children = (
+				414359961DA952C000ADC7EE /* Application.h */,
 				4186FF901CBC27E00036559B /* AxisAlignedBoundingBox.h */,
 				418C1AB71C2743AC005FF276 /* BinaryTreeScene.h */,
 				41867F0D1C1B90D70096F198 /* Camera_old.h */,
@@ -742,11 +783,21 @@
 		41CFF7F11D7C96FF00AF3606 /* DarwinGlRenderer */ = {
 			isa = PBXGroup;
 			children = (
+				4155AAAF1DA2BCA4008BFB0F /* DarwinGlRenderFramebuffer.cpp */,
+				4155AAAD1DA2BC95008BFB0F /* DarwinGlRenderFramebuffer.h */,
 				41CFF7FB1D7C98BE00AF3606 /* DarwinGlRendererMain.cpp */,
 				41CFF7FE1D7C9A3800AF3606 /* DarwinGlHeader.h */,
 				41CFF8001D7C9EE700AF3606 /* DarwinGlHeader.cpp */,
 				41CFF8021D7CA0CC00AF3606 /* DarwinGlRenderer.h */,
 				41CFF8031D7D860500AF3606 /* DarwinGlRenderer.cpp */,
+				413C5BED1DA53E410058FDE4 /* DarwinGlHardwareProgramManager.h */,
+				413C5BEE1DA53EFC0058FDE4 /* DarwinGlHardwareProgramManager.cpp */,
+				413C5BF01DA5583A0058FDE4 /* DarwinGlHardwareShader.h */,
+				413C5BF11DA55A5B0058FDE4 /* DarwinGlHardwareShader.cpp */,
+				413C5BF31DA568B20058FDE4 /* DarwinGlHardwareProgram.h */,
+				413C5BF41DA56A9C0058FDE4 /* DarwinGlHardwareProgram.cpp */,
+				413C5BEA1DA5236E0058FDE4 /* DarwinGlTexture.h */,
+				413C5BEB1DA525EE0058FDE4 /* DarwinGlTexture.cpp */,
 				41CFF8051D7D990900AF3606 /* DarwinGlContext.h */,
 				41CFF8061D7D9B2200AF3606 /* DarwinGlContext.cpp */,
 			);
@@ -895,6 +946,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4155AAAE1DA2BC95008BFB0F /* DarwinGlRenderFramebuffer.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1140,6 +1192,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				414359951DA94E0B00ADC7EE /* Example3.cpp in Sources */,
 				41153B6B1CA2E48E00757AC3 /* Example1.cpp in Sources */,
 				41153B6D1CA2E4B700757AC3 /* Example2.cpp in Sources */,
 				414BC0501BFD640100EA4A76 /* main.cpp in Sources */,
@@ -1170,6 +1223,7 @@
 				418C1ABA1C2786BB005FF276 /* BinaryTreeScene.cpp in Sources */,
 				413E53AD1CD7A1CF00316307 /* ResourceHolder.cpp in Sources */,
 				4120041D1C3DBED10010739D /* Pass.cpp in Sources */,
+				414359981DA9559000ADC7EE /* Application.cpp in Sources */,
 				410C1C2F1C035C8100937366 /* Event.cpp in Sources */,
 				41531FBE1CB58E7600E9B581 /* WindowEvent.cpp in Sources */,
 				414B6A1B1C1F603500D09D5E /* Node.cpp in Sources */,
@@ -1222,7 +1276,9 @@
 			files = (
 				412194921CAEDDBD00F6E0E4 /* CustomWindow.m in Sources */,
 				4121948E1CAED7EB00F6E0E4 /* OpenGlCustomView.m in Sources */,
+				414359931DA9182100ADC7EE /* MacEventQueue.cpp in Sources */,
 				41877BC01BEFB0740024B643 /* PluginMain.cpp in Sources */,
+				4143599B1DA95BD300ADC7EE /* DarwinApplication.cpp in Sources */,
 				4121949C1CAEE44900F6E0E4 /* ImageApi.m in Sources */,
 				41877BC11BEFB0740024B643 /* WindowApi.m in Sources */,
 				412194961CAEDFAF00F6E0E4 /* WindowBufEntry.m in Sources */,
@@ -1262,6 +1318,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				41B8C8221C1C5F71000084F2 /* ObjLoader.cp in Sources */,
+				4121E08A1D99C7EE00C30EA3 /* WavefrontLoader.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1269,9 +1326,14 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				413C5BF21DA55A5B0058FDE4 /* DarwinGlHardwareShader.cpp in Sources */,
 				41CFF8011D7C9EE700AF3606 /* DarwinGlHeader.cpp in Sources */,
+				4155AAB01DA2BCA4008BFB0F /* DarwinGlRenderFramebuffer.cpp in Sources */,
 				41CFF8071D7D9B2200AF3606 /* DarwinGlContext.cpp in Sources */,
+				413C5BEF1DA53EFC0058FDE4 /* DarwinGlHardwareProgramManager.cpp in Sources */,
+				413C5BEC1DA525EE0058FDE4 /* DarwinGlTexture.cpp in Sources */,
 				41CFF8041D7D860500AF3606 /* DarwinGlRenderer.cpp in Sources */,
+				413C5BF51DA56A9C0058FDE4 /* DarwinGlHardwareProgram.cpp in Sources */,
 				41CFF7FC1D7C98BE00AF3606 /* DarwinGlRendererMain.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -2194,6 +2256,7 @@
 				41CFF7FA1D7C96FF00AF3606 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

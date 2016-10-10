@@ -43,6 +43,8 @@
 #   define BUILDING_DLL
 #   include "ResourceManager.h"
 
+using namespace Gre;
+
 #endif // OSXFUNCTIONS_OBJC
 
 #ifdef OSXFUNCTIONS_OBJC
@@ -52,12 +54,7 @@
 
 #include <OpenGL/OpenGL.h>
 
-#ifndef OSXFUNCTIONS_OBJC
-
-using namespace Gre;
-typedef const void* CFTypeRef;
-
-#endif
+#include "MacEventQueue.h"
 
 // Maximum number of Windows.
 #define WINDOW_MAX 16
@@ -75,6 +72,13 @@ struct keybuf_t
 /// @brief A C-style structure which contains every buffered properties
 /// that might have changed in a Window object.
 /// Those properties are given by the function NsGetWindowBufEntry(CFTypeRef).
+///
+/// The ObjC Window object send events to the Gre::Window object using a Queue style
+/// object. The Queue is set by entering new Window events. The Window Gre objects then
+/// looks at the queue and act in consequence.
+///
+/// The Objc Window should be completly apart from the Gre Window. Every Objc calls should
+/// be made using another queue.
 typedef struct window_t_id
 {
     /// @brief The Keyboard buffer we use.
@@ -176,6 +180,15 @@ extern "C" DLL_PUBLIC bool NsWindowPropertyIsVisible ( const CFTypeRef* window )
 
 /// @brief Calls [window isOnActiveSpace] .
 extern "C" DLL_PUBLIC bool NsWindowPropertyIsOnActiveSpace ( const CFTypeRef* window );
+
+/// @brief Sets the EventQueue that should be used by the Window to send event.
+extern "C" DLL_PUBLIC void NsWindowSetEventQueue ( CFTypeRef* window , WindowEventQueue* queue ) ;
+
+/// @brief Run the shared application.
+extern "C" DLL_PUBLIC void NSGlobalApplicationRun ( ) ;
+
+/// @brief Terminate the shared application.
+extern "C" DLL_PUBLIC void NSGlobalApplicationTerminate ( ) ;
 
 // ---------------------------------------------------------------------------------------
 

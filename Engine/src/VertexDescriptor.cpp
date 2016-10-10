@@ -154,7 +154,7 @@ std::string VertexComponentTypeToString(const VertexComponentType& component)
 
 VertexDescriptor::VertexDescriptor()
 {
-    
+    iSize = 0;
 }
 
 VertexDescriptor::~VertexDescriptor()

@@ -31,7 +31,6 @@
  */
 
 #include "RenderContext.h"
-#include "WindowEvent.h"
 
 GreBeginNamespace
 
@@ -92,6 +91,8 @@ Viewport RenderContextPrivate::getDefaultViewport() const
 
 void RenderContextPrivate::removeViewport(const std::string &name)
 {
+    GreResourceAutolock ;
+    
     auto it = std::find_if(iViewports.begin(), iViewports.end(), [&](const Viewport& v) -> bool { return name == v.getName(); });
     
     if(it != iViewports.end())
@@ -109,6 +110,8 @@ void RenderContextPrivate::removeViewport(const std::string &name)
 
 std::string RenderContextPrivate::toString() const
 {
+    GreResourceAutolock ;
+    
     std::string ret;
     ret += "RenderContext (name='"; ret += getName();
     ret += "', Viewports="; ret += std::to_string(getViewports().size());
@@ -118,6 +121,8 @@ std::string RenderContextPrivate::toString() const
 
 void RenderContextPrivate::onEvent(const Event &e)
 {
+    GreResourceAutolock ;
+    
     if(e.getType() == EventType::WindowSized)
     {
         WindowSizedEvent wse = e.to<WindowSizedEvent>();
@@ -127,11 +132,78 @@ void RenderContextPrivate::onEvent(const Event &e)
     Resource::onEvent(e);
 }
 
+RenderFramebufferHolder RenderContextPrivate::createFramebuffer( const std::string& name )
+{
+    GreResourceAutolock ;
+    
+    RenderFramebufferHolder holder = iCreateFramebuffer(name);
+    
+    if ( holder.isInvalid() )
+    {
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "Can't create RenderFramebuffer '" << name << "'." << std::endl;
+#endif
+        return RenderFramebufferHolder ( nullptr );
+    }
+    
+    else
+    {
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "RenderFramebuffer '" << name << "'." << std::endl;
+#endif
+        iFramebuffers.add(holder);
+        return holder;
+    }
+}
+
+RenderFramebufferHolderList RenderContextPrivate::getFramebuffers(int sz)
+{
+    if ( sz > 0 )
+    {
+        GreResourceAutolock ;
+        RenderFramebufferHolderList ret;
+        
+        for ( auto it = iFramebuffers.begin(); it != iFramebuffers.end(); it++ )
+        {
+            ret.add((*it));
+            sz--;
+            
+            if ( sz <= 0 )
+                break;
+        }
+        
+        while ( sz > 0 )
+        {
+            RenderFramebufferHolder fbo = createFramebuffer( getName() + "/fbo#" + std::to_string(sz) );
+            sz--;
+            
+            if ( fbo.isInvalid() )
+            {
+#ifdef GreIsDebugMode
+                GreDebugPretty() << "Can't create RenderFramebuffer '" << getName() + "/fbo#" + std::to_string(sz) << "'." << std::endl;
+#endif
+            }
+            
+            else
+            {
+                ret.add(fbo);
+            }
+        }
+        
+        return ret;
+    }
+    
+    return RenderFramebufferHolderList () ;
+}
+
 void RenderContextPrivate::_onWindowSizedEvent(WindowSizedEvent &event)
 {
+    GreResourceAutolock ;
+    
     for(auto& viewport : iViewports)
     {
-        viewport.onBordersChanged(event.getSurface());
+        viewport.onBordersChanged({viewport.getSurface().left , viewport.getSurface().top ,
+            event.Width , event.Height });
     }
 }
 

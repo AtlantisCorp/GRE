@@ -132,6 +132,9 @@ private:
     
     /// @brief A reference to the Obj-C NsWindow object.
     CFTypeRef iWindow;
+    
+    /// @brief The Window Event Queue .
+    WindowEventQueue* iEventQueue ;
 };
 
 //////////////////////////////////////////////////////////////////////

@@ -1,10 +1,34 @@
+//////////////////////////////////////////////////////////////////////
 //
 //  CustomWindow.m
-//  GRE
+//  This source file is part of Gre
+//		(Gang's Resource Engine)
 //
-//  Created by Jacques Tronconi on 01/04/2016.
+//  Copyright (c) 2015 - 2016 Luk2010
+//  Created on 01/04/2016.
 //
-//
+//////////////////////////////////////////////////////////////////////
+/*
+ -----------------------------------------------------------------------------
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal
+ in the Software without restriction, including without limitation the rights
+ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
+ 
+ The above copyright notice and this permission notice shall be included in
+ all copies or substantial portions of the Software.
+ 
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ THE SOFTWARE.
+ -----------------------------------------------------------------------------
+ */
 
 #import "CustomWindow.h"
 
@@ -19,15 +43,8 @@
 /// @brief Sets the YsOpenGlView associated.
 - (void) setGlView: (OpenGlCustomView*) glView
 {
-    if(_nsGlView != nil)
-    {
-        [_nsGlView release];
-        _nsGlView = nil;
-    }
-    
-    _nsGlView = glView;
-    [self setContentView:_nsGlView];
-    [self makeFirstResponder:_nsGlView];
+    [self setContentView:glView];
+    [glView setEventQueue:iEventQueue];
 }
 
 /// @brief Returns the current WindowBufEntry.
@@ -49,6 +66,7 @@
 {
     self = [super initWithContentRect:rect styleMask:wndStyle backing:bufferingType defer:deferFlg];
     _nsGlView = nil;
+    iIsInvisible = true ;
     
     [[NSNotificationCenter defaultCenter]
      addObserver:self
@@ -94,28 +112,38 @@
 /// @brief Called when the Window did move.
 - (void) windowDidMove: (NSNotification*) notification
 {
-    if(_nsWindowEntry)
+    if ( iEventQueue )
     {
-        _nsWindowEntry->sizeChanged = true;
-        _nsWindowEntry->newWidth = _frame.size.width;
-        _nsWindowEntry->newHeight = _frame.size.height;
-        _nsWindowEntry->newX = _frame.origin.x;
-        _nsWindowEntry->newY = _frame.origin.y;
-        _nsWindowEntry->exposed = [self isVisible];
+        WindowEventDidMove * event = (WindowEventDidMove*) malloc( sizeof(WindowEventDidMove) ) ;
+        if ( !event ) @throw [NSException exceptionWithName:@"BadAllocException"
+                                                     reason:@"'event' could not be allocated."
+                                                   userInfo:nil];
+        
+        event->base.WindowSender = self ;
+        event->base.WinEventType = WETWindowDidMove ;
+        event->x = _frame.origin.x;
+        event->y = _frame.origin.y;
+        
+        EventQueuePush ( iEventQueue , (WindowEventBase*) event );
     }
 }
 
 /// @brief Called when the Window did resize.
 - (void) windowDidResize: (NSNotification *)notification
 {
-    if(_nsWindowEntry)
+    if ( iEventQueue )
     {
-        _nsWindowEntry->sizeChanged = true;
-        _nsWindowEntry->newWidth = _frame.size.width;
-        _nsWindowEntry->newHeight = _frame.size.height;
-        _nsWindowEntry->newX = _frame.origin.x;
-        _nsWindowEntry->newY = _frame.origin.y;
-        _nsWindowEntry->exposed = [self isVisible];
+        WindowEventDidResize * event = (WindowEventDidResize*) malloc( sizeof(WindowEventDidResize) ) ;
+        if ( !event ) @throw [NSException exceptionWithName:@"BadAllocException"
+                                                     reason:@"'event' could not be allocated."
+                                                   userInfo:nil];
+        
+        event->base.WindowSender = self ;
+        event->base.WinEventType = WETWindowDidResize ;
+        event->height = _frame.size.height ;
+        event->width = _frame.size.width ;
+        
+        EventQueuePush ( iEventQueue , (WindowEventBase*) event ) ;
     }
 }
 
@@ -123,26 +151,40 @@
 /// that this Window... well is closed.
 - (void) windowWillClose: (NSNotification *)notification
 {
-    if(_nsWindowEntry) {
-        _nsWindowEntry->closed = true;
-        _nsWindowEntry->exposed = false;
-        _nsWindowEntry->keybuf_sz = 0;
-        // With this line, we 'free' the Entry. Any other Window which
-        // will try to find an available Entry will find this one.
-        _nsWindowEntry->window = nil;
+    if ( iEventQueue )
+    {
+        WindowEventBase* event = (WindowEventBase*) malloc ( sizeof(WindowEventBase) ) ;
+        if ( !event ) @throw [NSException exceptionWithName:@"BadAllocException"
+                                                     reason:@"'event' could not be allocated."
+                                                   userInfo:nil];
+        
+        event->WindowSender = self;
+        event->WinEventType = WETWindowWillClose;
+        
+        EventQueuePush ( iEventQueue , (WindowEventBase*) event ) ;
     }
-    
-    _nsIsClosed = true;
 }
 
 /// @brief Notifiate the Window Entry that we are shown to the public.
 - (void) windowExposed: (NSNotification *) notification
 {
-    if(_nsWindowEntry) {
-        _nsWindowEntry->exposed = true;
-        _nsWindowEntry->closed = false;
+    if ( iEventQueue )
+    {
+        WindowEventExposed* event = (WindowEventExposed*) malloc ( sizeof(WindowEventExposed) ) ;
+        if ( !event ) @throw [NSException exceptionWithName:@"BadAllocException"
+                                                     reason:@"'event' could not be allocated."
+                                                   userInfo:nil];
+        
+        event->base.WindowSender = self;
+        event->base.WinEventType = WETWindowExposed;
+        
+        event->x = _frame.origin.x ;
+        event->y = _frame.origin.y ;
+        event->width = _frame.size.width ;
+        event->height = _frame.size.height ;
+        
+        EventQueuePush ( iEventQueue , (WindowEventBase*) event ) ;
     }
-    _nsIsClosed = false;
 }
 
 /// @brief When a Key is down, we add it to the Entry key queue.
@@ -150,16 +192,20 @@
 /// treat this Event.
 - (void) keyDown:(NSEvent *)theEvent
 {
-    if(_nsWindowEntry)
+    if ( iEventQueue )
     {
-        if(_nsWindowEntry->keybuf_sz < KEYBUF_MAX)
-        {
-            struct keybuf_t nsNewKeyEvent;
-            nsNewKeyEvent.key = theEvent.keyCode;
-            nsNewKeyEvent.pressed = 1;
-            _nsWindowEntry->keybufs[_nsWindowEntry->keybuf_sz] = nsNewKeyEvent;
-            _nsWindowEntry->keybuf_sz++;
-        }
+        WindowEventKeyPressed* event = (WindowEventKeyPressed*) malloc ( sizeof(WindowEventKeyPressed) ) ;
+        if ( !event ) @throw [NSException exceptionWithName:@"BadAllocException"
+                                                     reason:@"'event' could not be allocated."
+                                                   userInfo:nil];
+        
+        char buf [256] ; [theEvent.characters getCString:buf maxLength:255 encoding:NSASCIIStringEncoding];
+        
+        event->base.WindowSender = self;
+        event->base.WinEventType = WETWindowKeyPressed;
+        event->key = (int) buf[0] ;
+        
+        EventQueuePush ( iEventQueue , (WindowEventBase*) event ) ;
     }
     
     [super keyDown:theEvent];
@@ -170,16 +216,20 @@
 /// treat this Event.
 - (void) keyUp:(NSEvent *)theEvent
 {
-    if(_nsWindowEntry)
+    if ( iEventQueue )
     {
-        if(_nsWindowEntry->keybuf_sz < KEYBUF_MAX)
-        {
-            struct keybuf_t nsNewKeyEvent;
-            nsNewKeyEvent.key = theEvent.keyCode;
-            nsNewKeyEvent.pressed = 0;
-            _nsWindowEntry->keybufs[_nsWindowEntry->keybuf_sz] = nsNewKeyEvent;
-            _nsWindowEntry->keybuf_sz++;
-        }
+        WindowEventKeyReleased* event = (WindowEventKeyReleased*) malloc ( sizeof(WindowEventKeyReleased) ) ;
+        if ( !event ) @throw [NSException exceptionWithName:@"BadAllocException"
+                                                     reason:@"'event' could not be allocated."
+                                                   userInfo:nil];
+        
+        char buf [256] ; [theEvent.characters getCString:buf maxLength:255 encoding:NSASCIIStringEncoding];
+        
+        event->base.WindowSender = self;
+        event->base.WinEventType = WETWindowKeyReleased;
+        event->key = (int) buf[0] ;
+        
+        EventQueuePush ( iEventQueue , (WindowEventBase*) event ) ;
     }
     
     [super keyUp:theEvent];
@@ -187,14 +237,80 @@
 
 - (void) update
 {
-    if ( [self isOnActiveSpace] && [self isVisible] )
+    [super update];
+    
+    // Try to see if Window is visible, or being hidden.
+    
+    if ( [self isVisible] && [self isOnActiveSpace] && iIsInvisible )
     {
-        if ( _nsGlView != nil )
+        if ( iEventQueue )
         {
-            [_nsGlView update];
+            WindowEventExposed* event = (WindowEventExposed*) malloc ( sizeof(WindowEventExposed) ) ;
+            if ( !event ) @throw [NSException exceptionWithName:@"BadAllocException"
+                                                         reason:@"'event' could not be allocated."
+                                                       userInfo:nil];
+            
+            event->base.WindowSender = self;
+            event->base.WinEventType = WETWindowExposed;
+            
+            event->x = _frame.origin.x ;
+            event->y = _frame.origin.y ;
+            event->width = _frame.size.width ;
+            event->height = _frame.size.height ;
+            
+            EventQueuePush ( iEventQueue , (WindowEventBase*) event ) ;
         }
         
-        [super update];
+        iIsInvisible = false;
+    }
+    
+    else if ( !iIsInvisible )
+    {
+        if ( ![self isVisible] || ![self isOnActiveSpace] )
+        {
+            if ( iEventQueue )
+            {
+                WindowEventHidden* event = (WindowEventHidden*) malloc ( sizeof(WindowEventHidden) ) ;
+                if ( !event ) @throw [NSException exceptionWithName:@"BadAllocException"
+                                                             reason:@"'event' could not be allocated."
+                                                           userInfo:nil];
+                
+                event->base.WindowSender = self;
+                event->base.WinEventType = WETWindowHidden;
+                
+                EventQueuePush ( iEventQueue , (WindowEventBase*) event ) ;
+            }
+            
+            iIsInvisible = true;
+        }
+    }
+}
+
+- (void) setWindowEventQueue:(WindowEventQueue *)queue
+{
+    iEventQueue = queue ;
+}
+
+- (void) setTitle:(NSString *)title
+{
+    [super setTitle:title];
+    
+    if ( iEventQueue )
+    {
+        WindowEventTitleChanged* event = (WindowEventTitleChanged*) malloc ( sizeof(WindowEventTitleChanged) ) ;
+        if ( !event ) @throw [NSException exceptionWithName:@"BadAllocException"
+                                                     reason:@"'event' could not be allocated."
+                                                   userInfo:nil];
+        
+        event->base.WindowSender = self;
+        event->base.WinEventType = WETWindowTitleChanged;
+        
+        event->title = (char*) malloc ( [title length] + 1 ) ;
+        memcpy(event->title, [title cStringUsingEncoding:NSASCIIStringEncoding], [title length]);
+        event->title[ title.length ] = '\0' ;
+        event->size = (int) title.length ;
+        
+        EventQueuePush ( iEventQueue , (WindowEventBase*) event ) ;
     }
 }
 
