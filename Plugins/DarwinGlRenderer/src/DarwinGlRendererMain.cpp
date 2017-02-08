@@ -46,7 +46,7 @@ extern "C" void StartPlugin ( void )
     
     if ( DarwinGl::InitializeOpenGl() )
     {
-        GreDebugPretty() << (const char*) GetPluginName() << " initialized." << std::endl;
+        GreDebugPretty() << (const char*) GetPluginName() << " initialized." << Gre::gendl;
     }
     
     // Register a RendererLoader in the RendererManager.

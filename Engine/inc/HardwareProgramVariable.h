@@ -49,7 +49,10 @@ enum class HdwProgVarType
     Uint32, ///< @brief uint GLSL type.
     Sampler2D, ///< @brief sampler2d GLSL type.
     Sampler3D, ///< @brief sampler3d GLSL type.
-    Float1 ///< @brief A Float variable.
+    Float1, ///< @brief A Float variable.
+    Float4, ///< @brief float4 structure.
+    Integer, ///< @brief int
+    Bool ///< @brief boolean
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -92,6 +95,9 @@ struct HardwareProgramVariable
         uint32_t uint32;
         int textureunit;
         float float1;
+        Float4 float4;
+        int integer;
+        bool boolean;
         
         _u() { memset(this, 0, sizeof(_u)); }
         

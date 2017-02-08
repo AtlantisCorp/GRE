@@ -34,60 +34,20 @@
 
 GreBeginNamespace
 
-SoftwareIndexBufferPrivate::SoftwareIndexBufferPrivate(const std::string& name)
-: Gre::HardwareIndexBufferPrivate(name)
+SoftwareIndexBuffer::SoftwareIndexBuffer(const std::string& name)
+: Gre::HardwareIndexBuffer(name)
 {
     
 }
 
-SoftwareIndexBufferPrivate::~SoftwareIndexBufferPrivate() noexcept(false)
+SoftwareIndexBuffer::~SoftwareIndexBuffer() noexcept(false)
 {
     
 }
 
-void SoftwareIndexBufferPrivate::onUpdateEvent(const Gre::UpdateEvent &e)
+void SoftwareIndexBuffer::onUpdateEvent(const Gre::UpdateEvent &e)
 {
     iDataChanged = false;
 }
-
-// ---------------------------------------------------------------------------------------------------
-
-SoftwareIndexBuffer::SoftwareIndexBuffer(const SoftwareIndexBufferPrivate* pointer)
-: Gre::ResourceUser(pointer),
-  Gre::HardwareIndexBuffer(pointer)
-{
-    
-}
-
-SoftwareIndexBuffer::SoftwareIndexBuffer(const SoftwareIndexBufferHolder& holder)
-: Gre::ResourceUser(holder),
-  Gre::HardwareIndexBuffer(holder.get())
-{
-    
-}
-
-SoftwareIndexBuffer::SoftwareIndexBuffer(const SoftwareIndexBuffer& user)
-: Gre::ResourceUser(user),
-  Gre::HardwareIndexBuffer(user)
-{
-    
-}
-
-SoftwareIndexBuffer::~SoftwareIndexBuffer()
-{
-    
-}
-
-SoftwareIndexBufferHolder SoftwareIndexBuffer::lock()
-{
-    return GreUserLockCast(SoftwareIndexBufferHolder, SoftwareIndexBufferPrivate, HardwareIndexBuffer);
-}
-
-const SoftwareIndexBufferHolder SoftwareIndexBuffer::lock() const
-{
-    return GreUserConstLockCast(SoftwareIndexBufferHolder, SoftwareIndexBufferPrivate, HardwareIndexBuffer);
-}
-
-SoftwareIndexBuffer SoftwareIndexBuffer::Null = SoftwareIndexBuffer(nullptr);
 
 GreEndNamespace

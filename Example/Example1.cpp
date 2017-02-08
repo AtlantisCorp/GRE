@@ -77,7 +77,7 @@ int main(int argc, const char * argv[]) {
     
     try
     {
-        GreDebugPretty() << "Initialized Gre v." << localVersion.major << "." << localVersion.minor << "." << localVersion.build << std::endl;
+        GreDebugPretty() << "Initialized Gre v." << localVersion.major << "." << localVersion.minor << "." << localVersion.build << Gre::gendl;
         
         ResourceManager::Create();
         ResourceManager::Get().loadPluginsIn("./plugins");
@@ -123,7 +123,7 @@ int main(int argc, const char * argv[]) {
             //myWindow.associate(myRenderer);
             //myWindow.setTitle("My Cool Application");
             
-            GreDebugPretty() << "Pool current size = " << ResourceManager::Get().getResourceUsage() << std::endl;
+            GreDebugPretty() << "Pool current size = " << ResourceManager::Get().getResourceUsage() << Gre::gendl;
             
             float rtri      = 0.0f;
             float rquad     = 0.0f;
@@ -150,7 +150,7 @@ int main(int argc, const char * argv[]) {
                     trispeed -= 0.05f;
                 }
                 
-                GreDebugPretty() << "[Main] Key Down : " << (int) kde.key << std::endl;
+                GreDebugPretty() << "[Main] Key Down : " << (int) kde.key << Gre::gendl;
             });
             
             Keyboard myKeyboard("MyKeyboard");
@@ -373,10 +373,10 @@ int main(int argc, const char * argv[]) {
         ResourceManager::Destroy();
         
     } catch (std::exception const& e) {
-        GreDebugPretty() << "Exception : " << e.what() << std::endl;
+        GreDebugPretty() << "Exception : " << e.what() << Gre::gendl;
     }
     
-    GreDebugPretty() << "end." << std::endl;
+    GreDebugPretty() << "end." << Gre::gendl;
     return 0;
 }
 #endif

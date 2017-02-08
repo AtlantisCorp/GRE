@@ -51,9 +51,6 @@
     /// @brief The OpenGlCustomView. This View can change its OpenGlContext whenever we want.
     OpenGlCustomView* _nsGlView;
     
-    /// @brief The WindowBufEntry buffer. This Buffer has a fixed size.
-    WindowBufEntry* _nsWindowEntry;
-    
     /// @brief True if this Window is closed.
     bool _nsIsClosed;
     
@@ -64,7 +61,6 @@
 - (OpenGlCustomView*) getGlView;
 - (void) setGlView: (OpenGlCustomView*) glView;
 
-- (WindowBufEntry*) getWindowEntry;
 - (bool) isClosed;
 
 - (void) setWindowEventQueue: (WindowEventQueue*) queue ;

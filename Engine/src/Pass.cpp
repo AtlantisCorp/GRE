@@ -35,118 +35,43 @@
 
 GreBeginNamespace
 
-PassPrivate::PassPrivate(const std::string& name, const PassNumber& passNumber)
-: Resource(name), iNumber(passNumber), iIsActivated(true), iLinkedProgram(HardwareProgram::Null)
+RenderPass::RenderPass ( const RenderPassIdentifier& identifier )
+: Gre::Resource(), iIdentifier(identifier)
+, iActivated(false)
 {
     
 }
 
-PassPrivate::~PassPrivate()
+RenderPass::RenderPass ( const std::string & name , const RenderPassIdentifier& identifier )
+: Gre::Resource(name), iIdentifier(identifier)
+, iActivated(false)
 {
     
 }
 
-void PassPrivate::setActivated(bool activate)
-{
-    iIsActivated = activate;
-}
-
-bool PassPrivate::isActivated() const
-{
-    return iIsActivated;
-}
-
-void PassPrivate::setHardwareProgram(const HardwareProgram& hwdProgram)
-{
-    iLinkedProgram = hwdProgram;
-}
-
-HardwareProgram PassPrivate::getHardwareProgram() const
-{
-    return iLinkedProgram;
-}
-
-PassNumber PassPrivate::getPassNumber() const
-{
-    return iNumber;
-}
-
-bool PassPrivate::isAcceptable(const RenderNodeIdentifier &identifier) const
-{
-    return true;
-}
-
-// ---------------------------------------------------------------------------------------------------
-
-Pass::Pass(const PassPrivate* pointer)
-: ResourceUser(pointer)
-, SpecializedResourceUser<Gre::PassPrivate>(pointer)
+RenderPass::~RenderPass() noexcept ( false )
 {
     
 }
 
-Pass::Pass(const PassHolder& holder)
-: ResourceUser(holder)
-, SpecializedResourceUser<Gre::PassPrivate>(holder)
+const RenderPassIdentifier & RenderPass::getPassIdentifier() const
 {
-    
+    GreAutolock ; return iIdentifier ;
 }
 
-Pass::Pass(const Pass& user)
-: ResourceUser(user)
-, SpecializedResourceUser<Gre::PassPrivate>(user)
+void RenderPass::setActivated(bool value)
 {
-    
+    GreAutolock ; iActivated = value ;
 }
 
-Pass::~Pass()
+bool RenderPass::isActivated() const
 {
-    
+    GreAutolock ; return iActivated ;
 }
 
-void Pass::setActivated(bool activate)
+const HardwareProgramUser& RenderPass::getHardwareProgram() const
 {
-    auto ptr = lock();
-    
-    if(ptr)
-        ptr->setActivated(activate);
+    GreAutolock ; return iProgram ;
 }
-
-bool Pass::isActivated() const
-{
-    auto ptr = lock();
-    
-    if(ptr)
-        return ptr->isActivated();
-    return false;
-}
-
-void Pass::setHardwareProgram(const HardwareProgram& hwdProgram)
-{
-    auto ptr = lock();
-    
-    if(ptr)
-        ptr->setHardwareProgram(hwdProgram);
-}
-
-HardwareProgram Pass::getHardwareProgram() const
-{
-    auto ptr = lock();
-    
-    if(ptr)
-        return ptr->getHardwareProgram();
-    return HardwareProgram::Null;
-}
-
-PassNumber Pass::getPassNumber() const
-{
-    auto ptr = lock();
-    
-    if(ptr)
-        return ptr->getPassNumber();
-    return (PassNumber) 0;
-}
-
-Pass Pass::Null = Pass(nullptr);
 
 GreEndNamespace

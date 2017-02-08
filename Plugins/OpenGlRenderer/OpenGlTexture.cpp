@@ -20,7 +20,7 @@ OpenGlTexture::OpenGlTexture(const std::string& name)
 #ifdef GreIsDebugMode
     if(!_mTextureId)
     {
-        GreDebugPretty() << "Can't create texture '" << name << "'." << std::endl;
+        GreDebugPretty() << "Can't create texture '" << name << "'." << Gre::gendl;
         throw OpenGlGenTexture(name + " (glGenTextures)");
     }
 #endif

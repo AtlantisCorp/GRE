@@ -34,21 +34,24 @@
 
 GreBeginNamespace
 
-PluginPrivate::PluginPrivate (const std::string& name, const std::string& file)
-: Resource(name), _file (file)
+Plugin::Plugin (const std::string& name, const std::string& file)
+: Resource(ResourceIdentifier::New() , name)
+, _file (file)
 {
+    GreAutolock ;
+    
     // We check the extension of the file.
     std::size_t found = _file.find(std::string(".") + DYNLIB_EXTENSION);
     if(found != std::string::npos) {
     }
     else {
-        GreDebugPretty() << name << " : Bad extension." << std::endl;
+        GreDebugPretty() << name << " : Bad extension." << Gre::gendl;
         throw BadPluginExtension(_file + " [Contructor]");
     }
     
     DYNLIB_HANDLE hdl = DYNLIB_LOAD(_file.c_str());
     if(!hdl) {
-        GreDebugPretty() << "{" << name << "} Could not load file." << std::endl;
+        GreDebugPretty() << "{" << name << "} Could not load file." << Gre::gendl;
         throw BadPluginFile(_file + " [Constructor]");
     }
     
@@ -58,7 +61,7 @@ PluginPrivate::PluginPrivate (const std::string& name, const std::string& file)
     
     * (void**) &mFunc = DYNLIB_GETSYM(hdl, "GetPluginName");
     if(!mFunc) {
-        GreDebugPretty() << name << " : " << dlerror() << std::endl;
+        GreDebugPretty() << name << " : " << dlerror() << Gre::gendl;
         DYNLIB_UNLOAD(hdl);
         throw BadPluginConception(_file + " [GetPluginName]");
     }
@@ -69,7 +72,7 @@ PluginPrivate::PluginPrivate (const std::string& name, const std::string& file)
     * (void**) &mFunc3 = DYNLIB_GETSYM(hdl, "StopPlugin");
     
     if(!mFunc2 || !mFunc3) {
-        GreDebugPretty() << name << " : " << dlerror() << std::endl;
+        GreDebugPretty() << name << " : " << dlerror() << Gre::gendl;
         DYNLIB_UNLOAD(hdl);
         throw BadPluginConception(_file + " [StartOrStopPlugin]");
     }
@@ -80,8 +83,50 @@ PluginPrivate::PluginPrivate (const std::string& name, const std::string& file)
     _mIsStarted = false;
 }
 
-PluginPrivate::~PluginPrivate()
+Plugin::~Plugin()
 {
+    unload();
+}
+
+bool Plugin::start ()
+{
+    GreAutolock ;
+    
+    if(_mStart && !_mIsStarted) {
+        _mStart ();
+#ifdef DEBUG
+        GreDebugPretty() << _mName << " : Started." << Gre::gendl;
+#endif
+        _mIsStarted = true;
+        return true;
+    }
+    
+    return false;
+}
+
+void Plugin::stop ()
+{
+    GreAutolock ;
+    
+    if(_mStop && _mHandle && _mIsStarted) {
+        _mStop();
+        _mIsStarted = false;
+#ifdef DEBUG
+        GreDebugPretty() << _mName << " : Stopped." << Gre::gendl;
+#endif
+    }
+}
+
+const std::string& Plugin::getName() const
+{
+    GreAutolock ;
+    return _mName;
+}
+
+void Plugin::unload()
+{
+    GreAutolock ;
+    
     if(_mStop && _mStart && _mHandle)
     {
         stop();
@@ -91,90 +136,6 @@ PluginPrivate::~PluginPrivate()
         _mStop   = nullptr;
         _mHandle = 0;
     }
-}
-
-bool PluginPrivate::start ()
-{
-    
-    if(_mStart && !_mIsStarted) {
-        _mStart ();
-#ifdef DEBUG
-        GreDebugPretty() << _mName << " : Started." << std::endl;
-#endif
-        _mIsStarted = true;
-        return true;
-    }
-    
-    return false;
-}
-
-void PluginPrivate::stop ()
-{
-    if(_mStop && _mHandle && _mIsStarted) {
-        _mStop();
-        _mIsStarted = false;
-#ifdef DEBUG
-        GreDebugPretty() << _mName << " : Stopped." << std::endl;
-#endif
-    }
-}
-
-const std::string& PluginPrivate::getName() const
-{
-    return _mName;
-}
-
-// ---------------------------------------------------------------------------------------------------
-
-Plugin::Plugin(const PluginPrivate* pointer)
-: ResourceUser(pointer)
-, SpecializedResourceUser<Gre::PluginPrivate>(pointer)
-{
-    
-}
-
-Plugin::Plugin(const PluginHolder& holder)
-: ResourceUser(holder)
-, SpecializedResourceUser<Gre::PluginPrivate>(holder)
-{
-    
-}
-
-Plugin::Plugin(const Plugin& user)
-: ResourceUser(user)
-, SpecializedResourceUser<Gre::PluginPrivate>(user)
-{
-    
-}
-
-Plugin::~Plugin ()
-{
-    
-}
-
-std::string _tmp;
-
-const std::string& Plugin::getName() const
-{
-    auto ptr = lock();
-    if(ptr)
-        return ptr->getName();
-    return _tmp;
-}
-
-bool Plugin::start()
-{
-    auto ptr = lock();
-    if(ptr)
-        return ptr->start();
-    return false;
-}
-
-void Plugin::stop()
-{
-    auto ptr = lock();
-    if(ptr)
-        ptr->stop();
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -199,7 +160,7 @@ bool PluginLoader::isLoadable(const std::string &filepath) const
     if ( extension != DYNLIB_EXTENSION )
     {
 #ifdef GreIsDebugMode
-        GreDebugPretty() << "'" << extension << "' is not a viable extension for Dynamic Library file. ('" << DYNLIB_EXTENSION << "' is correct.)" << std::endl;
+        GreDebugPretty() << "'" << extension << "' is not a viable extension for Dynamic Library file. ('" << DYNLIB_EXTENSION << "' is correct.)" << Gre::gendl;
 #endif
         return false;
     }
@@ -218,7 +179,7 @@ bool PluginLoader::isLoadable(const std::string &filepath) const
         else
         {
 #ifdef GreIsDebugMode
-            GreDebugPretty() << "File '" << filepath << "' cannot be opened." << std::endl;
+            GreDebugPretty() << "File '" << filepath << "' cannot be opened." << Gre::gendl;
 #endif
             return false;
         }
@@ -230,7 +191,7 @@ PluginHolder PluginLoader::load(const std::string &name, const std::string &file
     if ( !isLoadable(file) )
     {
 #ifdef GreIsDebugMode
-        GreDebugPretty() << "File '" << file << "' is not loadable by this Loader." << std::endl;
+        GreDebugPretty() << "File '" << file << "' is not loadable by this Loader." << Gre::gendl;
 #endif
         return PluginHolder ( nullptr );
     }
@@ -239,12 +200,12 @@ PluginHolder PluginLoader::load(const std::string &name, const std::string &file
     {
         try
         {
-            PluginPrivate* newPlugin = new PluginPrivate ( name , file );
+            Plugin* newPlugin = new Plugin ( name , file );
             
             if ( !newPlugin )
             {
 #ifdef GreIsDebugMode 
-                GreDebugPretty() << "Plugin '" << name << "' could not be created." << std::endl;
+                GreDebugPretty() << "Plugin '" << name << "' could not be created." << Gre::gendl;
 #endif
                 return PluginHolder ( nullptr );
             }
@@ -257,8 +218,8 @@ PluginHolder PluginLoader::load(const std::string &name, const std::string &file
         catch ( const std::exception& e )
         {
 #ifdef GreIsDebugMode 
-            GreDebugPretty() << "Plugin '" << name << "' could not be created." << std::endl;
-            GreDebugPretty() << "Exception : " << e.what() << "." << std::endl;
+            GreDebugPretty() << "Plugin '" << name << "' could not be created." << Gre::gendl;
+            GreDebugPretty() << "Exception : " << e.what() << "." << Gre::gendl;
 #endif
             return PluginHolder ( nullptr );
         }
@@ -272,56 +233,61 @@ ResourceLoader* PluginLoader::clone() const
 
 // ---------------------------------------------------------------------------------------------------
 
-PluginManager::PluginManager()
+PluginManager::PluginManager(const std::string & name)
+: Resource ( ResourceIdentifier::New() , name )
 {
     // Register basic PluginLoader.
     iFactory.registers("DefaultPluginLoader", new PluginLoader());
 }
 
-PluginManager::~PluginManager()
+PluginManager::~PluginManager() noexcept ( false )
 {
     
 }
 
-Plugin PluginManager::load(const PluginHolder &holder)
+PluginUser PluginManager::load(const PluginHolder &holder)
 {
+    GreAutolock ;
+    
     if ( !holder.isInvalid() )
     {
-        Plugin tmp = get(holder->getName());
+        PluginUser tmp = get(holder->getName());
         
         if ( tmp.isInvalid() )
         {
 #ifdef GreIsDebugMode 
-            GreDebugPretty() << "Plugin Resource '" << holder->getName() << "' already installed." << std::endl;
+            GreDebugPretty() << "Plugin Resource '" << holder->getName() << "' already installed." << Gre::gendl;
 #endif
-            return Plugin ( nullptr );
+            return PluginUser ( nullptr );
         }
         
         iPlugins.add(holder);
-        return Plugin ( holder );
+        return PluginUser ( holder );
     }
     
     else
     {
 #ifdef GreIsDebugMode
-        GreDebugPretty() << "'holder' is invalid." << std::endl;
+        GreDebugPretty() << "'holder' is invalid." << Gre::gendl;
 #endif
-        return Plugin ( nullptr );
+        return PluginUser ( nullptr );
     }
 }
 
-Plugin PluginManager::load(const std::string &name, const std::string &filepath)
+PluginUser PluginManager::load(const std::string &name, const std::string &filepath)
 {
+    GreAutolock ;
+    
     if ( !name.empty() )
     {
-        Plugin tmp = get(name);
+        PluginUser tmp = get(name);
         
         if ( !tmp.isInvalid() )
         {
 #ifdef GreIsDebugMode
-            GreDebugPretty() << "Plugin Resource '" << name << "' already installed." << std::endl;
+            GreDebugPretty() << "Plugin Resource '" << name << "' already installed." << Gre::gendl;
 #endif
-            return Plugin ( nullptr );
+            return PluginUser ( nullptr );
         }
         
         if ( !filepath.empty() )
@@ -339,50 +305,52 @@ Plugin PluginManager::load(const std::string &name, const std::string &filepath)
                         if ( !plugin.isInvalid() )
                         {
                             iPlugins.add(plugin);
-                            return Plugin ( plugin );
+                            return PluginUser ( plugin );
                         }
                         
                         else
                         {
 #ifdef GreIsDebugMode
-                            GreDebugPretty() << "Plugin Resource '" << name << "' can't be loaded by loader '" << it->first << "'." << std::endl;
+                            GreDebugPretty() << "Plugin Resource '" << name << "' can't be loaded by loader '" << it->first << "'." << Gre::gendl;
 #endif
-                            return Plugin ( nullptr );
+                            return PluginUser ( nullptr );
                         }
                     }
                     
                     else
                     {
 #ifdef GreIsDebugMode 
-                        GreDebugPretty() << "Plugin Loader '" << it->first << "' can't load Plugin Resource '" << name << "'." << std::endl;
+                        GreDebugPretty() << "Plugin Loader '" << it->first << "' can't load Plugin Resource '" << name << "'." << Gre::gendl;
 #endif
                     }
                 }
             }
             
 #ifdef GreIsDebugMode
-            GreDebugPretty() << "Plugin Resource '" << name << "' don't have any loadable Plugin Loader." << std::endl;
+            GreDebugPretty() << "Plugin Resource '" << name << "' don't have any loadable Plugin Loader." << Gre::gendl;
 #endif
-            return Plugin ( nullptr );
+            return PluginUser ( nullptr );
         }
         
 #ifdef GreIsDebugMode
-        GreDebugPretty() << "'filepath' is empty." << std::endl;
+        GreDebugPretty() << "'filepath' is empty." << Gre::gendl;
 #endif
-        return Plugin ( nullptr );
+        return PluginUser ( nullptr );
     }
     
     else
     {
 #ifdef GreIsDebugMode
-        GreDebugPretty() << "'name' is empty." << std::endl;
+        GreDebugPretty() << "'name' is empty." << Gre::gendl;
 #endif
-        return Plugin ( nullptr );
+        return PluginUser ( nullptr );
     }
 }
 
-Plugin PluginManager::get(const std::string &name)
+PluginUser PluginManager::get(const std::string &name)
 {
+    GreAutolock ;
+    
     if ( !name.empty() )
     {
         for ( PluginHolder& holder : iPlugins )
@@ -391,28 +359,30 @@ Plugin PluginManager::get(const std::string &name)
             {
                 if ( holder->getName() == name )
                 {
-                    return Plugin ( holder );
+                    return PluginUser ( holder );
                 }
             }
         }
         
 #ifdef GreIsDebugMode
-        GreDebugPretty() << "Plugin Resource '" << name << "' not found." << std::endl;
+        GreDebugPretty() << "Plugin Resource '" << name << "' not found." << Gre::gendl;
 #endif
-        return Plugin ( nullptr );
+        return PluginUser ( nullptr );
     }
     
     else
     {
 #ifdef GreIsDebugMode
-        GreDebugPretty() << "'name' is empty." << std::endl;
+        GreDebugPretty() << "'name' is empty." << Gre::gendl;
 #endif
-        return Plugin ( nullptr );
+        return PluginUser ( nullptr );
     }
 }
 
-const Plugin PluginManager::get(const std::string &name) const
+const PluginUser PluginManager::get(const std::string &name) const
 {
+    GreAutolock ;
+    
     if ( !name.empty() )
     {
         for ( const PluginHolder& holder : iPlugins )
@@ -421,28 +391,30 @@ const Plugin PluginManager::get(const std::string &name) const
             {
                 if ( holder->getName() == name )
                 {
-                    return Plugin ( holder );
+                    return PluginUser ( holder );
                 }
             }
         }
         
 #ifdef GreIsDebugMode
-        GreDebugPretty() << "Plugin Resource '" << name << "' not found." << std::endl;
+        GreDebugPretty() << "Plugin Resource '" << name << "' not found." << Gre::gendl;
 #endif
-        return Plugin ( nullptr );
+        return PluginUser ( nullptr );
     }
     
     else
     {
 #ifdef GreIsDebugMode
-        GreDebugPretty() << "'name' is empty." << std::endl;
+        GreDebugPretty() << "'name' is empty." << Gre::gendl;
 #endif
-        return Plugin ( nullptr );
+        return PluginUser ( nullptr );
     }
 }
 
 void PluginManager::remove(const std::string &name)
 {
+    GreAutolock ;
+    
     if ( !name.empty() )
     {
         for ( auto it = iPlugins.begin(); it != iPlugins.end(); it++ )
@@ -459,37 +431,46 @@ void PluginManager::remove(const std::string &name)
         }
         
 #ifdef GreIsDebugMode
-        GreDebugPretty() << "Plugin Resource '" << name << "' not found." << std::endl;
+        GreDebugPretty() << "Plugin Resource '" << name << "' not found." << Gre::gendl;
 #endif
     }
     
     else
     {
 #ifdef GreIsDebugMode
-        GreDebugPretty() << "'name' is empty." << std::endl;
+        GreDebugPretty() << "'name' is empty." << Gre::gendl;
 #endif
     }
 }
 
 void PluginManager::clearPlugins()
 {
+    GreAutolock ;
     iPlugins.clear();
 }
 
 PluginLoaderFactory& PluginManager::getPluginLoaderFactory()
 {
+    GreAutolock ;
     return iFactory;
 }
 
 const PluginLoaderFactory& PluginManager::getPluginLoaderFactory() const
 {
+    GreAutolock ;
     return iFactory;
 }
 
 void PluginManager::clear()
 {
+    GreAutolock ;
     clearPlugins();
     iFactory.clear();
+}
+
+void PluginManager::unload()
+{
+    clear();
 }
 
 GreEndNamespace

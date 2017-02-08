@@ -55,7 +55,7 @@ DarwinWindow::DarwinWindow(const std::string & name, int x0, int y0, int wid, in
     
     if ( !iEventQueue )
     {
-        GreDebugPretty() << "'EventQueueCreate()' couldn't create a new Event Queue. Using Global Queue instead." << std::endl;
+        GreDebugPretty() << "'EventQueueCreate()' couldn't create a new Event Queue. Using Global Queue instead." << Gre::gendl;
         iEventQueue = WindowGlobalQueue ;
     }
     
@@ -64,7 +64,7 @@ DarwinWindow::DarwinWindow(const std::string & name, int x0, int y0, int wid, in
     
     if( iWindow == NULL )
     {
-        GreDebugPretty() << "Impossible to create 'DarwinWindow' implementation." << std::endl;
+        GreDebugPretty() << "Impossible to create 'DarwinWindow' implementation." << Gre::gendl;
         throw GreExceptionWithText( "Impossible to create 'DarwinWindow' implementation." ) ;
     }
     
@@ -74,6 +74,14 @@ DarwinWindow::DarwinWindow(const std::string & name, int x0, int y0, int wid, in
 //      iClosed = false;
         
         NsWindowSetEventQueue( &iWindow , iEventQueue ) ;
+        
+        // NOTE ( 13.10.2016 ) : 'WETWindowDidExpose' never sent by the NSWindow object. So
+        // initialize here the Surface object.
+        
+        iSurface.top = x0;
+        iSurface.left = y0;
+        iSurface.width = wid;
+        iSurface.height = hei;
     }
 }
 
@@ -96,76 +104,6 @@ DarwinWindow::~DarwinWindow() noexcept (false)
     {
         EventQueueDestroy( iEventQueue ) ;
     }
-}
-
-bool DarwinWindow::pollEvent()
-{
-/*  This is completly obsolete .
- 
-    if( !iClosed )
-    {
-        GreResourceAutolock ;
-        
-        ret = NsPollEvent();
-        WindowBufEntry* nsWindowEntry = NsGetWindowBufEntry(&iWindow);
-        
-        if( nsWindowEntry )
-        {
-            while( nsWindowEntry->keybuf_sz )
-            {
-                if(nsWindowEntry->keybufs[0].pressed > 0) {
-                    KeyDownEvent e(Key(nsWindowEntry->keybufs[0].key));
-                    sendEvent(e);
-                    nsWindowEntry->keybuf_sz--;
-                } else {
-                    KeyUpEvent e(Key(nsWindowEntry->keybufs[0].key));
-                    sendEvent(e);
-                    nsWindowEntry->keybuf_sz--;
-                }
-            }
-            
-            if( nsWindowEntry->sizeChanged )
-            {
-                iSurface.width = nsWindowEntry->newWidth;
-                iSurface.height = nsWindowEntry->newHeight;
-                iSurface.left = nsWindowEntry->newX;
-                iSurface.top = nsWindowEntry->newY;
-                nsWindowEntry->sizeChanged = false;
-                
-                WindowSizedEvent e (Window(this), iSurface);
-                onEvent(e);
-            }
-            
-            iHasBeenClosed = iExposed && nsWindowEntry->closed;
-            iClosed = nsWindowEntry->closed;
-            iExposed = nsWindowEntry->exposed;
-            
-            // We must double-check visibility because i don't find any notification
-            // to indicate Exposure.
-            if(!iExposed)
-                iExposed = NsWindowIsVisible(&iWindow);
-        }
-    }
-    
-//  NsWindowSwapBuffers(&iWindow);
-    
-    return true || ret;
- 
-*/
-    return false ;
-}
-
-bool DarwinWindow::hasBeenClosed() const
-{
-    return iHasBeenClosed;
-}
-
-void DarwinWindow::setTitle(const std::string& title)
-{
-    GreResourceAutolock ;
-    
-    WindowPrivate::setTitle(title);
-    NsSetWindowTitle(&iWindow, title.c_str());
 }
 
 void DarwinWindow::bind()
@@ -199,34 +137,29 @@ void DarwinWindow::unbindFramebuffer()
     
 }
 
-void DarwinWindow::setRenderContext(const Gre::RenderContext &renderCtxt)
-{
-    WindowPrivate::setRenderContext(renderCtxt);
-    
-    if( !iRenderContext.isInvalid() )
-    {
-        GreResourceAutolock ;
-        
-        uintptr_t* _mContext = (uintptr_t*) ( (const CGLContextObj*) iRenderContext->getProperty("CGLContext") );
-        // When RenderContext is changed, we must notifiate the CustomWindow
-        // for it to change the OpenGlCustomView.
-        NsWindowSetRenderContext(&iWindow, *((CGLContextObj*)_mContext));
-    }
-}
-
-void DarwinWindow::draw()
-{
-    if ( iWindow )
-    {
-        GreResourceAutolock ;
-        NsWindowDisplay(&iWindow);
-    }
-}
-
 bool DarwinWindow::isAvailableForDrawing() const
 {
     GreResourceAutolock ;
     return NsWindowPropertyIsVisible ( &iWindow ) && NsWindowPropertyIsOnActiveSpace ( &iWindow );
+}
+
+void DarwinWindow::iSetTitle(const std::string &title) const
+{
+    GreResourceAutolock ;
+    NsSetWindowTitle( const_cast<CFTypeRef*>(&iWindow) , title.c_str() );
+}
+
+void DarwinWindow::iSetRenderContext(const RenderContextHolder &ctxt) const
+{
+    if( !ctxt.isInvalid() )
+    {
+        GreResourceAutolock ;
+        
+        uintptr_t* _mContext = (uintptr_t*) ( (const CGLContextObj*) ctxt->getProperty("CGLContext") );
+        // When RenderContext is changed, we must notifiate the CustomWindow
+        // for it to change the OpenGlCustomView.
+        NsWindowSetRenderContext( const_cast<CFTypeRef*>(&iWindow) , *((CGLContextObj*)_mContext) );
+    }
 }
 
 void DarwinWindow::onUpdateEvent(const Gre::UpdateEvent &e)
@@ -268,9 +201,9 @@ void DarwinWindow::iPollEvent()
             {
                 WindowEventDidMove * didmove = reinterpret_cast<WindowEventDidMove*>(nextevent) ;
                 
-                GreDebugPretty() << "New Window Coordinates : " << std::endl;
-                GreDebugPretty() << "  X = " << didmove->x << std::endl;
-                GreDebugPretty() << "  Y = " << didmove->y << std::endl;
+                GreDebugPretty() << "New Window Coordinates : " << Gre::gendl;
+                GreDebugPretty() << "  X = " << didmove->x << Gre::gendl;
+                GreDebugPretty() << "  Y = " << didmove->y << Gre::gendl;
                 
                 iSurface.left = didmove->x ;
                 iSurface.top = didmove->y ;
@@ -283,9 +216,9 @@ void DarwinWindow::iPollEvent()
             {
                 WindowEventDidResize * didresize = reinterpret_cast<WindowEventDidResize*>(nextevent) ;
                 
-                GreDebugPretty() << "New Window Size : " << std::endl;
-                GreDebugPretty() << "  Width  = " << didresize->width << std::endl;
-                GreDebugPretty() << "  Height = " << didresize->height << std::endl;
+                GreDebugPretty() << "New Window Size : " << Gre::gendl;
+                GreDebugPretty() << "  Width  = " << didresize->width << Gre::gendl;
+                GreDebugPretty() << "  Height = " << didresize->height << Gre::gendl;
                 
                 iSurface.width = didresize->width ;
                 iSurface.height = didresize->height ;
@@ -298,7 +231,7 @@ void DarwinWindow::iPollEvent()
             {
                 WindowEventKeyPressed * keypressed = reinterpret_cast<WindowEventKeyPressed*>(nextevent) ;
                 
-                GreDebugPretty() << "Key pressed : '" << keypressed->key << "'." << std::endl;
+                GreDebugPretty() << "Key pressed : '" << keypressed->key << "'." << Gre::gendl;
                 
                 KeyDownEvent * event = new KeyDownEvent ( this , DarwinWindowTranslateKey(keypressed->key) ) ;
                 sendEvent( event ) ;
@@ -308,7 +241,7 @@ void DarwinWindow::iPollEvent()
             {
                 WindowEventKeyReleased * keyreleased = reinterpret_cast<WindowEventKeyReleased*>(nextevent) ;
                 
-                GreDebugPretty() << "Key released : '" << keyreleased->key << "'." << std::endl;
+                GreDebugPretty() << "Key released : '" << keyreleased->key << "'." << Gre::gendl;
                 
                 KeyUpEvent * event = new KeyUpEvent ( this , DarwinWindowTranslateKey(keyreleased->key) ) ;
                 sendEvent( event ) ;
@@ -318,7 +251,7 @@ void DarwinWindow::iPollEvent()
             {
                 WindowEventExposed * exposed = reinterpret_cast<WindowEventExposed*>(nextevent) ;
                 
-                GreDebugPretty() << "Window is exposed." << std::endl;
+                GreDebugPretty() << "Window is exposed." << Gre::gendl;
                 
                 iSurface.left = exposed->x ;
                 iSurface.top = exposed->y ;
@@ -334,7 +267,7 @@ void DarwinWindow::iPollEvent()
             {
                 WindowEventHidden * hidden = reinterpret_cast<WindowEventHidden*>(nextevent) ;
                 
-                GreDebugPretty() << "Window is hidden." << std::endl;
+                GreDebugPretty() << "Window is hidden." << Gre::gendl;
                 
                 WindowHiddenEvent * event = new WindowHiddenEvent ( this ) ;
                 sendEvent ( event ) ;
@@ -342,7 +275,7 @@ void DarwinWindow::iPollEvent()
             
             else if ( nextevent->WinEventType == WETWindowWillClose )
             {
-                GreDebugPretty() << "Window '" << getName() << "' will close." << std::endl;
+                GreDebugPretty() << "Window '" << getName() << "' will close." << Gre::gendl;
                 
                 iExposed = false ;
                 iClosed = true ;
@@ -355,8 +288,8 @@ void DarwinWindow::iPollEvent()
             {
                 WindowEventTitleChanged * titlechanged = reinterpret_cast<WindowEventTitleChanged*>(nextevent) ;
                 
-                GreDebugPretty() << "Window '" << getName() << "' title changed." << std::endl;
-                GreDebugPretty() << "  Title = '" << titlechanged->title << "'." << std::endl;
+                GreDebugPretty() << "Window '" << getName() << "' title changed." << Gre::gendl;
+                GreDebugPretty() << "  Title = '" << titlechanged->title << "'." << Gre::gendl;
                 
                 iTitle = std::string ( titlechanged->title , titlechanged->size ) ;
                 

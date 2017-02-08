@@ -86,7 +86,7 @@ size_t VertexComponentTypeGetSize(const VertexComponentType& vtype)
 #ifdef GreIsDebugMode
     else
     {
-        GreDebugPretty() << "Bad VertexComponentType given : " << (uint32_t) vtype << "." << std::endl;
+        GreDebugPretty() << "Bad VertexComponentType given : " << (uint32_t) vtype << "." << Gre::gendl;
     }
 #endif
     
@@ -143,7 +143,7 @@ std::string VertexComponentTypeToString(const VertexComponentType& component)
 #ifdef GreIsDebugMode
     else
     {
-        GreDebugPretty() << "Component given not found ('" << (int) component << "')." << std::endl;
+        GreDebugPretty() << "Component given not found ('" << (int) component << "')." << Gre::gendl;
     }
 #endif
     
@@ -216,7 +216,7 @@ int VertexDescriptor::getComponentLocation(const Gre::VertexComponentType &compo
     }
     
 #ifdef GreIsDebugMode
-    GreDebugPretty() << "Component '" << VertexComponentTypeToString(component) << "' not found in Vertex." << std::endl;
+    GreDebugPretty() << "Component '" << VertexComponentTypeToString(component) << "' not found in Vertex." << Gre::gendl;
 #endif
     
     return -1;

@@ -59,7 +59,7 @@ GreBeginNamespace
 /// data.
 ///
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC SoftwareVertexBufferPrivate : public HardwareVertexBufferPrivate
+class DLL_PUBLIC SoftwareVertexBuffer : public HardwareVertexBuffer
 {
 public:
     
@@ -67,11 +67,11 @@ public:
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    SoftwareVertexBufferPrivate(const std::string& name);
+    SoftwareVertexBuffer(const std::string& name);
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    virtual ~SoftwareVertexBufferPrivate();
+    virtual ~SoftwareVertexBuffer();
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Bind the Hardware Buffer in order to use it.
@@ -163,62 +163,14 @@ protected:
     mutable bool iBoundingBoxInvalid;
 };
 
-/// @brief SpecializedResourceHolder for SoftwareVertexBufferPrivate.
-typedef SpecializedResourceHolder<SoftwareVertexBufferPrivate> SoftwareVertexBufferHolder;
+/// @brief SpecializedCountedObjectHolder for SoftwareVertexBufferPrivate.
+typedef SpecializedCountedObjectHolder<SoftwareVertexBuffer> SoftwareVertexBufferHolder;
 
 /// @brief SpecializedResourceHolderList for SoftwareVertexBufferPrivate.
-typedef SpecializedResourceHolderList<SoftwareVertexBufferPrivate> SoftwareVertexBufferHolderList;
+typedef SpecializedResourceHolderList<SoftwareVertexBuffer> SoftwareVertexBufferHolderList;
 
-//////////////////////////////////////////////////////////////////////
-/// @brief SpecializedResourceUser for SoftwareVertexBufferPrivate.
-//////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC SoftwareVertexBuffer : public HardwareVertexBuffer
-{
-public:
-    
-    POOLED(Pools::Resource)
-    
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    SoftwareVertexBuffer(const SoftwareVertexBufferPrivate* pointer);
-    
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    SoftwareVertexBuffer(const SoftwareVertexBufferHolder& holder);
-    
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    SoftwareVertexBuffer(const SoftwareVertexBuffer& user);
-    
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    virtual ~SoftwareVertexBuffer();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Creates a new ResourceHolder in order to use the Resource.
-    //////////////////////////////////////////////////////////////////////
-    SoftwareVertexBufferHolder lock();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Creates a new ResourceHolder in order to use the Resource.
-    //////////////////////////////////////////////////////////////////////
-    const SoftwareVertexBufferHolder lock() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the BoundingBox computed for this Software Buffer.
-    //////////////////////////////////////////////////////////////////////
-    virtual const BoundingBox& getBoundingBox() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Computes the BoundingBox from this Software Buffer's data.
-    /// Uses this function if you modify the HardwareBuffer from a pointer,
-    /// after setting new data.
-    //////////////////////////////////////////////////////////////////////
-    virtual void makeBoundingBox();
-    
-    /// @brief Null SoftwareVertexBuffer.
-    static SoftwareVertexBuffer Null;
-};
+/// @brief SpecializedCountedObjectUser.
+typedef SpecializedCountedObjectUser<SoftwareVertexBuffer> SoftwareVertexBufferUser;
 
 GreEndNamespace
 

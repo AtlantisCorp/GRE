@@ -22,8 +22,8 @@
     
     NSOpenGLContext* context = [self openGLContext];
     
-    [context makeCurrentContext];
     CGLLockContext([context CGLContextObj]);
+    [context makeCurrentContext];
     
     [context flushBuffer];
     CGLUnlockContext([context CGLContextObj]);

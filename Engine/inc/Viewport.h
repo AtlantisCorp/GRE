@@ -34,7 +34,6 @@
 #define GRE_Viewport_h
 
 #include "Pools.h"
-#include "Scene.h"
 
 GreBeginNamespace
 
@@ -56,7 +55,7 @@ public:
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    virtual ~Viewport();
+    virtual ~Viewport() noexcept ( false ) ;
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
@@ -82,22 +81,6 @@ public:
     /// @brief Returns the Surface covered by this Viewport.
     //////////////////////////////////////////////////////////////////////
     const Surface& getSurface() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Selects a RenderScene for this Viewport.
-    //////////////////////////////////////////////////////////////////////
-    void selectScene(const RenderScene& scene);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns 'true' if this Viewport has a Scene object linked to.
-    //////////////////////////////////////////////////////////////////////
-    bool hasScene() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Scene object linked to this Viewport if it has
-    /// one, or RenderScene::Null if not.
-    //////////////////////////////////////////////////////////////////////
-    const RenderScene& getScene() const;
     
     /// @brief An empty const vector of Viewport.
     static const std::list<Viewport> EmptyList;
@@ -125,10 +108,6 @@ protected:
     
     /// @brief Surface object updated with Viewport::onBordersChanged().
     Surface _mSurface;
-    
-    /// @brief Holds the Scene that might have been selected by the User to draw this
-    /// Viewport object.
-    RenderScene _mScene;
 };
 
 /// @brief std::list<> for Viewport.

@@ -31,333 +31,205 @@
  */
 
 #include "Resource.h"
-#include "ResourceManager.h"
 
 GreBeginNamespace
 
-Resource::Resource(const std::string& name)
+ResourceIdentifier ResourceIdentifier::Current = ResourceIdentifier ( 0 ) ;
+
+ResourceIdentifier ResourceIdentifier::New()
 {
-    iName = name;
-    iType = Resource::Type::Null;
-    iShouldTransmit = true;
-    iCounter = nullptr;
-    iCounterInitialized = false;
+    ResourceIdentifier retvalue ( ResourceIdentifier::Current ) ;
+    ResourceIdentifier::Current ++ ;
+    return retvalue ;
 }
 
-Resource::~Resource() noexcept(false)
+ResourceIdentifier ResourceIdentifier::Last()
 {
-    {
-        GreResourceAutolock ;
-        
-        if(iCounterInitialized)
-        {
-            iCounter->unuse();
-            
-            if(iCounter->getUserCount() == 0)
-            {
-                delete iCounter;
-                iCounter = nullptr;
-                iCounterInitialized = false;
-            }
-        }
-    }
+    unsigned long int value = ResourceIdentifier::Current.iValue ;
+    
+    if ( value == 0 )
+        return value ;
+    
+    return ResourceIdentifier ( value - 1 ) ;
 }
 
-const std::string& Resource::getName() const
-{
-    return iName;
-}
-
-const Resource::Type& Resource::getType() const
-{
-    return iType;
-}
-
-void Resource::addAction(Gre::EventType etype, std::function<void (const Event &)> eaction)
-{
-    GreResourceAutolock ;
-    iActions[etype].push_back(eaction);
-}
-
-void Resource::resetActions()
-{
-    GreResourceAutolock ;
-    iActions.clear();
-}
-
-void Resource::onEvent(const Event &e)
-{
-    if(e.getType() == EventType::Update) {
-        onUpdateEvent(e.to<UpdateEvent>());
-    }
-    
-    else if(e.getType() == EventType::KeyUp) {
-        onKeyUpEvent(e.to<KeyUpEvent>());
-    }
-    
-    else if(e.getType() == EventType::KeyDown) {
-        onKeyDownEvent(e.to<KeyDownEvent>());
-    }
-    
-    // As those functions are not certainly locked , we must ensure multithread availability and lock
-    // the recursive mutex.
-    
-    GreResourceAutolock ;
-    
-    auto actions = iActions[e.getType()];
-    if(!actions.empty())
-    {
-        for(auto itr = actions.begin(); itr != actions.end(); itr++)
-        {
-            (*itr) (e);
-        }
-    }
-    
-    // Proceeds to the iNextCallbacks functions.
-    
-    if ( !iNextCallbacks[e.getType()].empty() )
-    {
-        for ( auto callback : iNextCallbacks[e.getType()] )
-        {
-            callback(e);
-        }
-        
-        iNextCallbacks[e.getType()].clear();
-    }
-    
-    // Send events to listener if it has to.
-    
-    if( shouldTransmitEvents() )
-    {
-        sendEvent(e);
-    }
-}
-
-void Resource::onNextEvent(const Gre::EventType &etype, EventCallback callback)
-{
-    GreResourceAutolock ;
-    iNextCallbacks[etype].push_back(callback);
-}
-
-void Resource::onUpdateEvent(const Gre::UpdateEvent &e)
+ResourceIdentifier::ResourceIdentifier ( unsigned long int value )
+: iValue(value)
 {
     
 }
 
-void Resource::onKeyUpEvent(const Gre::KeyUpEvent &e)
+ResourceIdentifier::ResourceIdentifier ( const ResourceIdentifier & rhs )
+: iValue(rhs.iValue)
 {
     
 }
 
-void Resource::onKeyDownEvent(const Gre::KeyDownEvent &e)
+ResourceIdentifier::operator unsigned long()
 {
-    
+    return iValue ;
 }
 
-ResourceUser& Resource::addListener(const std::string& name)
+ResourceIdentifier::operator const unsigned long() const
 {
-    GreResourceAutolock ;
-    ResourceUser pureListener = ResourceManager::Get().loadEmptyResource(name);
-    return addListener(pureListener);
+    return iValue ;
 }
 
-ResourceUser& Resource::addListener(const ResourceUser& listener)
+ResourceIdentifier & ResourceIdentifier::operator++()
 {
-    GreResourceAutolock ;
-    iListeners.insert(std::pair<std::string, ResourceUser>(listener.getName(), listener));
-    return iListeners.at(listener.getName());
+    iValue ++ ;
+    return *this ;
 }
 
-ResourceUser Resource::getListener(const std::string &name)
+ResourceIdentifier ResourceIdentifier::operator++(int)
 {
-    GreResourceAutolock ;
-    return iListeners.at(name);
+    ResourceIdentifier tmp ( *this ) ;
+    operator++();
+    return tmp ;
 }
 
-void Resource::removeListener(const std::string &name)
+ResourceIdentifier & ResourceIdentifier::operator--()
 {
-    GreResourceAutolock ;
-    auto it = iListeners.find(name);
-    if(it != iListeners.end())
-    {
-        iListeners.erase(it);
-    }
+    iValue -- ;
+    return *this ;
 }
 
-void Resource::sendEvent(const Event &e)
+ResourceIdentifier ResourceIdentifier::operator--(int)
 {
-    GreResourceAutolock ;
-    
-    for(auto itr = iListeners.begin(); itr != iListeners.end(); itr++)
-    {
-        itr->second.onEvent(e);
-    }
-}
-
-void Resource::sendEvent(Event* e , bool destroy)
-{
-    if ( e )
-    {
-        GreResourceAutolock ;
-        
-        // Send this Event to every Listeners we have.
-        
-        for ( auto it = iListeners.begin() ; it != iListeners.end() ; it++ )
-        {
-            // As '::onEvent()' use only the reference function '::sendEvent()' , we don't have to pay attention
-            // on deleting or not the event.
-            
-            it->second.onEvent( *e );
-        }
-        
-        // If we have to , also delete this event.
-        
-        if ( destroy )
-        {
-            delete e ;
-        }
-    }
-}
-
-void Resource::setShouldTransmitEvents(bool p)
-{
-    GreResourceAutolock ;
-    iShouldTransmit = p;
-}
-
-bool Resource::shouldTransmitEvents() const
-{
-    return iShouldTransmit;
-}
-
-void Resource::acquire()
-{
-    GreResourceAutolock ;
-    
-    if(!iCounterInitialized)
-    {
-        iCounter = new ReferenceCounter;
-        iCounter->use();
-        iCounterInitialized = true;
-    }
-    
-    iCounter->hold();
-}
-
-void Resource::release()
-{
-    // Notes ( 26.09.2016 ) : We can't use GreResourceAutolock in this function , because it would cause the
-    // 'iMutex' property to be destroyed two times when 'deleting this;' is called.
-    // As 'Resource::~Resource()' use GreResourceAutolock , we don't need to check for Mutex locking in this
-    // function ( 'delete this' ).
-    
-    lockGuard();
-    
-    if(iCounterInitialized)
-    {
-        iCounter->unhold();
-        
-        if(iCounter->getHolderCount() == 0)
-        {
-            unlockGuard();
-            
-            delete this;
-            return;
-        }
-    }
-    
-    unlockGuard();
-}
-
-int Resource::getCounterValue() const
-{
-    GreResourceAutolock ;
-    return iCounter->getHolderCount();
-}
-
-ReferenceCounter* Resource::getReferenceCounter()
-{
-    GreResourceAutolock ;
-    return iCounter;
-}
-
-Variant& Resource::getCustomData(const std::string &entry)
-{
-    GreResourceAutolock ;
-    return iCustomData[entry];
-}
-
-const Variant& Resource::getCustomData(const std::string &entry) const
-{
-    GreResourceAutolock ;
-    return iCustomData.at(entry);
-}
-
-void Resource::setCustomData(const std::string &entry, const Gre::Variant &data)
-{
-    GreResourceAutolock ;
-    iCustomData[entry] = data;
-}
-
-const void* Resource::getProperty(const std::string &name) const
-{
-    GreResourceAutolock ;
-    
-    if ( name == "iName" )
-    {
-        return &iName;
-    }
-    
-    if ( name == "iType" )
-    {
-        return &iType;
-    }
-    
-    if ( name == "iActions" )
-    {
-        return &iActions;
-    }
-    
-    return nullptr;
-}
-
-void Resource::lockGuard() const
-{
-    iMutex.lock();
-}
-
-void Resource::unlockGuard() const
-{
-    iMutex.unlock();
-}
-
-void Resource::clearListeners()
-{
-    iListeners.clear();
-}
-
-void Resource::clear()
-{
-    iName.clear();
-    iType = Resource::Type::Null;
-    iActions.clear();
-    iNextCallbacks.clear();
-    iListeners.clear();
-    iShouldTransmit = true;
-    iCustomData.clear();
+    ResourceIdentifier tmp ( *this ) ;
+    operator--();
+    return tmp ;
 }
 
 // ---------------------------------------------------------------------------------------------------
 
-ResourceAutolock::ResourceAutolock ( std::recursive_mutex& mutex )
-: iMutexReference( &mutex )
+Resource::Resource ()
+: Gre::EventProceeder()
+, iIdentifier(ResourceIdentifier::New())
+, iName("Default") , iProperties() , iLoadStatus(true)
 {
-    iMutexReference->lock();
+    
 }
 
-ResourceAutolock::~ResourceAutolock()
+Resource::Resource ( const std::string & name )
+: Gre::EventProceeder ()
+, iIdentifier(ResourceIdentifier::New())
+, iName(name) , iProperties() , iLoadStatus(true)
 {
-    iMutexReference->unlock();
+    
+}
+
+Resource::Resource ( const ResourceIdentifier & identifier , const std::string & name )
+: Gre::EventProceeder()
+, iIdentifier(identifier)
+, iName(name) , iProperties() , iLoadStatus(true)
+{
+    
+}
+
+Resource::~Resource() noexcept ( false )
+{
+    
+}
+
+const ResourceIdentifier & Resource::getIdentifier() const
+{
+    GreAutolock ;
+    return iIdentifier ;
+}
+
+const std::string & Resource::getName() const
+{
+    GreAutolock ;
+    return iName ;
+}
+
+void Resource::setName(const std::string &name)
+{
+    GreAutolock ;
+    iName = name ;
+}
+
+const ResourceProperty & Resource::getProperty(const std::string &name) const
+{
+    GreAutolock ;
+    
+    for ( const ResourceProperty & property : iProperties )
+    {
+        if ( property.name == name )
+            return property ;
+    }
+    
+    return Resource::BadProperty ;
+}
+
+const void * Resource::getPropertyData(const std::string &name) const
+{
+    GreAutolock ;
+    
+    for ( const ResourceProperty & property : iProperties )
+    {
+        if ( property.name == name )
+            return property.data ;
+    }
+    
+    return nullptr ;
+}
+
+bool Resource::isLoaded() const
+{
+    GreAutolock ;
+    return iLoadStatus ;
+}
+
+void Resource::unload()
+{
+    GreAutolock ;
+    
+    // Always send the 'ResourceUnloadedEvent' before destroying the Resource, thus the EventProceeder
+    // listeners can access for the last time their objects in relation with this one.
+    
+    EventHolder e = EventHolder ( new ResourceUnloadedEvent(this) ) ;
+    sendEvent(e) ;
+    
+    iIdentifier = ResourceIdentifier::New();
+    iName = "Default" ;
+    iProperties.clear() ;
+    iLoadStatus = false ;
+    
+    EventProceeder::clear() ;
+}
+
+ResourceProperty Resource::BadProperty = { "BadProperty" , "" , nullptr } ;
+
+// ---------------------------------------------------------------------------------------------------
+
+IndependentResource::IndependentResource ()
+: Gre::Resource()
+{
+    
+}
+
+IndependentResource::IndependentResource ( const std::string & name )
+: Gre::Resource ( ResourceIdentifier::New() , name )
+{
+    
+}
+
+IndependentResource::IndependentResource ( const ResourceIdentifier & identifier , const std::string & name )
+: Gre::Resource(identifier , name)
+{
+    
+}
+
+IndependentResource::~IndependentResource() noexcept ( false )
+{
+    
+}
+
+bool IndependentResource::reloadResource ( const std::string & arguments )
+{
+    unload(); return loadResource(arguments);
 }
 
 GreEndNamespace

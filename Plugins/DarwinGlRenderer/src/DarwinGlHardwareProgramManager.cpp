@@ -52,7 +52,7 @@ namespace DarwinGl
         if ( GlDefaultVertexShader.isInvalid() )
         {
 #ifdef GreIsDebugMode
-            GreDebugPretty() << "No 'GlDefaultVertexShader' could be created." << std::endl;
+            GreDebugPretty() << "No 'GlDefaultVertexShader' could be created." << Gre::gendl;
 #endif
         }
         else
@@ -64,7 +64,7 @@ namespace DarwinGl
             if ( GlDefaultFragmentShader.isInvalid() )
             {
 #ifdef GreIsDebugMode
-                GreDebugPretty() << "No 'GlDefaultFragmentShader' could be created." << std::endl;
+                GreDebugPretty() << "No 'GlDefaultFragmentShader' could be created." << Gre::gendl;
 #endif
             }
             else
@@ -78,7 +78,7 @@ namespace DarwinGl
                     if ( GlDefaultProgram.isInvalid() )
                     {
 #ifdef GreIsDebugMode
-                        GreDebugPretty() << "No 'GlDefaultProgram' could be created." << std::endl;
+                        GreDebugPretty() << "No 'GlDefaultProgram' could be created." << Gre::gendl;
 #endif
                     }
                     
@@ -86,7 +86,7 @@ namespace DarwinGl
                     {
                         GlDefaultProgram.finalize();
 #ifdef GreIsDebugMode
-                        GreDebugPretty() << "'GlDefaultProgram' correctly created." << std::endl;
+                        GreDebugPretty() << "'GlDefaultProgram' correctly created." << Gre::gendl;
 #endif
                     }
                 }

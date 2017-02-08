@@ -35,28 +35,31 @@
 
 GreBeginNamespace
 
-HardwareProgramManagerPrivate::HardwareProgramManagerPrivate(const std::string& name)
-: Resource(name)
+HardwareProgramManager::HardwareProgramManager(const std::string& name)
+: Resource(ResourceIdentifier::New() , name)
 {
     
 }
 
-HardwareProgramManagerPrivate::~HardwareProgramManagerPrivate()
+HardwareProgramManager::~HardwareProgramManager() noexcept ( false )
 {
     
 }
 
-HardwareShader HardwareProgramManagerPrivate::loadShader(const ShaderType& stype, const std::string &name, const std::string &filepath)
+HardwareShaderUser HardwareProgramManager::loadShader(const ShaderType& stype, const std::string &name, const std::string &filepath)
 {
-    return HardwareShader ( loadShaderHolder(stype, name, filepath) );
+    GreAutolock ;
+    return HardwareShaderUser ( loadShaderHolder(stype, name, filepath) );
 }
 
-HardwareShader HardwareProgramManagerPrivate::getShaderByName(const std::string &name)
+HardwareShaderUser HardwareProgramManager::getShaderByName(const std::string &name)
 {
+    GreAutolock ;
+    
     auto it = iShaders.find(name);
     if(it == iShaders.end())
     {
-        return HardwareShader::Null;
+        return HardwareShaderUser (nullptr);
     }
     
     else
@@ -65,12 +68,14 @@ HardwareShader HardwareProgramManagerPrivate::getShaderByName(const std::string 
     }
 }
 
-const HardwareShader HardwareProgramManagerPrivate::getShaderByName(const std::string &name) const
+const HardwareShaderUser HardwareProgramManager::getShaderByName(const std::string &name) const
 {
+    GreAutolock ;
+    
     auto it = iShaders.find(name);
     if(it == iShaders.end())
     {
-        return HardwareShader::Null;
+        return HardwareShaderUser (nullptr);
     }
     
     else
@@ -79,8 +84,10 @@ const HardwareShader HardwareProgramManagerPrivate::getShaderByName(const std::s
     }
 }
 
-void HardwareProgramManagerPrivate::unloadShaderByName(const std::string &name)
+void HardwareProgramManager::unloadShaderByName(const std::string &name)
 {
+    GreAutolock ;
+    
     auto it = iShaders.find(name);
     if(it == iShaders.end())
         return;
@@ -88,13 +95,16 @@ void HardwareProgramManagerPrivate::unloadShaderByName(const std::string &name)
     iShaders.erase(it);
 }
 
-void HardwareProgramManagerPrivate::clearShaders()
+void HardwareProgramManager::clearShaders()
 {
+    GreAutolock ;
     iShaders.clear();
 }
 
-HardwareProgram HardwareProgramManagerPrivate::createHardwareProgram(const std::string &name)
+HardwareProgramUser HardwareProgramManager::createHardwareProgram(const std::string &name)
 {
+    GreAutolock ;
+    
     if ( !name.empty() )
     {
         // Check if the HardwareProgram currently exists.
@@ -104,9 +114,9 @@ HardwareProgram HardwareProgramManagerPrivate::createHardwareProgram(const std::
         if ( it != iPrograms.end() )
         {
 #ifdef GreIsDebugMode
-            GreDebugPretty() << "HardwareProgram '" << name << "' already loaded." << std::endl;
+            GreDebugPretty() << "HardwareProgram '" << name << "' already loaded." << Gre::gendl;
 #endif
-            return HardwareProgram ( nullptr );
+            return HardwareProgramUser ( nullptr );
         }
         
         // Here we want to create a HardwareProgram but without HardwareShader. By this we mean that the
@@ -119,28 +129,30 @@ HardwareProgram HardwareProgramManagerPrivate::createHardwareProgram(const std::
         if ( program.isInvalid() )
         {
 #ifdef GreIsDebugMode
-            GreDebugPretty() << "Invalid HardwareProgram '" << name << "' creation." << std::endl;
+            GreDebugPretty() << "Invalid HardwareProgram '" << name << "' creation." << Gre::gendl;
 #endif
-            return HardwareProgram ( nullptr );
+            return HardwareProgramUser ( nullptr );
         }
         
         // Load the HardwareProgram to the database.
         
         iPrograms.add(program);
-        return HardwareProgram ( program );
+        return HardwareProgramUser ( program );
     }
     
     else
     {
 #ifdef GreIsDebugMode
-        GreDebugPretty() << "'name' is invalid." << std::endl;
+        GreDebugPretty() << "'name' is invalid." << Gre::gendl;
 #endif
-        return HardwareProgram ( nullptr );
+        return HardwareProgramUser ( nullptr );
     }
 }
 
-HardwareProgram HardwareProgramManagerPrivate::createHardwareProgram(const std::string& name, const HardwareShader &vertexShader, const HardwareShader &fragmentShader)
+HardwareProgramUser HardwareProgramManager::createHardwareProgram(const std::string& name, const HardwareShaderUser &vertexShader, const HardwareShaderUser &fragmentShader)
 {
+    GreAutolock ;
+    
     if ( !name.empty() )
     {
         // Check if the HardwareProgram currently exists.
@@ -150,9 +162,9 @@ HardwareProgram HardwareProgramManagerPrivate::createHardwareProgram(const std::
         if ( it != iPrograms.end() )
         {
 #ifdef GreIsDebugMode
-            GreDebugPretty() << "HardwareProgram '" << name << "' already loaded." << std::endl;
+            GreDebugPretty() << "HardwareProgram '" << name << "' already loaded." << Gre::gendl;
 #endif
-            return HardwareProgram ( nullptr );
+            return HardwareProgramUser ( nullptr );
         }
         
         // Check Vertex shader.
@@ -160,9 +172,9 @@ HardwareProgram HardwareProgramManagerPrivate::createHardwareProgram(const std::
         if ( vertexShader.isInvalid() )
         {
 #ifdef GreIsDebugMode
-            GreDebugPretty() << "Vertex shader is invalid." << std::endl;
+            GreDebugPretty() << "Vertex shader is invalid." << Gre::gendl;
 #endif
-            return HardwareProgram ( nullptr );
+            return HardwareProgramUser ( nullptr );
         }
         
         // Check Fragment shader.
@@ -170,9 +182,9 @@ HardwareProgram HardwareProgramManagerPrivate::createHardwareProgram(const std::
         if ( fragmentShader.isInvalid() )
         {
 #ifdef GreIsDebugMode
-            GreDebugPretty() << "Fragment shader is invalid." << std::endl;
+            GreDebugPretty() << "Fragment shader is invalid." << Gre::gendl;
 #endif
-            return HardwareProgram ( nullptr );
+            return HardwareProgramUser ( nullptr );
         }
         
         // Holds shaders and create HardwareProgram.
@@ -185,28 +197,30 @@ HardwareProgram HardwareProgramManagerPrivate::createHardwareProgram(const std::
         if ( program.isInvalid() )
         {
 #ifdef GreIsDebugMode
-            GreDebugPretty() << "Invalid HardwareProgram '" << name << "' creation." << std::endl;
+            GreDebugPretty() << "Invalid HardwareProgram '" << name << "' creation." << Gre::gendl;
 #endif
-            return HardwareProgram ( nullptr );
+            return HardwareProgramUser ( nullptr );
         }
         
         // Load the HardwareProgram to the database.
         
         iPrograms.add(program);
-        return HardwareProgram ( program );
+        return HardwareProgramUser ( program );
     }
     
     else
     {
 #ifdef GreIsDebugMode
-        GreDebugPretty() << "'name' is invalid." << std::endl;
+        GreDebugPretty() << "'name' is invalid." << Gre::gendl;
 #endif
-        return HardwareProgram ( nullptr );
+        return HardwareProgramUser ( nullptr );
     }
 }
 
-HardwareProgram HardwareProgramManagerPrivate::createHardwareProgramFromFiles(const std::string &name, const std::string &vertexshaderpath, const std::string &fragmentshaderpath)
+HardwareProgramUser HardwareProgramManager::createHardwareProgramFromFiles(const std::string &name, const std::string &vertexshaderpath, const std::string &fragmentshaderpath)
 {
+    GreAutolock ;
+    
     if ( !name.empty() )
     {
         // Check if the HardwareProgram currently exists.
@@ -216,9 +230,9 @@ HardwareProgram HardwareProgramManagerPrivate::createHardwareProgramFromFiles(co
         if ( it != iPrograms.end() )
         {
 #ifdef GreIsDebugMode
-            GreDebugPretty() << "HardwareProgram '" << name << "' already loaded." << std::endl;
+            GreDebugPretty() << "HardwareProgram '" << name << "' already loaded." << Gre::gendl;
 #endif
-            return HardwareProgram ( nullptr );
+            return HardwareProgramUser ( nullptr );
         }
         
         // Try to load the first Shader.
@@ -228,9 +242,9 @@ HardwareProgram HardwareProgramManagerPrivate::createHardwareProgramFromFiles(co
         if ( vshader.isInvalid() )
         {
 #ifdef GreIsDebugMode
-            GreDebugPretty() << "Invalid Vertex Shader path '" << vertexshaderpath << "'." << std::endl;
+            GreDebugPretty() << "Invalid Vertex Shader path '" << vertexshaderpath << "'." << Gre::gendl;
 #endif
-            return HardwareProgram ( nullptr );
+            return HardwareProgramUser ( nullptr );
         }
         
         vshader->compile();
@@ -242,9 +256,9 @@ HardwareProgram HardwareProgramManagerPrivate::createHardwareProgramFromFiles(co
         if ( fshader.isInvalid() )
         {
 #ifdef GreIsDebugMode
-            GreDebugPretty() << "Invalid Fragment Shader path '" << fragmentshaderpath << "'." << std::endl;
+            GreDebugPretty() << "Invalid Fragment Shader path '" << fragmentshaderpath << "'." << Gre::gendl;
 #endif
-            return HardwareProgram ( nullptr );
+            return HardwareProgramUser ( nullptr );
         }
         
         fshader->compile();
@@ -256,9 +270,9 @@ HardwareProgram HardwareProgramManagerPrivate::createHardwareProgramFromFiles(co
         if ( program.isInvalid() )
         {
 #ifdef GreIsDebugMode
-            GreDebugPretty() << "Invalid HardwareProgram '" << name << "' creation." << std::endl;
+            GreDebugPretty() << "Invalid HardwareProgram '" << name << "' creation." << Gre::gendl;
 #endif
-            return HardwareProgram ( nullptr );
+            return HardwareProgramUser ( nullptr );
         }
         
         program->finalize();
@@ -266,20 +280,22 @@ HardwareProgram HardwareProgramManagerPrivate::createHardwareProgramFromFiles(co
         // Load the HardwareProgram to the database.
         
         iPrograms.add(program);
-        return HardwareProgram ( program );
+        return HardwareProgramUser ( program );
     }
     
     else
     {
 #ifdef GreIsDebugMode
-        GreDebugPretty() << "'name' is invalid." << std::endl;
+        GreDebugPretty() << "'name' is invalid." << Gre::gendl;
 #endif
-        return HardwareProgram ( nullptr );
+        return HardwareProgramUser ( nullptr );
     }
 }
 
-HardwareShaderHolder HardwareProgramManagerPrivate::loadShaderHolder(const Gre::ShaderType &stype, const std::string &name, const std::string &filepath)
+HardwareShaderHolder HardwareProgramManager::loadShaderHolder(const Gre::ShaderType &stype, const std::string &name, const std::string &filepath)
 {
+    GreAutolock ;
+    
     if ( !name.empty() )
     {
         auto it = iShaders.find(name);
@@ -296,7 +312,7 @@ HardwareShaderHolder HardwareProgramManagerPrivate::loadShaderHolder(const Gre::
                 else
                 {
 #ifdef GreIsDebugMode
-                    GreDebugPretty() << "HardwareShader '" << (*it)->getName() << "' has different filepath." << std::endl;
+                    GreDebugPretty() << "HardwareShader '" << (*it)->getName() << "' has different filepath." << Gre::gendl;
 #endif
                     return HardwareShaderHolder ( nullptr );
                 }
@@ -316,7 +332,7 @@ HardwareShaderHolder HardwareProgramManagerPrivate::loadShaderHolder(const Gre::
         if ( !srcstream )
         {
 #ifdef GreIsDebugMode
-            GreDebugPretty() << "Can't open file '" << filepath << "'." << std::endl;
+            GreDebugPretty() << "Can't open file '" << filepath << "'." << Gre::gendl;
 #endif
             return HardwareShaderHolder ( nullptr );
         }
@@ -336,7 +352,7 @@ HardwareShaderHolder HardwareProgramManagerPrivate::loadShaderHolder(const Gre::
         if ( shader.isInvalid() )
         {
 #ifdef GreIsDebugMode
-            GreDebugPretty() << "HardwareShader '" << name << "' can't be created." << std::endl;
+            GreDebugPretty() << "HardwareShader '" << name << "' can't be created." << Gre::gendl;
 #endif
             return HardwareShaderHolder ( nullptr );
         }
@@ -349,37 +365,44 @@ HardwareShaderHolder HardwareProgramManagerPrivate::loadShaderHolder(const Gre::
     else
     {
 #ifdef GreIsDebugMode
-        GreDebugPretty() << "'name' is invalid." << std::endl;
+        GreDebugPretty() << "'name' is invalid." << Gre::gendl;
 #endif
         return HardwareShaderHolder ( nullptr );
     }
 }
 
-const HardwareProgramHolder HardwareProgramManagerPrivate::getDefaultProgram() const
+const HardwareProgramHolder HardwareProgramManager::getDefaultProgram() const
 {
+    GreAutolock ;
     return getProgram("Default").lock();
 }
 
-HardwareProgram HardwareProgramManagerPrivate::getProgram(const std::string &name)
+HardwareProgramUser HardwareProgramManager::getProgram(const std::string &name)
 {
+    GreAutolock ;
+    
     auto it = iPrograms.find(name);
     if(it == iPrograms.end())
-        return HardwareProgram::Null;
+        return HardwareProgramUser (nullptr);
     else
         return (*it);
 }
 
-const HardwareProgram HardwareProgramManagerPrivate::getProgram(const std::string &name) const
+const HardwareProgramUser HardwareProgramManager::getProgram(const std::string &name) const
 {
+    GreAutolock ;
+    
     auto it = iPrograms.find(name);
     if(it == iPrograms.end())
-        return HardwareProgram::Null;
+        return HardwareProgramUser (nullptr);
     else
         return (*it);
 }
 
-void HardwareProgramManagerPrivate::destroyProgram(const std::string &name)
+void HardwareProgramManager::destroyProgram(const std::string &name)
 {
+    GreAutolock ;
+    
     auto it = iPrograms.find(name);
     if(it == iPrograms.end())
         return;
@@ -387,20 +410,25 @@ void HardwareProgramManagerPrivate::destroyProgram(const std::string &name)
     iPrograms.erase(it);
 }
 
-void HardwareProgramManagerPrivate::clearPrograms()
+void HardwareProgramManager::clearPrograms()
 {
+    GreAutolock ;
     iPrograms.clear();
 }
 
-void HardwareProgramManagerPrivate::clear()
+void HardwareProgramManager::clear()
 {
+    GreAutolock ;
+    
     clearShaders();
     clearPrograms();
     clearGlobals();
 }
 
-HardwareProgramVariable& HardwareProgramManagerPrivate::setGlobalVariableMat4(const std::string &name, const Matrix4 &mat4)
+HardwareProgramVariable& HardwareProgramManager::setGlobalVariableMat4(const std::string &name, const Matrix4 &mat4)
 {
+    GreAutolock ;
+    
     HardwareProgramVariable nVar;
     nVar.name = name;
     nVar.type = HdwProgVarType::Mat4;
@@ -409,183 +437,37 @@ HardwareProgramVariable& HardwareProgramManagerPrivate::setGlobalVariableMat4(co
     return iGlobals.get(name);
 }
 
-HardwareProgramVariable& HardwareProgramManagerPrivate::setGlobalVariable(const HardwareProgramVariable& var)
+HardwareProgramVariable& HardwareProgramManager::setGlobalVariable(const HardwareProgramVariable& var)
 {
+    GreAutolock ;
     iGlobals.add(var);
     return iGlobals.get(var.name);
 }
 
-void HardwareProgramManagerPrivate::unsetGlobalVariable(const std::string &name)
-{
-    iGlobals.remove(name);
-}
-
-void HardwareProgramManagerPrivate::clearGlobals()
-{
-    iGlobals.clear();
-}
-
-void HardwareProgramManagerPrivate::onUpdateEvent(const Gre::UpdateEvent &e)
-{
-    for(auto prog : iPrograms)
-    {
-        for(auto var : iGlobals)
-        {
-            prog->setUniform(var);
-        }
-    }
-}
-
-// ---------------------------------------------------------------------------------------------------
-
-HardwareProgramManager::HardwareProgramManager(const HardwareProgramManagerPrivate* pointer)
-: ResourceUser(pointer)
-, SpecializedResourceUser<Gre::HardwareProgramManagerPrivate>(pointer)
-{
-    
-}
-
-HardwareProgramManager::HardwareProgramManager(const HardwareProgramManagerHolder& holder)
-: ResourceUser(holder)
-, SpecializedResourceUser<Gre::HardwareProgramManagerPrivate>(holder)
-{
-    
-}
-
-HardwareProgramManager::HardwareProgramManager(const HardwareProgramManager& user)
-: ResourceUser(user)
-, SpecializedResourceUser<Gre::HardwareProgramManagerPrivate>(user)
-{
-    
-}
-
-HardwareProgramManager::~HardwareProgramManager()
-{
-    
-}
-
-HardwareShader HardwareProgramManager::loadShader(const Gre::ShaderType &stype, const std::string &name, const std::string &filepath)
-{
-    auto ptr = lock();
-    if(ptr)
-        return ptr->loadShader(stype, name, filepath);
-    return HardwareShader::Null;
-}
-
-HardwareShader HardwareProgramManager::getShaderByName(const std::string &name)
-{
-    auto ptr = lock();
-    if(ptr)
-        return ptr->getShaderByName(name);
-    return HardwareShader::Null;
-}
-
-const HardwareShader HardwareProgramManager::getShaderByName(const std::string &name) const
-{
-    auto ptr = lock();
-    if(ptr)
-        return ptr->getShaderByName(name);
-    return HardwareShader::Null;
-}
-
-void HardwareProgramManager::unloadShaderByName(const std::string &name)
-{
-    auto ptr = lock();
-    if(ptr)
-        ptr->unloadShaderByName(name);
-}
-
-void HardwareProgramManager::clearShaders()
-{
-    auto ptr = lock();
-    if(ptr)
-        ptr->clearShaders();
-}
-
-HardwareProgram HardwareProgramManager::createHardwareProgram(const std::string &name)
-{
-    auto ptr = lock();
-    if(ptr)
-        return ptr->createHardwareProgram(name);
-    return HardwareProgram::Null;
-}
-
-HardwareProgram HardwareProgramManager::createHardwareProgram(const std::string &name, const HardwareShader &vertexShader, const HardwareShader &fragmentShader)
-{
-    auto ptr = lock();
-    if(ptr)
-        return ptr->createHardwareProgram(name, vertexShader, fragmentShader);
-    return HardwareProgram::Null;
-}
-
-HardwareProgram HardwareProgramManager::getProgram(const std::string &name)
-{
-    auto ptr = lock();
-    if(ptr)
-        return ptr->getProgram(name);
-    return HardwareProgram::Null;
-}
-
-const HardwareProgram HardwareProgramManager::getProgram(const std::string &name) const
-{
-    auto ptr = lock();
-    if(ptr)
-        return ptr->getProgram(name);
-    return HardwareProgram::Null;
-}
-
-void HardwareProgramManager::destroyProgram(const std::string &name)
-{
-    auto ptr = lock();
-    if(ptr)
-        ptr->destroyProgram(name);
-}
-
-void HardwareProgramManager::clearPrograms()
-{
-    auto ptr = lock();
-    if(ptr)
-        ptr->clearPrograms();
-}
-
-void HardwareProgramManager::clear()
-{
-    auto ptr = lock();
-    if(ptr)
-        ptr->clear();
-}
-
-HardwareProgramVariable& HardwareProgramManager::setGlobalVariableMat4(const std::string &name, const Matrix4 &mat4)
-{
-    auto ptr = lock();
-    if(ptr)
-        return ptr->setGlobalVariableMat4(name, mat4);
-    return HardwareProgramVariable::Null;
-}
-
-HardwareProgramVariable& HardwareProgramManager::setGlobalVariable(const Gre::HardwareProgramVariable &var)
-{
-    auto ptr = lock();
-    if(ptr)
-        return ptr->setGlobalVariable(var);
-    return HardwareProgramVariable::Null;
-}
-
 void HardwareProgramManager::unsetGlobalVariable(const std::string &name)
 {
-    auto ptr = lock();
-    if(ptr)
-        ptr->unsetGlobalVariable(name);
+    GreAutolock ;
+    iGlobals.remove(name);
 }
 
 void HardwareProgramManager::clearGlobals()
 {
-    auto ptr = lock();
-    if(ptr)
-        ptr->clearGlobals();
+    GreAutolock ;
+    iGlobals.clear();
 }
 
-HardwareProgramManager HardwareProgramManager::Null = HardwareProgramManager(nullptr);
+void HardwareProgramManager::onUpdateEvent(const Gre::UpdateEvent &e)
+{
+    GreAutolock ;
+    
+    for(auto prog : iPrograms)
+    {
+        for(auto var : iGlobals)
+        {
+            prog->setVariable(var);
+        }
+    }
+}
 
 // ---------------------------------------------------------------------------------------------------
 
@@ -599,14 +481,9 @@ HardwareProgramManagerLoader::~HardwareProgramManagerLoader()
     
 }
 
-bool HardwareProgramManagerLoader::isTypeSupported(Resource::Type type) const
+HardwareProgramManagerHolder HardwareProgramManagerLoader::load( const std::string &name ) const
 {
-    return type == Resource::Type::HwdProgManager;
-}
-
-Resource* HardwareProgramManagerLoader::load(Resource::Type type, const std::string &name) const
-{
-    return nullptr;
+    return HardwareProgramManagerHolder(nullptr) ;
 }
 
 GreEndNamespace

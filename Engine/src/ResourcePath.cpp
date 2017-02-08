@@ -81,7 +81,7 @@ ResourcePath::ResourcePath(const std::string& path)
         if ( splitted.size() > 2 )
         {
 #ifdef GreIsDebugMode
-            GreDebugPretty() << "'path' given ('" << path << "') is invalid because it contains more than 2 elements." << std::endl;
+            GreDebugPretty() << "'path' given ('" << path << "') is invalid because it contains more than 2 elements." << Gre::gendl;
 #endif
         }
         

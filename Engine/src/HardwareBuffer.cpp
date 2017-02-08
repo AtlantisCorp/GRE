@@ -34,91 +34,8 @@
 
 GreBeginNamespace
 
-HardwareBufferPrivate::HardwareBufferPrivate(const std::string& name)
-: Resource(name)
-{
-    
-}
-
-HardwareBufferPrivate::~HardwareBufferPrivate()
-{
-    
-}
-
-size_t HardwareBufferPrivate::getSize() const
-{
-    return 0;
-}
-
-size_t HardwareBufferPrivate::count() const
-{
-    return 0;
-}
-
-void HardwareBufferPrivate::bind() const
-{
-    
-}
-
-void HardwareBufferPrivate::unbind() const
-{
-
-}
-
-void HardwareBufferPrivate::update()
-{
-
-}
-
-bool HardwareBufferPrivate::isDirty() const
-{
-    return iIsDirty;
-}
-
-void HardwareBufferPrivate::setDirty(bool dirty) const
-{
-    iIsDirty = dirty;
-}
-
-bool HardwareBufferPrivate::isDataInvalid() const
-{
-    return true;
-}
-
-void HardwareBufferPrivate::addData(const char *vdata, size_t sz)
-{
-    
-}
-
-const char* HardwareBufferPrivate::getData() const
-{
-    return nullptr;
-}
-
-void HardwareBufferPrivate::clearData()
-{
-    
-}
-
-// ---------------------------------------------------------------------------------------------------
-
-HardwareBuffer::HardwareBuffer(const HardwareBufferPrivate* resource)
-: ResourceUser(resource)
-, SpecializedResourceUser<Gre::HardwareBufferPrivate>(resource)
-{
-    
-}
-
-HardwareBuffer::HardwareBuffer(const HardwareBufferHolder& holder)
-: ResourceUser(holder)
-, SpecializedResourceUser<Gre::HardwareBufferPrivate>(holder)
-{
-    
-}
-
-HardwareBuffer::HardwareBuffer(const HardwareBuffer& user)
-: ResourceUser(user)
-, SpecializedResourceUser<Gre::HardwareBufferPrivate>(user)
+HardwareBuffer::HardwareBuffer(const std::string& name)
+: Resource(ResourceIdentifier::New() , name)
 {
     
 }
@@ -128,79 +45,59 @@ HardwareBuffer::~HardwareBuffer()
     
 }
 
-void HardwareBuffer::bind() const
-{
-    auto ptr = lock();
-    if(ptr)
-        return ptr->bind();
-}
-
-void HardwareBuffer::unbind() const
-{
-    auto ptr = lock();
-    if(ptr)
-        return ptr->unbind();
-}
-
-void HardwareBuffer::update() const
-{
-    auto ptr = lock();
-    if(ptr)
-        return ptr->update();
-}
-
 size_t HardwareBuffer::getSize() const
 {
-    auto ptr = lock();
-    if(ptr)
-        return ptr->getSize();
     return 0;
 }
 
 size_t HardwareBuffer::count() const
 {
-    auto ptr = lock();
-    if(ptr)
-        return ptr->count();
     return 0;
+}
+
+void HardwareBuffer::bind() const
+{
+    
+}
+
+void HardwareBuffer::unbind() const
+{
+
+}
+
+void HardwareBuffer::update()
+{
+
 }
 
 bool HardwareBuffer::isDirty() const
 {
-    auto ptr = lock();
-    if(ptr)
-        return ptr->isDirty();
-    return false;
+    return iIsDirty;
+}
+
+void HardwareBuffer::setDirty(bool dirty) const
+{
+    iIsDirty = dirty;
+}
+
+bool HardwareBuffer::isDataInvalid() const
+{
+    return true;
 }
 
 void HardwareBuffer::addData(const char *vdata, size_t sz)
 {
-    auto ptr = lock();
-    if ( ptr )
-        ptr->addData(vdata, sz);
+    
 }
 
 const char* HardwareBuffer::getData() const
 {
-    auto ptr = lock();
-    if ( ptr )
-        return ptr->getData();
     return nullptr;
 }
 
 void HardwareBuffer::clearData()
 {
-    auto ptr = lock();
-    if ( ptr )
-        ptr->clearData();
-}
-
-bool HardwareBuffer::isDataInvalid() const
-{
-    auto ptr = lock();
-    if ( ptr )
-        return ptr->isDataInvalid();
-    throw GreInvalidUserException("HardwareBuffer");
+    
 }
 
 GreEndNamespace

@@ -60,7 +60,7 @@ OpenGlRenderContext::OpenGlRenderContext(const std::string& name, const RenderCo
     
     if(CGLChoosePixelFormat(formatAttribCore4, &cGlPixelFormat, &pixNum) == kCGLNoError)
     {
-        GreDebugPretty() << "Context '" << name << "' successfully found pixel format Gl4." << std::endl;
+        GreDebugPretty() << "Context '" << name << "' successfully found pixel format Gl4." << Gre::gendl;
         foundPixelFormat = true;
         
         cGlErrorCode = CGLCreateContext(cGlPixelFormat, NULL, &cGlContext);
@@ -68,14 +68,14 @@ OpenGlRenderContext::OpenGlRenderContext(const std::string& name, const RenderCo
         
         if(cGlErrorCode != kCGLNoError)
         {
-            GreDebugPretty() << "Context '" << name << "' Can't create Context Object. " << std::endl;
-            GreDebugPretty() << "Error Code : " << CGLErrorString(cGlErrorCode) << std::endl;
+            GreDebugPretty() << "Context '" << name << "' Can't create Context Object. " << Gre::gendl;
+            GreDebugPretty() << "Error Code : " << CGLErrorString(cGlErrorCode) << Gre::gendl;
             
             _mIsCreated = false;
         }
         else
         {
-            GreDebugPretty() << "Context '" << name << "' Created New Context Object. " << std::endl;
+            GreDebugPretty() << "Context '" << name << "' Created New Context Object. " << Gre::gendl;
             _mIsCreated = true;
             _mContext = cGlContext;
         }
@@ -83,7 +83,7 @@ OpenGlRenderContext::OpenGlRenderContext(const std::string& name, const RenderCo
     
     if(CGLChoosePixelFormat(formatAttribCore3, &cGlPixelFormat, &pixNum) == kCGLNoError && !_mIsCreated)
     {
-        GreDebugPretty() << "Context '" << name << "' successfully found pixel format Gl3." << std::endl;
+        GreDebugPretty() << "Context '" << name << "' successfully found pixel format Gl3." << Gre::gendl;
         foundPixelFormat = true;
         
         cGlErrorCode = CGLCreateContext(cGlPixelFormat, NULL, &cGlContext);
@@ -91,14 +91,14 @@ OpenGlRenderContext::OpenGlRenderContext(const std::string& name, const RenderCo
         
         if(cGlErrorCode != kCGLNoError)
         {
-            GreDebugPretty() << "Context '" << name << "' Can't create Context Object. " << std::endl;
-            GreDebugPretty() << "Error Code : " << CGLErrorString(cGlErrorCode) << std::endl;
+            GreDebugPretty() << "Context '" << name << "' Can't create Context Object. " << Gre::gendl;
+            GreDebugPretty() << "Error Code : " << CGLErrorString(cGlErrorCode) << Gre::gendl;
             
             _mIsCreated = false;
         }
         else
         {
-            GreDebugPretty() << "Context '" << name << "' Created New Context Object. " << std::endl;
+            GreDebugPretty() << "Context '" << name << "' Created New Context Object. " << Gre::gendl;
             _mIsCreated = true;
             _mContext = cGlContext;
         }
@@ -106,7 +106,7 @@ OpenGlRenderContext::OpenGlRenderContext(const std::string& name, const RenderCo
     
     if(CGLChoosePixelFormat(formatAttrib, &cGlPixelFormat, &pixNum) == kCGLNoError && !_mIsCreated)
     {
-        GreDebugPretty() << "Context '" << name << "' successfully found pixel format Gl legacy." << std::endl;
+        GreDebugPretty() << "Context '" << name << "' successfully found pixel format Gl legacy." << Gre::gendl;
         foundPixelFormat = true;
         
         cGlErrorCode = CGLCreateContext(cGlPixelFormat, NULL, &cGlContext);
@@ -114,14 +114,14 @@ OpenGlRenderContext::OpenGlRenderContext(const std::string& name, const RenderCo
         
         if(cGlErrorCode != kCGLNoError)
         {
-            GreDebugPretty() << "Context '" << name << "' Can't create Context Object. " << std::endl;
-            GreDebugPretty() << "Error Code : " << CGLErrorString(cGlErrorCode) << std::endl;
+            GreDebugPretty() << "Context '" << name << "' Can't create Context Object. " << Gre::gendl;
+            GreDebugPretty() << "Error Code : " << CGLErrorString(cGlErrorCode) << Gre::gendl;
             
             _mIsCreated = false;
         }
         else
         {
-            GreDebugPretty() << "Context '" << name << "' Created New Context Object. " << std::endl;
+            GreDebugPretty() << "Context '" << name << "' Created New Context Object. " << Gre::gendl;
             _mIsCreated = true;
             _mContext = cGlContext;
         }
@@ -129,7 +129,7 @@ OpenGlRenderContext::OpenGlRenderContext(const std::string& name, const RenderCo
     
     if(CGLChoosePixelFormat(formatAttribSoft, &cGlPixelFormat, &pixNum) == kCGLNoError && !_mIsCreated)
     {
-        GreDebugPretty() << "Context '" << name << "' successfully found pixel format Gl software." << std::endl;
+        GreDebugPretty() << "Context '" << name << "' successfully found pixel format Gl software." << Gre::gendl;
         foundPixelFormat = true;
         
         cGlErrorCode = CGLCreateContext(cGlPixelFormat, NULL, &cGlContext);
@@ -137,14 +137,14 @@ OpenGlRenderContext::OpenGlRenderContext(const std::string& name, const RenderCo
         
         if(cGlErrorCode != kCGLNoError)
         {
-            GreDebugPretty() << "Context '" << name << "' Can't create Context Object. " << std::endl;
-            GreDebugPretty() << "Error Code : " << CGLErrorString(cGlErrorCode) << std::endl;
+            GreDebugPretty() << "Context '" << name << "' Can't create Context Object. " << Gre::gendl;
+            GreDebugPretty() << "Error Code : " << CGLErrorString(cGlErrorCode) << Gre::gendl;
             
             _mIsCreated = false;
         }
         else
         {
-            GreDebugPretty() << "Context '" << name << "' Created New Context Object. " << std::endl;
+            GreDebugPretty() << "Context '" << name << "' Created New Context Object. " << Gre::gendl;
             _mIsCreated = true;
             _mContext = cGlContext;
         }
@@ -153,7 +153,7 @@ OpenGlRenderContext::OpenGlRenderContext(const std::string& name, const RenderCo
 #ifdef GreIsDebugMode
     if(!foundPixelFormat)
     {
-        GreDebugPretty() << "Context '" << name << "' did not found any Gl Context suitable. " << std::endl;
+        GreDebugPretty() << "Context '" << name << "' did not found any Gl Context suitable. " << Gre::gendl;
     }
 #endif
     
@@ -166,7 +166,7 @@ OpenGlRenderContext::OpenGlRenderContext(const std::string& name, const RenderCo
 #endif
         
         _mGl.GreOpenGlInit();
-        GreDebugPretty() << "Gl Object Version = '" << _mGl.VersionMajor << "." << _mGl.VersionMinor << "' created." << std::endl;
+        GreDebugPretty() << "Gl Object Version = '" << _mGl.VersionMajor << "." << _mGl.VersionMinor << "' created." << Gre::gendl;
         
 #ifdef GrePlatformDarwin
         CGLSetCurrentContext(NULL);

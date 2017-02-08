@@ -43,7 +43,7 @@ extern "C" DLL_PUBLIC void* GetPluginName (void)
 extern "C" DLL_PUBLIC void StartPlugin (void)
 {
 #ifdef GreIsDebugMode
-    GreDebugPretty() << "Loading Plugin Factories (OpenGlLoader, OpenGlHdwShaderLoader, OpenGlHdwProgramManagerLoader, OpenGlFrameBufferLoader)." << std::endl;
+    GreDebugPretty() << "Loading Plugin Factories (OpenGlLoader, OpenGlHdwShaderLoader, OpenGlHdwProgramManagerLoader, OpenGlFrameBufferLoader)." << Gre::gendl;
 #endif
     
     ResourceManager::Get().getRendererLoaderFactory().registers("OpenGlLoader", new OpenGlRendererLoader);

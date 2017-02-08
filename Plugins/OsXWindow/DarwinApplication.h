@@ -61,6 +61,11 @@ public:
     /// @brief Terminates the NSApplication run loop.
     //////////////////////////////////////////////////////////////////////
     virtual void terminate () ;
+    
+protected:
+    
+    /// @brief Thread used to launch the main loop.
+    std::thread iRunloop ;
 };
 
 //////////////////////////////////////////////////////////////////////

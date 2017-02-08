@@ -36,7 +36,7 @@ OpenGlHardwareShader::OpenGlHardwareShader(const std::string& name, const Shader
             {
                 std::vector<char> shaderErrorMessage(infoLogLenght+1);
                 glGlobalContext->getGl().GetProgramInfoLog(_mShaderId, infoLogLenght, NULL, &shaderErrorMessage[0]);
-                GreDebugPretty() << "Glsl Linker Error : " << &shaderErrorMessage[0] << std::endl;
+                GreDebugPretty() << "Glsl Linker Error : " << &shaderErrorMessage[0] << Gre::gendl;
             }
             
             else
@@ -48,7 +48,7 @@ OpenGlHardwareShader::OpenGlHardwareShader(const std::string& name, const Shader
 #ifdef GreIsDebugMode
         else
         {
-            GreDebugPretty() << "Can't define type of shader '" << name << "'." << std::endl;
+            GreDebugPretty() << "Can't define type of shader '" << name << "'." << Gre::gendl;
         }
 #endif
     }

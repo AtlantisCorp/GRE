@@ -72,6 +72,9 @@
 /// mode.
 #define GreIsDebugMode
 
+/// @brief Defines this to enable exception throwing.
+// #define GreHasExceptions
+
 /// @brief If enabled, use of Extra Macros to define Class attributes are
 /// allowed.
 #define GreExtraMacros
@@ -165,8 +168,25 @@ typedef TVector4<float> Vector4;
 typedef glm::mat4 Matrix4;
 typedef glm::quat Quaternion;
 
+typedef Vector4 Float4 ;
+
+// Times definition .
+
+/// @brief The Time definition.
+typedef std::chrono::high_resolution_clock Time ;
+
+/// @brief A Time Point structure.
+typedef Time::time_point TimePoint ;
+
+/// @brief Delta of two Time , in seconds.
+typedef std::chrono::duration < float > Duration ;
+
+/// @brief Delta of two Time , in milliseconds.
+typedef std::chrono::milliseconds DurationMilli ;
+
 // This file is here to includes some third-party code help.
 #include "ThirdParty.h"
+#include "Exceptions.h"
 
 GreBeginNamespace
 
@@ -174,7 +194,7 @@ GreBeginNamespace
 
 #define GreVersionMajor 0             ///< @brief GRE Major version.
 #define GreVersionMinor 0             ///< @brief GRE Minor version.
-#define GreVersionBuild 18            ///< @brief GRE Build number.
+#define GreVersionBuild 19            ///< @brief GRE Build number.
 
 /// @brief Defines the Version structure.
 typedef struct Version
@@ -187,14 +207,30 @@ typedef struct Version
 #define localVersion (Version({ GreVersionMajor , GreVersionMinor , GreVersionBuild }))
 DLL_PUBLIC Version GetLibVersion ();
 
+/// @brief For multithreaded purpose , we make a safe debug function.
+/// 'GreDebugBase()' locks a global mutex.
+/// 'gendl' unlocks this mutex.
+
+extern std::recursive_mutex __globcoutmutex ;
+
+template <class _CharT, class _Traits>
+inline std::basic_ostream<_CharT, _Traits>& gendl(std::basic_ostream<_CharT, _Traits>& __os)
+{
+    __os.put(__os.widen('\n'));
+    __os.flush();
+    __globcoutmutex.unlock();
+    return __os;
+}
+
 /// @brief Debug using an intro (should use __COMPACT_PRETTY_FUNCTION__ macro) and the body message.
-DLL_PUBLIC std::ostream& GreDebug(const std::string& func);
-#define GreDebugPretty() Gre::GreDebug( __COMPACT_PRETTY_FUNCTION__ )
+DLL_PUBLIC std::ostream& GreDebugBase(const std::string& func);
+#define GreDebugPretty() Gre::GreDebugBase( __COMPACT_PRETTY_FUNCTION__ )
+#define GreDebug(msg) GreDebugPretty() << msg 
 
 #define _GreDebugNotImplemented( message , arg ) \
     static std::string __message##__arg = std::string( message ); \
     static bool __already_passed##__arg = false; \
-    if( __already_passed##__arg ) { GreDebugPretty() << message << std::endl; __already_passed##__arg = true; }
+    if( __already_passed##__arg ) { GreDebugPretty() << message << Gre::gendl; __already_passed##__arg = true; }
 
 #define GreDebugNotImplemented( message ) _GreDebugNotImplemented( message , __LINE__ )
 #define GreDebugFunctionNotImplemented() GreDebugNotImplemented( std::string ( __COMPACT_PRETTY_FUNCTION__ ) + " : Not implemented !" )
@@ -245,6 +281,10 @@ struct Surface
     /// @brief A Zero'd surface.
     static Surface Null;
 };
+
+inline bool operator < ( const Surface& s1, const Surface& s2 ) {
+    return (s1.width*s1.top) < (s2.width*s2.top) ;
+}
 
 /// @brief Common egality operator.
 extern bool operator == (const Surface& lhs, const Surface& rhs);

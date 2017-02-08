@@ -228,6 +228,12 @@ public:
         }
     }
     
+    /// @brief Returns the Color as 4 floats.
+    Float4 toFloat4 () const
+    {
+        return Float4 ( getRed() , getGreen() , getBlue() , getAlpha() ) ;
+    }
+    
     bool operator == (const GenColor& rhs) const
     {
         if(Format < ColorFormat::RGB)

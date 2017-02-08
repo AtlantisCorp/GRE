@@ -43,7 +43,7 @@ namespace DarwinGl
     {
         if ( !cglcontext )
         {
-            GreDebugPretty() << "Initializing 'DarwinGlContext' with null 'cglcontext' has undefined behaviour." << std::endl;
+            GreDebugPretty() << "Initializing 'DarwinGlContext' with null 'cglcontext' has undefined behaviour." << Gre::gendl;
         }
         
         // Check the 'iContextStack' at least has one null CGLContextObj.
@@ -71,16 +71,16 @@ namespace DarwinGl
             // Check the iContextStack. If another CGLContextObj is binded , we should save it for later.
             if ( iGetCurrentBindedContext() != iContext )
             {
+                CGLLockContext( iContext ) ;
+                
                 if ( CGLSetCurrentContext(iContext) != kCGLNoError )
                 {
-                    GreDebugPretty() << "Can't bind CGLContext '" << getName() << "'." << std::endl;
+                    GreDebugPretty() << "Can't bind CGLContext '" << getName() << "'." << Gre::gendl;
                     iIsBinded = false;
                 }
                 
                 else
                 {
-                    CGLLockContext( iContext ) ;
-                    
                     // Sets clearing state.
                     
                     glClearColor(iClearColor.getRed(), iClearColor.getGreen(), iClearColor.getBlue(), iClearColor.getAlpha());
@@ -104,15 +104,15 @@ namespace DarwinGl
             if ( iGetCurrentBindedContext() == iContext )
             {
                 iContextStack.pop();
-                CGLUnlockContext( iContext ) ;
                 
                 if ( CGLSetCurrentContext(iContextStack.top()) != kCGLNoError )
                 {
-                    GreDebugPretty() << "Can't unbind CGLContext '" << getName() << "'." << std::endl;
+                    GreDebugPretty() << "Can't unbind CGLContext '" << getName() << "'." << Gre::gendl;
                 }
                 else
                 {
                     iIsBinded = false;
+                    CGLUnlockContext( iContext ) ;
                 }
             }
         }
@@ -126,7 +126,7 @@ namespace DarwinGl
             
             if ( CGLFlushDrawable(iContext) != kCGLNoError )
             {
-                GreDebugPretty() << "Can't flush CGLContext '" << getName() << "'." << std::endl;
+                GreDebugPretty() << "Can't flush CGLContext '" << getName() << "'." << Gre::gendl;
             }
         }
     }

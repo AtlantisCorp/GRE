@@ -42,25 +42,25 @@ GreBeginNamespace
 //////////////////////////////////////////////////////////////////////
 /// @brief Defines a HardwareBuffer used to hold Vertexs.
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC HardwareVertexBufferPrivate : public HardwareBufferPrivate
+class DLL_PUBLIC HardwareVertexBuffer : public HardwareBuffer
 {
 public:
     
     POOLED(Pools::HdwBuffer)
     
-    /// @brief SpecializedResourceHolder for HardwareVertexBufferPrivate.
-    typedef SpecializedResourceHolder<HardwareVertexBufferPrivate> HardwareVertexBufferHolder;
+    /// @brief SpecializedCountedObjectHolder for HardwareVertexBufferPrivate.
+    typedef SpecializedCountedObjectHolder<HardwareVertexBuffer> HardwareVertexBufferHolder;
     
     /// @brief SpecializedResourceHolderList for HardwareVertexBufferPrivate.
-    typedef SpecializedResourceHolderList<HardwareVertexBufferPrivate> HardwareVertexBufferHolderList;
+    typedef SpecializedResourceHolderList<HardwareVertexBuffer> HardwareVertexBufferHolderList;
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    HardwareVertexBufferPrivate(const std::string& name);
+    HardwareVertexBuffer(const std::string& name);
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    virtual ~HardwareVertexBufferPrivate();
+    virtual ~HardwareVertexBuffer();
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the VertexDescriptor.
@@ -84,66 +84,14 @@ protected:
     VertexDescriptor iComponents;
 };
 
-/// @brief SpecializedResourceHolder for HardwareVertexBufferPrivate.
-typedef SpecializedResourceHolder<HardwareVertexBufferPrivate> HardwareVertexBufferHolder;
+/// @brief SpecializedCountedObjectHolder for HardwareVertexBufferPrivate.
+typedef SpecializedCountedObjectHolder<HardwareVertexBuffer> HardwareVertexBufferHolder;
 
 /// @brief SpecializedResourceHolderList for HardwareVertexBufferPrivate.
-typedef SpecializedResourceHolderList<HardwareVertexBufferPrivate> HardwareVertexBufferHolderList;
+typedef SpecializedResourceHolderList<HardwareVertexBuffer> HardwareVertexBufferHolderList;
 
-//////////////////////////////////////////////////////////////////////
-/// @brief Proxy to the HardwareVertexBufferPrivate object.
-//////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC HardwareVertexBuffer : public HardwareBuffer
-{
-public:
-    
-    POOLED(Pools::HdwBuffer)
-    
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    HardwareVertexBuffer(const HardwareVertexBufferPrivate* pointer);
-    
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    HardwareVertexBuffer(const HardwareVertexBufferHolder& holder);
-    
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    HardwareVertexBuffer(const HardwareVertexBuffer& user);
-    
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    virtual ~HardwareVertexBuffer();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Creates a new ResourceHolder in order to use the Resource.
-    //////////////////////////////////////////////////////////////////////
-    HardwareVertexBufferHolder lock();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Creates a new ResourceHolder in order to use the Resource.
-    //////////////////////////////////////////////////////////////////////
-    const HardwareVertexBufferHolder lock() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the VertexDescriptor.
-    //////////////////////////////////////////////////////////////////////
-    virtual const VertexDescriptor& getVertexDescriptor() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Changes the VertexDescriptor.
-    //////////////////////////////////////////////////////////////////////
-    virtual void setVertexDescriptor(const VertexDescriptor& vdesc);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Sets data from another HardwareVertexBuffer object, erasing
-    /// prior data and updating new one.
-    //////////////////////////////////////////////////////////////////////
-    virtual void setData ( const HardwareVertexBufferHolder& holder );
-    
-    /// @brief A Null HardwareVertexBuffer.
-    static HardwareVertexBuffer Null;
-};
+/// @brief SpecializedCountedObjectUser.
+typedef SpecializedCountedObjectUser<HardwareVertexBuffer> HardwareVertexBufferUser;
 
 GreEndNamespace
 

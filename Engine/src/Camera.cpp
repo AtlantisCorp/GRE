@@ -34,47 +34,47 @@
 
 GreBeginNamespace
 
-CameraPrivate::CameraPrivate(const std::string& name)
-: Gre::Resource(name), iMaxVerticalAngle(89.0f)
+Camera::Camera(const std::string& name)
+: Gre::Resource(ResourceIdentifier::New() , name), iMaxVerticalAngle(89.0f)
 {
     
 }
 
-CameraPrivate::CameraPrivate(const std::string& name, const Vector3& position, const Vector3& to)
-: Gre::Resource(name), iPosition(position), iMaxVerticalAngle(89.0f)
+Camera::Camera(const std::string& name, const Vector3& position, const Vector3& to)
+: Gre::Resource(ResourceIdentifier::New() , name), iPosition(position), iMaxVerticalAngle(89.0f)
 {
     lookAt(to);
 }
 
-CameraPrivate::CameraPrivate(const std::string& name, const Vector3& position, const Radian& angle, const Vector3& direction)
-: Gre::Resource(name), iPosition(position), iMaxVerticalAngle(89.0f)
+Camera::Camera(const std::string& name, const Vector3& position, const Radian& angle, const Vector3& direction)
+: Gre::Resource(ResourceIdentifier::New() , name), iPosition(position), iMaxVerticalAngle(89.0f)
 {
     lookAt(angle, direction);
 }
 
-CameraPrivate::~CameraPrivate()
+Camera::~Camera()
 {
     
 }
 
-void CameraPrivate::setPosition(const Vector3 &position)
+void Camera::setPosition(const Vector3 &position)
 {
     iPosition = position;
     lookAtCache();
 }
 
-Vector3 CameraPrivate::getPosition() const
+Vector3 Camera::getPosition() const
 {
     return iPosition;
 }
 
-void CameraPrivate::lookAt(const Vector3 &position)
+void Camera::lookAt(const Vector3 &position)
 {
     Vector3 direction = glm::normalize (position - iPosition);
     lookAt(0.0f, direction);
 }
 
-void CameraPrivate::lookAt(const Radian &angle, const Vector3 &direction)
+void Camera::lookAt(const Radian &angle, const Vector3 &direction)
 {
     if(iCache.iLookDirection != direction)
     {
@@ -115,95 +115,86 @@ void CameraPrivate::lookAt(const Radian &angle, const Vector3 &direction)
     }
 }
 
-void CameraPrivate::lookAtCache()
+void Camera::lookAtCache()
 {
     Matrix4 view = iCache.iOrientation * glm::translate( glm::mat4(), -iPosition );
     iFrustrum.setView(view);
     iFrustrum.computePlanes();
 }
 
-bool CameraPrivate::contains(const Vector3 &object) const
+bool Camera::contains(const Vector3 &object) const
 {
     return iFrustrum.contains(object);
 }
 
-bool CameraPrivate::isVisible(const Gre::BoundingBox &bbox) const
+bool Camera::isVisible(const Gre::BoundingBox &bbox) const
 {
     return iFrustrum.intersect(bbox) != IntersectionResult::Outside;
 }
 
+const Matrix4 & Camera::getProjectionMatrix() const
+{
+    return iFrustrum.getPerspective() ;
+}
+
+const Matrix4 & Camera::getViewMatrix() const
+{
+    return iFrustrum.getView() ;
+}
+
 // ---------------------------------------------------------------------------------------------------
 
-Camera::Camera(const CameraPrivate* pointer)
-: ResourceUser(pointer)
-, SpecializedResourceUser<Gre::CameraPrivate>(pointer)
+CameraLoader::CameraLoader ()
 {
     
 }
 
-Camera::Camera(const CameraHolder& holder)
-: ResourceUser(holder)
-, SpecializedResourceUser<Gre::CameraPrivate>(holder)
+CameraLoader::~CameraLoader () noexcept ( false )
 {
     
 }
 
-Camera::Camera(const Camera& user)
-: ResourceUser(user)
-, SpecializedResourceUser<Gre::CameraPrivate>(user)
+// ---------------------------------------------------------------------------------------------------
+
+CameraManager::CameraManager ( const std::string & name )
+: SpecializedResourceManager<Camera, CameraLoader> ( name )
 {
     
 }
 
-Camera::~Camera()
+CameraManager::~CameraManager () noexcept ( false )
 {
     
 }
 
-void Camera::setPosition(const Vector3 &position)
+CameraUser CameraManager::load ( const std::string & name , const CameraOptions & options )
 {
-    auto ptr = lock();
-    if( ptr )
-        ptr->setPosition(position);
+    auto loadername = options.find("loader") ;
+    if ( loadername != options.end() )
+    {
+        std::string lname = loadername->second.toString() ;
+        CameraLoader* loader = iFindBestLoader( lname ) ;
+        
+        if ( loader )
+        {
+            CameraHolder newcam = loader->load(name, options) ;
+            iHolders.push_back(newcam) ;
+            
+            return CameraUser ( newcam ) ;
+        }
+        
+        else
+        {
+            GreDebug("No 'CameraLoader' found to load Camera '") << name << "' (options.loader='" << lname << "')." << Gre::gendl;
+        }
+    }
+    
+    else
+    {
+        GreDebug("No 'loader' options found in 'CameraOptions' object.") << Gre::gendl ;
+    }
+    
+    return CameraUser ( nullptr ) ;
 }
-
-Vector3 Camera::getPosition() const
-{
-    auto ptr = lock();
-    if( ptr )
-        return ptr->getPosition();
-    return Vector3();
-}
-
-void Camera::lookAt(const Vector3 &position)
-{
-    auto ptr = lock();
-    if( ptr )
-        ptr->lookAt(position);
-}
-
-void Camera::lookAt(const Radian &angle, const Vector3 &direction)
-{
-    auto ptr = lock();
-    if( ptr )
-        ptr->lookAt(angle, direction);
-}
-
-void Camera::lookAtCache()
-{
-    auto ptr = lock();
-    if( ptr )
-        ptr->lookAtCache();
-}
-
-bool Camera::contains(const Vector3 &object) const
-{
-    auto ptr = lock();
-    if( ptr )
-        return ptr->contains(object);
-    return false;
-}
-
-Camera Camera::Null = Camera(nullptr);
 
 GreEndNamespace

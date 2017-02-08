@@ -44,6 +44,8 @@
 #include "ResourcePath.h"
 #include "Material.h"
 #include "Application.h"
+#include "EventDispatcher.h"
+#include "Animator.h"
 
 GreBeginNamespace
 
@@ -54,7 +56,7 @@ GreBeginNamespace
 /// The ResourceManager is a Singleton, that can be accessed from any point
 /// of any application or program linked with the main library.
 ///
-/// # Application
+/// ## Application
 ///
 /// A program should always imbricate operations relating to the ResourceManager
 /// in a try/catch block. This is a way to destroy everything correctly when
@@ -68,19 +70,16 @@ GreBeginNamespace
 /// objects allocated in the ResourceManager, and thus before the end of
 /// the try/catch block.
 ///
-/// # Plugins / Libraries
+/// ## Plugins / Libraries
 ///
-/// You can directly use the ResourceManager, but a call to ResourceManager::Get()
-/// is not guaranteed to be successfull, because the main program normally should
-/// have called ResourceManager::Create(), but that is not sure. You also
-/// can imbricate your calls in a try/catch block.
+/// As loading a plugin from a GRE program requires to load the ResourceManager , a call
+/// to 'ResourceManager::Get()' in that plugin is guaranteed to success.
 ///
-/// # Uses to load Resources
+/// ## Uses to load Resources
 ///
-/// You have ways to load Resource :
-///   - Use the appropriate Manager (like HardwareProgramManager for HardwareProgram
-/// objects) , using the function ::createSomething().
-///   - Use the ResourceManager loading system.
+/// Resources are loaded using Manager's . You can also select the right Loader in the Manager,
+/// accessing the Loader Factory. Resources are owned by the Managers. Those Managers are also
+/// owned by the 'ResourceManager'.
 ///
 /// ## The ResourceManager loading system
 ///
@@ -110,80 +109,53 @@ GreBeginNamespace
 ///
 /// @see Resource, ResourceFactory
 ////////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC ResourceManager : public Resource
+class DLL_PUBLIC ResourceManager : public Lockable
 {
 public:
     
-    POOLED(Pools::Manager)
-    
-    /// @brief An object that generate names for a resource.
-    /// Example : You want to add 10 resources with name "MyName", it will generate
-    /// automaticly "MyName", "MyName0", "MyName1", ... "MyName8"
-    class NameGenerator
-    {
-    public:
-        
-        NameGenerator();
-        ~NameGenerator();
-        
-        /// @return A Name based on current used copies.
-        std::string generateName(const std::string& base = "default");
-        
-    private:
-        
-        std::map<std::string, unsigned> iUsedNames;
-    };
+    POOLED ( Pools::Manager )
     
 protected:
     
-    /// @brief Utility class to create Names.
-    NameGenerator iNameGenerator;
-    
-    /// @brief A simple Keyboard Loader.
-    KeyboardLoader iKeyboardLoader;
-    
-    /// @brief Determines when the ResourceManager should stop the Loop.
-    CloseBehaviour iCloseBehaviour;
-    
-    /// @brief Holds LoopBehaviour's functions.
-    LoopBehaviours iLoopBehaviours;
-    
-    /// @brief Holds LoopBehaviour's functions for PerWindow loop.
-    LoopBehaviours iPerWindowBehaviours;
-    
-    /// @brief A property that take effect only when the Loop has started.
-    /// When the Loop starts, this property is set to false. When the User
-    /// or any other events calls ResourceManager::stop(), this property is
-    /// set to true.
-    bool iMustStopLoop;
-    
-    /// @brief The Elapsed Time delta.
-    UpdateClock iElapsedTime;
-    
-    /// @brief The current Elapsed Time since app started.
-    UpdateTime iLastUpdate;
+    /// @brief Renderer Manager.
+    RendererManagerHolder iRendererManager;
     
     /// @brief Window Manager.
     WindowManagerHolder iWindowManager;
-    
-    /// @brief Renderer Manager.
-    RendererManagerHolder iRendererManager;
     
     /// @brief RenderScene's Manager.
     RenderSceneManagerHolder iRenderSceneManager;
     
     /// @brief Material Manager.
-    MaterialManager iMaterialManager;
+    MaterialManagerHolder iMaterialManager;
     
     /// @brief Plugin Manager.
-    PluginManager iPluginManager;
+    PluginManagerHolder iPluginManager;
     
     /// @brief Mesh Manager.
-    MeshManager iMeshManager;
+    MeshManagerHolder iMeshManager;
+    
+    /// @brief Animator Manager.
+    AnimatorManagerHolder iAnimatorManager ;
+    
+    /// @brief Camera Manager.
+    CameraManagerHolder iCameraManager ;
+    
+    /// @brief Texture Manager.
+    TextureManagerHolder iTextureManager ;
+    
+    /// @brief RenderContext Manager.
+    RenderContextManagerHolder iRenderContextManager ;
+    
+    /// @brief HardwareProgram Manager.
+    HardwareProgramManagerHolder iProgramManager ;
     
     /// @brief Application Loaders. As there can be only one Application by process, there is no need to have
     /// an ApplicationManager.
     ApplicationLoaderFactory iApplicationFactory ;
+    
+    /// @brief A Global Event Dispatcher.
+    EventDispatcherHolder iGlobalEventDispatcher ;
     
 public:
     
@@ -228,102 +200,12 @@ public:
     ////////////////////////////////////////////////////////////////////////
     /// @brief Destroys the ResourceManager and, all the Resource objects.
     ////////////////////////////////////////////////////////////////////////
-    virtual ~ResourceManager() noexcept(false);
+    ~ResourceManager() noexcept(false);
     
     ////////////////////////////////////////////////////////////////////////
-    /// @brief Creates a generic empty Resource.
-    /// This Resource can be, for example, used as a Listener.
+    /// @brief Unloads the Resource.
     ////////////////////////////////////////////////////////////////////////
-    virtual ResourceHolder loadEmptyResource(const std::string& name);
-    
-    ////////////////////////////////////////////////////////////////////////
-    /// @brief Loads a Resource and return it to the form of a ResourceHolder
-    /// of given type.
-    ///
-    /// Using the Resource::Type assertions should be avoided. The ResourceLoader
-    /// should have a load() function of type :
-    ///
-    ///     MyResourceHolder load ( const std::string& name, myargs ... ) const ;
-    ///
-    /// This function waits for a referenced loader. This loader is not destroyed
-    /// in this function, so if you need this behaviour please use a pointer
-    /// instead.
-    ////////////////////////////////////////////////////////////////////////
-    template <class Holder , class Loader , class ... Args>
-    Holder loadResourceFrom ( const Loader& loader , const std::string& name , Args&& ... args )
-    {
-        Holder retvalue = loader.load(name , std::forward<Args>(args)...);
-        
-#ifdef GreIsDebugMode
-        if ( retvalue.isInvalid() )
-        {
-            GreDebugPretty() << "Can't load Resource '" << name << "'." << std::endl;
-        }
-#endif
-
-        return retvalue;
-    }
-    
-    ////////////////////////////////////////////////////////////////////////
-    /// @brief Loads a Resource and return it to the form of a ResourceHolder
-    /// of given type.
-    ///
-    /// Using the Resource::Type assertions should be avoided. The ResourceLoader
-    /// should have a load() function of type :
-    ///
-    ///     MyResourceHolder load ( const std::string& name, myargs ... ) const ;
-    ///
-    /// This function waits for a pointer to a Loader. This loader is destroyed
-    /// by this function. If you don't need this behaviour, use ::loadResourceWith()
-    /// with a referenced loader instead of a pointer.
-    ////////////////////////////////////////////////////////////////////////
-    template <class Holder , class Loader , class ... Args>
-    Holder loadResourceWith ( const Loader* loader , const std::string& name , Args&& ... args )
-    {
-        if ( loader )
-        {
-            Holder retvalue = loader->load(name , std::forward<Args>(args)...);
-            
-#ifdef GreIsDebugMode
-            if ( retvalue.isInvalid() )
-            {
-                GreDebugPretty() << "Can't load Resource '" << name << "'." << std::endl;
-            }
-#endif
-            
-            delete loader;
-            return retvalue;
-        }
-        
-        else
-        {
-#ifdef GreIsDebugMode
-            GreDebugPretty() << "No loader provided to load Resource '" << name << "'." << std::endl;
-#endif
-            
-            return Holder ( nullptr );
-        }
-    }
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Clears every Managers, Factory, and others.
-    //////////////////////////////////////////////////////////////////////
-    virtual void clear();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns 'Pool<Resource>::Get().getCurrentSize()'.
-    //////////////////////////////////////////////////////////////////////
-    virtual unsigned getResourceUsage() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the NameGenerator object.
-    //////////////////////////////////////////////////////////////////////
-    NameGenerator& getNameGenerator();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Keyboard Loader.
-    //////////////////////////////////////////////////////////////////////
-    KeyboardLoader& getKeyboardLoader();
+    void unload () ;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Loads every plugins in given directory name.
@@ -333,200 +215,127 @@ public:
     ///
     /// @note The directory must be different from the Working Directory.
     //////////////////////////////////////////////////////////////////////
-    virtual int loadPluginsIn(const std::string& dirname);
-    
-    ////////////////////////////////////////////////////////////////////////
-    /// @brief Set the CloseBehaviour.
-    ////////////////////////////////////////////////////////////////////////
-    virtual void setCloseBehaviour(const CloseBehaviour& behaviour);
+    int loadPluginsIn(const std::string& dirname);
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Adds a loop behaviour function.
+    /// @brief Changes 'iApplicationFactory'.
     //////////////////////////////////////////////////////////////////////
-    virtual void addLoopBehaviour(LoopBehaviour behaviour);
+    void setApplicationFactory ( const ApplicationLoaderFactory & appfactory ) ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Erases every Loop Behaviours.
+    /// @brief Return 'iApplicationFactory'.
     //////////////////////////////////////////////////////////////////////
-    virtual void clearLoopBehaviour();
+    ApplicationLoaderFactory & getApplicationFactory () ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Stops the current loop processing.
-    /// This is done by simply setting the property _mMustStopLoop to true.
+    /// @brief Changes 'iRendererManager'.
     //////////////////////////////////////////////////////////////////////
-    virtual void stop();
+    void setRendererManager ( const RendererManagerHolder & rendmanager ) ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Updates the Window objects. 
+    /// @brief Returns 'iRendererManager'.
     //////////////////////////////////////////////////////////////////////
-    virtual void loop();
+    RendererManagerHolder getRendererManager () ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Creates a simple Keyboard Resource.
+    /// @brief Changes 'iWindowManager'.
     //////////////////////////////////////////////////////////////////////
-    virtual KeyboardHolder createKeyboard(const std::string& name);
+    void setWindowManager ( const WindowManagerHolder & winmanager ) ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Window Manager.
+    /// @brief Returns 'iWindowManager'.
     //////////////////////////////////////////////////////////////////////
-    virtual WindowManager& getWindowManager();
+    WindowManagerHolder getWindowManager () ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Window Manager.
+    /// @brief Changes 'iRenderSceneManager'.
     //////////////////////////////////////////////////////////////////////
-    virtual const WindowManager& getWindowManager() const;
+    void setRenderSceneManager ( const RenderSceneManagerHolder & rsceneholder ) ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the MaterialManager.
+    /// @brief Returns 'iRenderSceneManager'.
     //////////////////////////////////////////////////////////////////////
-    virtual const MaterialManager& getMaterialManager() const;
+    RenderSceneManagerHolder getRenderSceneManager () ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the MaterialManager.
+    /// @brief Changes 'iMeshManager'.
     //////////////////////////////////////////////////////////////////////
-    virtual MaterialManager& getMaterialManager();
+    void setMeshManager ( const MeshManagerHolder & mmholder ) ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the RendererManager.
+    /// @brief Returns 'iMeshManager'.
     //////////////////////////////////////////////////////////////////////
-    virtual RendererManager& getRendererManager();
+    MeshManagerHolder getMeshManager () ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the RendererManager.
+    /// @brief Changes 'iAnimatorManager'.
     //////////////////////////////////////////////////////////////////////
-    virtual const RendererManager& getRendererManager() const;
+    void setAnimatorManager ( const AnimatorManagerHolder & animholder ) ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the RenderSceneManager.
+    /// @brief Returns 'iAnimatorManager'.
     //////////////////////////////////////////////////////////////////////
-    virtual RenderSceneManager& getRenderSceneManager();
+    AnimatorManagerHolder getAnimatorManager () ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the RenderSceneManager.
+    /// @brief Changes 'iCameraManager'.
     //////////////////////////////////////////////////////////////////////
-    virtual const RenderSceneManager& getRenderSceneManager() const;
+    void setCameraManager ( const CameraManagerHolder & camholder ) ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the MeshManager.
+    /// @brief Returns 'iCameraManager'.
     //////////////////////////////////////////////////////////////////////
-    virtual MeshManager& getMeshManager();
+    CameraManagerHolder getCameraManager () ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the MeshManager.
+    /// @brief Changes 'iTextureManager'.
     //////////////////////////////////////////////////////////////////////
-    virtual const MeshManager& getMeshManager() const;
+    void setTextureManager ( const TextureManagerHolder & manager ) ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the ApplicationLoaderFactory.
+    /// @brief Returns 'iTextureManager'.
     //////////////////////////////////////////////////////////////////////
-    virtual ApplicationLoaderFactory& getApplicationFactory() ;
+    TextureManagerHolder getTextureManager () ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Find a Resource given its 'ResourcePath'.
+    /// @brief Changes 'iRenderContextManager'.
     //////////////////////////////////////////////////////////////////////
-    template< typename User >
-    User findResource ( const ResourcePath& path )
-    {
-        if ( !path.empty() )
-        {
-            ResourceDirectoryType resourcetype = path.getDirectoryType();
-            
-            if ( resourcetype == ResourceDirectoryType::Material )
-            {
-                return iMaterialManager.get(path.getName());
-            }
-            
-#ifdef GreIsDebugMode
-            GreDebugPretty() << "ResourcePath '" << path.toString() << "' has invalid ResourceDirectoryType." << std::endl;
-#endif
-            return User ( nullptr );
-        }
-        
-        else
-        {
-#ifdef GreIsDebugMode
-            GreDebugPretty() << "'path' is empty." << std::endl;
-#endif
-            return User ( nullptr );
-        }
-    }
+    void setRenderContextManager ( const RenderContextManagerHolder & manager ) ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Find a Resource given its 'ResourcePath'.
+    /// @brief Returns 'iRenderContextManager'.
     //////////////////////////////////////////////////////////////////////
-    template< typename User >
-    const User findResource ( const ResourcePath& path ) const
-    {
-        if ( !path.empty() )
-        {
-            ResourceDirectoryType resourcetype = path.getDirectoryType();
-            
-            if ( resourcetype == ResourceDirectoryType::Material )
-            {
-                return iMaterialManager.get(path.getName());
-            }
-            
-#ifdef GreIsDebugMode
-            GreDebugPretty() << "ResourcePath '" << path.toString() << "' has invalid ResourceDirectoryType." << std::endl;
-#endif
-            return User ( nullptr );
-        }
-        
-        else
-        {
-#ifdef GreIsDebugMode
-            GreDebugPretty() << "'path' is empty." << std::endl;
-#endif
-            return User ( nullptr );
-        }
-    }
-    
-protected:
+    RenderContextManagerHolder getRenderContextManager () ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Updates the Time elapsed between each turn in ::loop().
+    /// @brief Changes 'iProgramManager'.
     //////////////////////////////////////////////////////////////////////
-    void _updateElapsedTime();
-    
-public:
+    void setHardwareProgramManager ( const HardwareProgramManagerHolder & manager ) ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Unites some Utilities function to help the user do some
-    /// basics things.
+    /// @brief Returns 'iProgramManager'.
     //////////////////////////////////////////////////////////////////////
-    class DLL_PUBLIC Helper
-    {
-    public:
-        
-        //////////////////////////////////////////////////////////////////////
-        /// @brief Let the final user choose a RendererLoader using Console
-        /// prompting.
-        ///
-        /// It returns the name of the Chosen Renderer.
-        //////////////////////////////////////////////////////////////////////
-        static std::string ChooseRenderer(RendererLoaderFactory& rFactory);
-        
-        //////////////////////////////////////////////////////////////////////
-        /// @brief Load a Renderer object using Renderer Name, Loader Name
-        /// and the RendererLoaderFactory.
-        //////////////////////////////////////////////////////////////////////
-        static Renderer LoadRenderer(const std::string& rname, const std::string& lname, RendererLoaderFactory& rFactory);
-        
-        //////////////////////////////////////////////////////////////////////
-        /// @brief Let the final user choose a WindowLoader using Console
-        /// prompting.
-        ///
-        /// It returns the name of the Chosen Window.
-        //////////////////////////////////////////////////////////////////////
-        static std::string ChooseWindowLoader(WindowLoaderFactory& wFactory);
-        
-        //////////////////////////////////////////////////////////////////////
-        /// @brief Load a Window Object using its Name, Loader Name, Window
-        /// Loader Factory, and a Surface that corresponds to the future size
-        /// of the Window.
-        //////////////////////////////////////////////////////////////////////
-        static Window LoadWindow(const std::string& wname, const std::string& lname, WindowLoaderFactory& wFactory, const Surface& param);
-    };
+    HardwareProgramManagerHolder getHardwareProgramManager () ;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Changes 'iMaterialManager'.
+    //////////////////////////////////////////////////////////////////////
+    void setMaterialManager ( const MaterialManagerHolder& manager ) ;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns 'iMaterialManager'.
+    //////////////////////////////////////////////////////////////////////
+    MaterialManagerHolder getMaterialManager () ;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Changes 'iPluginManager'.
+    //////////////////////////////////////////////////////////////////////
+    void setPluginManager ( const PluginManagerHolder& manager ) ;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns 'iPluginManager'.
+    //////////////////////////////////////////////////////////////////////
+    PluginManagerHolder getPluginManager () ;
 };
 
 GreEndNamespace

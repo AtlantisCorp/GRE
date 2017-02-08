@@ -34,9 +34,8 @@
 
 GreBeginNamespace
 
-WindowPrivate::WindowPrivate(const std::string& name)
-: RenderTargetPrivate(name)
-, iRenderContext(nullptr)
+Window::Window(const std::string& name)
+: RenderTarget(name) , iRenderContext(nullptr)
 {
     iTitle = name;
     iSurface.top = 0;
@@ -44,262 +43,106 @@ WindowPrivate::WindowPrivate(const std::string& name)
     iSurface.width = 0;
     iSurface.height = 0;
     iExposed = false;
-    iClosed = true;
-    iLastUpdate = iLastUpdate.min();
+    iClosed = false;
+    iFocused = false;
 }
 
-WindowPrivate::~WindowPrivate() noexcept(false)
+Window::~Window() noexcept(false)
 {
-    // Note : A subclass should always check that
-    // the Window has correctly been closed before
-    // destruction.
-}
-
-bool WindowPrivate::isClosed() const
-{
-    return iClosed;
-}
-
-void WindowPrivate::setTitle(const std::string &title)
-{
-    iTitle = title;
-}
-
-Surface WindowPrivate::getSurface() const
-{
-    return iSurface;
-}
-
-void WindowPrivate::update()
-{
-    
-}
-
-bool WindowPrivate::isExposed() const
-{
-    return iExposed;
-}
-
-bool WindowPrivate::holdsRenderContext() const
-{
-    return !iRenderContext.isInvalid();
-}
-
-void WindowPrivate::setRenderContext(const RenderContext &renderCtxt)
-{
-    if ( holdsRenderContext() )
-    {
-        iRenderContext->unbind();
-        removeListener(iRenderContext->getName());
-    }
-    
-    iRenderContext = renderCtxt.lock();
-    addListener( renderCtxt );
-}
-
-RenderContextHolder WindowPrivate::getRenderContext()
-{
-    return iRenderContext;
-}
-
-const RenderContextHolder WindowPrivate::getRenderContext() const
-{
-    return iRenderContext;
-}
-
-void WindowPrivate::addLoopBehaviour(LoopBehaviour behaviour)
-{
-    iLoopBehaviours.add(behaviour);
-}
-
-void WindowPrivate::clearLoopBehaviour()
-{
-    iLoopBehaviours.clear();
-}
-
-bool WindowPrivate::hasBeenClosed() const
-{
-    return true;
-}
-
-void WindowPrivate::onUpdateEvent(const Gre::UpdateEvent &e)
-{
-    RenderTargetPrivate::onUpdateEvent(e);
-    
-    // Should be overriden by subclass in order to treat Window Events, Key Events,
-    // and Window's Frame update. The RenderContext listens to this Class and should have
-    // 'onUpdateEvent' called.
-    
-    iUpdateTimerAndBehaviours();
-}
-
-void WindowPrivate::iUpdateTimerAndBehaviours()
-{
-    // We are modifying the 'iLastUpdate' property, so lock the Resource's mutex.
-    
-    lockGuard();
-    {
-//      Here we send an update event to listeners.
-        if( iLastUpdate != iLastUpdate.min() )
-        {
-            UpdateTime now = UpdateChrono::now();
-            UpdateEvent ue ( this , std::chrono::duration_cast<std::chrono::nanoseconds>(now - iLastUpdate) );
-            
-//          'sendEvent' will be called when calling 'onEvent' from this object.
-//          sendEvent(ue);
-            
-            iLastUpdate = now;
-            
-        }
-        else
-        {
-            iLastUpdate = UpdateChrono::now();
-        }
-        
-        // Then, we must call every LoopBehaviour functions.
-        iLoopBehaviours.call();
-    }
-    unlockGuard();
-}
-
-// ---------------------------------------------------------------------------------------------------
-
-Window::Window(const WindowPrivate* pointer)
-: Gre::ResourceUser(pointer)
-, RenderTarget(pointer)
-{
-    
-}
-
-Window::Window (const WindowHolder& holder)
-: Gre::ResourceUser(holder)
-, RenderTarget(holder.get())
-{
-    
-}
-
-Window::Window(const Window& user)
-: Gre::ResourceUser(user)
-, RenderTarget(user)
-{
-    
-}
-
-Window::~Window()
-{
-    
-}
-
-WindowHolder Window::lock()
-{
-    return GreUserLockCast(WindowHolder, WindowPrivate, RenderTarget);
-}
-
-const WindowHolder Window::lock() const
-{
-    return GreUserConstLockCast(WindowHolder, WindowPrivate, RenderTarget);
-}
-
-bool Window::pollEvent()
-{
-    auto ptr = lock();
-    if(ptr)
-        return ptr->pollEvent();
-    throw GreInvalidUserException("Window");
+    // Note : A subclass should always check that the Window has correctly been
+    // closed before destruction.
 }
 
 bool Window::isClosed() const
 {
-    auto ptr = lock();
-    if(ptr)
-        return ptr->isClosed();
-    throw GreInvalidUserException("Window");
+    GreAutolock ; return iClosed;
 }
 
 void Window::setTitle(const std::string &title)
 {
-    auto ptr = lock();
-    if(ptr)
-        ptr->setTitle(title);
+    GreAutolock ; iTitle = title;
+    
+    // Call internal function .
+    iSetTitle(title);
 }
 
 Surface Window::getSurface() const
 {
-    auto ptr = lock();
-    if(ptr)
-        return ptr->getSurface();
-    throw GreInvalidUserException("Window");
-}
-
-void Window::update()
-{
-    auto ptr = lock();
-    if(ptr)
-        ptr->update();
+    GreAutolock ;
+    return iSurface;
 }
 
 bool Window::isExposed() const
 {
-    auto ptr = lock();
-    if(ptr)
-        return ptr->isExposed();
-    throw GreInvalidUserException("Window");
+    GreAutolock ;
+    return iExposed;
 }
 
 bool Window::holdsRenderContext() const
 {
-    auto ptr = lock();
-    if(ptr)
-        return ptr->holdsRenderContext();
-    throw GreInvalidUserException("Window");
+    GreAutolock ;
+    return !iRenderContext.isInvalid();
 }
 
-void Window::setRenderContext(const Gre::RenderContext &renderCtxt)
+void Window::setRenderContext(const RenderContextUser &renderCtxt)
 {
-    auto ptr = lock();
-    if(ptr)
-        ptr->setRenderContext(renderCtxt);
+    GreAutolock ;
+    
+    if ( holdsRenderContext() )
+    {
+        iRenderContext->unbind();
+        
+        // Here , we send an event to inform the RenderContext that this Window is detaching it.
+        EventHolder event ( new WindowDetachContextEvent ( this ) ) ;
+        iRenderContext->onEvent(event) ;
+        
+        removeListener ( RenderContextUser ( iRenderContext ) ) ;
+    }
+    
+    iRenderContext = renderCtxt.lock();
+    addListener( renderCtxt );
+    
+    // Call the internal function .
+    iSetRenderContext(iRenderContext);
+    
+    // Notifiate the new RenderContext from attaching this Window .
+    EventHolder event ( new WindowAttachContextEvent ( this ) ) ;
+    iRenderContext->onEvent(event) ;
 }
 
 RenderContextHolder Window::getRenderContext()
 {
-    auto ptr = lock();
-    if(ptr)
-        return ptr->getRenderContext();
-    throw GreInvalidUserException("Window");
+    GreAutolock ;
+    return iRenderContext;
 }
 
 const RenderContextHolder Window::getRenderContext() const
 {
-    auto ptr = lock();
-    if ( ptr )
-        return ptr->getRenderContext();
-    throw GreInvalidUserException("Window");
+    GreAutolock ;
+    return iRenderContext;
 }
 
-void Window::addLoopBehaviour(LoopBehaviour behaviour)
+RenderFramebufferHolder Window::getFramebuffer()
 {
-    auto ptr = lock();
-    if(ptr)
-        ptr->addLoopBehaviour(behaviour);
+    return RenderFramebufferHolder ( nullptr ) ;
 }
 
-void Window::clearLoopBehaviour()
+const RenderFramebufferHolder Window::getFramebuffer() const
 {
-    auto ptr = lock();
-    if(ptr)
-        ptr->clearLoopBehaviour();
+    return RenderFramebufferHolder ( nullptr ) ;
 }
 
-bool Window::hasBeenClosed() const
+bool Window::holdsFramebuffer() const
 {
-    auto ptr = lock();
-    if(ptr)
-        return ptr->hasBeenClosed();
-    throw GreInvalidUserException("Window");
+    return false ;
 }
 
-Window Window::Null = Window(nullptr);
+void Window::onUpdateEvent(const Gre::UpdateEvent &e)
+{
+    // We just call the parent's onUpdateEvent function. A subclass should treat Window's events
+    // specifically in this function.
+    RenderTarget::onUpdateEvent(e);
+}
 
 // ---------------------------------------------------------------------------------------------------
 
@@ -316,239 +159,104 @@ WindowLoader::~WindowLoader()
 // ---------------------------------------------------------------------------------------------------
 
 WindowManager::WindowManager( const std::string& name )
-: Gre::Resource(name)
+: Gre::SpecializedResourceManager<Window, WindowLoader> ( name )
+, iGlobalKeylistener()
 {
     
 }
 
-WindowManager::~WindowManager()
+WindowManager::~WindowManager() noexcept ( false ) 
 {
-    // We call 'clearWindows' in order to be sure every Windows was launched the
-    // event WindowMustClose.
     
-    clearWindows();
 }
 
-Window WindowManager::load(const std::string &name, int x0, int y0, int wid, int height)
+WindowUser WindowManager::load ( const std::string & name , const WindowInfo & info )
 {
-    // As every WindowLoader installed should be able to load a Window, we should try every
-    // WindowLoader as soon as one created our Window.
+    GreAutolock ;
     
-    if ( !name.empty() )
+    WindowLoader * bestloader = iFindBestLoader ( std::string() ) ;
+    
+    if ( !bestloader )
     {
-        Window tmp = get(name);
-        
-        if ( !tmp.isInvalid() )
-        {
 #ifdef GreIsDebugMode
-            GreDebugPretty() << "Window Resource '" << name << "' is already present." << std::endl;
+        GreDebugPretty () << "No loader found." << Gre::gendl ;
 #endif
-            return Window::Null;
-        }
+        return WindowUser ( nullptr ) ;
+    }
+    
+    WindowHolder holder = bestloader->load ( name , info ) ;
+    
+    if ( holder.isInvalid() )
+    {
+#ifdef GreIsDebugMode
+        GreDebugPretty () << "Window '" << name << "' could not be loaded." << Gre::gendl ;
+#endif
+        return WindowUser ( nullptr ) ;
+    }
+    
+    iHolders.add ( holder ) ;
+    addListener ( WindowUser(holder) ) ;
+    iGlobalKeylistener.addListener( EventProceederUser(holder) ) ;
+    
+    return holder ;
+}
+
+void WindowManager::addGlobalKeyListener ( const EventProceederUser & proceeder )
+{
+    GreAutolock ;
+    assert ( !proceeder.isInvalid() && "'proceeder' is invalid." ) ;
+    iGlobalKeylistener.addListener(proceeder);
+}
+
+void WindowManager::pollEvents ( const Duration& elapsed ) const
+{
+    _pollEvents () ;
+}
+
+void WindowManager::onUpdateEvent(const Gre::UpdateEvent &e)
+{
+    GreAutolock ;
+    
+    // Check if a Window needs to be unregistered.
+    for ( auto it = iHolders.begin(); it != iHolders.end(); it++ )
+    {
+        WindowHolder win = (*it) ;
         
-        for ( auto it = iFactory.getLoaders().begin(); it != iFactory.getLoaders().end(); it++ )
+        if ( !win.isInvalid() )
         {
-            auto& loader = it->second;
-            
-            WindowHolder loaded = loader->load(name, x0, y0, wid, height);
-            
-            if ( !loaded.isInvalid() )
+            if ( win->isClosed() )
             {
-                addListener( loaded ) ;
-                iWindows.add(loaded);
-                return Window ( loaded );
-            }
-            
-            else
-            {
-#ifdef GreIsDebugMode
-                GreDebugPretty() << "Can't load Window Resource '" << name << "' with loader '" << it->first << "'." << std::endl;
-#endif
-            }
-        }
-        
-#ifdef GreIsDebugMode
-        GreDebugPretty() << "Can't found any WindowLoader able to load Window Resource '" << name << "'." << std::endl;
-#endif
-        
-        return Window ( nullptr );
-    }
-    
-    else
-    {
-#ifdef GreIsDebugMode
-        GreDebugPretty() << "'name' is empty." << std::endl;
-#endif
-        return Window ( nullptr );
-    }
-}
-
-Window WindowManager::load(const WindowHolder &holder)
-{
-    if ( !holder.isInvalid() )
-    {
-        Window tmp = get(holder->getName());
-        
-        if ( !tmp.isInvalid() )
-        {
-#ifdef GreIsDebugMode
-            GreDebugPretty() << "Window Resource '" << holder->getName() << "' is already loaded." << std::endl;
-#endif
-            return Window ( nullptr );
-        }
-        
-        addListener( holder ) ;
-        iWindows.add(holder);
-        return Window ( holder );
-    }
-    
-    else
-    {
-#ifdef GreIsDebugMode
-        GreDebugPretty() << "'holder' is invalid." << std::endl;
-#endif
-        return Window ( nullptr );
-    }
-}
-
-Window WindowManager::get(const std::string &name)
-{
-    if ( !name.empty() )
-    {
-        for ( WindowHolder& holder : iWindows )
-        {
-            if ( !holder.isInvalid() )
-            {
-                if ( holder->getName() == name )
-                {
-                    return Window ( holder );
-                }
-            }
-        }
-        
-#ifdef GreIsDebugMode
-        GreDebugPretty() << "Window Resource '" << name << "' not found." << std::endl;
-#endif
-        return Window ( nullptr );
-    }
-    
-    else
-    {
-#ifdef GreIsDebugMode
-        GreDebugPretty() << "'name' is empty." << std::endl;
-#endif
-        return Window ( nullptr );
-    }
-}
-
-const Window WindowManager::get(const std::string &name) const
-{
-    if ( !name.empty() )
-    {
-        for ( const WindowHolder& holder : iWindows )
-        {
-            if ( !holder.isInvalid() )
-            {
-                if ( holder->getName() == name )
-                {
-                    return Window ( holder );
-                }
-            }
-        }
-        
-#ifdef GreIsDebugMode
-        GreDebugPretty() << "Window Resource '" << name << "' not found." << std::endl;
-#endif
-        return Window ( nullptr );
-    }
-    
-    else
-    {
-#ifdef GreIsDebugMode
-        GreDebugPretty() << "'name' is empty." << std::endl;
-#endif
-        return Window ( nullptr );
-    }
-}
-
-Window WindowManager::getFirstActive()
-{
-    for ( WindowHolder& holder : iWindows )
-    {
-        if ( !holder.isInvalid() )
-        {
-            if ( holder->isExposed() )
-            {
-                return Window ( holder );
+                // We must unregister the Window from here. This will invalidate the iterator , so we can relaunch
+                // the function .
+                remove ( win ) ;
+                onUpdateEvent ( e ) ;
             }
         }
     }
+}
+
+// ---------------------------------------------------------------------------------------------------
+
+WindowManager::KeyListener::KeyListener ()
+{
     
-#ifdef GreIsDebugMode
-    GreDebugPretty() << "Window Resource actived not found." << std::endl;
-#endif
-    return Window ( nullptr );
 }
 
-WindowHolderList& WindowManager::getWindows()
+WindowManager::KeyListener::~KeyListener()
 {
-    return iWindows;
-}
-
-const WindowHolderList& WindowManager::getWindows() const
-{
-    return iWindows;
-}
-
-void WindowManager::remove(const std::string &name)
-{
-    if ( !name.empty() )
-    {
-        for ( auto it = iWindows.begin(); it != iWindows.end(); it++ )
-        {
-            if ( !(*it).isInvalid() )
-            {
-                if ( (*it)->getName() == name )
-                {
-                    removeListener( (*it)->getName() );
-                    iWindows.erase(it);
-                    return;
-                }
-            }
-        }
-        
-#ifdef GreIsDebugMode
-        GreDebugPretty() << "Window Resource '" << name << "' not found." << std::endl;
-#endif
-        return;
-    }
     
-#ifdef GreIsDebugMode
-    GreDebugPretty() << "'name' is invalid." << std::endl;
-#endif
 }
 
-void WindowManager::clearWindows()
+void WindowManager::KeyListener::onKeyUpEvent(const Gre::KeyUpEvent &e)
 {
-    iWindows.clear();
-    Resource::clearListeners();
+    EventHolder holder ( &e ) ;
+    sendEvent ( holder ) ;
 }
 
-WindowLoaderFactory& WindowManager::getWindowLoaderFactory()
+void WindowManager::KeyListener::onKeyDownEvent(const Gre::KeyDownEvent &e)
 {
-    return iFactory;
-}
-
-const WindowLoaderFactory& WindowManager::getWindowLoaderFactory() const
-{
-    return iFactory;
-}
-
-void WindowManager::clear()
-{
-    iWindows.clear();
-    iFactory.clear();
-    Resource::clear();
+    EventHolder holder ( &e ) ;
+    sendEvent( holder ) ;
 }
 
 GreEndNamespace

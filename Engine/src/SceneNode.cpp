@@ -34,28 +34,8 @@ THE SOFTWARE.
 
 GreBeginNamespace
 
-RenderNodePrivate::Identifier RenderNodePrivate::Identificator::identifier = 0;
-
-RenderNodePrivate::Identifier RenderNodePrivate::Identificator::Create()
-{
-	return (identifier++);
-}
-
-RenderNodePrivate::Identifier RenderNodePrivate::Identificator::Last()
-{
-	return identifier;
-}
-
-bool RenderNodePrivate::Identificator::IsValid(RenderNodePrivate::Identifier id)
-{
-	return id > 0;
-}
-
-// ---------------------------------------------------------------------------------------------------
-
-RenderNodePrivate::RenderNodePrivate()
-: Gre::Resource(std::string("RenderNode#") + std::to_string(Identificator::Create()))
-, iIdentifier(Identificator::Last())
+RenderNode::RenderNode()
+: Gre::Resource()
 , iRenderable(nullptr)
 , iTransformation()
 , iChilds()
@@ -65,12 +45,11 @@ RenderNodePrivate::RenderNodePrivate()
 , iTransformationChanged(false)
 , iRenderableChanged(false)
 {
-    
+    setName ( std::string("RenderNode#") + std::to_string(getIdentifier()) ) ;
 }
 
-RenderNodePrivate::RenderNodePrivate(const std::string& name)
+RenderNode::RenderNode(const std::string& name)
 : Gre::Resource(name)
-, iIdentifier(Identificator::Create())
 , iRenderable(nullptr)
 , iTransformation()
 , iChilds()
@@ -83,34 +62,34 @@ RenderNodePrivate::RenderNodePrivate(const std::string& name)
     
 }
 
-RenderNodePrivate::~RenderNodePrivate()
+RenderNode::~RenderNode() noexcept ( false )
 {
     
 }
 
-bool RenderNodePrivate::isRenderable() const
+bool RenderNode::isRenderable() const
 {
-    GreResourceAutolock ;
+    GreAutolock ;
     return !iRenderable.isInvalid();
 }
 
-const Mesh& RenderNodePrivate::getMesh() const
+const MeshUser& RenderNode::getMesh() const
 {
     return iRenderable;
 }
 
-Mesh& RenderNodePrivate::getMesh()
+MeshUser& RenderNode::getMesh()
 {
     return iRenderable;
 }
 
-void RenderNodePrivate::setMesh(const Gre::Mesh &mesh)
+void RenderNode::setMesh(const Gre::MeshUser &mesh)
 {
-    GreResourceAutolock ;
+    GreAutolock ;
     
     if ( !iRenderable.isInvalid() )
     {
-        Resource::removeListener( iRenderable.getName() );
+        Resource::removeListener( iRenderable );
     }
     
     iRenderable = mesh;
@@ -122,34 +101,34 @@ void RenderNodePrivate::setMesh(const Gre::Mesh &mesh)
     }
 }
 
-void RenderNodePrivate::setTransformation(const Gre::Transformation &transformation)
+void RenderNode::setTransformation(const Gre::Transformation &transformation)
 {
-    GreResourceAutolock ;
+    GreAutolock ;
     iTransformation = transformation;
     iTransformationChanged = true;
 }
 
-const Transformation& RenderNodePrivate::getTransformation() const
+const Transformation& RenderNode::getTransformation() const
 {
     return iTransformation;
 }
 
-Matrix4 RenderNodePrivate::getModelMatrix() const
+Matrix4 RenderNode::getModelMatrix() const
 {
     return iModelMatrix;
 }
 
-void RenderNodePrivate::addNode(const RenderNodeHolder &node)
+void RenderNode::addNode(const RenderNodeHolder &node)
 {
     if ( !node.isInvalid() )
     {
-        GreResourceAutolock ;
+        GreAutolock ;
         
         // First, check if this Node is not already one of our children. If this is the case,
-        // this is probably a check from 'RenderNodePrivate::onUpdateEvent' when 'iTransformationChanged' is
+        // this is probably a check from 'RenderNode::onUpdateEvent' when 'iTransformationChanged' is
         // true.
         
-        auto it = iChilds.find(node);
+        auto it = iChilds.find( node->getIdentifier() );
         
         if ( it != iChilds.end() )
         {
@@ -157,7 +136,7 @@ void RenderNodePrivate::addNode(const RenderNodeHolder &node)
             // lets us adding it as if it was a new Node. Also, we remove the node from the listeners.
             
             iChilds.erase(it);
-            Resource::removeListener( node->getName() );
+            Resource::removeListener( RenderNodeUser(node) );
             
             addNode(node);
             return;
@@ -179,7 +158,7 @@ void RenderNodePrivate::addNode(const RenderNodeHolder &node)
                         // Here, the futur Node also contains this Node Child. Add this child to the Node, and remove
                         // this child from the listeners.
                         
-                        Resource::removeListener( (*it)->getName() );
+                        Resource::removeListener( RenderNodeUser(*it) );
                         RenderNodeHolder(node)->addNode((*it));
                     }
                     
@@ -198,7 +177,7 @@ void RenderNodePrivate::addNode(const RenderNodeHolder &node)
             
             iChilds = tmplist;
             iChilds.add(node);
-            Resource::addListener( RenderNode(node) );
+            Resource::addListener( RenderNodeUser (node) );
             RenderNodeHolder(node)->setParent(RenderNodeHolder(this));
         }
         
@@ -218,220 +197,163 @@ void RenderNodePrivate::addNode(const RenderNodeHolder &node)
     }
 }
 
-RenderNodeHolderList& RenderNodePrivate::getChilds()
+RenderNodeHolderList& RenderNode::getChildren()
 {
     return iChilds;
 }
 
-const RenderNodeHolderList& RenderNodePrivate::getChilds() const
+const RenderNodeHolderList& RenderNode::getChildren() const
 {
     return iChilds;
 }
 
-RenderNodeHolder RenderNodePrivate::find(RenderNodeIdentifier identifier)
+bool RenderNode::hasChildren() const
 {
-    if ( Identificator::IsValid(identifier) )
+    return iChilds.size() > 0 ;
+}
+
+const RenderNodeHolder& RenderNode::getParent() const
+{
+    return iParent ;
+}
+
+RenderNodeHolder RenderNode::find(ResourceIdentifier identifier)
+{
+    GreAutolock;
+    
+    for ( RenderNodeHolder& child : iChilds )
     {
-        GreResourceAutolock;
-        
-        for ( RenderNodeHolder& child : iChilds )
+        if ( !child.isInvalid() )
         {
-            if ( !child.isInvalid() )
+            if ( child->getIdentifier() == identifier )
             {
-                if ( child->getIdentifier() == identifier )
-                {
-                    return child;
-                }
+                return child;
             }
         }
-        
-        for ( RenderNodeHolder& child : iChilds )
+    }
+    
+    for ( RenderNodeHolder& child : iChilds )
+    {
+        if ( !child.isInvalid() )
         {
-            if ( !child.isInvalid() )
+            RenderNodeHolder ret = child->find(identifier);
+            
+            if ( !ret.isInvalid() )
             {
-                RenderNodeHolder ret = child->find(identifier);
+                return ret;
+            }
+        }
+    }
+    
+#ifdef GreIsDebugMode
+    GreDebugPretty() << "'identifier' was not found in Children's list ('" << (int) identifier << "')." << Gre::gendl;
+#endif
+    return RenderNodeHolder ( nullptr );
+}
+
+const RenderNodeHolder RenderNode::find(ResourceIdentifier identifier) const
+{
+    GreAutolock ;
+    
+    for ( const RenderNodeHolder& child : iChilds )
+    {
+        if ( !child.isInvalid() )
+        {
+            if ( child->getIdentifier() == identifier )
+            {
+                return child;
+            }
+        }
+    }
+    
+    for ( const RenderNodeHolder& child : iChilds )
+    {
+        if ( !child.isInvalid() )
+        {
+            RenderNodeHolder ret = child->find(identifier);
+            
+            if ( !ret.isInvalid() )
+            {
+                return ret;
+            }
+        }
+    }
+    
+#ifdef GreIsDebugMode
+    GreDebugPretty() << "'identifier' was not found in Children's list ('" << (int) identifier << "')." << Gre::gendl;
+#endif
+    return RenderNodeHolder ( nullptr );
+}
+
+void RenderNode::remove(const ResourceIdentifier& identifier)
+{
+    GreAutolock ;
+    
+    for ( auto it = iChilds.begin(); it != iChilds.end(); it++ )
+    {
+        if ( !(*it).isInvalid() )
+        {
+            if ( (*it)->getIdentifier() == identifier )
+            {
+                Resource::removeListener( RenderNodeUser(*it) );
+                iChilds.erase(it);
+                return;
+            }
+        }
+    }
+    
+#ifdef GreIsDebugMode
+    GreDebugPretty() << "RenderNode Resource 'RenderNode#" << std::to_string(identifier) << "' not found." << Gre::gendl;
+#endif
+}
+
+void RenderNode::removeNotRecursive(const ResourceIdentifier& identifier)
+{
+    GreAutolock ;
+    
+    for ( auto it = iChilds.begin(); it != iChilds.end(); it++ )
+    {
+        if ( !(*it).isInvalid() )
+        {
+            if ( (*it)->getIdentifier() == identifier )
+            {
+                // Save Children.
                 
-                if ( !ret.isInvalid() )
-                {
-                    return ret;
-                }
-            }
-        }
-        
-#ifdef GreIsDebugMode
-        GreDebugPretty() << "'identifier' was not found in Children's list ('" << (int) identifier << "')." << std::endl;
-#endif
-        return RenderNodeHolder ( nullptr );
-    }
-    
-    else
-    {
-#ifdef GreIsDebugMode
-        GreDebugPretty() << "'identifier' is invalid." << std::endl;
-#endif
-        return RenderNodeHolder ( nullptr );
-    }
-}
-
-const RenderNodeHolder RenderNodePrivate::find(RenderNodeIdentifier identifier) const
-{
-    if ( Identificator::IsValid(identifier) )
-    {
-        GreResourceAutolock ;
-        
-        for ( const RenderNodeHolder& child : iChilds )
-        {
-            if ( !child.isInvalid() )
-            {
-                if ( child->getIdentifier() == identifier )
-                {
-                    return child;
-                }
-            }
-        }
-        
-        for ( const RenderNodeHolder& child : iChilds )
-        {
-            if ( !child.isInvalid() )
-            {
-                RenderNodeHolder ret = child->find(identifier);
+                RenderNodeHolderList children = (*it)->getChildren();
                 
-                if ( !ret.isInvalid() )
+                // Erase Child.
+                
+                Resource::removeListener( RenderNodeUser(*it) );
+                iChilds.erase(it);
+                
+                // Adds every Children to this Node.
+                
+                for ( RenderNodeHolder& holder : children )
                 {
-                    return ret;
-                }
-            }
-        }
-        
-#ifdef GreIsDebugMode
-        GreDebugPretty() << "'identifier' was not found in Children's list ('" << (int) identifier << "')." << std::endl;
-#endif
-        return RenderNodeHolder ( nullptr );
-    }
-    
-    else
-    {
-#ifdef GreIsDebugMode
-        GreDebugPretty() << "'identifier' is invalid." << std::endl;
-#endif
-        return RenderNodeHolder ( nullptr );
-    }
-}
-
-RenderNodeHolderList RenderNodePrivate::getVisibleChildren(const CameraHolder &camera) const
-{
-    if ( !camera.isInvalid() )
-    {
-        GreResourceAutolock ;
-        RenderNodeHolderList ret;
-        
-        for ( const RenderNodeHolder& child : iChilds )
-        {
-            if ( !child.isInvalid() )
-            {
-                if ( camera->isVisible(child->getBoundingBox()) )
-                {
-                    ret.add( child->getVisibleChildren(camera) );
-                    ret.add( child );
-                }
-            }
-        }
-        
-        return ret;
-    }
-    
-    return RenderNodeHolderList();
-}
-
-void RenderNodePrivate::remove(const RenderNodePrivate::Identifier& identifier)
-{
-    if ( Identificator::IsValid(identifier) )
-    {
-        GreResourceAutolock ;
-        
-        for ( auto it = iChilds.begin(); it != iChilds.end(); it++ )
-        {
-            if ( !(*it).isInvalid() )
-            {
-                if ( (*it)->getIdentifier() == identifier )
-                {
-                    Resource::removeListener( (*it)->getName() );
-                    iChilds.erase(it);
-                    return;
-                }
-            }
-        }
-        
-#ifdef GreIsDebugMode
-        GreDebugPretty() << "RenderNode Resource 'RenderNode#" << std::to_string(identifier) << "' not found." << std::endl;
-#endif
-    }
-    
-    else
-    {
-#ifdef GreIsDebugMode
-        GreDebugPretty() << "'identifier' is invalid." << std::endl;
-#endif
-    }
-}
-
-void RenderNodePrivate::removeNotRecursive(const RenderNodePrivate::Identifier& identifier)
-{
-    if ( RenderNodePrivate::Identificator::IsValid(identifier) )
-    {
-        GreResourceAutolock ;
-        
-        for ( auto it = iChilds.begin(); it != iChilds.end(); it++ )
-        {
-            if ( !(*it).isInvalid() )
-            {
-                if ( (*it)->getIdentifier() == identifier )
-                {
-                    // Save Children.
-                    
-                    RenderNodeHolderList children = (*it)->getChilds();
-                    
-                    // Erase Child.
-                    
-                    Resource::removeListener( (*it)->getName() );
-                    iChilds.erase(it);
-                    
-                    // Adds every Children to this Node.
-                    
-                    for ( RenderNodeHolder& holder : children )
+                    if ( !holder.isInvalid() )
                     {
-                        if ( !holder.isInvalid() )
-                        {
-                            addNode(holder);
-                        }
+                        addNode(holder);
                     }
-                    
-                    return;
                 }
+                
+                return;
             }
         }
-        
-#ifdef GreIsDebugMode
-        GreDebugPretty() << "RenderNode Resource 'RenderNode#" << std::to_string(identifier) << "' not found." << std::endl;
-#endif
     }
     
-    else
-    {
 #ifdef GreIsDebugMode
-        GreDebugPretty() << "'identifier' is invalid." << std::endl;
+    GreDebugPretty() << "RenderNode Resource 'RenderNode#" << std::to_string(identifier) << "' not found." << Gre::gendl;
 #endif
-    }
 }
 
-void RenderNodePrivate::clear()
+void RenderNode::clear()
 {
-    GreResourceAutolock ;
+    GreAutolock ;
     
     iChilds.clear();
-    iRenderable.reset();
+    iRenderable.clear();
     iTransformation = Transformation();
-    iParent.reset();
+    iParent.clear();
     iBoundingBox.clear();
     iModelMatrix = Matrix4(0);
     iTransformationChanged = true;
@@ -439,48 +361,56 @@ void RenderNodePrivate::clear()
     Resource::clear();
 }
 
-const BoundingBox& RenderNodePrivate::getBoundingBox() const
+const BoundingBox& RenderNode::getBoundingBox() const
 {
     return iBoundingBox;
 }
 
-void RenderNodePrivate::translate(const Vector3 &vec)
+void RenderNode::translate(const Vector3 &vec)
 {
-    GreResourceAutolock ;
+    GreAutolock ;
     iTransformation.translate(vec);
     iTransformationChanged = true;
 }
 
-void RenderNodePrivate::rotate(float angle, const Vector3 &axis)
+void RenderNode::rotate(float angle, const Vector3 &axis)
 {
-    GreResourceAutolock ;
+    GreAutolock ;
     iTransformation.rotate(angle, axis);
     iTransformationChanged = true;
 }
 
-void RenderNodePrivate::scale(float value)
+void RenderNode::scale(float value)
 {
-    GreResourceAutolock ;
+    GreAutolock ;
     iTransformation.scale( Vector3(value, value, value) );
     iTransformationChanged = true;
 }
 
-RenderNodePrivate::Identifier RenderNodePrivate::getIdentifier() const
+void RenderNode::setParent(const RenderNodeHolder &parent)
 {
-    return iIdentifier;
-}
-
-void RenderNodePrivate::setParent(const RenderNodeHolder &parent)
-{
-    GreResourceAutolock ;
+    GreAutolock ;
     iParent = parent;
 }
 
-void RenderNodePrivate::onUpdateEvent(const Gre::UpdateEvent &e)
+const MaterialHolder& RenderNode::getMaterial() const
+{
+    GreAutolock ; return iMaterial ;
+}
+
+bool RenderNode::isVisible(const CameraUser &camera) const
+{
+    if ( camera.isInvalid() )
+        return false ;
+    
+    return camera.lock()->isVisible( iBoundingBox ) ;
+}
+
+void RenderNode::onUpdateEvent(const Gre::UpdateEvent &e)
 {
     Resource::onUpdateEvent(e);
     
-    GreResourceAutolock ;
+    GreAutolock ;
     
     if ( iTransformationChanged )
     {
@@ -505,42 +435,12 @@ void RenderNodePrivate::onUpdateEvent(const Gre::UpdateEvent &e)
     {
         if ( !iRenderable.isInvalid() )
         {
-            iBoundingBox = iRenderable.getBoundingBox();
+            iBoundingBox = iRenderable.lock()->getBoundingBox();
             iBoundingBox.apply(iTransformation);
         }
         
         iRenderableChanged = false;
     }
 }
-
-// ---------------------------------------------------------------------------------------------------
-
-RenderNode::RenderNode(const RenderNodePrivate* pointer)
-: Gre::ResourceUser(pointer)
-, SpecializedResourceUser<Gre::RenderNodePrivate>(pointer)
-{
-    
-}
-
-RenderNode::RenderNode(const RenderNodeHolder& holder)
-: Gre::ResourceUser(holder)
-, SpecializedResourceUser<Gre::RenderNodePrivate>(holder)
-{
-    
-}
-
-RenderNode::RenderNode(const RenderNode& user)
-: Gre::ResourceUser(user)
-, SpecializedResourceUser<Gre::RenderNodePrivate>(user)
-{
-    
-}
-
-RenderNode::~RenderNode()
-{
-    
-}
-
-RenderNode RenderNode::Null = RenderNode(nullptr);
 
 GreEndNamespace

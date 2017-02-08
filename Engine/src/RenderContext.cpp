@@ -31,35 +31,48 @@
  */
 
 #include "RenderContext.h"
+#include "Window.h"
 
 GreBeginNamespace
 
-RenderContextPrivate::RenderContextPrivate(const std::string& name, const RenderContextInfo& ctxtInfo)
-: Resource(name), iContextInfo(ctxtInfo)
+RenderContext::RenderContext ( const std::string& name )
+: Gre::Resource(ResourceIdentifier::New() , name)
 {
-    iViewports.push_back(Viewport(name+"/DefaultViewport"));
+    Viewport defaultviewport ( name + "/DefaultViewport" , 0.0f , 0.0f , 1.0f , 1.0f ) ;
+    iViewports.push_back(defaultviewport);
 }
 
-RenderContextPrivate::~RenderContextPrivate()
+RenderContext::RenderContext(const std::string& name, const RenderContextInfo& ctxtInfo)
+: Resource(ResourceIdentifier::New() , name)
+, iContextInfo(ctxtInfo)
 {
-    if(isBinded()) {
-        //unbind();
-    }
+    Viewport defaultviewport ( name + "/DefaultViewport" , 0.0f , 0.0f , 1.0f , 1.0f ) ;
+    iViewports.push_back(defaultviewport);
 }
 
-const RenderContextInfo& RenderContextPrivate::getInfo() const
+RenderContext::~RenderContext() noexcept ( false )
 {
+    
+}
+
+const RenderContextInfo& RenderContext::getInfo() const
+{
+    GreAutolock ;
     return iContextInfo;
 }
 
-bool RenderContextPrivate::isBinded() const
+bool RenderContext::isBinded() const
 {
+    GreAutolock ;
     return iIsBinded;
 }
 
-void RenderContextPrivate::addViewport(const Gre::Viewport &viewport)
+void RenderContext::addViewport(const Gre::Viewport &viewport)
 {
-    auto it = std::find_if(iViewports.begin(), iViewports.end(), [&](const Viewport& v) -> bool { return viewport.getName() == v.getName(); });
+    GreAutolock ;
+    
+    auto it = std::find_if(iViewports.begin(), iViewports.end(),
+                           [&](const Viewport& v) -> bool { return viewport.getName() == v.getName(); });
     
     if(it == iViewports.end())
     {
@@ -69,29 +82,32 @@ void RenderContextPrivate::addViewport(const Gre::Viewport &viewport)
     else
     {
 #ifdef GreIsDebugMode
-        GreDebugPretty() << "Sorry, Viewport '" << viewport.getName() << "' is already present in RenderContext '" << getName() << "'." << std::endl;
+        GreDebugPretty() << "Sorry, Viewport '" << viewport.getName() << "' is already present in RenderContext '" << getName() << "'." << Gre::gendl;
 #endif
     }
 }
 
-void RenderContextPrivate::createViewport(const std::string &name, float topratio, float leftratio, float widthratio, float heightratio, bool activated)
+void RenderContext::createViewport(const std::string &name, float topratio, float leftratio, float widthratio, float heightratio, bool activated)
 {
-    RenderContextPrivate::addViewport(Viewport(name, topratio, leftratio, widthratio, heightratio, activated));
+    GreAutolock ;
+    RenderContext::addViewport(Viewport(name, topratio, leftratio, widthratio, heightratio, activated));
 }
 
-const ViewportList& RenderContextPrivate::getViewports() const
+const ViewportList& RenderContext::getViewports() const
 {
+    GreAutolock ;
     return iViewports;
 }
 
-Viewport RenderContextPrivate::getDefaultViewport() const
+Viewport RenderContext::getDefaultViewport() const
 {
+    GreAutolock ;
     return iViewports.front();
 }
 
-void RenderContextPrivate::removeViewport(const std::string &name)
+void RenderContext::removeViewport(const std::string &name)
 {
-    GreResourceAutolock ;
+    GreAutolock ;
     
     auto it = std::find_if(iViewports.begin(), iViewports.end(), [&](const Viewport& v) -> bool { return name == v.getName(); });
     
@@ -103,14 +119,14 @@ void RenderContextPrivate::removeViewport(const std::string &name)
     else
     {
 #ifdef GreIsDebugMode
-        GreDebugPretty() << "Sorry, Viewport '" << name << "' is not present in RenderContext '" << getName() << "'." << std::endl;
+        GreDebugPretty() << "Sorry, Viewport '" << name << "' is not present in RenderContext '" << getName() << "'." << Gre::gendl;
 #endif
     }
 }
 
-std::string RenderContextPrivate::toString() const
+std::string RenderContext::toString() const
 {
-    GreResourceAutolock ;
+    GreAutolock ;
     
     std::string ret;
     ret += "RenderContext (name='"; ret += getName();
@@ -119,29 +135,16 @@ std::string RenderContextPrivate::toString() const
     return ret;
 }
 
-void RenderContextPrivate::onEvent(const Event &e)
+RenderFramebufferHolder RenderContext::createFramebuffer( const std::string& name )
 {
-    GreResourceAutolock ;
-    
-    if(e.getType() == EventType::WindowSized)
-    {
-        WindowSizedEvent wse = e.to<WindowSizedEvent>();
-        _onWindowSizedEvent(wse);
-    }
-    
-    Resource::onEvent(e);
-}
-
-RenderFramebufferHolder RenderContextPrivate::createFramebuffer( const std::string& name )
-{
-    GreResourceAutolock ;
+    GreAutolock ;
     
     RenderFramebufferHolder holder = iCreateFramebuffer(name);
     
     if ( holder.isInvalid() )
     {
 #ifdef GreIsDebugMode
-        GreDebugPretty() << "Can't create RenderFramebuffer '" << name << "'." << std::endl;
+        GreDebugPretty() << "Can't create RenderFramebuffer '" << name << "'." << Gre::gendl;
 #endif
         return RenderFramebufferHolder ( nullptr );
     }
@@ -149,18 +152,18 @@ RenderFramebufferHolder RenderContextPrivate::createFramebuffer( const std::stri
     else
     {
 #ifdef GreIsDebugMode
-        GreDebugPretty() << "RenderFramebuffer '" << name << "'." << std::endl;
+        GreDebugPretty() << "RenderFramebuffer '" << name << "'." << Gre::gendl;
 #endif
         iFramebuffers.add(holder);
         return holder;
     }
 }
 
-RenderFramebufferHolderList RenderContextPrivate::getFramebuffers(int sz)
+RenderFramebufferHolderList RenderContext::getFramebuffers(int sz)
 {
     if ( sz > 0 )
     {
-        GreResourceAutolock ;
+        GreAutolock ;
         RenderFramebufferHolderList ret;
         
         for ( auto it = iFramebuffers.begin(); it != iFramebuffers.end(); it++ )
@@ -180,7 +183,7 @@ RenderFramebufferHolderList RenderContextPrivate::getFramebuffers(int sz)
             if ( fbo.isInvalid() )
             {
 #ifdef GreIsDebugMode
-                GreDebugPretty() << "Can't create RenderFramebuffer '" << getName() + "/fbo#" + std::to_string(sz) << "'." << std::endl;
+                GreDebugPretty() << "Can't create RenderFramebuffer '" << getName() + "/fbo#" + std::to_string(sz) << "'." << Gre::gendl;
 #endif
             }
             
@@ -196,127 +199,34 @@ RenderFramebufferHolderList RenderContextPrivate::getFramebuffers(int sz)
     return RenderFramebufferHolderList () ;
 }
 
-void RenderContextPrivate::_onWindowSizedEvent(WindowSizedEvent &event)
+void RenderContext::onWindowSizedEvent(const Gre::WindowSizedEvent &e)
 {
-    GreResourceAutolock ;
+    iUpdatesViewportsBorders( { 0 , 0 , e.Width , e.Height } );
+}
+
+void RenderContext::onWindowAttachContextEvent(const Gre::WindowAttachContextEvent &e)
+{
+    GreAutolock ;
     
-    for(auto& viewport : iViewports)
+    ResourceUser winuser = e.getEmitter() ;
+    ResourceHolder winholder = winuser.lock() ;
+    WindowHolder window = WindowHolder ( reinterpret_cast<Window*>(winholder.getObject()) ) ;
+    
+    if ( !window.isInvalid() )
     {
-        viewport.onBordersChanged({viewport.getSurface().left , viewport.getSurface().top ,
-            event.Width , event.Height });
+        iUpdatesViewportsBorders ( window->getSurface() ) ;
     }
 }
 
-// ---------------------------------------------------------------------------------------------------
-
-RenderContext::RenderContext(const RenderContextPrivate* pointer)
-: ResourceUser(pointer)
-, SpecializedResourceUser<RenderContextPrivate>(pointer)
+void RenderContext::iUpdatesViewportsBorders ( const Surface& surface )
 {
+    GreAutolock ;
     
+    for(Viewport& viewport : iViewports)
+    {
+        viewport.onBordersChanged({viewport.getSurface().left , viewport.getSurface().top ,
+            surface.width , surface.height });
+    }
 }
-
-RenderContext::RenderContext(const RenderContextHolder& holder)
-: ResourceUser(holder)
-, SpecializedResourceUser<RenderContextPrivate>(holder)
-{
-    
-}
-
-RenderContext::RenderContext(const RenderContext& user)
-: ResourceUser(user)
-, SpecializedResourceUser<RenderContextPrivate>(user)
-{
-    
-}
-
-RenderContext::~RenderContext()
-{
-    
-}
-
-const RenderContextInfo& RenderContext::getInfo() const
-{
-    auto ptr = lock();
-    if(ptr)
-        return ptr->getInfo();
-    return RenderContextInfo::Null;
-}
-
-bool RenderContext::isBinded() const
-{
-    auto ptr = lock();
-    if(ptr)
-        return ptr->isBinded();
-    return false;
-}
-
-void RenderContext::bind()
-{
-    auto ptr = lock();
-    if(ptr)
-        ptr->bind();
-}
-
-void RenderContext::unbind()
-{
-    auto ptr = lock();
-    if(ptr)
-        ptr->unbind();
-}
-
-void RenderContext::flush()
-{
-    auto ptr = lock();
-    if(ptr)
-        ptr->flush();
-}
-
-void RenderContext::addViewport(const Gre::Viewport &viewport)
-{
-    auto ptr = lock();
-    if(ptr)
-        ptr->addViewport(viewport);
-}
-
-void RenderContext::createViewport(const std::string &name, float topratio, float leftratio, float widthratio, float heightratio, bool activated)
-{
-    auto ptr = lock();
-    if(ptr)
-        ptr->createViewport(name, topratio, leftratio, widthratio, heightratio, activated);
-}
-
-const ViewportList& RenderContext::getViewports() const
-{
-    auto ptr = lock();
-    if(ptr)
-        return ptr->getViewports();
-    return Viewport::EmptyList;
-}
-
-Viewport RenderContext::getDefaultViewport() const
-{
-    auto ptr = lock();
-    if ( ptr )
-        return ptr->getDefaultViewport();
-    return Viewport();
-}
-
-void RenderContext::removeViewport(const std::string &name)
-{
-    auto ptr = lock();
-    if(ptr)
-        ptr->removeViewport(name);
-}
-
-std::string RenderContext::toString() const
-{
-    auto ptr = lock();
-    if(ptr)
-        return ptr->toString();
-    return "";
-}
-
-RenderContext RenderContext::Null = RenderContext(nullptr);
 
 GreEndNamespace

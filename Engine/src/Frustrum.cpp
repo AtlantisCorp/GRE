@@ -68,7 +68,7 @@ void Frustrum::setPerspective(const Matrix4 &perspective)
     iPerspective = perspective;
 }
 
-Matrix4 Frustrum::getPerspective() const
+const Matrix4 & Frustrum::getPerspective() const
 {
     return iPerspective;
 }
@@ -78,7 +78,7 @@ void Frustrum::setView(const Matrix4 &view)
     iView = view;
 }
 
-Matrix4 Frustrum::getView() const
+const Matrix4 & Frustrum::getView() const
 {
     return iView;
 }

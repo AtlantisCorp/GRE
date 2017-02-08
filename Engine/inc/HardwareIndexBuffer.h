@@ -58,25 +58,25 @@ GreBeginNamespace
 /// ::clearBatches().
 ///
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC HardwareIndexBufferPrivate : public HardwareBufferPrivate
+class DLL_PUBLIC HardwareIndexBuffer : public HardwareBuffer
 {
 public:
     
     POOLED(Pools::HdwBuffer)
     
-    /// @brief SpecializedResourceHolder for HardwareIndexBufferPrivate.
-    typedef SpecializedResourceHolder<HardwareIndexBufferPrivate> HardwareIndexBufferHolder;
+    /// @brief SpecializedCountedObjectHolder for HardwareIndexBufferPrivate.
+    typedef SpecializedCountedObjectHolder<HardwareIndexBuffer> HardwareIndexBufferHolder;
     
     /// @brief SpecializedResourceHolderList for HardwareIndexBufferPrivate.
-    typedef SpecializedResourceHolderList<HardwareIndexBufferPrivate> HardwareIndexBufferHolderList;
+    typedef SpecializedResourceHolderList<HardwareIndexBuffer> HardwareIndexBufferHolderList;
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    HardwareIndexBufferPrivate(const std::string& name);
+    HardwareIndexBuffer(const std::string& name);
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    virtual ~HardwareIndexBufferPrivate();
+    virtual ~HardwareIndexBuffer();
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Adds raw Indexes to the default IndexBatch.
@@ -168,90 +168,14 @@ protected:
     mutable bool iDataChanged;
 };
 
-/// @brief SpecializedResourceHolder for HardwareIndexBufferPrivate.
-typedef SpecializedResourceHolder<HardwareIndexBufferPrivate> HardwareIndexBufferHolder;
+/// @brief SpecializedCountedObjectHolder for HardwareIndexBufferPrivate.
+typedef SpecializedCountedObjectHolder<HardwareIndexBuffer> HardwareIndexBufferHolder;
 
 /// @brief SpecializedResourceHolderList for HardwareIndexBufferPrivate.
-typedef SpecializedResourceHolderList<HardwareIndexBufferPrivate> HardwareIndexBufferHolderList;
+typedef SpecializedResourceHolderList<HardwareIndexBuffer> HardwareIndexBufferHolderList;
 
-//////////////////////////////////////////////////////////////////////
-/// @brief Proxy to the HardwareIndexBufferPrivate object.
-//////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC HardwareIndexBuffer : public HardwareBuffer
-{
-public:
-    
-    POOLED(Pools::HdwBuffer)
-    
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    HardwareIndexBuffer(const HardwareIndexBufferPrivate* resource);
-    
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    HardwareIndexBuffer(const HardwareIndexBufferHolder& holder);
-    
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    HardwareIndexBuffer(const HardwareIndexBuffer& user);
-    
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    virtual ~HardwareIndexBuffer();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Creates a new ResourceHolder in order to use the Resource.
-    //////////////////////////////////////////////////////////////////////
-    HardwareIndexBufferHolder lock();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Creates a new ResourceHolder in order to use the Resource.
-    //////////////////////////////////////////////////////////////////////
-    const HardwareIndexBufferHolder lock() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Adds an IndexBatch to the list.
-    //////////////////////////////////////////////////////////////////////
-    virtual void addIndexBatch ( const IndexBatch& batch );
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Adds raw Indexes to the given IndexBatch.
-    ///
-    /// @param data : Raw indexes to add.
-    /// @param sz : Size of the indexes.
-    /// @param index : Index of the IndexBatch in the HardwareIndexBuffer.
-    ///
-    //////////////////////////////////////////////////////////////////////
-    virtual void addDataToIndexBatch ( const char* data , size_t sz , size_t index );
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns every IndexBatch.
-    //////////////////////////////////////////////////////////////////////
-    virtual const IndexBatchVector& getIndexBatches () const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the IndexBatch at given index.
-    //////////////////////////////////////////////////////////////////////
-    virtual const IndexBatch& getIndexBatch ( const size_t& index ) const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns IndexBatch '0'.
-    //////////////////////////////////////////////////////////////////////
-    virtual const IndexBatch& getDefaultBatch () const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Removes IndexBatch at given index.
-    //////////////////////////////////////////////////////////////////////
-    virtual void removeIndexBatch ( const size_t& index );
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Removes every IndexBatch.
-    //////////////////////////////////////////////////////////////////////
-    virtual void clearBatches();
-    
-    /// @brief A Null HardwareIndexBuffer.
-    static HardwareIndexBuffer Null;
-};
+/// @brief SpecializedCountedObjectUser for HardwareIndexBuffer.
+typedef SpecializedCountedObjectUser<HardwareIndexBuffer> HardwareIndexBufferUser;
 
 GreEndNamespace
 

@@ -69,13 +69,13 @@ namespace DarwinGl
         
         if ( CGLChoosePixelFormat(formatAttribCore4, &iDefaultPixelFormat, &npix) == kCGLNoError )
         {
-            GreDebugPretty() << "OpenGl 4 PixelFormat is supported." << std::endl;
+            GreDebugPretty() << "OpenGl 4 PixelFormat is supported." << Gre::gendl;
             
             if ( !iGlobalContext )
             {
                 if ( CGLCreateContext(iDefaultPixelFormat, nullptr, &iGlobalContext) == kCGLNoError )
                 {
-                    GreDebugPretty() << "Global Context successfully created." << std::endl;
+                    GreDebugPretty() << "Global Context successfully created." << Gre::gendl;
                     success = true;
                 }
             }
@@ -85,13 +85,13 @@ namespace DarwinGl
         
         if ( CGLChoosePixelFormat(formatAttribCore3, &iDefaultPixelFormat, &npix) == kCGLNoError && !success )
         {
-            GreDebugPretty() << "OpenGl 3 PixelFormat is supported (min 3.2 core)." << std::endl;
+            GreDebugPretty() << "OpenGl 3 PixelFormat is supported (min 3.2 core)." << Gre::gendl;
             
             if ( !iGlobalContext )
             {
                 if ( CGLCreateContext(iDefaultPixelFormat, nullptr, &iGlobalContext) == kCGLNoError )
                 {
-                    GreDebugPretty() << "Global Context successfully created." << std::endl;
+                    GreDebugPretty() << "Global Context successfully created." << Gre::gendl;
                     success = true;
                 }
             }
@@ -102,7 +102,7 @@ namespace DarwinGl
             iDefaultPixelFormat = nullptr;
             iGlobalContext = nullptr;
             
-            GreDebugPretty() << "This Renderer needs at least OpenGl 3.2 Core profile." << std::endl;
+            GreDebugPretty() << "This Renderer needs at least OpenGl 3.2 Core profile." << Gre::gendl;
             throw Gre::GreExceptionWithText("No OpenGl 3.2 detected.");
         }
         
@@ -148,7 +148,7 @@ namespace DarwinGl
         
         else
         {
-            GreDebugPretty() << "'iDefaultPixelFormat' wasn't created." << std::endl;
+            GreDebugPretty() << "'iDefaultPixelFormat' wasn't created." << Gre::gendl;
             return Gre::RenderContextHolder ( nullptr );
         }
     }
@@ -174,17 +174,17 @@ namespace DarwinGl
                 
                 if ( CGLCreateContext(iDefaultPixelFormat, iGlobalContext, &ctxt) == kCGLNoError )
                 {
-                    GreDebugPretty() << "OpenGl Context '" << name << "' created." << std::endl;
+                    GreDebugPretty() << "OpenGl Context '" << name << "' created." << Gre::gendl;
                     
                     Gre::RenderContextHolder holder = Gre::RenderContextHolder ( new DarwinGlContext(name, info, ctxt) );
                     
                     if ( holder.isInvalid() )
                     {
-                        GreDebugPretty() << "Can't create 'Gre::RenderContextHolder' Resource." << std::endl;
+                        GreDebugPretty() << "Can't create 'Gre::RenderContextHolder' Resource." << Gre::gendl;
                         
                         if ( CGLDestroyContext(ctxt) != kCGLNoError )
                         {
-                            GreDebugPretty() << "Can't destroy OpenGl Context." << std::endl;
+                            GreDebugPretty() << "Can't destroy OpenGl Context." << Gre::gendl;
                         }
                         
                         return Gre::RenderContextHolder ( nullptr );
@@ -198,21 +198,21 @@ namespace DarwinGl
                 
                 else
                 {
-                    GreDebugPretty() << "OpenGl Context '" << name << "' couldn't be created." << std::endl;
+                    GreDebugPretty() << "OpenGl Context '" << name << "' couldn't be created." << Gre::gendl;
                     return Gre::RenderContextHolder ( nullptr );
                 }
             }
             
             else
             {
-                GreDebugPretty() << "'name' is invalid." << std::endl;
+                GreDebugPretty() << "'name' is invalid." << Gre::gendl;
                 return Gre::RenderContextHolder ( nullptr );
             }
         }
         
         else
         {
-            GreDebugPretty() << "'iGlobalContext' has not been initialized." << std::endl;
+            GreDebugPretty() << "'iGlobalContext' has not been initialized." << Gre::gendl;
             return Gre::RenderContextHolder ( nullptr );
         }
     }

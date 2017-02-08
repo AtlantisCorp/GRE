@@ -35,7 +35,6 @@
 
 #include "Pools.h"
 #include "Resource.h"
-#include "Scene.h"
 #include "RenderContext.h"
 #include "FrameBuffer.h"
 
@@ -43,8 +42,21 @@ GreBeginNamespace
 
 //////////////////////////////////////////////////////////////////////
 /// @brief An Object where the Renderer can render a Scene on it.
+///
+/// A RenderTarget can send some specific Events :
+///
+/// - RenderTargetWillClose : Normally sent went the RenderTarget is
+/// about to be destroyed. The Renderer should listen this Event in order
+/// to unregister the RenderTarget.
+/// - RenderTargetClosed : Normally sent went the RenderTarget is already
+/// closed.
+/// - RenderTargetChangedRenderContext : Should be sent when the RenderTarget
+/// changed its RenderContext.
+/// - RenderTargetChangedFramebuffer : Should be sent when the RenderTarget
+/// changed its RenderFramebuffer.
+///
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC RenderTargetPrivate : public Resource
+class DLL_PUBLIC RenderTarget : public Resource
 {
 public:
     
@@ -53,268 +65,95 @@ public:
     //////////////////////////////////////////////////////////////////////
     /// @brief Constructs a RenderTarget.
     //////////////////////////////////////////////////////////////////////
-    RenderTargetPrivate(const std::string& name);
+    RenderTarget(const std::string& name);
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Destructs the RenderTarget.
     //////////////////////////////////////////////////////////////////////
-    virtual ~RenderTargetPrivate();
+    virtual ~RenderTarget() noexcept ( false ) ;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Bind the RenderTarget.
     /// In case this RenderTarget has a RenderContext object, this function
     /// may change the current RenderContext.
     //////////////////////////////////////////////////////////////////////
-    virtual void bind();
+    virtual void bind() const = 0;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Unbind the RenderTarget.
     //////////////////////////////////////////////////////////////////////
-    virtual void unbind();
+    virtual void unbind() const = 0;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Swap buffers if this render target has a render context.
+    //////////////////////////////////////////////////////////////////////
+    virtual void swapBuffers () const = 0 ;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief If has one, should bind the internal Framebuffer.
     /// This method is used by the Renderer in order to be able to draw the
     /// result of the blended Pass'es objects in a custom Framebuffer.
     //////////////////////////////////////////////////////////////////////
-    virtual void bindFramebuffer();
+    virtual void bindFramebuffer() const = 0;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief If has one, unbind the internal Framebuffer.
     //////////////////////////////////////////////////////////////////////
-    virtual void unbindFramebuffer();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Select a RenderScene to be rendered when rendering on this
-    /// RenderTarget.
-    //////////////////////////////////////////////////////////////////////
-    virtual void selectScene(const RenderScene& scene);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Selected RenderScene to be rendered on this Target.
-    //////////////////////////////////////////////////////////////////////
-    virtual RenderScene getSelectedScene();
+    virtual void unbindFramebuffer() const = 0;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns true if this RenderTarget contains a RenderContext
     /// and should be drawed by the Renderer during the first phase.
     //////////////////////////////////////////////////////////////////////
-    virtual bool holdsRenderContext() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns an holder to the RenderContext associated to this
-    /// RenderTarget, or null.
-    //////////////////////////////////////////////////////////////////////
-    virtual RenderContextHolder getRenderContext();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns an holder to the RenderContext associated to this
-    /// RenderTarget, or null.
-    //////////////////////////////////////////////////////////////////////
-    virtual const RenderContextHolder getRenderContext() const;
+    virtual bool holdsRenderContext() const = 0;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns true if this RenderTarget contains a special
     /// RenderFramebuffer to draw to.
     //////////////////////////////////////////////////////////////////////
-    virtual bool holdsFramebuffer() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the RenderFramebufferHolder this RenderTarget contains,
-    /// or null.
-    //////////////////////////////////////////////////////////////////////
-    virtual RenderFramebufferHolder getFramebuffer();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the RenderFramebufferHolder this RenderTarget contains,
-    /// or null.
-    //////////////////////////////////////////////////////////////////////
-    virtual const RenderFramebufferHolder getFramebuffer() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns true if this RenderTarget needs to be drawed, either
-    /// because it has changed or because the Scene has changed.
-    //////////////////////////////////////////////////////////////////////
-    virtual bool needsDrawing() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Forces the draw of this RenderTarget for one frame.
-    //////////////////////////////////////////////////////////////////////
-    virtual void forceRedraw();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Used by the Renderer to notifiate the RenderTarget it has
-    /// been drawed.
-    //////////////////////////////////////////////////////////////////////
-    virtual void onRenderFinished() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Draw immediately the surface from this RenderTarget.
-    //////////////////////////////////////////////////////////////////////
-    virtual void draw() = 0;
+    virtual bool holdsFramebuffer() const = 0;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns true if the RenderTarget is ready to be drawn on.
     /// For example , this should be true for a Window object if the Window
     /// is directly visible by the user on the screen ( 'isVisible' and
     /// 'isOnActiveSpace' properties on macOs ).
-    /// @return True by default, but should be overwritten.
     //////////////////////////////////////////////////////////////////////
-    virtual bool isAvailableForDrawing () const;
-    
-protected:
+    virtual bool isAvailableForDrawing () const = 0;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Called when receiving Update Event.
-    /// [thread-safe]
-    ///
-    /// The UpdateEvent can be emitted when Window objects themself, using
-    /// ResourceManager::loop() or Window::update().
+    /// @brief Returns an holder to the RenderContext associated to this
+    /// RenderTarget, or null.
     //////////////////////////////////////////////////////////////////////
-    virtual void onUpdateEvent(const UpdateEvent& e);
+    virtual RenderContextHolder getRenderContext() = 0;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Called when a Key is up.
+    /// @brief Returns an holder to the RenderContext associated to this
+    /// RenderTarget, or null.
     //////////////////////////////////////////////////////////////////////
-    virtual void onKeyUpEvent(const KeyUpEvent& e);
+    virtual const RenderContextHolder getRenderContext() const = 0;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Called when a Key is down.
+    /// @brief Returns the RenderFramebufferHolder this RenderTarget contains,
+    /// or null.
     //////////////////////////////////////////////////////////////////////
-    virtual void onKeyDownEvent(const KeyDownEvent& e);
+    virtual RenderFramebufferHolder getFramebuffer() = 0;
     
-private:
-    
-    /// @brief The Selected Scene to render on this RenderTarget.
-    RenderScene iSelectedScene;
-    
-    /// @brief Must this RenderTarget be rendered ?
-    mutable bool iNeedsDrawing;
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the RenderFramebufferHolder this RenderTarget contains,
+    /// or null.
+    //////////////////////////////////////////////////////////////////////
+    virtual const RenderFramebufferHolder getFramebuffer() const = 0;
 };
 
-/// @brief SpecializedResourceHolder for RenderTargetPrivate.
-typedef SpecializedResourceHolder<RenderTargetPrivate> RenderTargetHolder;
+/// @brief SpecializedCountedObjectHolder for RenderTargetPrivate.
+typedef SpecializedCountedObjectHolder<RenderTarget> RenderTargetHolder;
 
 /// @brief SpecializedResourceHolderList for RenderTargetPrivate.
-typedef SpecializedResourceHolderList<RenderTargetPrivate> RenderTargetHolderList;
+typedef SpecializedResourceHolderList<RenderTarget> RenderTargetHolderList;
 
-//////////////////////////////////////////////////////////////////////
 /// @brief SpecializedResourceUser for RenderTargetPrivate.
-//////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC RenderTarget : public SpecializedResourceUser<RenderTargetPrivate>
-{
-public:
-    
-    POOLED(Pools::Render)
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Constructs a RenderTarget from pointer.
-    //////////////////////////////////////////////////////////////////////
-    RenderTarget(const RenderTargetPrivate* pointer);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Constructs a RenderTarget from holder.
-    //////////////////////////////////////////////////////////////////////
-    RenderTarget(const RenderTargetHolder& holder);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Constructs a RenderTarget from user.
-    //////////////////////////////////////////////////////////////////////
-    RenderTarget(const RenderTarget& user);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Destructs the RenderTarget user.
-    //////////////////////////////////////////////////////////////////////
-    virtual ~RenderTarget();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Bind the RenderTarget.
-    /// In case this RenderTarget has a RenderContext object, this function
-    /// may change the current RenderContext.
-    //////////////////////////////////////////////////////////////////////
-    virtual void bind();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Unbind the RenderTarget.
-    //////////////////////////////////////////////////////////////////////
-    virtual void unbind();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief If has one, should bind the internal Framebuffer.
-    /// This method is used by the Renderer in order to be able to draw the
-    /// result of the blended Pass'es objects in a custom Framebuffer.
-    //////////////////////////////////////////////////////////////////////
-    virtual void bindFramebuffer();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief If has one, unbind the internal Framebuffer.
-    //////////////////////////////////////////////////////////////////////
-    virtual void unbindFramebuffer();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Select a RenderScene to be rendered when rendering on this
-    /// RenderTarget.
-    //////////////////////////////////////////////////////////////////////
-    virtual void selectScene(const RenderScene& scene);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Selected RenderScene to be rendered on this Target.
-    //////////////////////////////////////////////////////////////////////
-    virtual RenderScene getSelectedScene();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns true if this RenderTarget contains a RenderContext
-    /// and should be drawed by the Renderer during the first phase.
-    //////////////////////////////////////////////////////////////////////
-    virtual bool holdsRenderContext() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns an holder to the RenderContext associated to this
-    /// RenderTarget, or null.
-    //////////////////////////////////////////////////////////////////////
-    virtual RenderContextHolder getRenderContext();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns an holder to the RenderContext associated to this
-    /// RenderTarget, or null.
-    //////////////////////////////////////////////////////////////////////
-    virtual const RenderContextHolder getRenderContext() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns true if this RenderTarget contains a special
-    /// RenderFramebuffer to draw to.
-    //////////////////////////////////////////////////////////////////////
-    virtual bool holdsFramebuffer() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the RenderFramebufferHolder this RenderTarget contains,
-    /// or null.
-    //////////////////////////////////////////////////////////////////////
-    virtual RenderFramebufferHolder getFramebuffer();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the RenderFramebufferHolder this RenderTarget contains,
-    /// or null.
-    //////////////////////////////////////////////////////////////////////
-    virtual const RenderFramebufferHolder getFramebuffer() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns true if this RenderTarget needs to be drawed, either
-    /// because it has changed or because the Scene has changed.
-    //////////////////////////////////////////////////////////////////////
-    virtual bool needsDrawing() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Forces the draw of this RenderTarget for one frame.
-    //////////////////////////////////////////////////////////////////////
-    virtual void forceRedraw();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Used by the Renderer to notifiate the RenderTarget it has
-    /// been drawed.
-    //////////////////////////////////////////////////////////////////////
-    virtual void onRenderFinished() const;
-};
+typedef SpecializedCountedObjectUser<RenderTarget> RenderTargetUser;
 
 GreEndNamespace
 

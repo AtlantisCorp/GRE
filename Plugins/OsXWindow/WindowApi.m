@@ -11,20 +11,8 @@
 #include "OpenGlCustomView.h"
 #include "CustomWindow.h"
 
-WindowBufEntry* NsGetWindowBufEntry(CFTypeRef* nsWindow)
-{
-    if(nsWindow)
-    {
-        const CustomWindow* nsGlWindow = (__bridge CustomWindow*) *nsWindow;
-        return (WindowBufEntry*) ((void*)[nsGlWindow getWindowEntry]);
-    }
-    
-    else
-    {
-        static WindowBufEntry BadEntry;
-        return &BadEntry;
-    }
-}
+NSLock* plock = nil ;
+NSApplication * GlobalApplication = nil ;
 
 void NsDestroyWindow(CFTypeRef* nsWindow)
 {
@@ -50,11 +38,15 @@ bool NsIsWindowClosed(CFTypeRef* nsWindow)
 
 void NsSetWindowTitle(CFTypeRef* nsWindow, const char* cTitle)
 {
+    [plock lock] ;
+    
     if(nsWindow)
     {
         const CustomWindow* nsGlWindow = (__bridge const CustomWindow*) *nsWindow;
         [nsGlWindow setTitle:[NSString stringWithCString:cTitle encoding:NSASCIIStringEncoding]];
     }
+    
+    [plock unlock] ;
 }
 
 void NsWindowSwapBuffers(CFTypeRef* nsWindow)
@@ -78,27 +70,6 @@ void NsGetWindowSize(CFTypeRef* nsWindow, int* retWidth, int* retHeight)
     }
 }
 
-bool NsWindowIsVisible(CFTypeRef* nsWindow)
-{
-    if(nsWindow)
-    {
-        CustomWindow* nsGlWindow = (__bridge CustomWindow*) *nsWindow;
-        return [nsGlWindow isVisible] ;
-    }
-    
-    return false;
-}
-
-bool NsWindowIsVertSync(const CFTypeRef* nsWindow)
-{
-    return true;
-}
-
-void NsWindowSetVertSync(CFTypeRef* nsWindow, bool arg)
-{
-    
-}
-
 void NsAddMenu (void)
 {
     NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
@@ -116,84 +87,15 @@ void NsAddMenu (void)
     [pool release];
 }
 
-// Return the best PixelFormat for this computer.
-NSOpenGLPixelFormat* GChooseBestOpenGlPixelFormat()
-{
-    NSOpenGLPixelFormatAttribute formatAttribCore4[] =
-    {
-        NSOpenGLPFADepthSize, (NSOpenGLPixelFormatAttribute) 32,
-        NSOpenGLPFADoubleBuffer,
-        NSOpenGLPFAOpenGLProfile, NSOpenGLProfileVersion4_1Core,
-        NSOpenGLPFAAccelerated,
-        0
-    };
-    
-    NSOpenGLPixelFormatAttribute formatAttribCore3[] =
-    {
-        NSOpenGLPFADepthSize, (NSOpenGLPixelFormatAttribute) 32,
-        NSOpenGLPFADoubleBuffer,
-        NSOpenGLPFAOpenGLProfile, NSOpenGLProfileVersion3_2Core,
-        NSOpenGLPFAAccelerated,
-        0
-    };
-    
-    NSOpenGLPixelFormatAttribute formatAttrib[] =
-    {
-        NSOpenGLPFADepthSize,(NSOpenGLPixelFormatAttribute)32,
-        NSOpenGLPFADoubleBuffer,
-        NSOpenGLPFAOpenGLProfile, NSOpenGLProfileVersionLegacy,
-        NSOpenGLPFAAccelerated,
-        0
-    };
-    
-    NSOpenGLPixelFormatAttribute formatAttribSoft[] =
-    {
-        NSOpenGLPFADepthSize,(NSOpenGLPixelFormatAttribute)32,
-        NSOpenGLPFADoubleBuffer,
-        0
-    };
-    
-    NSOpenGLPixelFormat* result = nil;
-    
-    result = [[NSOpenGLPixelFormat alloc] initWithAttributes: formatAttribCore4];
-    
-    if(result == nil) {
-        printf("[OSXWindow] Can't find OpenGL Core Profile 4.1 . \n");
-        result = [[NSOpenGLPixelFormat alloc] initWithAttributes: formatAttribCore3];
-        
-        if(result == nil) {
-            printf("[OSXWindow] Can't find OpenGL Core Profile 3.2 . \n");
-            result = [[NSOpenGLPixelFormat alloc] initWithAttributes: formatAttrib];
-            
-            if(result == nil) {
-                printf("[OSXWindow] Can't find OpenGL Legacy Profile. \n");
-                result = [[NSOpenGLPixelFormat alloc] initWithAttributes:formatAttribSoft];
-                
-                if(result != nil) {
-                    printf("[OSXWindow] Using not 'hardware-accelerated' renderer. \n");
-                } else {
-                    printf("[OSXWindow] No Renderer found on this Mac. \n");
-                }
-                
-            } else {
-                printf("[OSXWindow] Found OpenGL Legacy Profile. \n");
-            }
-        } else {
-            printf("[OSXWindow] Found OpenGL Core Profile 3.2 . \n");
-        }
-    } else {
-        printf("[OSXWindow] Found OpenGL Core Profile 4.1 . \n");
-    }
-    
-    return result;
-}
-
 bool NSIsAppLoaded = false;
 
 void NsLoadPluginApp()
 {
-    NSApplication* app = [NSApplication sharedApplication];
-    if(app == nil)
+    plock = [[NSLock alloc] init] ;
+    
+    GlobalApplication = [NSApplication sharedApplication] ;
+    
+    if( GlobalApplication == nil )
         return;
     
     // loadNibNamed:owner:topLevelObjects was introduced in 10.8 (Mountain Lion).
@@ -225,12 +127,10 @@ void NsLoadPluginApp()
 
 void NsCreateWindow(CFTypeRef* cfretreturn, int x0,int y0,int wid,int hei)
 {
-    NSApplication* app = [NSApplication sharedApplication];
+    NSApplication* app = GlobalApplication;
+    
     if(app == nil)
         return;
-    
-    if( !NSIsAppLoaded )
-        NsLoadPluginApp();
     
     CustomWindow* nsNewWindow = nil;
     
@@ -256,74 +156,19 @@ void NsCreateWindow(CFTypeRef* cfretreturn, int x0,int y0,int wid,int hei)
     [nsNewWindow orderFront: nsNewWindow];
     [nsNewWindow makeMainWindow];
     
-    [nsNewWindow display];
+  //  [nsNewWindow display];
     [app updateWindows];
     
     *cfretreturn = CFBridgingRetain(nsNewWindow);
 }
 
-void NsPollEventForWindow ( CFTypeRef* window )
-{
-    if ( window != nil )
-    {
-        CustomWindow* glwindow = (__bridge CustomWindow*) *window;
-        [glwindow update];
-    }
-}
-
-bool NsPollEvent()
-{
-    NSApplication* app = [NSApplication sharedApplication];
-    if(app == nil) {
-        return false;
-    }
-    
-    @try
-    {
-        NSEvent* event = [app nextEventMatchingMask:NSAnyEventMask untilDate: [NSDate distantPast] inMode: NSDefaultRunLoopMode dequeue:YES];
-        
-        if( event!=nil )
-        {
-            if( [event type] == NSRightMouseDown )
-            {
-                printf("R mouse down event\n");
-            }
-            
-            [app sendEvent:event];
-        }
-        else
-        {
-            return false;
-        }
-        
-    }
-    @catch (NSException* e)
-    {
-        printf("Error");
-        printf([[e reason] cStringUsingEncoding:NSASCIIStringEncoding]);
-    }
-
-    return true;
-}
-
 void NsWindowSetRenderContext(CFTypeRef* nsWindow, CGLContextObj ctxt)
 {
+    [plock lock] ;
+    
     if(nsWindow && ctxt)
     {
         CustomWindow* nsCustomWindow = (__bridge CustomWindow*) *nsWindow;
-        /*
-        
-        NSRect nsFrame = [[nsCustomWindow contentView] frame];
-        NSOpenGLPixelFormat* pixelformat = [[NSOpenGLPixelFormat alloc] initWithCGLPixelFormatObj:CGLGetPixelFormat(ctxt)];
-        NSOpenGLContext* context = [[NSOpenGLContext alloc] initWithCGLContextObj:ctxt];
-        
-        OpenGlCustomView* customview = [[OpenGlCustomView alloc] initWithFrame:nsFrame pixelFormat:pixelformat];
-        [customview setOpenGlContext:context];
-        [context setView:customview];
-        
-        [nsCustomWindow setGlView:customview];
-        [nsCustomWindow update];
-         */
         
         NSRect nsFrame = [[nsCustomWindow contentView] frame];
         NSOpenGLPixelFormat* pixelformat = [[NSOpenGLPixelFormat alloc] initWithCGLPixelFormatObj:CGLGetPixelFormat(ctxt)];
@@ -333,52 +178,46 @@ void NsWindowSetRenderContext(CFTypeRef* nsWindow, CGLContextObj ctxt)
         [glview setOpenGLContext:context];
         [nsCustomWindow setGlView:glview];
     }
-}
-
-void NsWindowSetNeedsDisplay(CFTypeRef* window, bool value)
-{
-    if ( window )
-    {
-        CustomWindow* nsWindow = (__bridge CustomWindow*) *window;
-        [[nsWindow getGlView] setNeedsDisplay:(BOOL)value];
-    }
-}
-
-void NsWindowDisplay(CFTypeRef* window)
-{
-    if ( window )
-    {
-        CustomWindow* nsWindow = (__bridge CustomWindow*) *window;
-        
-        if ( [nsWindow isOnActiveSpace] && [nsWindow isVisible] )
-        {
-            [[nsWindow getGlView] display];
-        }
-    }
+    
+    [plock unlock] ;
 }
 
 bool NsWindowPropertyIsVisible ( const CFTypeRef* window )
 {
+    const CustomWindow * nsWindow = NULL ;
+    bool ret = false ;
+    
+    [plock lock];
+    
     if ( window )
     {
-        const CustomWindow* nsWindow = ( __bridge const CustomWindow* ) *window;
-        return [nsWindow isVisible];
+        nsWindow = ( __bridge const CustomWindow* ) *window;
+        ret = [nsWindow isVisible];
     }
     
-    return false;
+    [plock unlock] ;
+    
+    return ret ;
 }
 
 bool NsWindowPropertyIsOnActiveSpace ( const CFTypeRef* window )
 {
+    const CustomWindow * nsWindow = NULL ;
+    bool ret = false ;
+    
+    [plock lock];
+    
     if ( window )
     {
-        const CustomWindow* nsWindow = ( __bridge const CustomWindow* ) *window;
-        return [nsWindow isOnActiveSpace];
+        nsWindow = ( __bridge const CustomWindow* ) *window;
+        ret = true ;
     }
     
-    return false;
+    [plock unlock] ;
+    
+    return ret ;
 }
-
+ 
 void NsWindowSetEventQueue ( CFTypeRef* window , WindowEventQueue* queue )
 {
     if ( window && queue )
@@ -390,13 +229,13 @@ void NsWindowSetEventQueue ( CFTypeRef* window , WindowEventQueue* queue )
 
 void NSGlobalApplicationRun ( )
 {
-    NSApplication* app = [NSApplication sharedApplication];
-    [app performSelectorOnMainThread:@selector(run) withObject:nil waitUntilDone:TRUE];
+    NSApplication* app = [GlobalApplication retain];
+    [app performSelectorOnMainThread:@selector(run) withObject:app waitUntilDone:YES];
 }
 
 void NSGlobalApplicationTerminate ( )
 {
-    NSApplication* app = [NSApplication sharedApplication];
+    NSApplication* app = GlobalApplication;
     [app terminate:nil];
 }
 

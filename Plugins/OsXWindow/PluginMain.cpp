@@ -34,8 +34,6 @@
 #include "OSXImage.h"
 #include "DarwinApplication.h"
 
-WindowBufEntry nsWindowBufs [WINDOW_MAX];
-
 extern "C" DLL_PUBLIC void* GetPluginName (void)
 {
     return (void*) "Darwin OS Window system";
@@ -53,11 +51,11 @@ extern "C" DLL_PUBLIC void StartPlugin (void)
     
     if ( !WindowGlobalQueue )
     {
-        GreDebugPretty() << "'WindowGlobalQueue' couldn't be initialized." << std::endl;
+        GreDebugPretty() << "'WindowGlobalQueue' couldn't be initialized." << Gre::gendl;
         throw GreExceptionWithText("'WindowGlobalQueue' couldn't be initialized.") ;
     }
     
-    GreDebugPretty() << (const char*) GetPluginName() << " installed." << std::endl;
+    GreDebugPretty() << (const char*) GetPluginName() << " installed." << Gre::gendl;
 }
 
 extern "C" DLL_PUBLIC void StopPlugin (void)

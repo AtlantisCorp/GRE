@@ -89,7 +89,7 @@ bool HardwareProgramVariables::has(const std::string &name) const
     else
     {
 #ifdef GreIsDebugMode
-        GreDebugPretty() << "Invalid 'name' given." << std::endl;
+        GreDebugPretty() << "Invalid 'name' given." << Gre::gendl;
 #endif
         return false;
     }

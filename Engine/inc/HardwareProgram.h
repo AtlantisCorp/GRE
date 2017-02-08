@@ -38,7 +38,6 @@
 #include "HardwareShader.h"
 #include "HardwareProgramVariables.h"
 #include "VertexDescriptor.h"
-#include "Material.h"
 
 GreBeginNamespace
 
@@ -58,7 +57,7 @@ GreBeginNamespace
 ///   - HardwareProgram:: finalize();
 ///   - Pass:: setHardwareProgram( ThisProgram );
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC HardwareProgramPrivate : public Resource
+class DLL_PUBLIC HardwareProgram : public Resource
 {
 public:
     
@@ -66,29 +65,29 @@ public:
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    HardwareProgramPrivate(const std::string& name,
-                           const HardwareShader& vertexShader = HardwareShader::Null,
-                           const HardwareShader& fragmentShader = HardwareShader::Null);
+    HardwareProgram(const std::string& name,
+                    const HardwareShaderUser& vertexShader = HardwareShaderUser(nullptr),
+                    const HardwareShaderUser& fragmentShader = HardwareShaderUser(nullptr));
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    virtual ~HardwareProgramPrivate();
+    virtual ~HardwareProgram();
     
     //////////////////////////////////////////////////////////////////////
     /// @brief 'Bind' the Program, make it usable.
     //////////////////////////////////////////////////////////////////////
-    virtual void bind() const;
+    virtual void use() const;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief 'Unbind' the Program, or detaches it from the pipeline.
     //////////////////////////////////////////////////////////////////////
-    virtual void unbind() const;
+    virtual void unuse() const;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Attach the given shader to this Program.
     /// Remember that only one shader of each type can be attached.
     //////////////////////////////////////////////////////////////////////
-    virtual void attachShader(const HardwareShader& hwdShader);
+    virtual void attachShader(const HardwareShaderUser& hwdShader);
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Finalize the Program.
@@ -101,27 +100,6 @@ public:
     /// binded but correctly compiled).
     //////////////////////////////////////////////////////////////////////
     virtual bool isReady() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns a Dictionnary of every Variables that use this
-    /// Program.
-    //////////////////////////////////////////////////////////////////////
-    virtual HardwareProgramVariables getVariables();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Sets a uniform Matrix4 variable in this Program.
-    //////////////////////////////////////////////////////////////////////
-    virtual void setUniformMat4(const std::string& name, const Matrix4& mat4);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Sets a new HardwareVariable.
-    //////////////////////////////////////////////////////////////////////
-    virtual void setUniform(const HardwareProgramVariable& var);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Unsets the HardwareVariable.
-    //////////////////////////////////////////////////////////////////////
-    virtual void unsetUniform(const std::string& name);
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the location of a given attribute variable, or -1
@@ -191,29 +169,34 @@ public:
     virtual void bindAttributeLocation ( const VertexComponentType& component, int index );
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Binds Material's data to the HardwareProgram.
-    //////////////////////////////////////////////////////////////////////
-    virtual void bindMaterial ( const Material& material ) const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Unbinds Materials' data from the HardwareProgram.
-    /// Basically, it is used to tell Material's Textures to unbind.
-    //////////////////////////////////////////////////////////////////////
-    virtual void unbindMaterial ( const Material& material ) const;
-    
-    //////////////////////////////////////////////////////////////////////
     /// @brief Returns the Location for given uniform, or -1.
     //////////////////////////////////////////////////////////////////////
     virtual int getUniformLocation ( const std::string& name ) const;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Changes the value of a given uniform location.
-    /// This value is changed when the function is called, not when updating
-    /// the HardwareProgram.
+    /// @brief Sets the value of the given Variable.
+    ///
+    /// @note If the HardwareProgram is not binded , it will cache the query
+    /// and do it when the HardwareProgram is binded.
     //////////////////////////////////////////////////////////////////////
-    virtual void setUniformVariable ( const HardwareProgramVariable& var ) const;
+    virtual void setVariable ( const HardwareProgramVariable & var ) const ;
     
 protected:
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Bind the program.
+    //////////////////////////////////////////////////////////////////////
+    virtual void iBind () const = 0 ;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Unbind the program.
+    //////////////////////////////////////////////////////////////////////
+    virtual void iUnbind () const = 0 ;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Upload the given variable to the program.
+    //////////////////////////////////////////////////////////////////////
+    virtual void iUploadVariable ( const HardwareProgramVariable & var ) const = 0 ;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Internal helper for subclass to change the iNeedsCompilation
@@ -227,166 +210,36 @@ protected:
 protected:
     
     /// @brief The VertexShader object.
-    HardwareShader iVertexShader;
+    HardwareShaderUser iVertexShader;
     
     /// @brief The FragmentShader object.
-    HardwareShader iFragmentShader;
+    HardwareShaderUser iFragmentShader;
     
-    /// @brief Holds a table to HardwareProgramVariableReference Objects.
-    /// Those reference are entry in the vertex shader.
-    HardwareProgramVariables iVariables;
+    /// @brief A Cached list of Variables not uploaded to the program because it was not
+    /// binded yet.
+    mutable HardwareProgramVariables iCachedVariables;
     
     /// @brief Flags set to true if this Program needs compilation.
     mutable bool iNeedsCompilation;
     
     /// @brief Flag true if this Program needs to upload its variables.
     mutable bool iNeedsVarUpdate;
+    
+    /// @brief True if the program is currently bind, false otherwise.
+    /// It is used to know if a variable or a uniform can be uploaded
+    /// or not. If not, the next time the program is binded, it will
+    /// also bind those variables.
+    mutable bool iBinded ;
 };
 
-/// @brief SpecializedResourceHolder for HardwareProgramPrivate.
-typedef SpecializedResourceHolder<HardwareProgramPrivate> HardwareProgramHolder;
+/// @brief SpecializedCountedObjectHolder for HardwareProgramPrivate.
+typedef SpecializedCountedObjectHolder<HardwareProgram> HardwareProgramHolder;
 
 /// @brief SpecializedResourceHolderList for HardwareProgramPrivate.
-typedef SpecializedResourceHolderList<HardwareProgramPrivate> HardwareProgramHolderList;
+typedef SpecializedResourceHolderList<HardwareProgram> HardwareProgramHolderList;
 
-//////////////////////////////////////////////////////////////////////
-/// @brief SpecializedResourceUser for HardwareProgramPrivate.
-//////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC HardwareProgram : public SpecializedResourceUser<HardwareProgramPrivate>
-{
-public:
-    
-    POOLED(Pools::Resource)
-    
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    HardwareProgram(const HardwareProgramPrivate* pointer);
-    
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    HardwareProgram(const HardwareProgramHolder& holder);
-    
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    HardwareProgram(const HardwareProgram& user);
-    
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    virtual ~HardwareProgram();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief 'Bind' the Program, make it usable.
-    //////////////////////////////////////////////////////////////////////
-    void bind() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief 'Unbind' the Program, or detaches it from the pipeline.
-    //////////////////////////////////////////////////////////////////////
-    void unbind() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Finalize the Program.
-    /// Call this function when every shaders is attached.
-    //////////////////////////////////////////////////////////////////////
-    void finalize();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns true if the Program is ready to be used (i.e. not
-    /// binded but correctly compiled).
-    //////////////////////////////////////////////////////////////////////
-    bool isReady() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns a Dictionnary of every Variables that use this
-    /// Program.
-    //////////////////////////////////////////////////////////////////////
-    HardwareProgramVariables getVariables();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Sets a uniform Matrix4 variable in this Program.
-    //////////////////////////////////////////////////////////////////////
-    void setUniformMat4(const std::string& name, const Matrix4& mat4);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Sets a new HardwareVariable.
-    //////////////////////////////////////////////////////////////////////
-    void setUniform(const HardwareProgramVariable& var);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Unsets the HardwareVariable.
-    //////////////////////////////////////////////////////////////////////
-    void unsetUniform(const std::string& name);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the location of a given attribute variable, or -1
-    /// if this does not exists.
-    //////////////////////////////////////////////////////////////////////
-    int getAttribLocation(const std::string& name) const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns true if this Program has been successfully compiled.
-    //////////////////////////////////////////////////////////////////////
-    bool isCompiled() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Reset the HardwareProgram.
-    /// This function also clears the HardwareShader it holds, the Variables
-    /// and the Compile datas.
-    //////////////////////////////////////////////////////////////////////
-    void reset();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns true if the Compiled HardwareProgram has the current
-    /// output location given.
-    //////////////////////////////////////////////////////////////////////
-    virtual bool hasOutputLocation(uint16_t location) const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Activate the given Texture Unit.
-    //////////////////////////////////////////////////////////////////////
-    virtual void bindTextureUnit ( int unit ) const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Binds the given VertexDescriptor.
-    /// The Attributes should be binded in the order given by the descriptor,
-    /// or if the name corresponding to given entree already exists in the
-    /// HardwareProgram.
-    ///
-    /// @param descriptor : The descriptor that should describe the Vertex
-    /// structure.
-    /// @param data : A generic pointer used to point to the first Vertex's
-    /// data. This pointer should be 'nullptr' if the first Vertex used is
-    /// the first data of an HardwareBuffer ( and not a SoftwareBuffer ).
-    ///
-    //////////////////////////////////////////////////////////////////////
-    virtual void bindAttribsVertex ( const VertexDescriptor& descriptor, const char* data ) const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the location for the given component.
-    /// If this component is not found, it will return '-1' .
-    //////////////////////////////////////////////////////////////////////
-    virtual int getAttribLocation ( const VertexComponentType& component ) const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Sets the data that should be given as argument for the
-    /// HardwareProgram at given index.
-    ///
-    /// @param index : Location for the data to be set.
-    /// @param stride : The stride between two contiguous data.
-    /// @param data : A pointer to an array of data.
-    ///
-    //////////////////////////////////////////////////////////////////////
-    virtual void setAttribData ( int index , size_t stride , const char* data ) const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Bind an Attribute to the HardwareProgram's given location.
-    /// This should be called before linking the HardwareProgram.
-    //////////////////////////////////////////////////////////////////////
-    virtual void bindAttributeLocation ( const VertexComponentType& component, int index );
-    
-    /// @brief Null HardwareProgram.
-    static HardwareProgram Null;
-};
+/// @brief SpecializedCountedObjectUser for HardwareProgram.
+typedef SpecializedCountedObjectUser<HardwareProgram> HardwareProgramUser;
 
 GreEndNamespace
 

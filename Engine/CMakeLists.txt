@@ -2,6 +2,9 @@
 cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
 project(libgre VERSION 0.0 LANGUAGES CXX)
 
+# Enables C++ 11 Flags.
+set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -std=c++11")
+
 # Sources files.
 file(GLOB_RECURSE GRE_SOURCES_FILES "*.cpp" "*.h")
 add_library(gre SHARED ${GRE_SOURCES_FILES})
@@ -13,8 +16,7 @@ include_directories(PUBLIC
         PRIVATE src)
 
 # Link with used libraries.
-target_link_libraries(gre
-        dl)
+target_link_libraries(gre dl)
 
 set_target_properties( gre
         PROPERTIES
@@ -23,4 +25,24 @@ set_target_properties( gre
         RUNTIME_OUTPUT_DIRECTORY ${GRE_ROOT_DIRECTORY}/Sdk
 )
 
-set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -std=c++11")
+# Try to set C++11 Flags for Xcode Projects.
+if(${CMAKE_GENERATOR} MATCHES "Xcode")
+
+    macro (set_xcode_property TARGET XCODE_PROPERTY XCODE_VALUE)
+        set_property (TARGET ${TARGET} PROPERTY XCODE_ATTRIBUTE_${XCODE_PROPERTY}
+                      ${XCODE_VALUE})
+    endmacro (set_xcode_property)
+
+    set_xcode_property(gre CLANG_CXX_LANGUAGE_STANDARD "c++11")
+    set_xcode_property(gre CLANG_CXX_LIBRARY "libc++")
+
+    set_property(TARGET gre PROPERTY CXX_STANDARD 11)
+    set_property(TARGET gre PROPERTY CXX_STANDARD_REQUIRED ON)
+
+else()
+
+    set_property(TARGET gre PROPERTY CXX_STANDARD 11)
+    set_property(TARGET gre PROPERTY CXX_STANDARD_REQUIRED ON)
+
+endif(${CMAKE_GENERATOR} MATCHES "Xcode")
+

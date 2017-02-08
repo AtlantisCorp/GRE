@@ -35,25 +35,44 @@
 
 #include "Pools.h"
 #include "Resource.h"
+#include "ResourceLoader.h"
+
+#include "Window.h"
+#include "Scene.h"
 
 GreBeginNamespace
 
 //////////////////////////////////////////////////////////////////////
+/// @brief Flags used to see if the Application should stop.
+//////////////////////////////////////////////////////////////////////
+enum class ApplicationCloseBehaviour
+{
+    AllWindowClosed ,
+    TerminateCalled ,
+    EscapeKey ,
+    
+    Invalid
+};
+
+//////////////////////////////////////////////////////////////////////
 /// @brief An Application Object.
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC ApplicationPrivate : public Resource
+class DLL_PUBLIC Application : public Resource
 {
 public:
     
     POOLED(Pools::Resource)
     
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    ApplicationPrivate ( const std::string& name , const std::string& author = std::string() , const std::string& description = std::string() ) ;
+    /// @brief SpecializedCountedObjectHolder for Application.
+    typedef SpecializedCountedObjectHolder < Application > ApplicationHolder ;
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    virtual ~ApplicationPrivate () noexcept ( false ) ;
+    Application ( const std::string& name , const std::string& author = std::string() , const std::string& description = std::string() ) ;
+    
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    virtual ~Application () noexcept ( false ) ;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Basically runs the Application.
@@ -65,9 +84,101 @@ public:
     virtual void run () ;
     
     //////////////////////////////////////////////////////////////////////
+    /// @brief Spawns a 'Worker Thread' to updates the given event proceeder.
+    //////////////////////////////////////////////////////////////////////
+    virtual void addWorkerThread ( SpecializedCountedObjectUser<EventProceeder> eventproceeder ) ;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Adds the given EventProceeder (generally a Manager) to update
+    /// in the Main Thread.
+    //////////////////////////////////////////////////////////////////////
+    virtual void addMainThread ( EventProceederHolder holder ) ;
+    
+    //////////////////////////////////////////////////////////////////////
     /// @brief Should terminate the run loop.
     //////////////////////////////////////////////////////////////////////
     virtual void terminate () ;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Adds a CloseBehaviour to the current behaviours.
+    //////////////////////////////////////////////////////////////////////
+    virtual void addCloseBehaviour ( const ApplicationCloseBehaviour & behaviour ) ;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns 'iShouldTerminate'.
+    //////////////////////////////////////////////////////////////////////
+    bool shouldTerminate () const ;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Uses the ResourceManager to create an Application using the
+    /// first loader encountered.
+    //////////////////////////////////////////////////////////////////////
+    static ApplicationHolder Create ( const std::string& name , const std::string& author = std::string() , const std::string& description = std::string() ) ;
+    
+protected:
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Main function for every Worker Thread.
+    //////////////////////////////////////////////////////////////////////
+    static void WorkerThreadMain ( const Application * app , SpecializedCountedObjectUser<EventProceeder> proceeder ) ;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Main function for the Main Thread.
+    //////////////////////////////////////////////////////////////////////
+    void iMainThreadLoop () ;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Function called by 'terminate()' , AllWindowClosedListener
+    /// and EscapeKeyListener to notifiate terminate request .
+    //////////////////////////////////////////////////////////////////////
+    void iTerminatePrivate ( ApplicationCloseBehaviour why ) ;
+    
+protected:
+    
+    // Basic Listener to wait for every Window to be closed .
+    
+    class AllWindowClosedListener : public EventProceeder
+    {
+    public:
+        
+        POOLED ( Pools::Referenced ) ;
+        
+        AllWindowClosedListener ( Application* app ) ;
+        ~AllWindowClosedListener ( ) noexcept ( false ) ;
+        
+    protected:
+        
+        // As soon as we get this Event , call the application 'terminate' function .
+        void onLastWindowClosed ( const LastWindowClosedEvent & e ) ;
+        
+    protected:
+        
+        Application* appuser ;
+    };
+    
+    typedef SpecializedCountedObjectHolder < AllWindowClosedListener > AllWindowClosedListenerHolder ;
+    
+    // Basic Listener to wait for an escape key to be sent .
+    
+    class EscapeKeyListener : public EventProceeder
+    {
+    public:
+        
+        POOLED ( Pools::Referenced ) ;
+        
+        EscapeKeyListener ( Application* appli ) ;
+        ~EscapeKeyListener ( ) noexcept ( false ) ;
+        
+    protected:
+        
+        void onKeyDownEvent ( const KeyDownEvent & e ) ;
+        
+    protected:
+        
+        Application * app ;
+    };
+    
+    typedef SpecializedCountedObjectHolder < EscapeKeyListener > EscapeKeyListenerHolder ;
     
 protected:
     
@@ -79,58 +190,44 @@ protected:
     
     /// @brief Flag to indicate the loop must stop.
     bool iShouldTerminate ;
+    
+    /// @brief bitset to use ApplicationCloseBehaviour as flags.
+    std::bitset < (size_t) ApplicationCloseBehaviour::Invalid > iCloseBehaviours ;
+    
+    /// @brief List of Worker Threads executed by this Application.
+    std::vector < std::thread > iWorkerThreads ;
+    
+    /// @brief List of Event Proceeder to update in Main Thread.
+    std::vector < EventProceederHolder > iMainProceeders ;
+    
+    /// @brief Main Thread start time point.
+    TimePoint iMainStart ;
+    
+    /// @brief Listens to AllWindowClosed behaviour .
+    AllWindowClosedListenerHolder iAllWindowClosedListener ;
+    
+    /// @brief Listens to Escape Key from KeyboardManager.
+    EscapeKeyListenerHolder iEscapeListener ;
+    
+    /// @brief Application::run() should be called only once in the program. This
+    /// boolean records wheither Application::run() has been already called.
+    bool iRunAlreadyCalled ;
+    
+    /// @brief Once launched, this variable holds the current WindowManager.
+    WindowManagerHolder iWindowManager ;
+    
+    /// @brief Once launched, this variable holds the current RenderSceneManager.
+    RenderSceneManagerHolder iRenderSceneManager ;
 };
 
-/// @brief SpecializedResourceHolder for ApplicationPrivate.
-typedef SpecializedResourceHolder < ApplicationPrivate > ApplicationHolder ;
+/// @brief SpecializedCountedObjectHolder for Application.
+typedef SpecializedCountedObjectHolder < Application > ApplicationHolder ;
 
-/// @brief SpecializedResourceHolderList for ApplicationPrivate.
-typedef SpecializedResourceHolderList < ApplicationPrivate > ApplicationHolderList ;
+/// @brief SpecializedResourceHolderList for Application.
+typedef SpecializedResourceHolderList < Application > ApplicationHolderList ;
 
-//////////////////////////////////////////////////////////////////////
-/// @brief SpecializedResourceUser for ApplicationPrivate.
-//////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC Application : public SpecializedResourceUser < ApplicationPrivate >
-{
-public:
-    
-    POOLED(Pools::Resource)
-    
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    Application ( const ApplicationPrivate* pointer ) ;
-    
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    Application ( const ApplicationHolder& holder ) ;
-    
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    Application ( const Application& user ) ;
-    
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    virtual ~Application() noexcept ( false ) ;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Basically runs the Application.
-    //////////////////////////////////////////////////////////////////////
-    virtual void run () ;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Should terminate the run loop.
-    //////////////////////////////////////////////////////////////////////
-    virtual void terminate () ;
-    
-    /// @brief A Null Application object.
-    static Application Null ;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Uses the ResourceManager to create an Application using the
-    /// first loader encountered.
-    //////////////////////////////////////////////////////////////////////
-    static ApplicationHolder Create ( const std::string& name , const std::string& author = std::string() , const std::string& description = std::string() ) ;
-};
+/// @brief SpecializedCountedObjectUser for Application.
+typedef SpecializedCountedObjectUser < Application > ApplicationUser ;
 
 //////////////////////////////////////////////////////////////////////
 /// @brief ResourceLoader for ApplicationPrivate.

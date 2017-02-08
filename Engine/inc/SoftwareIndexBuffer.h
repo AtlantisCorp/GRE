@@ -47,7 +47,7 @@ GreBeginNamespace
 /// memory.
 ///
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC SoftwareIndexBufferPrivate : public HardwareIndexBufferPrivate
+class DLL_PUBLIC SoftwareIndexBuffer : public HardwareIndexBuffer
 {
 public:
     
@@ -55,11 +55,11 @@ public:
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    SoftwareIndexBufferPrivate(const std::string& name);
+    SoftwareIndexBuffer(const std::string& name);
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    virtual ~SoftwareIndexBufferPrivate() noexcept(false);
+    virtual ~SoftwareIndexBuffer() noexcept(false);
     
 protected:
     
@@ -71,52 +71,17 @@ protected:
     virtual void onUpdateEvent(const UpdateEvent& e);
 };
 
-/// @brief SpecializedResourceHolder for SoftwareIndexBufferPrivate.
-typedef SpecializedResourceHolder<SoftwareIndexBufferPrivate> SoftwareIndexBufferHolder;
+/// @brief SpecializedCountedObjectHolder for SoftwareIndexBufferPrivate.
+typedef SpecializedCountedObjectHolder<SoftwareIndexBuffer> SoftwareIndexBufferHolder;
 
 /// @brief SpecializedResourceHolderList for SoftwareIndexBufferPrivate.
-typedef SpecializedResourceHolderList<SoftwareIndexBufferPrivate> SoftwareIndexBufferHolderList;
+typedef SpecializedResourceHolderList<SoftwareIndexBuffer> SoftwareIndexBufferHolderList;
 
-//////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC SoftwareIndexBuffer : public HardwareIndexBuffer
-{
-public:
-    
-    POOLED(Pools::HdwBuffer)
-    
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    SoftwareIndexBuffer(const SoftwareIndexBufferPrivate* pointer);
-    
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    SoftwareIndexBuffer(const SoftwareIndexBufferHolder& holder);
-    
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    SoftwareIndexBuffer(const SoftwareIndexBuffer& user);
-    
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    virtual ~SoftwareIndexBuffer();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Creates a new ResourceHolder in order to use the Resource.
-    //////////////////////////////////////////////////////////////////////
-    SoftwareIndexBufferHolder lock();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Creates a new ResourceHolder in order to use the Resource.
-    //////////////////////////////////////////////////////////////////////
-    const SoftwareIndexBufferHolder lock() const;
-    
-    /// @brief Null SoftwareIndexBuffer.
-    static SoftwareIndexBuffer Null;
-};
+/// @brief SpecializedCountedObjectUser for SoftwareIndexBuffer.
+typedef SpecializedCountedObjectUser<SoftwareIndexBuffer> SoftwareIndexBufferUser;
 
 /// @brief std::list for SoftwareIndexBuffer.
-typedef std::list<SoftwareIndexBuffer> SoftwareIndexBufferList;
+typedef std::list<SoftwareIndexBufferUser> SoftwareIndexBufferList;
 
 GreEndNamespace
 

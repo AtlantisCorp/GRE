@@ -34,59 +34,17 @@
 
 GreBeginNamespace
 
-HardwareSamplerPrivate::HardwareSamplerPrivate(const std::string& name)
+HardwareSampler::HardwareSampler(const std::string& name)
 : Gre::Resource(name)
 {
     
 }
 
-HardwareSamplerPrivate::~HardwareSamplerPrivate() noexcept(false)
+HardwareSampler::~HardwareSampler() noexcept(false)
 {
     
 }
 
 // ---------------------------------------------------------------------------------------------------
-
-HardwareSampler::HardwareSampler(const HardwareSamplerPrivate* pointer)
-: Gre::ResourceUser(pointer)
-, SpecializedResourceUser<Gre::HardwareSamplerPrivate>(pointer)
-{
-    
-}
-
-HardwareSampler::HardwareSampler(const HardwareSamplerHolder& holder)
-: Gre::ResourceUser(holder)
-, SpecializedResourceUser<Gre::HardwareSamplerPrivate>(holder)
-{
-    
-}
-
-HardwareSampler::HardwareSampler(const HardwareSampler& user)
-: Gre::ResourceUser(user)
-, SpecializedResourceUser<Gre::HardwareSamplerPrivate>(user)
-{
-    
-}
-
-HardwareSampler::~HardwareSampler()
-{
-    
-}
-
-void HardwareSampler::bind(int textureunit) const
-{
-    auto ptr = lock();
-    if ( ptr )
-        ptr->bind(textureunit);
-}
-
-void HardwareSampler::unbind(int textureunit) const
-{
-    auto ptr = lock();
-    if ( ptr )
-        ptr->unbind(textureunit);
-}
-
-HardwareSampler HardwareSampler::Null = HardwareSampler ( nullptr );
 
 GreEndNamespace

@@ -70,7 +70,7 @@ namespace DarwinGl
         if ( iGlLinked )
         {
 #ifdef GreIsDebugMode
-            GreDebugPretty() << "Can't attach HardwareShader to HardwareProgram because this one is already linked." << std::endl;
+            GreDebugPretty() << "Can't attach HardwareShader to HardwareProgram because this one is already linked." << Gre::gendl;
 #endif
             return;
         }
@@ -115,7 +115,7 @@ namespace DarwinGl
                 if ( log == NULL )
                 {
 #ifdef GreIsDebugMode
-                    GreDebugPretty() << "Can't allocate log memory." << std::endl;
+                    GreDebugPretty() << "Can't allocate log memory." << Gre::gendl;
 #endif
                 }
                 
@@ -126,7 +126,7 @@ namespace DarwinGl
                     
                     // On affiche
 #ifdef GreIsDebugMode
-                    GreDebugPretty() << "Error linking program '" << getName() << "' : " << log << std::endl;
+                    GreDebugPretty() << "Error linking program '" << getName() << "' : " << log << Gre::gendl;
 #endif
                     
                     free(log);

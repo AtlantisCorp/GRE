@@ -32,751 +32,356 @@
 
 #include "Mesh.h"
 
+// Because of 'MeshManager::CreateSquare()' , we must use the ResourceManager to retrieve the
+// MeshManager in place .
+#include "ResourceManager.h"
+
 GreBeginNamespace
 
-MeshPrivate::MeshPrivate(const std::string& name)
-: Gre::Resource(name)
-, iSoftVertexBuffer(nullptr)
-, iSoftIndexBuffer(nullptr)
-, iHardVertexBuffer(nullptr)
-, iHardIndexBuffer(nullptr)
-, iIsBoundingBoxUser(false)
-, iUseHardwareBuffers(false)
-, iSoftBuffersChanged(false)
-, iHardBuffersChanged(false)
-, iSoftVertexBufferUpdate(false)
-, iSoftIndexBufferUpdate(false)
+Mesh::Mesh ( )
+: Gre::Resource( )
+, iIndexBuffer ( nullptr ) , iBoundingBox ( )
+, iAutomateBoundingBox( false ), iOriginalFile ( "" )
 {
     
 }
 
-MeshPrivate::~MeshPrivate() noexcept(false)
+Mesh::Mesh ( const std::string & name )
+: Gre::Resource( ResourceIdentifier::New() , name )
+, iIndexBuffer( nullptr ) , iBoundingBox ( )
+, iAutomateBoundingBox( false ) , iOriginalFile( "" )
 {
     
 }
 
-const SoftwareVertexBuffer MeshPrivate::getSoftwareVertexBuffer() const
+Mesh::~Mesh() noexcept ( false )
 {
-    return SoftwareVertexBuffer(iSoftVertexBuffer);
-}
-
-SoftwareVertexBufferHolder& MeshPrivate::getSoftwareVertexBufferHolder()
-{
-    return iSoftVertexBuffer;
-}
-
-void MeshPrivate::setSoftwareVertexBuffer(const Gre::SoftwareVertexBuffer &softvertexbuffer)
-{
-    SoftwareVertexBufferHolder newbuf = softvertexbuffer.lock();
     
-    if ( newbuf != iSoftVertexBuffer )
+}
+
+void Mesh::setVertexBuffers(const MeshAttributeList &attributes)
+{
+    GreAutolock ;
+    
+    if ( !iVertexBuffers.empty() )
+        clearVertexBuffers () ;
+    
+    for ( const MeshAttribute & attribute : attributes )
+        addVertexBuffer(attribute) ;
+}
+
+const MeshAttributeList & Mesh::getVertexBuffers() const
+{
+    GreAutolock ; return iVertexBuffers ;
+}
+
+void Mesh::addVertexBuffer(const Gre::MeshAttribute &attribute)
+{
+    GreAutolock ;
+    
+    iVertexBuffers.push_back(attribute) ;
+    addListener( HardwareVertexBufferUser(attribute.buffer) ) ;
+    
+    if ( attribute.enabled )
     {
-        // We should remove old Software Vertex Buffer from listeners, then replace with new one.
-        
-        if ( !iSoftVertexBuffer.isInvalid() )
+        if ( !attribute.buffer.isInvalid() )
         {
-            Resource::removeListener( iSoftVertexBuffer->getName() );
-        }
-        
-        iSoftVertexBuffer = newbuf;
-        iSoftBuffersChanged = true;
-        iSoftVertexBufferUpdate = true;
-        
-        if ( !newbuf.isInvalid() )
-        {
-            Resource::addListener( softvertexbuffer );
+            if ( attribute.buffer->getVertexDescriptor().getComponentLocation(VertexComponentType::Position) != -1 )
+            {
+                // This buffer has Positions Vertex , so register on next update event to update the bounding
+                // box , if we can . The workaround to use the lambda is to pass a pointer to the mesh attribute
+                // in order not to copy it. In fact, the lambda will copy the pointer. In libc++, a 'bug' disallow
+                // the bracing of objects with a throw possibility.
+                // We assume that the mesh attribute will not be destroyed betwen this and the update event, wich
+                // should be a very little time.
+                if ( iAutomateBoundingBox )
+                {
+                    const MeshAttribute* ptr = &attribute ;
+                    addNextEventCallback(EventType::Update, [this , ptr] (const EventHolder &) {
+                        this->iUpdateBoundingBox ( *ptr ) ;
+                    });
+                }
+            }
         }
     }
 }
 
-const SoftwareIndexBuffer MeshPrivate::getSoftwareIndexBuffer() const
+void Mesh::setIndexBuffer(const HardwareIndexBufferHolder &buffer)
 {
-    return SoftwareIndexBuffer(iSoftIndexBuffer);
-}
-
-SoftwareIndexBufferHolder& MeshPrivate::getSoftwareIndexBufferHolder()
-{
-    return iSoftIndexBuffer;
-}
-
-void MeshPrivate::setSoftwareIndexBuffer(const Gre::SoftwareIndexBuffer &softindexbuffer)
-{
-    SoftwareIndexBufferHolder newbuf = softindexbuffer.lock();
+    GreAutolock ;
     
-    if ( newbuf != iSoftIndexBuffer )
+    if ( !iIndexBuffer.isInvalid() )
+        clearIndexBuffer () ;
+    
+    iIndexBuffer = buffer ;
+    addListener( HardwareIndexBufferUser(buffer) ) ;
+}
+
+const HardwareIndexBufferHolder & Mesh::getIndexBuffer() const
+{
+    GreAutolock ; return iIndexBuffer ;
+}
+
+void Mesh::unload ()
+{
+    GreAutolock ;
+    
+    iVertexBuffers.clear() ;
+    iIndexBuffer.clear() ;
+    iBoundingBox.clear() ;
+    iAutomateBoundingBox = true ;
+    Resource::unload() ;
+}
+
+void Mesh::bind() const
+{
+    GreAutolock ;
+    
+    // This is an example of what to do , but you should really overwrite it.
+    // Here we only bind every buffers enabled , more the index buffer if there
+    // is one . But one can bind other things related to API - specific data.
+    
+    for ( const MeshAttribute & attr : iVertexBuffers )
     {
-        // We should remove old Software Index Buffer from listeners, then replace with new one.
-        
-        if ( !iSoftIndexBuffer.isInvalid() )
+        if ( attr.enabled && !attr.buffer.isInvalid() )
         {
-            Resource::removeListener( iSoftIndexBuffer->getName() );
+            attr.buffer->bind() ;
         }
+    }
+    
+    if ( !iIndexBuffer.isInvalid() )
+        iIndexBuffer->bind() ;
+}
+
+void Mesh::clearVertexBuffers()
+{
+    GreAutolock ;
+    
+    for ( MeshAttribute& attr : iVertexBuffers )
+        removeListener( HardwareVertexBufferUser(attr.buffer) ) ;
+    iVertexBuffers.clear() ;
+}
+
+void Mesh::clearIndexBuffer()
+{
+    GreAutolock ;
+    
+    removeListener( HardwareIndexBufferUser(iIndexBuffer) ) ;
+    iIndexBuffer.clear() ;
+}
+
+void Mesh::setBoundingBox ( const BoundingBox & bbox )
+{
+    GreAutolock ; iBoundingBox = bbox ;
+}
+
+const BoundingBox & Mesh::getBoundingBox ( ) const
+{
+    GreAutolock ; return iBoundingBox ;
+}
+
+void Mesh::iUpdateBoundingBox(const Gre::MeshAttribute &attribute)
+{
+    GreAutolock ;
+    
+    // When calling this function , the BoundingBox should be updated using the Positions
+    // in the given buffer .
+    if ( iAutomateBoundingBox && attribute.enabled && !attribute.buffer.isInvalid() )
+    {
+        int positionloc = attribute.buffer->getVertexDescriptor().getComponentLocation(VertexComponentType::Position) ;
+        size_t stride = attribute.buffer->getVertexDescriptor().getStride(VertexComponentType::Position) ;
+        size_t positioncount = attribute.buffer->count() ;
+        size_t positioncur = 0 ;
         
-        iSoftIndexBuffer = newbuf;
-        iSoftBuffersChanged = true;
-        iSoftIndexBufferUpdate = true;
-        
-        if ( !newbuf.isInvalid() )
+        if ( positionloc >= -1 )
         {
-            Resource::addListener( softindexbuffer );
+            for ( const char * first = attribute.buffer->getData() + positionloc ; positioncur != positioncount ;
+                 first += stride , positioncur ++ )
+            {
+                const Vector3 * pos = (const Vector3 *) first ;
+                iBoundingBox.add( *pos ) ;
+            }
         }
     }
 }
 
-const HardwareVertexBuffer MeshPrivate::getVertexBuffer() const
+const std::string & Mesh::getOriginalFilepath () const
 {
-    return HardwareVertexBuffer(iHardVertexBuffer);
+    GreAutolock ; return iOriginalFile ;
 }
 
-void MeshPrivate::setVertexBuffer(const HardwareVertexBuffer& vertexbuffer)
+void Mesh::setOriginalFilepath ( const std::string & filepath )
 {
-    HardwareVertexBufferHolder newbuf = vertexbuffer.lock();
-    
-    if ( newbuf != iHardVertexBuffer )
-    {
-        if ( !iHardVertexBuffer.isInvalid() )
-        {
-            Resource::removeListener( iHardVertexBuffer->getName() );
-        }
-        
-        iHardVertexBuffer = newbuf;
-        iHardBuffersChanged = true;
-        
-        if ( !iHardVertexBuffer.isInvalid() )
-        {
-            Resource::addListener( vertexbuffer );
-        }
-    }
-}
-
-const HardwareIndexBuffer MeshPrivate::getIndexBuffer() const
-{
-    return HardwareIndexBuffer(iHardIndexBuffer);
-}
-
-void MeshPrivate::setIndexBuffer(const HardwareIndexBuffer& indexbuffer)
-{
-    HardwareIndexBufferHolder newbuf = indexbuffer.lock();
-    
-    if ( newbuf != iHardIndexBuffer )
-    {
-        if ( !iHardIndexBuffer.isInvalid() )
-        {
-            Resource::removeListener( iHardIndexBuffer->getName() );
-        }
-        
-        iHardIndexBuffer = newbuf;
-        iHardBuffersChanged = true;
-        
-        if ( !iHardIndexBuffer.isInvalid() )
-        {
-            Resource::addListener( indexbuffer );
-        }
-    }
-}
-
-bool MeshPrivate::useHardwareBuffers() const
-{
-    return iUseHardwareBuffers;
-}
-
-void MeshPrivate::setUseHardwareBuffers(bool b)
-{
-    iUseHardwareBuffers = b;
-}
-
-bool MeshPrivate::hasSoftwareBuffersChanged() const
-{
-    return iSoftBuffersChanged;
-}
-
-void MeshPrivate::setSoftwareBuffersChanged(bool b)
-{
-    iSoftBuffersChanged = b;
-}
-
-bool MeshPrivate::hasHardwareBuffersChanged() const
-{
-    return iHardBuffersChanged;
-}
-
-void MeshPrivate::setHardwareBuffersChanged(bool b)
-{
-    iHardBuffersChanged = b;
-}
-
-void MeshPrivate::clear()
-{
-    clearSoftwareBuffers();
-    clearHardwareBuffers();
-    
-    iBoundingBox.clear();
-    iSoftBuffersChanged = false;
-    iHardBuffersChanged = false;
-    iUseHardwareBuffers = false;
-    iSoftVertexBufferUpdate = false;
-    iSoftIndexBufferUpdate = false;
-}
-
-void MeshPrivate::clearSoftwareBuffers()
-{
-    iSoftVertexBuffer.reset();
-    iSoftIndexBuffer.reset();
-    iSoftBuffersChanged = false;
-    iSoftVertexBufferUpdate = false;
-    iSoftIndexBufferUpdate = false;
-}
-
-void MeshPrivate::clearHardwareBuffers()
-{
-    iHardVertexBuffer.reset();
-    iHardIndexBuffer.reset();
-    iHardBuffersChanged = false;
-}
-
-const BoundingBox& MeshPrivate::getBoundingBox() const
-{
-    return iBoundingBox;
-}
-
-void MeshPrivate::onUpdateEvent(const Gre::UpdateEvent &e)
-{
-    if ( iSoftVertexBufferUpdate )
-    {
-        if ( !iHardVertexBuffer.isInvalid() )
-        {
-            iHardVertexBuffer->setData( HardwareVertexBufferHolder(iSoftVertexBuffer.get()) );
-        }
-        
-        if ( !iIsBoundingBoxUser && !iSoftVertexBuffer.isInvalid() )
-        {
-            iBoundingBox = iSoftVertexBuffer->getBoundingBox();
-        }
-        
-        iSoftVertexBufferUpdate = false;
-    }
-    
-    if ( iSoftIndexBufferUpdate )
-    {
-        if ( !iHardIndexBuffer.isInvalid() )
-        {
-            iHardIndexBuffer->setData( HardwareIndexBufferHolder(iSoftIndexBuffer.get()) );
-        }
-        
-        iSoftIndexBufferUpdate = false;
-    }
-    
-    iSoftBuffersChanged = false;
+    GreAutolock ; iOriginalFile = filepath ;
 }
 
 // ---------------------------------------------------------------------------------------------------
 
-Mesh::Mesh(const MeshPrivate* pointer)
-: ResourceUser(pointer)
-, SpecializedResourceUser(pointer)
+MeshLoader::MeshLoader ()
 {
     
 }
 
-Mesh::Mesh(const MeshHolder& holder)
-: ResourceUser(holder)
-, SpecializedResourceUser(holder)
-{
-    
-}
-
-Mesh::Mesh(const Mesh& user)
-: ResourceUser(user)
-, SpecializedResourceUser(user)
-{
-    
-}
-
-Mesh::~Mesh() noexcept(false)
-{
-    
-}
-
-const SoftwareVertexBuffer Mesh::getSoftwareVertexBuffer() const
-{
-    auto ptr = lock();
-    if ( ptr )
-        return ptr->getSoftwareVertexBuffer();
-    return SoftwareVertexBuffer::Null;
-}
-
-void Mesh::setSoftwareVertexBuffer(const SoftwareVertexBuffer& softvertexbuffer)
-{
-    auto ptr = lock();
-    if ( ptr )
-        ptr->setSoftwareVertexBuffer(softvertexbuffer);
-}
-
-const SoftwareIndexBuffer Mesh::getSoftwareIndexBuffer() const
-{
-    auto ptr = lock();
-    if ( ptr )
-        return ptr->getSoftwareIndexBuffer();
-    return SoftwareIndexBuffer::Null;
-}
-
-void Mesh::setSoftwareIndexBuffer(const SoftwareIndexBuffer& softindexbuffer)
-{
-    auto ptr = lock();
-    if ( ptr )
-        ptr->setSoftwareIndexBuffer(softindexbuffer);
-}
-
-const HardwareVertexBuffer Mesh::getVertexBuffer() const
-{
-    auto ptr = lock();
-    if ( ptr )
-        return ptr->getVertexBuffer();
-    return HardwareVertexBuffer::Null;
-}
-
-void Mesh::setVertexBuffer(const HardwareVertexBuffer& vertexbuffer)
-{
-    auto ptr = lock();
-    if ( ptr )
-        ptr->setVertexBuffer(vertexbuffer);
-}
-
-const HardwareIndexBuffer Mesh::getIndexBuffer() const
-{
-    auto ptr = lock();
-    if ( ptr )
-        return ptr->getIndexBuffer();
-    return HardwareIndexBuffer::Null;
-}
-
-void Mesh::setIndexBuffer(const HardwareIndexBuffer& indexbuffer)
-{
-    auto ptr = lock();
-    if ( ptr )
-        ptr->setIndexBuffer(indexbuffer);
-}
-
-bool Mesh::useHardwareBuffers() const
-{
-    auto ptr = lock();
-    if ( ptr )
-        return ptr->useHardwareBuffers();
-    return false;
-}
-
-void Mesh::setUseHardwareBuffers(bool b)
-{
-    auto ptr = lock();
-    if ( ptr )
-        ptr->setUseHardwareBuffers(b);
-}
-
-bool Mesh::hasSoftwareBuffersChanged() const
-{
-    auto ptr = lock();
-    if ( ptr )
-        return ptr->hasSoftwareBuffersChanged();
-    return false;
-}
-
-void Mesh::setSoftwareBuffersChanged(bool b)
-{
-    auto ptr = lock();
-    if ( ptr )
-        ptr->setSoftwareBuffersChanged(b);
-}
-
-bool Mesh::hasHardwareBuffersChanged() const
-{
-    auto ptr = lock();
-    if ( ptr )
-        return ptr->hasHardwareBuffersChanged();
-    return false;
-}
-
-void Mesh::setHardwareBuffersChanged(bool b)
-{
-    auto ptr = lock();
-    if ( ptr )
-        ptr->setHardwareBuffersChanged(b);
-}
-
-void Mesh::clear()
-{
-    auto ptr = lock();
-    if ( ptr )
-        ptr->clear();
-}
-
-void Mesh::clearSoftwareBuffers()
-{
-    auto ptr = lock();
-    if ( ptr )
-        ptr->clearSoftwareBuffers();
-}
-
-void Mesh::clearHardwareBuffers()
-{
-    auto ptr = lock();
-    if ( ptr )
-        ptr->clearHardwareBuffers();
-}
-
-const BoundingBox& Mesh::getBoundingBox() const
-{
-    auto ptr = lock();
-    if ( ptr )
-        return ptr->getBoundingBox();
-    throw GreInvalidUserException("Mesh");
-}
-
-Mesh Mesh::Null = Mesh(nullptr);
-
-// ---------------------------------------------------------------------------------------------------
-
-MeshLoader::MeshLoader()
-{
-    
-}
-
-MeshLoader::~MeshLoader()
+MeshLoader::~MeshLoader () noexcept ( false )
 {
     
 }
 
 // ---------------------------------------------------------------------------------------------------
 
-MeshManager::MeshManager()
+MeshHolder MeshManager::CreateSquare ( const Surface & surface )
+{
+    MeshManagerHolder manager = ResourceManager::Get() .getMeshManager() ;
+    
+    if ( manager.isInvalid() )
+    {
+#ifdef GreIsDebugMode
+        GreDebugPretty () << "Please load a MeshManager before using this function." << Gre::gendl;
+#endif
+        return MeshHolder ( nullptr ) ;
+    }
+    
+    return manager->iCreateSquare ( surface ) ;
+}
+
+MeshManager::MeshManager ( )
+: SpecializedResourceManager ( )
 {
     
 }
 
-MeshManager::~MeshManager()
+MeshManager::~MeshManager ( ) noexcept ( false )
 {
     
 }
 
-Mesh MeshManager::createRectangle(const Gre::Surface &surface)
+MeshUser MeshManager::load ( const std::string & name , const std::string & filepath )
 {
-    if ( surface.height > 0 && surface.width > 0 )
+    GreAutolock ;
+    
     {
-        std::string name = std::string ( "MeshRectangle#" ) + std::to_string(iMeshes.size());
-        std::string svbname = name + "/svb";
-        std::string sibname = name + "/sib";
+        MeshUser check = findFirst ( name ) ;
         
-        // To create a Mesh, we have to fill a SoftwareVertexBuffer.
-        
-        SoftwareVertexBufferHolder svbholder = SoftwareVertexBufferHolder ( new SoftwareVertexBufferPrivate(svbname) );
-        
-        if ( !svbholder.isInvalid() )
+        if ( !check.isInvalid() )
         {
-            VertexDescriptor vdesc;
-            vdesc << VertexComponentType::Position;
-            svbholder->setVertexDescriptor(vdesc);
-            
-            VertexPosition* data = (VertexPosition*) new VertexPosition[4];
-            data[0] = VertexPosition ( surface.left ,                 surface.top ,                  0.0f );
-            data[1] = VertexPosition ( surface.left + surface.width , surface.top ,                  0.0f );
-            data[2] = VertexPosition ( surface.left + surface.width , surface.top - surface.height , 0.0f );
-            data[3] = VertexPosition ( surface.left ,                 surface.top - surface.height , 0.0f );
-            
-            svbholder->addData((const char*) data, sizeof(VertexPosition) * 4);
-        }
-        else
-        {
-#ifdef GreIsDebugMode
-            GreDebugPretty() << "SoftwareVertexBuffer '" << svbname << "' couldn't be created." << std::endl;
-#endif
-            return Mesh ( nullptr );
+            return load ( name + "*" , filepath ) ;
         }
         
-        // We also try to fill a SoftwareIndexBuffer.
+        check = findFirstFile ( filepath ) ;
         
-        SoftwareIndexBufferHolder sibholder = SoftwareIndexBufferHolder ( new SoftwareIndexBufferPrivate(sibname) );
-        
-        if ( !sibholder.isInvalid() )
+        if ( !check.isInvalid() )
         {
-            IndexDescriptor idesc;
-            idesc.setType(IndexType::UnsignedInteger);
-            
-            unsigned int data[6] = { 0, 1, 2, 2, 3, 0 };
-            
-            sibholder->setIndexDescriptor(idesc, 0);
-            sibholder->addDataToIndexBatch((const char*) data, sizeof(unsigned int) * 6, 0);
-        }
-        else
-        {
-#ifdef GreIsDebugMode
-            GreDebugPretty() << "SoftwareIndexBuffer '" << sibname << "' couldn't be created." << std::endl;
-#endif
-            return Mesh ( nullptr );
-        }
-        
-        // Now we can add those two HardwareBuffer to a Mesh object.
-        
-        MeshHolder rectangle = MeshHolder ( new MeshPrivate(name) );
-        
-        if ( !rectangle.isInvalid() )
-        {
-            rectangle->setSoftwareVertexBuffer(SoftwareVertexBuffer(svbholder));
-            rectangle->setSoftwareIndexBuffer(SoftwareIndexBuffer(sibholder));
-            
-            // Everything is set, just add this Mesh to the list and return it.
-            
-            iMeshes.add(rectangle);
-            return Mesh ( rectangle );
-        }
-        else
-        {
-#ifdef GreIsDebugMode
-            GreDebugPretty() << "Mesh '" << name << "' couldn't be created." << std::endl;
-#endif
-            return Mesh ( nullptr );
+            return check ;
         }
     }
     
-    else
+    MeshLoader * bestloader = iFindBestLoader ( filepath ) ;
+    
+    if ( !bestloader )
     {
 #ifdef GreIsDebugMode
-        GreDebugPretty() << "Can't create a Mesh Resource using null Surface." << std::endl;
+        GreDebugPretty () << "No loader found for filepath '" << filepath << "'." << Gre::gendl ;
 #endif
-        return Mesh ( nullptr );
-    }
-}
-
-Mesh MeshManager::load(const MeshHolder &holder)
-{
-    if ( !holder.isInvalid() )
-    {
-        if ( isLoaded(holder->getName()) )
-        {
-#ifdef GreIsDebugMode
-            GreDebugPretty() << "Resource Mesh '" << holder->getName() << "' has an already registered name." << std::endl;
-#endif
-            return Mesh ( nullptr );
-        }
-        
-        iMeshes.add(holder);
-        
-#ifdef GreIsDebugMode
-        GreDebugPretty() << "Resource Mesh '" << holder->getName() << "' registered." << std::endl;
-#endif
-        
-        return Mesh ( holder );
+        return MeshUser ( nullptr ) ;
     }
     
-    else
+    MeshHolder holder = bestloader->load ( name , filepath ) ;
+    
+    if ( holder.isInvalid() )
     {
 #ifdef GreIsDebugMode
-        GreDebugPretty() << "'holder' parameter is invalid." << std::endl;
+        GreDebugPretty () << "Filepath '" << filepath << "' could not be loaded." << Gre::gendl ;
 #endif
-        return Mesh ( nullptr );
+        return MeshUser ( nullptr ) ;
     }
+    
+    MeshHolder convertedmesh = iConvertMesh ( holder ) ;
+    
+    if ( convertedmesh.isInvalid() )
+    {
+#ifdef GreIsDebugMode
+        GreDebugPretty () << "Filepath '" << filepath << "' could not be converted to Gre::Mesh." << Gre::gendl ;
+#endif
+        return MeshUser ( nullptr ) ;
+    }
+    
+    iHolders.add ( convertedmesh ) ;
+    addListener ( MeshUser(convertedmesh) ) ;
+    
+    return convertedmesh ;
 }
 
-Mesh MeshManager::load(const std::string &name, const std::string &filepath)
+MeshUser MeshManager::findFirstFile(const std::string &filepath)
 {
-    if ( !name.empty() )
+    for ( auto mesh : iHolders ) {
+        if ( !mesh.isInvalid() && mesh->getOriginalFilepath() == filepath )
+            return mesh ;
+        
+    }
+    
+    return MeshUser ( nullptr ) ;
+}
+
+MeshHolder MeshManager::iConvertMesh ( const MeshHolder & srcmesh ) const
+{
+    return srcmesh ;
+}
+
+MeshHolder MeshManager::iCreateSquare ( const Surface & surface )
+{
+    float squarepos [] =
     {
-        // Check if the name is already registered.
-        
-        {
-            if ( isLoaded(name) )
-            {
-                // Name is already registered. Append a '*' and recall this function.
-                
-                return load(name + '*', filepath);
-            }
-        }
-        
-        if ( !filepath.empty() )
-        {
-            // Iterates through the Loader to find one able to load this file.
-            
-            auto loadermap = iLoaders.getLoaders();
-            
-            for ( auto it = loadermap.begin(); it != loadermap.end(); it++ )
-            {
-                if ( it->second->isLoadable(filepath) )
-                {
-                    // File is loadable by this loader, so use it.
-                    
-                    MeshHolder holder = it->second->load(name, filepath);
-                    iMeshes.add(holder);
-                    
-#ifdef GreIsDebugMode
-                    GreDebugPretty() << "Resource '" << name << "' registered." << std::endl;
-#endif
-                    
-                    return Mesh ( holder );
-                }
-            }
-            
-#ifdef GreIsDebugMode
-            GreDebugPretty() << "No loader found for Resource '" << name << "'." << std::endl;
-#endif
-            return Mesh ( nullptr );
-        }
-        
-        else
-        {
-#ifdef GreIsDebugMode
-            GreDebugPretty() << "No filepath given to load Resource '" << name << "'." << std::endl;
-#endif
-            return Mesh ( nullptr );
-        }
+        static_cast<float>(surface.top) , static_cast<float>(surface.left) , 0.0f ,
+        static_cast<float>(surface.top) , static_cast<float>(surface.left + surface.width) , 0.0f ,
+        static_cast<float>(surface.top + surface.height) , static_cast<float>(surface.left + surface.width) , 0.0f ,
+        static_cast<float>(surface.top + surface.height) , static_cast<float>(surface.left) , 0.0f
+    } ;
+    
+    unsigned short squaretri [] =
+    {
+        0 , 1 , 2 ,
+        2 , 3 , 0
+    } ;
+    
+    // Create our Mesh .
+    
+    MeshHolder mesh = MeshHolder ( new Mesh () ) ;
+    
+    // Creates the SoftwareVertexBuffer .
+    
+    SoftwareVertexBufferHolder vbuf = SoftwareVertexBufferHolder ( new SoftwareVertexBuffer("") ) ;
+    
+    VertexDescriptor vdesc ; vdesc.addComponent ( VertexComponentType::Position ) ;
+    vbuf->setVertexDescriptor ( vdesc ) ;
+    
+    vbuf->addData ( (const char*) squarepos , 4 * sizeof(float) ) ;
+    mesh->addVertexBuffer ({ vbuf , true }) ;
+    
+    // Creates the SoftwareIndexBuffer .
+    
+    SoftwareIndexBufferHolder ibuf = SoftwareIndexBufferHolder ( new SoftwareIndexBuffer("") ) ;
+    
+    IndexDescriptor idesc ; idesc.setType ( IndexType::UnsignedShort ) ;
+    ibuf->setIndexDescriptor ( idesc , 0 ) ;
+    
+    ibuf->addData ( (const char*) squaretri , sizeof ( unsigned short ) * 6 ) ;
+    mesh->setIndexBuffer ( ibuf ) ;
+    
+    // Try to convert this mesh . If we did not success , just return the not converted mesh .
+    
+    MeshHolder converted = iConvertMesh ( mesh ) ;
+    
+    if ( converted.isInvalid() )
+    {
+        iSquares [surface] = mesh ;
+        return mesh ;
     }
     
     else
     {
-#ifdef GreIsDebugMode
-        GreDebugPretty() << "No name given for Resource's file '" << filepath << "'." << std::endl;
-#endif
-        return Mesh ( nullptr );
+        iSquares [surface] = converted ;
+        return converted ;
     }
-}
-
-bool MeshManager::isLoaded(const std::string &name) const
-{
-    if ( !name.empty() )
-    {
-        for ( auto holder : iMeshes )
-        {
-            if ( !holder.isInvalid() )
-            {
-                if ( holder->getName() == name )
-                {
-                    return true;
-                }
-            }
-        }
-        
-#ifdef GreIsDebugMode
-        GreDebugPretty() << "Resource Mesh '" << name << "' not found." << std::endl;
-#endif
-        
-        return false;
-    }
-    
-    else
-    {
-#ifdef GreIsDebugMode
-        GreDebugPretty() << "Invalid name given." << std::endl;
-#endif
-        return false;
-    }
-}
-
-Mesh MeshManager::get(const std::string &name, const std::string &filepath)
-{
-    if ( !name.empty() )
-    {
-        // Check if already loaded.
-        
-        for ( auto holder : iMeshes )
-        {
-            if ( !holder.isInvalid() )
-            {
-                if ( holder->getName() == name )
-                {
-                    return Mesh ( holder );
-                }
-            }
-        }
-        
-        // If we are at this point, the 'name' Mesh was not found. Try to load using
-        // the 'filepath'.
-        
-        return load(name, filepath);
-    }
-    
-    else
-    {
-#ifdef GreIsDebugMode
-        GreDebugPretty() << "'name' parameter is empty." << std::endl;
-#endif
-        return Mesh ( nullptr );
-    }
-}
-
-const Mesh MeshManager::get(const std::string &name) const
-{
-    if ( !name.empty() )
-    {
-        for ( auto holder : iMeshes )
-        {
-            if ( !holder.isInvalid() )
-            {
-                if ( holder->getName() == name )
-                {
-                    return Mesh ( holder );
-                }
-            }
-        }
-        
-#ifdef GreIsDebugMode 
-        GreDebugPretty() << "Resource Mesh '" << name << "' not found." << std::endl;
-#endif
-        
-        return Mesh ( nullptr );
-    }
-    
-    else
-    {
-#ifdef GreIsDebugMode
-        GreDebugPretty() << "'name' parameter is empty." << std::endl;
-#endif
-        return Mesh ( nullptr );
-    }
-}
-
-void MeshManager::unload(const std::string &name)
-{
-    if ( !name.empty() )
-    {
-        for ( auto it = iMeshes.begin(); it != iMeshes.end(); it++ )
-        {
-            auto holder = (*it);
-            
-            if ( !holder.isInvalid() )
-            {
-                if ( holder->getName() == name )
-                {
-                    iMeshes.erase(it);
-#ifdef GreIsDebugMode
-                    GreDebugPretty() << "Resource Mesh '" << name << "' unloaded." << std::endl;
-#endif
-                    return;
-                }
-            }
-        }
-        
-#ifdef GreIsDebugMode
-        GreDebugPretty() << "Resource Mesh '" << name << "' not found." << std::endl;
-#endif
-    }
-}
-
-void MeshManager::clearMeshes()
-{
-    iMeshes.clear();
-}
-
-MeshLoaderFactory& MeshManager::getLoaderFactory()
-{
-    return iLoaders;
-}
-
-const MeshLoaderFactory& MeshManager::getLoaderFactory() const
-{
-    return iLoaders;
-}
-
-void MeshManager::clear()
-{
-    iMeshes.clear();
-    iLoaders.clear();
 }
 
 GreEndNamespace

@@ -31,34 +31,10 @@
  */
 
 #include "ResourceManager.h"
-#include "../inc/ResourceManager.h"
 
 GreBeginNamespace
 
 ResourceManager* iManager = nullptr;
-
-// ---------------------------------------------------------------------------------------------------
-
-ResourceManager::NameGenerator::NameGenerator()
-{
-    
-}
-
-ResourceManager::NameGenerator::~NameGenerator()
-{
-    
-}
-
-std::string ResourceManager::NameGenerator::generateName(const std::string& base)
-{
-    if(iUsedNames.find(base) == iUsedNames.end()) {
-        iUsedNames[base] = 1;
-        return base;
-    } else {
-        iUsedNames[base]++;
-        return base + std::to_string(iUsedNames[base] - 1);
-    }
-}
 
 // ---------------------------------------------------------------------------------------------------
 
@@ -69,7 +45,7 @@ void ResourceManager::Create()
 
 void ResourceManager::Destroy()
 {
-    if(iManager)
+    if( iManager )
     {
         delete iManager;
     }
@@ -77,7 +53,7 @@ void ResourceManager::Destroy()
 #ifdef GreIsDebugMode
     else
     {
-        GreDebugPretty() << "Called ResourceManager::Destroy() more than once, or before ResourceManager::Create()." << std::endl;
+        GreDebugPretty() << "Called ResourceManager::Destroy() more than once, or before ResourceManager::Create()." << Gre::gendl;
     }
 #endif
 }
@@ -90,12 +66,33 @@ ResourceManager& ResourceManager::Get()
 // ---------------------------------------------------------------------------------------------------
 
 ResourceManager::ResourceManager()
-: Gre::Resource("DefaultResourceManager")
-, iWindowManager( new WindowManager() )
+: Lockable ( )
 , iRendererManager( new RendererManager() )
+, iWindowManager( nullptr )
 , iRenderSceneManager( new RenderSceneManager() )
+, iMaterialManager ( new MaterialManager() )
+, iPluginManager ( new PluginManager() )
+, iMeshManager ( nullptr )
+, iAnimatorManager ( new AnimatorManager() )
+, iCameraManager ( new CameraManager() )
+, iTextureManager( nullptr )
+, iRenderContextManager( nullptr )
+, iProgramManager( nullptr )
+, iApplicationFactory ()
+, iGlobalEventDispatcher( new EventDispatcher("GlobalEventDispatcher") )
 {
+    GreAutolock ;
     
+#ifdef GreIsDebugMode
+    
+    if ( iGlobalEventDispatcher.isInvalid() )
+    {
+        throw GreConstructorException("ResourceManager", "Error loading 'iGlobalEventDispatcher'") ;
+    }
+    
+#endif
+    
+    iGlobalEventDispatcher->start() ;
 }
 
 ResourceManager::~ResourceManager() noexcept(false)
@@ -103,41 +100,144 @@ ResourceManager::~ResourceManager() noexcept(false)
     
 }
 
-ResourceHolder ResourceManager::loadEmptyResource(const std::string& name)
+void ResourceManager::unload ()
 {
-    ResourceHolder holder (new Resource(name));
+    GreAutolock ;
     
-#ifdef GreIsDebugMode
-    if(!holder)
-    {
-        GreDebugPretty() << "Error allocating new Resource." << std::endl;
-    }
-#endif
-    
-    return holder;
+    iCameraManager->unload();
+    iAnimatorManager->unload();
+    iMaterialManager->unload();
+    iMeshManager->unload();
+    iRenderSceneManager->unload();
+    iWindowManager->unload();
+    iRendererManager->unload();
+    iPluginManager->unload();
 }
 
-void ResourceManager::clear ()
+void ResourceManager::setApplicationFactory(const ApplicationLoaderFactory &appfactory)
 {
-    iWindowManager->clear();
-    iRendererManager->clear();
-    iRenderSceneManager->clear();
-    iMaterialManager.clear();
-    iPluginManager.clear();
+    GreAutolock ; iApplicationFactory = appfactory ;
 }
 
-unsigned ResourceManager::getResourceUsage() const
+ApplicationLoaderFactory & ResourceManager::getApplicationFactory()
 {
-    return Pool<Pools::Resource> :: Get().getCurrentSize();
+    GreAutolock ; return iApplicationFactory ;
 }
 
-ResourceManager::NameGenerator& ResourceManager::getNameGenerator()
+void ResourceManager::setRendererManager(const RendererManagerHolder &rendmanager)
 {
-    return iNameGenerator;
+    GreAutolock ; iRendererManager = rendmanager ;
+}
+
+RendererManagerHolder ResourceManager::getRendererManager()
+{
+    GreAutolock ; return iRendererManager ;
+}
+
+void ResourceManager::setWindowManager(const WindowManagerHolder &winmanager)
+{
+    GreAutolock ; iWindowManager = winmanager ;
+}
+
+WindowManagerHolder ResourceManager::getWindowManager()
+{
+    GreAutolock ; return iWindowManager ;
+}
+
+void ResourceManager::setRenderSceneManager(const RenderSceneManagerHolder &rsceneholder)
+{
+    GreAutolock ; iRenderSceneManager = rsceneholder ;
+}
+
+RenderSceneManagerHolder ResourceManager::getRenderSceneManager()
+{
+    GreAutolock ; return iRenderSceneManager ;
+}
+
+void ResourceManager::setMeshManager(const MeshManagerHolder &mmholder)
+{
+    GreAutolock ; iMeshManager = mmholder ;
+}
+
+MeshManagerHolder ResourceManager::getMeshManager()
+{
+    GreAutolock ; return iMeshManager ;
+}
+
+void ResourceManager::setAnimatorManager(const AnimatorManagerHolder &animholder)
+{
+    GreAutolock ; iAnimatorManager = animholder ;
+}
+
+AnimatorManagerHolder ResourceManager::getAnimatorManager()
+{
+    GreAutolock ; return iAnimatorManager ;
+}
+
+void ResourceManager::setCameraManager(const CameraManagerHolder &camholder)
+{
+    GreAutolock ; iCameraManager = camholder ;
+}
+
+CameraManagerHolder ResourceManager::getCameraManager()
+{
+    GreAutolock ; return iCameraManager ;
+}
+
+void ResourceManager::setTextureManager ( const TextureManagerHolder & manager )
+{
+    GreAutolock ; iTextureManager = manager ;
+}
+
+TextureManagerHolder ResourceManager::getTextureManager()
+{
+    GreAutolock ; return iTextureManager ;
+}
+
+void ResourceManager::setRenderContextManager(const RenderContextManagerHolder &manager)
+{
+    GreAutolock ; iRenderContextManager = manager ;
+}
+
+RenderContextManagerHolder ResourceManager::getRenderContextManager()
+{
+    GreAutolock ; return iRenderContextManager ;
+}
+
+void ResourceManager::setHardwareProgramManager(const HardwareProgramManagerHolder &manager)
+{
+    GreAutolock ; iProgramManager = manager ;
+}
+
+HardwareProgramManagerHolder ResourceManager::getHardwareProgramManager()
+{
+    GreAutolock ; return iProgramManager ;
+}
+
+void ResourceManager::setMaterialManager(const MaterialManagerHolder &manager)
+{
+    GreAutolock ; iMaterialManager = manager ;
+}
+
+MaterialManagerHolder ResourceManager::getMaterialManager()
+{
+    GreAutolock ; return iMaterialManager ;
+}
+
+void ResourceManager::setPluginManager(const PluginManagerHolder &manager)
+{
+    GreAutolock ; iPluginManager = manager ;
+}
+
+PluginManagerHolder ResourceManager::getPluginManager()
+{
+    GreAutolock ; return iPluginManager ;
 }
 
 int ResourceManager::loadPluginsIn(const std::string &dirname)
 {
+    GreAutolock ;
+    
     int res = 0;
     DIR *dir;
     struct dirent *ent;
@@ -151,17 +251,17 @@ int ResourceManager::loadPluginsIn(const std::string &dirname)
             if (d_name == "." || d_name == "..")
                 continue;
             
-            Plugin plugin = iPluginManager.load(std::string(ent->d_name) + "-plugin", dirname + "/" + ent->d_name);
+            PluginUser plugin = iPluginManager->load(std::string(ent->d_name) + "-plugin", dirname + "/" + ent->d_name);
             
 #ifdef GreIsDebugMode
             if( plugin.isInvalid() )
             {
-                GreDebugPretty() << "Couldn't load plugin '" << ent->d_name << "'." << std::endl;
+                GreDebugPretty() << "Couldn't load plugin '" << ent->d_name << "'." << Gre::gendl;
                 continue;
             }
 #endif
             
-            plugin.start();
+            plugin.lock() ->start();
         }
         
         closedir (dir);
@@ -175,269 +275,6 @@ int ResourceManager::loadPluginsIn(const std::string &dirname)
     }
     
     return res;
-}
-
-void ResourceManager::setCloseBehaviour(const CloseBehaviour &behaviour)
-{
-    iCloseBehaviour = behaviour;
-}
-
-void ResourceManager::addLoopBehaviour(LoopBehaviour behaviour)
-{
-    iLoopBehaviours.add(behaviour);
-}
-
-void ResourceManager::clearLoopBehaviour()
-{
-    iLoopBehaviours.clear();
-}
-
-void ResourceManager::stop()
-{
-    iMustStopLoop = true;
-}
-
-void ResourceManager::loop()
-{
-    iMustStopLoop = false;
-    
-    while( !iMustStopLoop )
-    {
-        _updateElapsedTime();
-        
-        UpdateEvent updateEvent(this, iElapsedTime);
-        
-        // The 'ResourceManager::loop()' function only updates the 'logical' objects. Renderers are updated
-        // using the 'Renderer::launch()' function. To draw a RenderTarget, use 'Renderer::registerTarget()' to
-        // enable it to drawing.
-        
-        // This loop only updates every Windows, and every RenderSceneManager.
-        
-        // First, we update every Windows objects.
-        WindowHolderList whlist = iWindowManager->getWindows();
-        
-        if(whlist.empty() && iCloseBehaviour == CloseBehaviour::AllWindowClosed)
-        {
-            iMustStopLoop = true;
-        }
-        
-        else
-        {
-            if( !whlist.empty() )
-            {
-                for(auto wholder : whlist)
-                {
-                    if(wholder)
-                    {
-                        if(wholder->hasBeenClosed())
-                        {
-                            // Window has been closed, we can destroy it.
-                            iWindowManager->remove(wholder->getName());
-                        }
-                        
-                        else
-                        {
-                            // For now , we have to lock the mutex here to be sure any operations are made
-                            // within a valid mutex.
-                            
-                            wholder->lockGuard();
-                            
-                            wholder->onEvent(updateEvent);
-                            
-                            wholder->unlockGuard();
-                            
-                            iPerWindowBehaviours.call();
-                        }
-                    }
-                }
-            }
-            
-            iLoopBehaviours.call();
-        }
-        
-        // Update also the RenderScene's objects.
-        RenderSceneHolderList smhlist = iRenderSceneManager->getAll();
-        
-        if( !smhlist.empty() )
-        {
-            for(auto smholder : smhlist)
-            {
-                if( smholder )
-                {
-                    smholder->onEvent(updateEvent);
-                }
-            }
-        }
-        
-        // Finally we send update event to every Listeners.
-        sendEvent(updateEvent);
-    }
-}
-
-KeyboardLoader& ResourceManager::getKeyboardLoader()
-{
-    return iKeyboardLoader;
-}
-
-KeyboardHolder ResourceManager::createKeyboard(const std::string &name)
-{
-    return loadResourceFrom<KeyboardHolder>(getKeyboardLoader() , name);
-}
-
-void ResourceManager::_updateElapsedTime()
-{
-    if(iLastUpdate != iLastUpdate.min())
-    {
-        UpdateTime now = UpdateChrono::now();
-        iElapsedTime = std::chrono::duration_cast<std::chrono::nanoseconds>(now - iLastUpdate);
-        iLastUpdate = now;
-    }
-    else
-    {
-        iLastUpdate = UpdateChrono::now();
-    }
-}
-
-MaterialManager& ResourceManager::getMaterialManager()
-{
-    return iMaterialManager;
-}
-
-const MaterialManager& ResourceManager::getMaterialManager() const
-{
-    return iMaterialManager;
-}
-
-RendererManager& ResourceManager::getRendererManager()
-{
-    return * iRendererManager.get();
-}
-
-const RendererManager& ResourceManager::getRendererManager() const
-{
-    return * iRendererManager.get();
-}
-
-RenderSceneManager& ResourceManager::getRenderSceneManager()
-{
-    return * iRenderSceneManager.get();
-}
-
-const RenderSceneManager& ResourceManager::getRenderSceneManager() const
-{
-    return * iRenderSceneManager.get();
-}
-
-MeshManager& ResourceManager::getMeshManager()
-{
-    return iMeshManager;
-}
-
-const MeshManager& ResourceManager::getMeshManager() const
-{
-    return iMeshManager;
-}
-
-ApplicationLoaderFactory& ResourceManager::getApplicationFactory()
-{
-    return iApplicationFactory ;
-}
-
-// ---------------------------------------------------------------------------------------------------
-
-std::string ResourceManager::Helper::ChooseRenderer(RendererLoaderFactory& rFactory)
-{
-    // First of all, you should create the Renderer which will render your Scene.
-    StringList renderers = rFactory.getLoadersName();
-    GreDebugPretty() << "Please choose a Renderer in the List : " << std::endl;
-    GreDebugPretty() << Gre::DebugListNumeroted(renderers) << std::endl;
-    GreDebugPretty() << ":> ";
-    
-    int rNum = Gre::DebugGetNumber();
-    return renderers[rNum-1];
-}
-
-Renderer ResourceManager::Helper::LoadRenderer(const std::string& rname, const std::string& lname, RendererLoaderFactory& rFactory)
-{
-    RendererLoader* rLoader = rFactory.get(lname);
-    if(rLoader)
-    {
-        RendererHolder holder = ResourceManager::Get().loadResourceWith<RendererHolder>(rLoader, rname);
-        
-#ifdef GreIsDebugMode
-        if(!holder)
-        {
-            GreDebugPretty() << "Couldn't load Renderer '" << rname << "'." << std::endl;
-        }
-#endif
-        
-        ResourceManager::Get().getRendererManager().load(holder);
-        Renderer user(holder);
-        
-        // Another method would have been :
-        // Renderer user = ResourceManager::Get().getRendererManager().create(rname, rLoader);
-        
-        return user;
-    }
-    
-    else
-    {
-#ifdef GreIsDebugMode
-        GreDebugPretty() << "Loader '" << lname << "' not found." << std::endl;
-#endif
-        
-        return Renderer::Null;
-    }
-}
-
-std::string ResourceManager::Helper::ChooseWindowLoader(WindowLoaderFactory& wFactory)
-{
-    StringList windowloaders = wFactory.getLoadersName();
-    GreDebugPretty() << "Please choose a Window Loader in the List : " << std::endl;
-    GreDebugPretty() << Gre::DebugListNumeroted(windowloaders) << std::endl;
-    GreDebugPretty() << ":> ";
-    
-    int wNum = Gre::DebugGetNumber();
-    return windowloaders[wNum-1];
-}
-
-Window ResourceManager::Helper::LoadWindow(const std::string& wname, const std::string& lname, WindowLoaderFactory& wFactory, const Surface& param)
-{
-    WindowLoader* wLoader = wFactory.get(lname);
-    if(wLoader)
-    {
-        WindowHolder holder = ResourceManager::Get().loadResourceWith<WindowHolder>(wLoader, wname, param.left, param.top, param.width, param.height);
-        
-#ifdef GreIsDebugMode
-        if(!holder)
-        {
-            GreDebugPretty() << "Couldn't load Window '" << wname << "'." << std::endl;
-        }
-#endif
-        
-        Window user(holder);
-        ResourceManager::Get().getWindowManager().load(holder);
-        
-        // Another method would have been :
-        // Window user = ResourceManager::Get().getWindowManager().create(wname, wLoader, param.left, param.top, param.width, param.height);
-        
-        return user;
-    }
-    
-    else
-    {
-        return Window::Null;
-    }
-}
-
-WindowManager& ResourceManager::getWindowManager()
-{
-    return * iWindowManager.get();
-}
-
-const WindowManager& ResourceManager::getWindowManager() const
-{
-    return * iWindowManager.get();
 }
 
 GreEndNamespace

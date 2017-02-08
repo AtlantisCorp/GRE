@@ -35,7 +35,7 @@
 GreBeginNamespace
 
 Viewport::Viewport(const std::string& name, float top, float left, float width, float height, bool activated)
-: _mName(name), _mBorderTop(top), _mBorderLeft(left), _mBorderWidth(width), _mBorderHeight(height), _mActivated(activated), _mScene(RenderScene::Null)
+: _mName(name), _mActivated(activated), _mBorderWidth(width), _mBorderHeight(height), _mBorderTop(top), _mBorderLeft(left)
 {
     _mSurface.height = 0;
     _mSurface.left = 0;
@@ -43,7 +43,7 @@ Viewport::Viewport(const std::string& name, float top, float left, float width, 
     _mSurface.width = 0;
 }
 
-Viewport::~Viewport()
+Viewport::~Viewport() noexcept ( false )
 {
     
 }
@@ -57,7 +57,6 @@ Viewport& Viewport::operator= (const Viewport& rhs)
     _mBorderLeft = rhs._mBorderLeft;
     _mBorderTop = rhs._mBorderTop;
     _mSurface = rhs._mSurface;
-    _mScene = rhs._mScene;
     return *this;
 }
 
@@ -82,21 +81,6 @@ bool Viewport::isActivated() const
 const Surface& Viewport::getSurface() const
 {
     return _mSurface;
-}
-
-void Viewport::selectScene(const Gre::RenderScene &scene)
-{
-    _mScene = scene;
-}
-
-bool Viewport::hasScene() const
-{
-    return !_mScene.isExpired();
-}
-
-const RenderScene& Viewport::getScene() const
-{
-    return _mScene;
 }
 
 const std::list<Viewport> Viewport::EmptyList = std::list<Viewport>();

@@ -33,9 +33,14 @@ THE SOFTWARE.
 #ifndef GRE_Scene_h
 #define GRE_Scene_h
 
+#include "SpecializedResourceManager.h"
 #include "SceneNode.h"
 #include "Camera.h"
 #include "Pass.h"
+
+#include "RenderTarget.h"
+#include "Technique.h"
+#include "Renderer.h"
 
 GreBeginNamespace
 
@@ -84,40 +89,24 @@ public:
 //////////////////////////////////////////////////////////////////////
 /// @brief A Generic Base Scene object.
 ///
-/// Pass Management : The RenderScene object automaticaly creates a Default
-/// PassPurpose::First Pass object. This Pass normally should only draws
-/// every objects in the Scene, according to the active Camera, with a
-/// pass-through HardwareProgram. But this behaviour is not guaranteed.
+/// The RenderScene object manages a set of RenderNode , a Camera , and
+/// creates/modify RenderPass object when queried by the Renderer.
 ///
-/// Rendering Notes : Render is done by giving the Renderer the list of Pass
-/// the Renderer should render. Those Pass have all required informations 
-/// for the Renderer to render the RenderScene.
+/// ### Managing RenderNode
 ///
-/// Camera Management : Cameras can be created as freestanding objects. You can
-/// connect a Camera to a RenderNode using 'Camera::connectRenderNode()',
-/// this RenderNode will be available as a RenderNodeHolder in your Camera
-/// class.
+/// Creates a RenderNode using '::createNode()' . Configure it and then ,
+/// adds it to the Node's tree using '::addNode()' . The RenderNode will be
+/// added to the root node.
 ///
-/// You should create a RenderNode using 'RenderScene::createNode()'. This
-/// RenderNode will not be connected to any other RenderNode. Set a Mesh,
-/// set its position ( and other Transformation properties ), and add it
-/// to the RenderScene using 'RenderScene::addNode()'. This will add the
-/// RenderNode to the Root RenderNode. If the RenderNode given is not
-/// acceptable to the Root Node ( 'iParent' property is still invalid ),
-/// you can change the Root Node by using 'RenderScene::setRoot()'.
+/// ### Managing rendering
 ///
-/// RenderNodes updating is managed by the RenderScene object. The
-/// RenderSceneManager updates each RenderScene, those will update only
-/// the Root Node which will update its children, ... Add some custom
-/// behaviours when updating a RenderNode using 'Resource::addAction()'
-/// functions, or 'Resource::onNextEvent()'.
-///
-/// Rendering particular RenderNode for a particular Pass : Overwrite the
-/// 'Pass::isRenderNodeDrawable()' function to filter RenderNodes returned
-/// by the 'RenderScene::findNodesForPass()' function.
+/// The Rendering is done by multiple RenderPass to multiple Framebuffers.
+/// Those Pass can have different HardwarePrograms. They also can affect
+/// only particular RenderNode. You can create a specific Pass for a
+/// RenderNode using '::createNodePass()' .
 ///
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC RenderScenePrivate : public Resource
+class DLL_PUBLIC RenderScene : public Resource
 {
 public:
     
@@ -125,161 +114,105 @@ public:
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    RenderScenePrivate(const std::string& name);
+    RenderScene(const std::string& name);
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    virtual ~RenderScenePrivate();
+    virtual ~RenderScene();
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the Root RenderNode.
     //////////////////////////////////////////////////////////////////////
-    virtual const RenderNodeHolder& getRootNode() const;
+    virtual const RenderNodeUser getRootNode() const;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Changes the Root RenderNode and returns the new Root.
     /// Check the return value with the given RenderNode to check if the
     /// Root Node has been successfully changed to your RenderNode.
     //////////////////////////////////////////////////////////////////////
-    virtual const RenderNodeHolder& setRootNode ( const RenderNodeHolder& rendernode );
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Creates a new RenderNode.
-    //////////////////////////////////////////////////////////////////////
-    virtual RenderNodeHolder createNode() const;
+    virtual const RenderNodeHolder & setRootNode ( const RenderNodeHolder & rendernode );
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Creates a new RenderNode with given name.
+    /// The returned RenderNode is not added into the Scene tree. You have to
+    /// use 'addNode()'. The holder returned by this function own the node.
+    /// @remarks If 'name' is empty , "DefaultNode" will be used.
     //////////////////////////////////////////////////////////////////////
-    virtual RenderNodeHolder createNodeWithName ( const std::string& name ) const;
+    virtual RenderNodeHolder createNode ( const std::string & name = std::string() ) const;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Add a RenderNode to this Scene.
     /// If the RenderNode couldn't be added, its 'iParent' property will
     /// still be invalid.
     //////////////////////////////////////////////////////////////////////
-    virtual void addNode ( const RenderNodeHolder& rendernode );
+    virtual void addNode ( const RenderNodeHolder & rendernode );
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Removes the given RenderNode from this Scene.
     //////////////////////////////////////////////////////////////////////
-    virtual void removeNode ( RenderNodeIdentifier identifier );
+    virtual void removeNode ( const RenderNodeHolder & rendernode );
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Finds a RenderNode with its identifier.
+    /// @brief Removes the given RenderNode but not its children.
     //////////////////////////////////////////////////////////////////////
-    virtual RenderNodeHolder findNode ( RenderNodeIdentifier identifier );
+    virtual void removeNodeNoChildren ( const RenderNodeHolder & holder ) ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Finds a RenderNode with its identifier.
+    /// @brief Removes the RenderNode identified by the given identifier.
     //////////////////////////////////////////////////////////////////////
-    virtual const RenderNodeHolder findNode ( RenderNodeIdentifier identifier ) const;
+    virtual void removeNodeFromIdentifier ( const ResourceIdentifier & identifier ) ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns a list of RenderNode, visible by the given Camera
-    /// object, and sorted with the given filter.
+    /// @brief Finds a RenderNode from its identifier and returns its
+    /// holder.
     //////////////////////////////////////////////////////////////////////
-    virtual RenderNodeHolderList findNodes ( const CameraHolder& camera , const RenderSceneFilter& filter ) const;
+    virtual RenderNodeHolder findHolder ( const ResourceIdentifier & identifier ) ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns a list of RenderNode, visible by the given Camera
-    /// object, sorted with the given filter and by the given Pass.
-    ///
-    /// This is a slow function , because it has to get RenderNodes visible
-    /// by the CameraHolder, throw objects not for given pass , and then
-    /// sort those objects.
+    /// @brief Finds a RenderNode from its identifier.
     //////////////////////////////////////////////////////////////////////
-    virtual RenderNodeHolderList findNodesForPass ( PassNumber passnumber , const CameraHolder& camera , const RenderSceneFilter& filter ) const;
+    virtual RenderNodeUser findNode ( const ResourceIdentifier & identifier ) ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Create a Default Pass given its name and number.
-    /// If passNumber is already taken, return Pass::Null.
+    /// @brief Finds a RenderNode from its identifier.
     //////////////////////////////////////////////////////////////////////
-    virtual Pass createAndAddPass ( const std::string& name , const PassNumber& passNumber );
+    virtual const RenderNodeUser findNode ( const ResourceIdentifier & identifier ) const ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Adds given custom created pass.
-    /// It may return Pass::Null if an error occured.
+    /// @brief Draw the RenderScene to the selected RenderTarget.
     //////////////////////////////////////////////////////////////////////
-    virtual Pass addPass ( const PassHolder& customPass );
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the first Pass with given name.
-    //////////////////////////////////////////////////////////////////////
-    virtual Pass getPassByName ( const std::string& name );
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the pass at given number.
-    //////////////////////////////////////////////////////////////////////
-    virtual Pass getPassByNumber ( const PassNumber& passNumber );
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns a PassHolder from given PassNumber.
-    //////////////////////////////////////////////////////////////////////
-    virtual PassHolder getPassHolder ( const PassNumber& passnumber );
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns a PassHolder from given PassNumber.
-    //////////////////////////////////////////////////////////////////////
-    virtual const PassHolder getPassHolder ( const PassNumber& passnumber ) const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Removes the first Pass with given name.
-    //////////////////////////////////////////////////////////////////////
-    virtual void removePassByName ( const std::string& name );
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Removes the Pass with given number.
-    //////////////////////////////////////////////////////////////////////
-    virtual void removePassByNumber ( const PassNumber& passNumber );
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns every active Pass, sorted by PassNumber from first
-    /// to last.
-    //////////////////////////////////////////////////////////////////////
-    virtual PassHolderList getActivePasses() const;
+    virtual void draw ( const EventHolder& elapsed ) const ;
     
 protected:
     
-    /// @brief Holds every Pass in the Scene.
-    PassHolderList iPasses;
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Draw the main technique or sub-techniques ( viewports ) .
+    //////////////////////////////////////////////////////////////////////
+    virtual void drawTechnique ( const TechniqueHolder& technique , const EventHolder& elapsed ) const ;
+    
+protected:
     
     /// @brief The Root RenderNode.
-    RenderNodeHolder iRootNode;
+    RenderNodeHolder iRootNode ;
+    
+    /// @brief RenderTarget we want to draw to.
+    RenderTargetHolder iRenderTarget ;
+    
+    /// @brief The Technique we use to draw this RenderScene.
+    TechniqueHolder iTechnique ;
+    
+    /// @brief Renderer we use to draw this RenderScene.
+    RendererUser iRenderer ;
 };
 
 /// @brief Common typedef to Specialize ResourceHolder.
-typedef SpecializedResourceHolder<RenderScenePrivate> RenderSceneHolder;
+typedef SpecializedCountedObjectHolder<RenderScene> RenderSceneHolder ;
 
 /// @brief Common typedef to make RenderSceneHolder List.
-typedef SpecializedResourceHolderList<RenderScenePrivate> RenderSceneHolderList;
+typedef SpecializedResourceHolderList<RenderScene> RenderSceneHolderList ;
 
-//////////////////////////////////////////////////////////////////////
-/// @brief SpecializedResourceUser for RenderScenePrivate.
-//////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC RenderScene : public SpecializedResourceUser<RenderScenePrivate>
-{
-public:
-    
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    RenderScene ( const RenderScenePrivate* pointer );
-    
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    RenderScene ( const RenderSceneHolder& holder );
-    
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    RenderScene ( const RenderScene& user );
-    
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    virtual ~RenderScene();
-    
-    /// @brief Null RenderScene.
-    static RenderScene Null;
-};
+/// @brief SpecializedCountedObjectUser for RenderScenePrivate.
+typedef SpecializedCountedObjectUser<RenderScene> RenderSceneUser ;
 
 //////////////////////////////////////////////////////////////////////
 /// @brief A basic loader to load RenderScene Objects.
@@ -328,7 +261,7 @@ typedef ResourceLoaderFactory<RenderSceneLoader> RenderSceneLoaderFactory;
 //////////////////////////////////////////////////////////////////////
 /// @brief A RenderScene Resource Manager.
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC RenderSceneManager : public Resource
+class DLL_PUBLIC RenderSceneManager : public SpecializedResourceManager<RenderScene, RenderSceneLoader>
 {
 public:
     
@@ -346,69 +279,21 @@ public:
     /// @brief Loads a RenderScene into the RenderScene list.
     /// If 'filename' is empty, the function will use the Default RenderSceneLoader.
     //////////////////////////////////////////////////////////////////////
-    virtual RenderScene load ( const std::string& name , const std::string& filename = std::string() );
+    virtual RenderSceneUser load ( const std::string& name , const std::string& filename = std::string() );
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Loads a RenderSceneHolder directly to the list.
     //////////////////////////////////////////////////////////////////////
-    virtual RenderScene load ( const RenderSceneHolder& holder );
+    virtual RenderSceneUser load ( const RenderSceneHolder& holder );
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the RenderScene associated with given name.
+    /// @brief This function should draw every RenderScene object.
     //////////////////////////////////////////////////////////////////////
-    virtual RenderScene get ( const std::string& name );
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the RenderScene associated with given name.
-    //////////////////////////////////////////////////////////////////////
-    virtual const RenderScene get ( const std::string& name ) const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the RenderSceneHolder associated with given name.
-    //////////////////////////////////////////////////////////////////////
-    virtual const RenderSceneHolder getHolder ( const std::string& name ) const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns every RenderScene objects.
-    //////////////////////////////////////////////////////////////////////
-    virtual RenderSceneHolderList& getAll () ;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns true if given RenderScene is loaded.
-    //////////////////////////////////////////////////////////////////////
-    virtual bool isLoaded ( const std::string& name ) const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Removes the given RenderScene.
-    //////////////////////////////////////////////////////////////////////
-    virtual void remove ( const std::string& name ) ;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Removes every RenderScene and clear the factory.
-    //////////////////////////////////////////////////////////////////////
-    virtual void clear () ;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the RenderSceneLoaderFactory.
-    //////////////////////////////////////////////////////////////////////
-    virtual RenderSceneLoaderFactory& getLoaderFactory() ;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the RenderSceneLoaderFactory.
-    //////////////////////////////////////////////////////////////////////
-    virtual const RenderSceneLoaderFactory& getLoaderFactory() const;
-    
-protected:
-    
-    /// @brief RenderScene objects.
-    RenderSceneHolderList iRenderScenes;
-    
-    /// @brief RenderSceneLoaderFactory.
-    RenderSceneLoaderFactory iFactory;
+    virtual void drawScenes ( const EventHolder& e ) const ;
 };
 
-/// @brief SpecializedResourceHolder for RenderSceneManager.
-typedef SpecializedResourceHolder < RenderSceneManager > RenderSceneManagerHolder ;
+/// @brief SpecializedCountedObjectHolder for RenderSceneManager.
+typedef SpecializedCountedObjectHolder < RenderSceneManager > RenderSceneManagerHolder ;
 
 GreEndNamespace
 

@@ -59,7 +59,7 @@ size_t IndexTypeGetSize(const IndexType& itype)
     else
     {
 #ifdef GreIsDebugMode
-        GreDebugPretty() << "Invalid 'IndexType' given !" << std::endl;
+        GreDebugPretty() << "Invalid 'IndexType' given !" << Gre::gendl;
 #endif
         return 0;
     }
@@ -68,7 +68,7 @@ size_t IndexTypeGetSize(const IndexType& itype)
 // ---------------------------------------------------------------------------------------------------
 
 IndexDescriptor::IndexDescriptor()
-: iType(IndexType::Null), iMaterial(Material::Null)
+: iType(IndexType::Null), iMaterial(nullptr)
 {
     
 }
@@ -88,12 +88,12 @@ void IndexDescriptor::setType(const Gre::IndexType &type)
     iType = type;
 }
 
-const Material& IndexDescriptor::getMaterial() const
+const MaterialUser& IndexDescriptor::getMaterial() const
 {
     return iMaterial;
 }
 
-void IndexDescriptor::setMaterial(const Gre::Material &material)
+void IndexDescriptor::setMaterial(const Gre::MaterialUser &material)
 {
     iMaterial = material;
 }
@@ -184,7 +184,7 @@ void IndexBatch::clear()
     if ( iData )
     {
 #ifdef GreIsDebugMode
-        GreDebugPretty() << "Freeing 'IndexBatch::iData' but 'iSize' is invalid." << std::endl;
+        GreDebugPretty() << "Freeing 'IndexBatch::iData' but 'iSize' is invalid." << Gre::gendl;
 #endif
         free(iData);
         iData = nullptr;

@@ -42,7 +42,7 @@ GreBeginNamespace
 /// @brief Describes a Sampler that can be used to change the
 /// configurations of a Texture to a HardwareProgram.
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC HardwareSamplerPrivate : public Resource
+class DLL_PUBLIC HardwareSampler : public Resource
 {
 public:
     
@@ -50,11 +50,11 @@ public:
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    HardwareSamplerPrivate(const std::string& name);
+    HardwareSampler(const std::string& name);
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    virtual ~HardwareSamplerPrivate() noexcept(false);
+    virtual ~HardwareSampler() noexcept(false);
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Bind the HardwareSampler.
@@ -67,50 +67,14 @@ public:
     virtual void unbind(int textureunit) const = 0;
 };
 
-/// @brief SpecializedResourceHolder for HardwareSamplerPrivate.
-typedef SpecializedResourceHolder<HardwareSamplerPrivate> HardwareSamplerHolder;
+/// @brief SpecializedCountedObjectHolder for HardwareSamplerPrivate.
+typedef SpecializedCountedObjectHolder<HardwareSampler> HardwareSamplerHolder;
 
 /// @brief SpecializedResourceHolderList for HardwareSamplerPrivate.
-typedef SpecializedResourceHolderList<HardwareSamplerPrivate> HardwareSamplerHolderList;
+typedef SpecializedResourceHolderList<HardwareSampler> HardwareSamplerHolderList;
 
-//////////////////////////////////////////////////////////////////////
 /// @brief SpecializedResourceUser for HardwareSampler.
-//////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC HardwareSampler : public SpecializedResourceUser<HardwareSamplerPrivate>
-{
-public:
-    
-    POOLED(Pools::HdwBuffer)
-    
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    HardwareSampler(const HardwareSamplerPrivate* pointer);
-    
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    HardwareSampler(const HardwareSamplerHolder& holder);
-    
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    HardwareSampler(const HardwareSampler& user);
-    
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    virtual ~HardwareSampler();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Bind the HardwareSampler to the given Texture Unit.
-    //////////////////////////////////////////////////////////////////////
-    virtual void bind(int textureunit) const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Unbind the HardwareSampler from given Texture Unit.
-    //////////////////////////////////////////////////////////////////////
-    virtual void unbind(int textureunit) const;
-    
-    /// @brief A Null HardwareSampler.
-    static HardwareSampler Null;
-};
+typedef SpecializedCountedObjectUser<HardwareSampler> HardwareSamplerUser ;
 
 GreEndNamespace
 

@@ -16,14 +16,14 @@ using namespace Gre;
 
 int main ( int argc, char* argv[] )
 {
-    GreDebugPretty() << "Hello, World :-)" << std::endl;
-    GreDebugPretty() << "GRE Version : " << localVersion.major << "." << localVersion.minor << "." << localVersion.build << std::endl;
+    GreDebugPretty() << "Hello, World :-)" << Gre::gendl;
+    GreDebugPretty() << "GRE Version : " << localVersion.major << "." << localVersion.minor << "." << localVersion.build << Gre::gendl;
     
     try
     {
         ResourceManager::Create();
         
-        GreDebugPretty() << "GRE correctly initialized." << std::endl;
+        GreDebugPretty() << "GRE correctly initialized." << Gre::gendl;
         
         ResourceManager::Get().loadPluginsIn("plugins");
         
@@ -31,7 +31,7 @@ int main ( int argc, char* argv[] )
         
         if ( winmanager.getWindowLoaderFactory().getLoaders().empty() )
         {
-            GreDebugPretty() << "No WindowLoader installed." << std::endl;
+            GreDebugPretty() << "No WindowLoader installed." << Gre::gendl;
         }
         
         else
@@ -40,7 +40,7 @@ int main ( int argc, char* argv[] )
             
             if ( win.isInvalid() )
             {
-                GreDebugPretty() << "Window is invalid." << std::endl;
+                GreDebugPretty() << "Window is invalid." << Gre::gendl;
             }
             
             else
@@ -52,7 +52,7 @@ int main ( int argc, char* argv[] )
                 
                 if ( kbd.isInvalid() )
                 {
-                    GreDebugPretty() << "Can't initialize Keyboard." << std::endl;
+                    GreDebugPretty() << "Can't initialize Keyboard." << Gre::gendl;
                 }
                 else
                 {
@@ -63,12 +63,12 @@ int main ( int argc, char* argv[] )
                         if ( kue.iKey == Key::Escape && !typing ) {
                             typing = true;
                             title.clear();
-                            GreDebugPretty() << "Please begin typing new title." << std::endl;
+                            GreDebugPretty() << "Please begin typing new title." << Gre::gendl;
                         }
                         
                         else if ( kue.iKey == Key::Escape && typing ) {
                             typing = false;
-                            GreDebugPretty() << "New title : " << title << std::endl;
+                            GreDebugPretty() << "New title : " << title << Gre::gendl;
                             win.setTitle(title);
                         }
                         
@@ -83,7 +83,7 @@ int main ( int argc, char* argv[] )
                 
                 if ( rmanager.getRendererLoaderFactory().getLoaders().empty() )
                 {
-                    GreDebugPretty() << "No RendererLoader installed." << std::endl;
+                    GreDebugPretty() << "No RendererLoader installed." << Gre::gendl;
                 }
                 
                 else
@@ -92,7 +92,7 @@ int main ( int argc, char* argv[] )
                     
                     if ( renderer.isInvalid() )
                     {
-                        GreDebugPretty() << "Renderer is invalid." << std::endl;
+                        GreDebugPretty() << "Renderer is invalid." << Gre::gendl;
                     }
                     
                     else
@@ -114,7 +114,7 @@ int main ( int argc, char* argv[] )
                         
                         if ( rctxt.isInvalid() )
                         {
-                            GreDebugPretty() << "RenderContext is invalid." << std::endl;
+                            GreDebugPretty() << "RenderContext is invalid." << Gre::gendl;
                         }
                         
                         else
@@ -128,7 +128,7 @@ int main ( int argc, char* argv[] )
                         
                         if ( mycube.isInvalid() )
                         {
-                            GreDebugPretty() << "'mycube' is invalid." << std::endl;
+                            GreDebugPretty() << "'mycube' is invalid." << Gre::gendl;
                         }
                         
                         // Try to load a RenderScene .
@@ -137,7 +137,7 @@ int main ( int argc, char* argv[] )
                         
                         if ( scene.isInvalid() )
                         {
-                            GreDebugPretty() << "'scene' is invalid." << std::endl;
+                            GreDebugPretty() << "'scene' is invalid." << Gre::gendl;
                         }
                         
                         else
@@ -164,13 +164,13 @@ int main ( int argc, char* argv[] )
         
         ResourceManager::Destroy();
         
-        GreDebugPretty() << "GRE correctly destroyed." << std::endl;
+        GreDebugPretty() << "GRE correctly destroyed." << Gre::gendl;
     }
     
     catch ( const Gre::GreException& e )
     {
-        GreDebugPretty() << "Exception launched : " << e.what() << std::endl;
-        GreDebugPretty() << "Exiting program." << std::endl;
+        GreDebugPretty() << "Exception launched : " << e.what() << Gre::gendl;
+        GreDebugPretty() << "Exiting program." << Gre::gendl;
     }
     
     return 0;

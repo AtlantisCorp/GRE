@@ -56,88 +56,13 @@ using namespace Gre;
 
 #include "MacEventQueue.h"
 
-// Maximum number of Windows.
-#define WINDOW_MAX 16
-
-// Maximum number of events handled at the same time.
-#define KEYBUF_MAX 256
-
-/// @brief A simple structure that represent a Key event.
-struct keybuf_t
-{
-    int key;
-    int pressed;
-};
-
-/// @brief A C-style structure which contains every buffered properties
-/// that might have changed in a Window object.
-/// Those properties are given by the function NsGetWindowBufEntry(CFTypeRef).
-///
-/// The ObjC Window object send events to the Gre::Window object using a Queue style
-/// object. The Queue is set by entering new Window events. The Window Gre objects then
-/// looks at the queue and act in consequence.
-///
-/// The Objc Window should be completly apart from the Gre Window. Every Objc calls should
-/// be made using another queue.
-typedef struct window_t_id
-{
-    /// @brief The Keyboard buffer we use.
-    struct keybuf_t keybufs [KEYBUF_MAX];
-    /// @brief The Current keybuf size.
-    int keybuf_sz;
-    
-    /// @brief Sets this to true if the Window has closed.
-    bool closed;
-    /// @brief Property set to true when window is exposed.
-    bool exposed;
-    
-    /// @brief This property is true if Size has changed.
-    bool sizeChanged;
-    /// @brief Holds the Width if changed.
-    int newWidth;
-    /// @brief Holds the Height if changed.
-    int newHeight;
-    /// @brief Holds the left border if changed.
-    int newX;
-    /// @brief Holds the top border if changed.
-    int newY;
-    
-#ifdef OSXFUNCTIONS_OBJC
-    /// @brief The Window we refer to.
-    id window;
-#endif
-    
-} WindowBufEntry;
-
-extern WindowBufEntry nsWindowBufs [WINDOW_MAX];
-
-#ifdef OSXFUNCTIONS_OBJC
-
-/// @brief Init every Window Entries in order to be able
-/// to call anyone of them.
-void InitWindowEntry();
-
-/// @brief Find a WindowEntry depending on given object's id.
-WindowBufEntry* FindWindowEntry(id nsWindow);
-
-/// @brief Find the next available window entry, or return NULL.
-WindowBufEntry* FindNextAvailableWindowEntry();
-
-#endif
-
 #ifndef OSXFUNCTIONS_OBJC
 
 /// @brief The base function that must be called in StartPlugin.
 extern "C" DLL_PUBLIC void NsLoadPluginApp();
 
-/// @brief Treats Window events.
-extern "C" DLL_PUBLIC bool NsPollEvent();
-
 /// @brief Creates a new window and returns it in given CFTypeRef pointer.
 extern "C" DLL_PUBLIC void NsCreateWindow(CFTypeRef* crefreturn, int x0,int y0,int wid,int hei);
-
-/// @brief Returns the current WindowBufEntry used by this Window.
-extern "C" DLL_PUBLIC WindowBufEntry* NsGetWindowBufEntry(CFTypeRef* nsWindow);
 
 /// @brief Destroys the Window and make it desappear.
 extern "C" DLL_PUBLIC void NsDestroyWindow(CFTypeRef* nsWindow);
@@ -154,26 +79,8 @@ extern "C" DLL_PUBLIC void NsWindowSwapBuffers(CFTypeRef* nsWindow);
 /// @brief Returns the Width and the Height of the Window.
 extern "C" DLL_PUBLIC void NsGetWindowSize(CFTypeRef* nsWindow, int* retWidth, int* retHeight);
 
-/// @brief Tells if the Window is visible.
-extern "C" DLL_PUBLIC bool NsWindowIsVisible(CFTypeRef* nsWindow);
-
-/// @brief Tells if Window is Vertically synchronized (experimental)
-extern "C" DLL_PUBLIC bool NsWindowIsVertSync(const CFTypeRef* nsWindow);
-
-/// @brief Sets the Window V'sync option. (experimental)
-extern "C" DLL_PUBLIC void NsWindowSetVertSync(CFTypeRef* nsWindow, bool arg);
-
 /// @brief Changes the RenderContext from the Window.
 extern "C" DLL_PUBLIC void NsWindowSetRenderContext(CFTypeRef* nsWindow, CGLContextObj ctxt);
-
-/// @brief Updates given Window.
-extern "C" DLL_PUBLIC void NsPollEventForWindow ( CFTypeRef* window );
-
-/// @brief Replaces the NSWindow::setNeedsDisplay function.
-extern "C" DLL_PUBLIC void NsWindowSetNeedsDisplay ( CFTypeRef* window , bool value );
-
-/// @brief Calls NSWindow::display function.
-extern "C" DLL_PUBLIC void NsWindowDisplay ( CFTypeRef* window );
 
 /// @brief Calls [window isVisible] .
 extern "C" DLL_PUBLIC bool NsWindowPropertyIsVisible ( const CFTypeRef* window );

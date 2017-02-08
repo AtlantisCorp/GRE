@@ -24,8 +24,11 @@ std::string computeMethodName(const std::string& function, const std::string& pr
         return (prettyFunction.substr(begin,end - begin) + "(...)");
 }
 
-std::ostream& GreDebug(const std::string& func)
+std::recursive_mutex __globcoutmutex ;
+
+std::ostream& GreDebugBase(const std::string& func)
 {
+    __globcoutmutex.lock();
     std::cout << "[" << func << "] ";
     return std::cout;
 }

@@ -224,7 +224,7 @@ void Gl::GreOpenGlVersionInit()
         VersionMinor = GL_version[vpoint+1] - '0';
         
 #ifdef GreIsDebugMode
-        GreDebugPretty() << "OpenGl Version found : " << VersionMajor << "." << VersionMinor << std::endl;
+        GreDebugPretty() << "OpenGl Version found : " << VersionMajor << "." << VersionMinor << Gre::gendl;
 #endif
     }
     
@@ -232,8 +232,8 @@ void Gl::GreOpenGlVersionInit()
     Renderer = std::string ((char*) GetString(GL_RENDERER));
     
 #ifdef GreIsDebugMode
-    GreDebugPretty() << "Vendor : '" << Vendor << "'." << std::endl;
-    GreDebugPretty() << "Renderer : '" << Renderer << "'." << std::endl;
+    GreDebugPretty() << "Vendor : '" << Vendor << "'." << Gre::gendl;
+    GreDebugPretty() << "Renderer : '" << Renderer << "'." << Gre::gendl;
 #endif
 }
 
@@ -248,7 +248,7 @@ void Gl::GreOpenGl3ExtensionInit()
     }
     
 #ifdef GreIsDebugMode
-    GreDebugPretty() << "Extensions Found : " << Extensions.size() << std::endl;
+    GreDebugPretty() << "Extensions Found : " << Extensions.size() << Gre::gendl;
 #endif
 }
 
@@ -285,7 +285,7 @@ void Gl::GreOpenGlInit()
 #ifdef GreIsDebugMode
     else
     {
-        GreDebugPretty() << "No glGlobalContext->getGl().GetString function found to initialize Gl Version." << std::endl;
+        GreDebugPretty() << "No glGlobalContext->getGl().GetString function found to initialize Gl Version." << Gre::gendl;
         throw GreOpenGlVersionInitException ("glGlobalContext->getGl().GetString not found.");
     }
 #endif
@@ -299,7 +299,7 @@ void Gl::GreOpenGlInit()
     else
     {
         GreDebugPretty() << "No glGlobalContext->getGl().GetStringi function found... Please update your drivers. glGetStringi is supported from OpenGl "
-        << "3.0 version." << std::endl;
+        << "3.0 version." << Gre::gendl;
         throw GreOpenGl3ExtensionInitException ("glGlobalContext->getGl().GetStringi not found.");
     }
 #endif
@@ -326,7 +326,7 @@ void Gl::GreOpenGlInit()
         FramebufferTexture = nullptr;
         
 #ifdef GreIsDebugMode
-        GreDebugPretty() << "Extension 'GL_ARB_framebuffer_object' is not supported but may be required." << std::endl;
+        GreDebugPretty() << "Extension 'GL_ARB_framebuffer_object' is not supported but may be required." << Gre::gendl;
 #endif
     }
     
@@ -351,7 +351,7 @@ void Gl::GreOpenGlInit()
         BindVertexArray = nullptr;
         
 #ifdef GreIsDebugMode
-        GreDebugPretty() << "Extension 'GL_ARB_vertex_array_object' is not supported but may be required." << std::endl;
+        GreDebugPretty() << "Extension 'GL_ARB_vertex_array_object' is not supported but may be required." << Gre::gendl;
 #endif
     }
     
@@ -380,7 +380,7 @@ void Gl::GreOpenGlInit()
         DisableVertexAttribArray = nullptr;
         
 #ifdef GreIsDebugMode
-        GreDebugPretty() << "Extension 'GL_ARB_vertex_program' is not supported but may be required." << std::endl;
+        GreDebugPretty() << "Extension 'GL_ARB_vertex_program' is not supported but may be required." << Gre::gendl;
 #endif
     }
     

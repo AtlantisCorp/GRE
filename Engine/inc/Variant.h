@@ -50,15 +50,17 @@ public:
         None    = 0,    ///< @brief Nothing is stored.
         Integer = 1,    ///< @brief Stores an Integer.
         Version = 2,    ///< @brief Stores a Version.
-        Boolean = 3     ///< @brief Type 'bool'.
+        Boolean = 3,    ///< @brief Type 'bool'.
+        String  = 4     ///< @brief std::string.
     };
     
     Variant(Policy policy = Policy::None, void* object = nullptr);
     Variant(const Variant& rhs);
     
-    Variant(int object);
-    Variant(const Version& object);
-    Variant(bool object);
+    Variant ( int object ) ;
+    Variant ( const Version & object ) ;
+    Variant ( bool object ) ;
+    Variant ( const std::string & obj ) ;
     
     ~Variant();
     
@@ -83,6 +85,11 @@ public:
     void reset(bool object);
     
     //////////////////////////////////////////////////////////////////////
+    /// @brief Sets a new Object.
+    //////////////////////////////////////////////////////////////////////
+    void reset(const std::string & object);
+    
+    //////////////////////////////////////////////////////////////////////
     /// @brief Clears the Variant and set it to Policy::None.
     //////////////////////////////////////////////////////////////////////
     void clear();
@@ -104,6 +111,12 @@ public:
     //////////////////////////////////////////////////////////////////////
     bool& toBool();
     const bool& toBool() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the Variant object as a std::string, if one.
+    //////////////////////////////////////////////////////////////////////
+    std::string& toString();
+    const std::string& toString() const;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns true if policy is Policy::None or Object is nullptr.
@@ -136,6 +149,9 @@ private:
 };
 
 typedef GreExceptionWithText VariantBadCast;
+
+/// @brief A Generic Dictionnary that can be used to store some variable informations.
+typedef std::map < std::string , Variant > VariantDictionnary ;
 
 GreEndNamespace
 

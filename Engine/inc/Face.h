@@ -85,12 +85,12 @@ public:
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the Material used in this descriptor.
     //////////////////////////////////////////////////////////////////////
-    const Material& getMaterial() const;
+    const MaterialUser& getMaterial() const;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Changes the Material.
     //////////////////////////////////////////////////////////////////////
-    void setMaterial(const Material& material);
+    void setMaterial(const MaterialUser& material);
     
     /// @brief A default IndexDesciptor.
     static IndexDescriptor Default;
@@ -101,7 +101,7 @@ protected:
     IndexType iType;
     
     /// @brief Material associated to the batch of indexes.
-    Material iMaterial;
+    MaterialUser iMaterial;
 };
 
 //////////////////////////////////////////////////////////////////////

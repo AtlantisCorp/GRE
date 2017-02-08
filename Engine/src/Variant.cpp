@@ -1,10 +1,34 @@
+//////////////////////////////////////////////////////////////////////
 //
 //  Variant.cpp
-//  GRE
+//  This source file is part of Gre
+//		(Gang's Resource Engine)
 //
-//  Created by Jacques Tronconi on 25/01/2016.
+//  Copyright (c) 2015 - 2016 Luk2010
+//  Created on 25/01/2016.
 //
-//
+//////////////////////////////////////////////////////////////////////
+/*
+ -----------------------------------------------------------------------------
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal
+ in the Software without restriction, including without limitation the rights
+ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
+ 
+ The above copyright notice and this permission notice shall be included in
+ all copies or substantial portions of the Software.
+ 
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ THE SOFTWARE.
+ -----------------------------------------------------------------------------
+ */
 
 #include "Variant.h"
 
@@ -43,6 +67,12 @@ Variant::Variant(bool object)
     
 }
 
+Variant::Variant ( const std::string & obj )
+: _mPolicy(Variant::Policy::String), _mObject(new std::string(obj))
+{
+    
+}
+
 Variant::~Variant()
 {
     clear();
@@ -66,6 +96,12 @@ void* Variant::CopyFromPolicy(Variant::Policy policy, const void *object)
     {
         const bool* tmp = (const bool*) object;
         return new bool(*tmp);
+    }
+    
+    if ( policy == Policy::String )
+    {
+        const std::string* tmp = (const std::string*) object;
+        return new std::string(*tmp);
     }
     
     return nullptr;
@@ -93,6 +129,13 @@ void Variant::DeleteFromPolicy(Variant::Policy policy, void *object)
         delete tmp;
         return;
     }
+    
+    if ( policy == Policy::String )
+    {
+        std::string* tmp = (std::string*) object;
+        delete tmp;
+        return ;
+    }
 }
 
 void Variant::reset(Variant::Policy policy, const void *object)
@@ -119,6 +162,11 @@ void Variant::reset(const Version& object)
 void Variant::reset(bool object)
 {
     reset(Policy::Boolean, &object);
+}
+
+void Variant::reset(const std::string &object)
+{
+    reset(Policy::String, &object);
 }
 
 void Variant::clear()
@@ -189,6 +237,26 @@ const bool& Variant::toBool() const
     }
     
     throw VariantBadCast("Trying to get Boolean object from none Boolean real object.");
+}
+
+std::string& Variant::toString()
+{
+    if ( _mPolicy == Policy::String )
+    {
+        return * ( (std::string*) _mObject ) ;
+    }
+    
+    throw VariantBadCast("Trying to get String object from none String real object.");
+}
+
+const std::string& Variant::toString() const
+{
+    if ( _mPolicy == Policy::String )
+    {
+        return * ( (const std::string*) _mObject ) ;
+    }
+    
+    throw VariantBadCast("Trying to get String object from none String real object.");
 }
 
 bool Variant::isNull() const

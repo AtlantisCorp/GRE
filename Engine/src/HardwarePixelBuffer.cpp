@@ -34,107 +34,35 @@
 
 GreBeginNamespace
 
-HardwarePixelBufferPrivate::HardwarePixelBufferPrivate(const std::string& name)
-: Gre::HardwareBufferPrivate(name), iPixFormat(HardwarePixelFormat::Null)
+HardwarePixelBuffer::HardwarePixelBuffer(const std::string& name)
+: Gre::HardwareBuffer(name), iPixFormat(HardwarePixelFormat::Null)
 {
     
 }
 
-HardwarePixelBufferPrivate::~HardwarePixelBufferPrivate()
+HardwarePixelBuffer::~HardwarePixelBuffer()
 {
     
 }
 
-void HardwarePixelBufferPrivate::setPixelFormat(const Gre::HardwarePixelFormat &pixformat)
+void HardwarePixelBuffer::setPixelFormat(const Gre::HardwarePixelFormat &pixformat)
 {
     iPixFormat = pixformat;
     setDirty(true);
 }
 
-HardwarePixelFormat HardwarePixelBufferPrivate::getPixelFormat() const
+HardwarePixelFormat HardwarePixelBuffer::getPixelFormat() const
 {
     return iPixFormat;
 }
 
-char* HardwarePixelBufferPrivate::getData()
-{
-    return nullptr;
-}
-
-const char* HardwarePixelBufferPrivate::getData() const
-{
-    return nullptr;
-}
-
-// ---------------------------------------------------------------------------------------------------
-
-HardwarePixelBuffer::HardwarePixelBuffer(const HardwarePixelBufferPrivate* pointer)
-: ResourceUser(pointer)
-, Gre::HardwareBuffer(pointer)
-, SpecializedResourceUser<Gre::HardwarePixelBufferPrivate>(pointer)
-{
-    
-}
-
-HardwarePixelBuffer::HardwarePixelBuffer(const HardwarePixelBufferHolder& holder)
-: ResourceUser(holder)
-, Gre::HardwareBuffer(holder.get())
-, SpecializedResourceUser<Gre::HardwarePixelBufferPrivate>(holder)
-{
-    
-}
-
-HardwarePixelBuffer::HardwarePixelBuffer(const HardwarePixelBuffer& user)
-: ResourceUser(user)
-, Gre::HardwareBuffer(user)
-, SpecializedResourceUser<Gre::HardwarePixelBufferPrivate>(user)
-{
-    
-}
-
-HardwarePixelBuffer::~HardwarePixelBuffer() noexcept(false)
-{
-    
-}
-
-HardwarePixelBufferHolder HardwarePixelBuffer::lock()
-{
-    return SpecializedResourceUser<HardwarePixelBufferPrivate>::lock();
-}
-
-const HardwarePixelBufferHolder HardwarePixelBuffer::lock() const
-{
-    return SpecializedResourceUser<HardwarePixelBufferPrivate>::lock();
-}
-
-void HardwarePixelBuffer::setPixelFormat(const Gre::HardwarePixelFormat &pixformat)
-{
-    auto ptr = lock();
-    if( ptr )
-        ptr->setPixelFormat(pixformat);
-}
-
-HardwarePixelFormat HardwarePixelBuffer::getPixelFormat() const
-{
-    auto ptr = lock();
-    if( ptr )
-        return ptr->getPixelFormat();
-    return HardwarePixelFormat::Null;
-}
-
 char* HardwarePixelBuffer::getData()
 {
-    auto ptr = lock();
-    if( ptr )
-        return ptr->getData();
     return nullptr;
 }
 
 const char* HardwarePixelBuffer::getData() const
 {
-    auto ptr = lock();
-    if( ptr )
-        return ptr->getData();
     return nullptr;
 }
 

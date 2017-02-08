@@ -34,8 +34,9 @@
 #define GRE_HardwareProgramManager_h
 
 #include "Pools.h"
-#include "HardwareProgram.h"
 #include "Resource.h"
+#include "ResourceLoader.h"
+#include "HardwareProgram.h"
 
 GreBeginNamespace
 
@@ -75,7 +76,7 @@ GreBeginNamespace
 /// receiving an Event of type EventType::Update.
 ///
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC HardwareProgramManagerPrivate : public Resource
+class DLL_PUBLIC HardwareProgramManager : public Resource
 {
 public:
     
@@ -83,11 +84,11 @@ public:
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    HardwareProgramManagerPrivate(const std::string& name);
+    HardwareProgramManager(const std::string& name);
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    virtual ~HardwareProgramManagerPrivate();
+    virtual ~HardwareProgramManager() noexcept ( false ) ;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Loads a new Shader using the correct HardwareShaderLoader
@@ -95,17 +96,17 @@ public:
     /// @note You should overwrite this function in a subclass in order to
     /// correctly load Shaders.
     //////////////////////////////////////////////////////////////////////
-    virtual HardwareShader loadShader(const ShaderType& stype, const std::string& name, const std::string& filepath);
+    virtual HardwareShaderUser loadShader(const ShaderType& stype, const std::string& name, const std::string& filepath);
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Retrieves a HardwareShader by its name.
     //////////////////////////////////////////////////////////////////////
-    virtual HardwareShader getShaderByName(const std::string& name);
+    virtual HardwareShaderUser getShaderByName(const std::string& name);
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Retrieves a HardwareShader by its name.
     //////////////////////////////////////////////////////////////////////
-    virtual const HardwareShader getShaderByName(const std::string& name) const;
+    virtual const HardwareShaderUser getShaderByName(const std::string& name) const;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Unload the given HardwareShader, retrieving it from its
@@ -121,18 +122,18 @@ public:
     //////////////////////////////////////////////////////////////////////
     /// @brief Creates a new blank HardwareProgram.
     //////////////////////////////////////////////////////////////////////
-    virtual HardwareProgram createHardwareProgram(const std::string& name);
+    virtual HardwareProgramUser createHardwareProgram(const std::string& name);
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Creates a new program using given Vertex and Fragment Shaders.
     //////////////////////////////////////////////////////////////////////
-    virtual HardwareProgram createHardwareProgram(const std::string& name, const HardwareShader &vertexShader, const HardwareShader &fragmentShader);
+    virtual HardwareProgramUser createHardwareProgram(const std::string& name, const HardwareShaderUser &vertexShader, const HardwareShaderUser &fragmentShader);
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Creates a new HardwareProgram using the Shaders loaded from
     /// given files.
     //////////////////////////////////////////////////////////////////////
-    virtual HardwareProgram createHardwareProgramFromFiles ( const std::string& name , const std::string& vertexshaderpath , const std::string& fragmentshaderpath );
+    virtual HardwareProgramUser createHardwareProgramFromFiles ( const std::string& name , const std::string& vertexshaderpath , const std::string& fragmentshaderpath );
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Loads a HardwareShader from a file and returns a holder.
@@ -150,12 +151,12 @@ public:
     //////////////////////////////////////////////////////////////////////
     /// @brief Retrieve a HardwareProgram from its name.
     //////////////////////////////////////////////////////////////////////
-    virtual HardwareProgram getProgram(const std::string& name);
+    virtual HardwareProgramUser getProgram(const std::string& name);
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Retrieve a HardwareProgram from its name.
     //////////////////////////////////////////////////////////////////////
-    virtual const HardwareProgram getProgram(const std::string& name) const;
+    virtual const HardwareProgramUser getProgram(const std::string& name) const;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Destroys the given program from its name.
@@ -226,125 +227,14 @@ protected:
     HardwareProgramVariables iGlobals;
 };
 
-/// @brief SpecializedResourceHolder for HardwareProgramManagerPrivate.
-typedef SpecializedResourceHolder<HardwareProgramManagerPrivate> HardwareProgramManagerHolder;
+/// @brief SpecializedCountedObjectHolder for HardwareProgramManagerPrivate.
+typedef SpecializedCountedObjectHolder<HardwareProgramManager> HardwareProgramManagerHolder;
 
 /// @brief SpecializedResourceHolderList for HardwareProgramManagerPrivate list.
-typedef SpecializedResourceHolderList<HardwareProgramManagerPrivate> HardwareProgramManagerHolderList;
+typedef SpecializedResourceHolderList<HardwareProgramManager> HardwareProgramManagerHolderList;
 
-//////////////////////////////////////////////////////////////////////
-/// @brief SpecializedResourceUser for HardwareProgramManagerPrivate.
-//////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC HardwareProgramManager : public SpecializedResourceUser<HardwareProgramManagerPrivate>
-{
-public:
-    
-    POOLED(Pools::Manager)
-    
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    HardwareProgramManager(const HardwareProgramManagerPrivate* pointer);
-    
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    HardwareProgramManager(const HardwareProgramManagerHolder& holder);
-    
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    HardwareProgramManager(const HardwareProgramManager& user);
-    
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    virtual ~HardwareProgramManager();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Loads a new Shader using the correct HardwareShaderLoader
-    /// generally provided by the Renderer object.
-    /// @note You should overwrite this function in a subclass in order to
-    /// correctly load Shaders.
-    //////////////////////////////////////////////////////////////////////
-    HardwareShader loadShader(const ShaderType& stype, const std::string& name, const std::string& filepath);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Retrieves a HardwareShader by its name.
-    //////////////////////////////////////////////////////////////////////
-    HardwareShader getShaderByName(const std::string& name);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Retrieves a HardwareShader by its name.
-    //////////////////////////////////////////////////////////////////////
-    const HardwareShader getShaderByName(const std::string& name) const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Unload the given HardwareShader, retrieving it from its
-    /// name.
-    //////////////////////////////////////////////////////////////////////
-    void unloadShaderByName(const std::string& name);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Unloads every Shader.
-    //////////////////////////////////////////////////////////////////////
-    void clearShaders();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Creates a new blank HardwareProgram.
-    //////////////////////////////////////////////////////////////////////
-    HardwareProgram createHardwareProgram(const std::string& name);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Creates a new program using given Vertex and Fragment Shaders.
-    //////////////////////////////////////////////////////////////////////
-    HardwareProgram createHardwareProgram(const std::string& name, const HardwareShader &vertexShader, const HardwareShader &fragmentShader);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Retrieve a HardwareProgram from its name.
-    //////////////////////////////////////////////////////////////////////
-    HardwareProgram getProgram(const std::string& name);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Retrieve a HardwareProgram from its name.
-    //////////////////////////////////////////////////////////////////////
-    const HardwareProgram getProgram(const std::string& name) const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Destroys the given program from its name.
-    //////////////////////////////////////////////////////////////////////
-    void destroyProgram(const std::string& name);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Unload every Program.
-    //////////////////////////////////////////////////////////////////////
-    void clearPrograms();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Reset the Manager.
-    //////////////////////////////////////////////////////////////////////
-    void clear();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Sets a new Global Variable for every programs.
-    /// This variable will be assigned to every Programs during update.
-    //////////////////////////////////////////////////////////////////////
-    HardwareProgramVariable& setGlobalVariableMat4(const std::string& name, const Matrix4& mat4);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Sets a new Global variable.
-    //////////////////////////////////////////////////////////////////////
-    HardwareProgramVariable& setGlobalVariable(const HardwareProgramVariable& var);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Unsets a given HardwareVariable Global by its name.
-    //////////////////////////////////////////////////////////////////////
-    void unsetGlobalVariable(const std::string& name);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Unset every Global Variables.
-    //////////////////////////////////////////////////////////////////////
-    void clearGlobals();
-    
-    /// @brief The Null HdwProgramManager.
-    static HardwareProgramManager Null;
-};
+/// @brief SpecializedCountedObjectUser for HardwareProgramManager.
+typedef SpecializedCountedObjectUser<HardwareProgramManager> HardwareProgramManagerUser;
 
 //////////////////////////////////////////////////////////////////////
 /// @brief A HardwareProgramManager Loader.
@@ -355,19 +245,19 @@ public:
     
     POOLED(Pools::Loader)
     
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
     HardwareProgramManagerLoader();
-    virtual ~HardwareProgramManagerLoader();
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns true if Resource::Type is ::HwdProgramManager.
     //////////////////////////////////////////////////////////////////////
-    virtual bool isTypeSupported(Resource::Type type) const;
+    virtual ~HardwareProgramManagerLoader();
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Loads a HardwareProgramManager.
     /// Default implementation returns a null pointer.
     //////////////////////////////////////////////////////////////////////
-    virtual Resource* load(Resource::Type type, const std::string& name) const;
+    virtual HardwareProgramManagerHolder load( const std::string& name ) const;
 };
 
 typedef ResourceLoaderFactory<HardwareProgramManagerLoader> HardwareProgramManagerLoaderFactory;

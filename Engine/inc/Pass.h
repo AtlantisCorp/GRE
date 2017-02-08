@@ -36,166 +36,87 @@
 #include "Pools.h"
 #include "Resource.h"
 #include "HardwareProgram.h"
-#include "SceneNode.h"
 
 GreBeginNamespace
 
-class DLL_PUBLIC RendererResource;
-
-/// @brief Type defining a Pass Number.
-typedef uint32_t PassNumber;
-
-/// @brief Defines the Pass Numbers that can be allocated.
-enum class PassPurpose
-{
-    /// @brief The first pass. Generally already allocated by the Renderer, should draw
-    /// every objects with a generic passthrough shader.
-    First = 1,
-    
-    /// @brief The last pass. This Pass can't be allocated. The number of Pass is high, i
-    /// hope you'll never have to get through 999 rendering of the Scene or you will have a
-    /// dramatic perf issue !
-    Last = 999
-};
+/// @brief Defines a unique identifier. This identifier is use to know
+/// the order the RenderPass should have when rendering. This is very important , as
+/// for example transparent objects should be rendered after opaque objects.
+typedef uint32_t RenderPassIdentifier ;
 
 //////////////////////////////////////////////////////////////////////
-/// @brief A Rendering Pass Private object.
+/// @brief Defines a RenderPass.
 ///
-/// A Pass is an object, able to add a step in the Rendering Procees.
-/// Normally, one Pass is used by the Renderer to draw the Scene with
-/// one HardwareShader onto a Renderer's private framebuffer. Then, this
-/// RenderFramebuffer is blended with the following pass's ones.
-/// The result of this is a blend between all Pass's effect, from first
-/// to last.
+/// A RenderPass is a step in the rendering process to render a
+/// RenderScene. The RenderScene is rendered using multiple RenderPass, as
+/// layers. Those RenderPass can render every RenderNodes of the Scene , or
+/// just particular nodes as transparents , shadows , etc ...
+///
+/// By creating new RenderPass with different actions , a user can effectively
+/// change the rendering process and customize it.
 ///
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC PassPrivate : public Resource
+class DLL_PUBLIC RenderPass : public Resource
 {
 public:
     
-    POOLED(Pools::Resource)
+    POOLED ( Pools::Referenced )
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Constructs a Pass given its name and purpose.
     //////////////////////////////////////////////////////////////////////
-    PassPrivate (const std::string& name, const PassNumber& passNumber);
+    RenderPass ( const RenderPassIdentifier & identifier ) ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Destructs the Pass.
     //////////////////////////////////////////////////////////////////////
-    virtual ~PassPrivate();
+    RenderPass ( const std::string & name , const RenderPassIdentifier & identifier ) ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Sets the property to true if you want this Pass to be enabled.
     //////////////////////////////////////////////////////////////////////
-    void setActivated(bool activate);
+    virtual ~RenderPass () noexcept ( false ) ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Tells if the Pass is enabled.
+    /// @brief Returns 'iIdentifier'.
     //////////////////////////////////////////////////////////////////////
-    bool isActivated() const;
+    const RenderPassIdentifier & getPassIdentifier () const ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Changes the HardwareProgram used by this PassPrivate object.
+    /// @brief Changes 'iActivated'.
     //////////////////////////////////////////////////////////////////////
-    void setHardwareProgram(const HardwareProgram& hwdProgram);
+    void setActivated ( bool value ) ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the HardwareProgram object. By default, HardwareProgram::Null.
+    /// @brief Returns 'iActivated'.
     //////////////////////////////////////////////////////////////////////
-    HardwareProgram getHardwareProgram() const;
+    bool isActivated ( ) const ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the current PassNumber.
+    /// @brief Returns 'iProgram'.
     //////////////////////////////////////////////////////////////////////
-    PassNumber getPassNumber() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns 'true' if given RenderNodeIdentifier is acceptable
-    /// to draw in this Pass object.
-    /// @note By default, this function returns always 'true'.
-    //////////////////////////////////////////////////////////////////////
-    virtual bool isAcceptable ( const RenderNodeIdentifier& identifier ) const;
+    const HardwareProgramUser& getHardwareProgram () const ;
     
 protected:
     
-    /// @brief The actual number of this Pass.
-    PassNumber iNumber;
+    /// @brief The RenderPass Identifier.
+    /// This number identifies the order this RenderPass should be processed by the
+    /// Renderer. The RenderPasses are processed from 0 to the last one.
+    RenderPassIdentifier iIdentifier ;
     
-    /// @brief Activated property : true if the Pass should be drew be the Renderer.
-    /// Default value is true.
-    bool iIsActivated;
+    /// @brief True if this RenderPass is activated for rendering.
+    bool iActivated ;
     
-    /// @brief The Program currently linked by this Pass. By default, HardwareProgram::Null.
-    HardwareProgram iLinkedProgram;
+    /// @brief
+    HardwareProgramUser iProgram ;
+    
 };
 
-/// @brief SpecializedResourceHolder for PassPrivate.
-typedef SpecializedResourceHolder<PassPrivate> PassHolder;
+/// @brief SpecializedCountedObjectHolder for RenderPass.
+typedef SpecializedCountedObjectHolder<RenderPass> RenderPassHolder ;
 
-/// @brief SpecializedResourceHolderList for PassHolder list.
-typedef SpecializedResourceHolderList<PassPrivate> PassHolderList;
+/// @brief SpecializedResourceHolderList for RenderPass.
+typedef SpecializedResourceHolderList<RenderPass> RenderPassHolderList ;
 
-//////////////////////////////////////////////////////////////////////
-/// @brief SpecializedResourceUser for PassPrivate.
-//////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC Pass : public SpecializedResourceUser<PassPrivate>
-{
-public:
-    
-    POOLED(Pools::Resource)
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Constructs from pointer.
-    //////////////////////////////////////////////////////////////////////
-    Pass(const PassPrivate* pointer);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Constructs from holder.
-    //////////////////////////////////////////////////////////////////////
-    Pass(const PassHolder& holder);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Constructs from user.
-    //////////////////////////////////////////////////////////////////////
-    Pass(const Pass& user);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Destructs the Pass user.
-    //////////////////////////////////////////////////////////////////////
-    ~Pass();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Sets the property to true if you want this Pass to be enabled.
-    //////////////////////////////////////////////////////////////////////
-    void setActivated(bool activate);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Tells if the Pass is enabled.
-    //////////////////////////////////////////////////////////////////////
-    bool isActivated() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Changes the HardwareProgram used by this PassPrivate object.
-    //////////////////////////////////////////////////////////////////////
-    void setHardwareProgram(const HardwareProgram& hwdProgram);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the HardwareProgram object. By default, HardwareProgram::Null.
-    //////////////////////////////////////////////////////////////////////
-    HardwareProgram getHardwareProgram() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the current PassNumber.
-    //////////////////////////////////////////////////////////////////////
-    PassNumber getPassNumber() const;
-    
-    /// @brief A Null Pass.
-    static Pass Null;
-};
-
-/// @brief Defines a simple list of Pass objects.
-typedef std::list<Pass> PassList;
+/// @brief SpecializedCountedObjectUser for RenderPass.
+typedef SpecializedCountedObjectUser<RenderPass> RenderPassUser ;
 
 GreEndNamespace
 

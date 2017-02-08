@@ -28,7 +28,7 @@ OpenGlRenderer::OpenGlRenderer (const std::string& name)
     else
     {
         _mProgramManager = HardwareProgramManager::Null;
-        GreDebugPretty() << "No OpenGlHdwProgramManagerLoader could be created." << std::endl;
+        GreDebugPretty() << "No OpenGlHdwProgramManagerLoader could be created." << Gre::gendl;
         throw RendererNoProgramManagerException("No OpenGlHdwProgramManagerLoader could be created.");
     }
 #endif
@@ -39,7 +39,7 @@ OpenGlRenderer::~OpenGlRenderer ()
     if(_mVao != 0)
     {
 #   ifdef GreIsDebugMode
-        GreDebugPretty() << "Deleted Vao (id=" << _mVao << ")." << std::endl;
+        GreDebugPretty() << "Deleted Vao (id=" << _mVao << ")." << Gre::gendl;
 #   endif
         glGlobalContext->getGl().DeleteVertexArrays(1, &_mVao);
     }
@@ -55,7 +55,7 @@ const void* OpenGlRenderer::getCustomData(const std::string &dataname) const
     }
     else {
 #ifdef GreIsDebugMode
-        GreDebugPretty() << "No data called '" << dataname << "' in OpenGlRenderer." << std::endl;
+        GreDebugPretty() << "No data called '" << dataname << "' in OpenGlRenderer." << Gre::gendl;
 #endif
         return nullptr;
     }
@@ -94,7 +94,7 @@ void OpenGlRenderer::_preRenderCurrentScene()
         {
             glGlobalContext->getGl().GenVertexArrays(1, &_mVao);
 #ifdef GreIsDebugMode
-            GreDebugPretty() << "Vertex Array created (id=" << _mVao << ")." << std::endl;
+            GreDebugPretty() << "Vertex Array created (id=" << _mVao << ")." << Gre::gendl;
 #endif
         }
         
@@ -282,7 +282,7 @@ void OpenGlRenderer::draw(const Mesh& mesh, const HardwareProgram& activProgram)
 #ifdef GreIsDebugMode
         if(posAttribLoc == -1)
         {
-            GreDebugPretty() << "No Attrib 'Position' in shader. Please add it." << std::endl;
+            GreDebugPretty() << "No Attrib 'Position' in shader. Please add it." << Gre::gendl;
             return;
         }
 #endif
@@ -298,7 +298,7 @@ void OpenGlRenderer::draw(const Mesh& mesh, const HardwareProgram& activProgram)
 #ifdef GreIsDebugMode
             if(colorAttribLoc == -1)
             {
-                GreDebugPretty() << "No Attrib 'Color' in shader. Please add it." << std::endl;
+                GreDebugPretty() << "No Attrib 'Color' in shader. Please add it." << Gre::gendl;
                 isColorAttribEnabled = false;
             }
             else
@@ -321,7 +321,7 @@ void OpenGlRenderer::draw(const Mesh& mesh, const HardwareProgram& activProgram)
 #ifdef GreIsDebugMode
             if(texCoordAttribLoc == -1)
             {
-                GreDebugPretty() << "No Attrib 'TexCoord' in shader. Please add it." << std::endl;
+                GreDebugPretty() << "No Attrib 'TexCoord' in shader. Please add it." << Gre::gendl;
                 isTexCoordAttribEnabled = false;
             }
             else
@@ -544,7 +544,7 @@ HardwareProgram OpenGlRenderer::createHardwareProgram(const std::string& name, c
 #ifdef GreIsDebugMode
         if(vshader.expired())
         {
-            GreDebugPretty() << "No passthrough vertex shader detected ! Should be in 'shaders/ogl-vertex-ps.vs'." << std::endl;
+            GreDebugPretty() << "No passthrough vertex shader detected ! Should be in 'shaders/ogl-vertex-ps.vs'." << Gre::gendl;
         }
 #endif
     }
@@ -556,25 +556,25 @@ HardwareProgram OpenGlRenderer::createHardwareProgram(const std::string& name, c
 #ifdef GreIsDebugMode
         if(vshader.expired())
         {
-            GreDebugPretty() << "No passthrough fragment shader detected ! Should be in 'shaders/ogl-fragment-ps.fs'." << std::endl;
+            GreDebugPretty() << "No passthrough fragment shader detected ! Should be in 'shaders/ogl-fragment-ps.fs'." << Gre::gendl;
         }
 #endif
     }
     
     if(vshader == HardwareShader::Null || fshader == HardwareShader::Null)
     {
-        GreDebugPretty() << "Unable to create HardwareProgram '" << name << "'." << std::endl;
+        GreDebugPretty() << "Unable to create HardwareProgram '" << name << "'." << Gre::gendl;
         if(!vshader.expired())
         {
 #ifdef GreIsDebugMode
-            GreDebugPretty() << "No fragment shader !" << std::endl;
+            GreDebugPretty() << "No fragment shader !" << Gre::gendl;
 #endif
             _mProgramManager.unloadShader(vshader);
         }
         if(!fshader.expired())
         {
 #ifdef GreIsDebugMode
-            GreDebugPretty() << "No vertex shader !" << std::endl;
+            GreDebugPretty() << "No vertex shader !" << Gre::gendl;
 #endif
             _mProgramManager.unloadShader(fshader);
         }
@@ -599,7 +599,7 @@ RenderContext OpenGlRenderer::createRenderContext(const std::string &name, const
     else
     {
 #ifdef GreIsDebugMode
-        GreDebugPretty() << "Sorry, name '" << name << "' for RenderContext is already taken. Please choose another one." << std::endl;
+        GreDebugPretty() << "Sorry, name '" << name << "' for RenderContext is already taken. Please choose another one." << Gre::gendl;
 #endif
         return RenderContext::Null;
     }
@@ -619,7 +619,7 @@ RenderContext OpenGlRenderer::findRenderContextFromPrivate(RenderContextPrivate 
         if(it == _mRenderContextsByName.end())
         {
 #ifdef GreIsDebugMode
-            GreDebugPretty() << "RenderContext named '" << oglCtxtPtr->getName() << "' is not present in RenderContext database. Ensure you created it using OpenGlRenderer::createRenderContext()." << std::endl;
+            GreDebugPretty() << "RenderContext named '" << oglCtxtPtr->getName() << "' is not present in RenderContext database. Ensure you created it using OpenGlRenderer::createRenderContext()." << Gre::gendl;
 #endif
             return RenderContext::Null;
         }
@@ -632,7 +632,7 @@ RenderContext OpenGlRenderer::findRenderContextFromPrivate(RenderContextPrivate 
         else
         {
 #ifdef GreIsDebugMode
-            GreDebugPretty() << "RenderContext named '" << oglCtxtPtr->getName() << "' does not point to the same RenderContext as the one in the database. Ensure you created it using OpenGlRenderer::createRenderContext()." << std::endl;
+            GreDebugPretty() << "RenderContext named '" << oglCtxtPtr->getName() << "' does not point to the same RenderContext as the one in the database. Ensure you created it using OpenGlRenderer::createRenderContext()." << Gre::gendl;
 #endif
             return RenderContext::Null;
         }
@@ -641,7 +641,7 @@ RenderContext OpenGlRenderer::findRenderContextFromPrivate(RenderContextPrivate 
 #ifdef GreIsDebugMode
     else
     {
-        GreDebugPretty() << "Given RenderContext pointer is invalid, reinterpret_cast() failed." << std::endl;
+        GreDebugPretty() << "Given RenderContext pointer is invalid, reinterpret_cast() failed." << Gre::gendl;
         return RenderContext::Null;
     }
 #endif

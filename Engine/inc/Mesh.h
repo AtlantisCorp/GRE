@@ -34,363 +34,188 @@
 #define GRE_Mesh_h
 
 #include "Resource.h"
+#include "ResourceLoader.h"
+#include "SpecializedResourceManager.h"
+
 #include "BoundingBox.h"
 
 #include "SoftwareVertexBuffer.h"
 #include "SoftwareIndexBuffer.h"
 
+#include "HardwareProgram.h"
+
 GreBeginNamespace
 
 //////////////////////////////////////////////////////////////////////
-/// @brief Defines a Mesh Resource Object.
-///
-/// The Mesh Object is responsible for its own drawing. You can subclass
-/// the Mesh::onUpdateEvent() method or the Mesh::onRenderEvent() in order
-/// to customize the Mesh.
-///
-/// Data is stored in the Mesh object as the following.
-/// When loading a Mesh from the MeshLoader, your Mesh object will only
-/// fills the SoftwareBuffer properties.
-///
-/// When the Renderer draw the Mesh, if the property Mesh::iUseHardwareBuffers
-/// is true, then the Renderer will creates some HardwareBuffer, upload
-/// data from the SoftwareBuffer's, and finally will release the SoftwareBuffer's
-/// using Mesh::clearSoftwareBuffers().
-///
-/// This allows the user to separate the loading of the Mesh, which is
-/// independent from the Rendering API, to the creation of HardwareBuffer's,
-/// which is dependent from the APi.
-///
-/// You should always use SoftwareVertexBuffers to create a Mesh. The
-/// SoftwareVertexBuffer will help making a BoundingBox for the Mesh, if
-/// 'iIsBoundingBoxUser' is false. 'set[Vertex/Index]Buffer' assumes that
-/// the HardwareBuffers are created using the Renderer from the
-/// Software[Vertex/Index]Buffers.
-///
-/// Modifying the Mesh structure
-///
-/// If you want to modify the Mesh structure, you may want to modify the
-/// Software[Vertex/Index]Buffers and let the Renderer updates the
-/// Hardware[Vertex/Index]Buffers directly. If your Mesh doesn't keep
-/// Software[Vertex/Index]Buffers, you should update yourself the
-/// 'iBoundingBox' property as it rely on Software Buffers.
-///
-/// Modifying directly the HardwareBuffers using a mapped pointer from the
-/// GPU is outdated, the reason is that typically, 'glMapBuffer' is blocking
-/// the Gpu driver while you performs your things, so this method is too
-/// slow. Updating the whole buffer orphaning it is much faster.
-///
+/// @brief Describes an Attribute for a Mesh buffer . One Attribute
+/// can hold one buffer . This buffer can have one or many Vertex data,
+/// like position , color , texture , normals , ...
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC MeshPrivate : public Resource
+struct MeshAttribute
+{
+    HardwareVertexBufferHolder buffer ;
+    bool enabled ;
+};
+
+/// @brief A List of MeshAttribute.
+typedef std::list < MeshAttribute > MeshAttributeList ;
+
+//////////////////////////////////////////////////////////////////////
+/// @brief Describes an object which can be draw on the screen.
+///
+/// The Mesh is directly loaded from either a file , either a Renderer
+/// for example.
+///
+/// When a Loader loads a Mesh , generally the buffers are Software's buffers,
+/// which means the data is on the CPU's RAM . To make this Mesh on the GPU's
+/// RAM , the Renderer should provides the 'convertMesh()' function . Also ,
+/// the Renderer can install a different MeshManager which will convert
+/// the Mesh automatically after loading it with the correct loader.
+//////////////////////////////////////////////////////////////////////
+class DLL_PUBLIC Mesh : public Resource
 {
 public:
     
-    POOLED(Pools::Resource)
+    POOLED ( Pools::Resource )
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    MeshPrivate(const std::string& name);
+    Mesh ( ) ;
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    virtual ~MeshPrivate() noexcept(false);
+    Mesh ( const std::string & name ) ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the SoftwareVertexBuffer.
     //////////////////////////////////////////////////////////////////////
-    virtual const SoftwareVertexBuffer getSoftwareVertexBuffer() const;
+    virtual ~Mesh ( ) noexcept ( false ) ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the SoftwareVertexBufferHolder reference.
+    /// @brief Changes the 'iVertexBuffers' property.
     //////////////////////////////////////////////////////////////////////
-    virtual SoftwareVertexBufferHolder& getSoftwareVertexBufferHolder();
+    virtual void setVertexBuffers ( const MeshAttributeList & attributes ) ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Changes the SoftwareVertexBuffer.
+    /// @brief Returns the 'iVertexBuffers' property.
     //////////////////////////////////////////////////////////////////////
-    virtual void setSoftwareVertexBuffer(const SoftwareVertexBuffer& softvertexbuffer);
+    virtual const MeshAttributeList & getVertexBuffers ( ) const ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the SoftwareIndexBuffers.
+    /// @brief Adds an Attribute to the Attribute's list.
     //////////////////////////////////////////////////////////////////////
-    virtual const SoftwareIndexBuffer getSoftwareIndexBuffer() const;
+    virtual void addVertexBuffer ( const MeshAttribute & attribute ) ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the SoftwareIndexBufferHolder reference.
+    /// @brief Changes the 'iIndexBuffer' property.
     //////////////////////////////////////////////////////////////////////
-    virtual SoftwareIndexBufferHolder& getSoftwareIndexBufferHolder();
+    virtual void setIndexBuffer ( const HardwareIndexBufferHolder & buffer ) ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Adds a SoftwareIndexBuffer to the list.
+    /// @brief Returns 'iIndexBuffer' .
     //////////////////////////////////////////////////////////////////////
-    virtual void setSoftwareIndexBuffer(const SoftwareIndexBuffer& softindexbuffer);
+    virtual const HardwareIndexBufferHolder & getIndexBuffer ( ) const ;
+    
+    ////////////////////////////////////////////////////////////////////////
+    /// @brief Unloads the Resource.
+    ////////////////////////////////////////////////////////////////////////
+    virtual void unload () ;
+    
+    ////////////////////////////////////////////////////////////////////////
+    /// @brief Binds the Mesh for rendering.
+    ////////////////////////////////////////////////////////////////////////
+    virtual void bind ( ) const ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Vertex Buffer object.
+    /// @brief Clears only the Vertex Buffers .
     //////////////////////////////////////////////////////////////////////
-    virtual const HardwareVertexBuffer getVertexBuffer() const;
+    virtual void clearVertexBuffers ( ) ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Changes the HardwareVertexBuffer.
+    /// @brief Clears only the index buffer .
     //////////////////////////////////////////////////////////////////////
-    virtual void setVertexBuffer(const HardwareVertexBuffer& vertexbuffer);
+    virtual void clearIndexBuffer ( ) ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Index Buffer batch.
+    /// @brief Changes 'iBoundingBox' .
     //////////////////////////////////////////////////////////////////////
-    virtual const HardwareIndexBuffer getIndexBuffer() const;
+    virtual void setBoundingBox ( const BoundingBox & bbox ) ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Adds an HardwareIndexBuffer to the list.
+    /// @brief Returns 'iBoundingBox' .
     //////////////////////////////////////////////////////////////////////
-    virtual void setIndexBuffer(const HardwareIndexBuffer& indexbuffer);
+    virtual const BoundingBox & getBoundingBox ( ) const ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the iUseHardwareBuffers property.
+    /// @brief Returns 'iOriginalFile'.
     //////////////////////////////////////////////////////////////////////
-    virtual bool useHardwareBuffers() const;
+    virtual const std::string & getOriginalFilepath () const ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Changes the iUseHardwareBuffers property.
+    /// @brief Changes 'iOriginalFile'.
     //////////////////////////////////////////////////////////////////////
-    virtual void setUseHardwareBuffers(bool b);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the iSoftBuffersChanged property.
-    //////////////////////////////////////////////////////////////////////
-    virtual bool hasSoftwareBuffersChanged() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Forces a change to iSoftBuffersChanged property.
-    //////////////////////////////////////////////////////////////////////
-    virtual void setSoftwareBuffersChanged(bool b);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the iHardBuffersChanged property.
-    //////////////////////////////////////////////////////////////////////
-    virtual bool hasHardwareBuffersChanged() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Forces a change to iHardBuffersChanged property.
-    //////////////////////////////////////////////////////////////////////
-    virtual void setHardwareBuffersChanged(bool b);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Clears the Hardware and Software Buffers.
-    //////////////////////////////////////////////////////////////////////
-    virtual void clear();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Clears the Software Buffers.
-    //////////////////////////////////////////////////////////////////////
-    virtual void clearSoftwareBuffers();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Clears the Hardware Buffers.
-    //////////////////////////////////////////////////////////////////////
-    virtual void clearHardwareBuffers();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the 'iBoundingBox' property.
-    //////////////////////////////////////////////////////////////////////
-    virtual const BoundingBox& getBoundingBox() const;
+    virtual void setOriginalFilepath ( const std::string & filepath ) ;
     
 protected:
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Called when receiving Update Event.
-    ///
-    /// If 'iSoftVertexBufferUpdate' is true, we updates the HardwareVertexBuffer
-    /// from the SoftwareVertexBuffer.
-    ///
-    /// If 'iSoftIndexBufferUpdate' is true, we updates the HardwareIndexBuffer
-    /// from the SoftwareIndexBuffer.
-    ///
-    /// If 'iSoftVertexBufferUpdate' is true, we updates the 'iBoundingBox' property
-    /// if 'iIsBoundingBoxUser' is false, using the SoftwareVertexBuffer.
-    ///
+    /// @brief Updates the BoundingBox using given MeshAttribute.
+    /// Generally this function is called when adding or changing one of
+    /// the Vertex's Buffers , but when update events hit the object.
     //////////////////////////////////////////////////////////////////////
-    virtual void onUpdateEvent(const UpdateEvent& e);
+    virtual void iUpdateBoundingBox ( const MeshAttribute & attribute ) ;
     
-private:
+protected:
     
-    /// @brief Holds the SoftwareVertexBuffer.
-    SoftwareVertexBufferHolder iSoftVertexBuffer;
+    /// @brief List of HardwareVertexBuffers .
+    /// Vertex's buffers can be multiple , because a Mesh can store its Vertex either using multiple buffers ,
+    /// for example one for normals , one for colors , ... , but it can also store every Vertex data in one
+    /// buffer. Each buffer is packed in an MeshAttribute structure which can be enabled or not.
+    MeshAttributeList iVertexBuffers ;
     
-    /// @brief Holds the SoftwareIndexBuffers.
-    SoftwareIndexBufferHolder iSoftIndexBuffer;
+    /// @brief The index buffer .
+    /// If the Mesh has a valid index buffer , this one will be used to draw the Mesh instead of using
+    /// only the Vertex buffer .
+    HardwareIndexBufferHolder iIndexBuffer ;
     
-    /// @brief Holds the HardwareVertexBuffer.
-    HardwareVertexBufferHolder iHardVertexBuffer;
+    /// @brief BoundingBox for this Mesh.
+    /// The Bounding box is updated only if the user sets 'iAutomateBoundingBox' to true. If false , the user
+    /// has to set himself the bounding box.
+    BoundingBox iBoundingBox ;
     
-    /// @brief Holds the HardwareIndexBuffers.
-    HardwareIndexBufferHolder iHardIndexBuffer;
+    /// @brief True if the bounding box can be updated when changing one of the buffers.
+    /// The bounding box will so be calculated using the 'VertexComponentType::Position' . If the changed buffer
+    /// contains any of this component , the bounding box will be recalculated.
+    bool iAutomateBoundingBox ;
     
-    /// @brief Mesh's BoundingBox.
-    BoundingBox iBoundingBox;
-    
-    /// @brief True if 'iBoundingBox' has been set by a user.
-    /// Setting this property to false will make the Mesh update
-    /// the BoundingBox from Software Buffers.
-    bool iIsBoundingBoxUser;
-    
-    /// @brief True if the Renderer can create HardwareBuffers.
-    bool iUseHardwareBuffers;
-    
-    /// @brief True if the Software Buffers have changed.
-    mutable bool iSoftBuffersChanged;
-    
-    /// @brief True if the Hardware Buffers have changed.
-    mutable bool iHardBuffersChanged;
-    
-    /// @brief True if SoftwareVertexBuffer changed.
-    mutable bool iSoftVertexBufferUpdate;
-    
-    /// @brief True if SoftwareIndexBuffer changed.
-    mutable bool iSoftIndexBufferUpdate;
+    /// @brief The file this mesh comes from, empty if this mesh was created inside the Engine.
+    std::string iOriginalFile ;
 };
 
-/// @brief SpecializedResourceHolder for MeshPrivate.
-typedef SpecializedResourceHolder<MeshPrivate> MeshHolder;
+/// @brief SpecializedCountedObjectHolder for Mesh .
+typedef SpecializedCountedObjectHolder < Mesh > MeshHolder ;
 
-/// @brief SpecializedResourceHolderList for MeshPrivate.
-typedef SpecializedResourceHolderList<MeshPrivate> MeshHolderList;
+/// @brief SpecializedResourceHolderList for Mesh .
+typedef SpecializedResourceHolderList < Mesh > MeshHolderList ;
 
-//////////////////////////////////////////////////////////////////////
-/// @brief A proxy to use MeshPrivate.
-//////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC Mesh : public SpecializedResourceUser<MeshPrivate>
-{
-public:
-    
-    POOLED(Pools::Resource)
-    
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    Mesh(const MeshPrivate* pointer);
-    
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    Mesh(const MeshHolder& holder);
-    
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    Mesh(const Mesh& user);
-    
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    virtual ~Mesh() noexcept(false);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the SoftwareVertexBuffer.
-    //////////////////////////////////////////////////////////////////////
-    virtual const SoftwareVertexBuffer getSoftwareVertexBuffer() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Changes the SoftwareVertexBuffer.
-    //////////////////////////////////////////////////////////////////////
-    virtual void setSoftwareVertexBuffer(const SoftwareVertexBuffer& softvertexbuffer);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the SoftwareIndexBuffers.
-    //////////////////////////////////////////////////////////////////////
-    virtual const SoftwareIndexBuffer getSoftwareIndexBuffer() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Adds a SoftwareIndexBuffer to the list.
-    //////////////////////////////////////////////////////////////////////
-    virtual void setSoftwareIndexBuffer(const SoftwareIndexBuffer& softindexbuffer);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Vertex Buffer object.
-    //////////////////////////////////////////////////////////////////////
-    virtual const HardwareVertexBuffer getVertexBuffer() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Changes the HardwareVertexBuffer.
-    //////////////////////////////////////////////////////////////////////
-    virtual void setVertexBuffer(const HardwareVertexBuffer& vertexbuffer);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Index Buffer batch.
-    //////////////////////////////////////////////////////////////////////
-    virtual const HardwareIndexBuffer getIndexBuffer() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Adds an HardwareIndexBuffer to the list.
-    //////////////////////////////////////////////////////////////////////
-    virtual void setIndexBuffer(const HardwareIndexBuffer& indexbuffer);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the iUseHardwareBuffers property.
-    //////////////////////////////////////////////////////////////////////
-    virtual bool useHardwareBuffers() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Changes the iUseHardwareBuffers property.
-    //////////////////////////////////////////////////////////////////////
-    virtual void setUseHardwareBuffers(bool b);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the iSoftBuffersChanged property.
-    //////////////////////////////////////////////////////////////////////
-    virtual bool hasSoftwareBuffersChanged() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Forces a change to iSoftBuffersChanged property.
-    //////////////////////////////////////////////////////////////////////
-    virtual void setSoftwareBuffersChanged(bool b);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the iHardBuffersChanged property.
-    //////////////////////////////////////////////////////////////////////
-    virtual bool hasHardwareBuffersChanged() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Forces a change to iHardBuffersChanged property.
-    //////////////////////////////////////////////////////////////////////
-    virtual void setHardwareBuffersChanged(bool b);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Clears the Hardware and Software Buffers.
-    //////////////////////////////////////////////////////////////////////
-    virtual void clear();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Clears the Software Buffers.
-    //////////////////////////////////////////////////////////////////////
-    virtual void clearSoftwareBuffers();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Clears the Hardware Buffers.
-    //////////////////////////////////////////////////////////////////////
-    virtual void clearHardwareBuffers();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the 'iBoundingBox' property.
-    //////////////////////////////////////////////////////////////////////
-    virtual const BoundingBox& getBoundingBox() const;
-    
-    /// @brief Null Mesh Property.
-    static Mesh Null;
-};
+/// @brief SpecializedCountedObjectUser for Mesh .
+typedef SpecializedCountedObjectUser < Mesh > MeshUser ;
 
-//////////////////////////////////////////////////////////////////////
-/// @brief ResourceLoader for Mesh.
-//////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////
+/// @brief Specialized ResourceLoader for Mesh .
+////////////////////////////////////////////////////////////////////////
 class DLL_PUBLIC MeshLoader : public ResourceLoader
 {
 public:
     
-    POOLED(Pools::Loader)
+    POOLED ( Pools::Loader )
     
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    MeshLoader();
+    ////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////
+    MeshLoader ( ) ;
     
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    virtual ~MeshLoader();
+    ////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////
+    virtual ~MeshLoader ( ) noexcept ( false ) ;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Loads a Mesh from given file.
@@ -398,107 +223,76 @@ public:
     /// a Mesh from a given file.
     //////////////////////////////////////////////////////////////////////
     virtual MeshHolder load ( const std::string& name , const std::string& filepath ) const = 0;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns true if the file given is loadable by this loader.
-    //////////////////////////////////////////////////////////////////////
-    virtual bool isLoadable( const std::string& filepath ) const = 0;
 };
 
 /// @brief ResourceLoaderFactory for MeshLoader.
-typedef ResourceLoaderFactory<MeshLoader> MeshLoaderFactory;
+typedef ResourceLoaderFactory < MeshLoader > MeshLoaderFactory ;
 
 //////////////////////////////////////////////////////////////////////
-/// @brief Manages the loaded Mesh's objects.
-///
-/// Permits the user to easily load Mesh and manages them. Let share
-/// the Mesh's from different use.
-///
-/// You can load a Mesh using MeshManager::load( name , filename ). This
-/// function should register the Mesh to the Manager and return a Mesh
-/// user object.
+/// @brief Manages the Mesh loaded.
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC MeshManager
+class DLL_PUBLIC MeshManager : public SpecializedResourceManager < Mesh , MeshLoader >
 {
 public:
     
-    POOLED(Pools::Manager)
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Retrieves the MeshManager using ResourceManager , then uses
+    /// 'MeshManager::iCreateSquare()' .
+    /// The squares created with this function are loaded using a private
+    /// map with its corresponding surface. This allow us to return the
+    /// corresponding surface's square with reload it .
+    //////////////////////////////////////////////////////////////////////
+    static MeshHolder CreateSquare ( const Surface & surface ) ;
+    
+public:
+    
+    POOLED ( Pools::Referenced )
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    MeshManager();
+    MeshManager ( ) ;
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    virtual ~MeshManager();
+    virtual ~MeshManager ( ) noexcept ( false ) ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Creates a Rectangle in the same Plane than (x, y) .
+    /// @brief Loads a Mesh and convert it to the underlying Rendering API
+    /// used.
     //////////////////////////////////////////////////////////////////////
-    Mesh createRectangle ( const Surface& surface );
+    virtual MeshUser load ( const std::string & name , const std::string & filepath ) ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Loads a Mesh to this Manager.
+    /// @brief Finds the first mesh wich origin file corresponds to given
+    /// one.
     //////////////////////////////////////////////////////////////////////
-    Mesh load ( const MeshHolder& holder );
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Loads a Mesh using the first compatible ResourceLoader
-    /// registered in the Factory.
-    /// If a Mesh of the same name already exists, the name will be
-    /// appended with a '*'.
-    //////////////////////////////////////////////////////////////////////
-    Mesh load ( const std::string& name , const std::string& filepath );
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns true if given Mesh has already been loaded.
-    //////////////////////////////////////////////////////////////////////
-    bool isLoaded ( const std::string& name ) const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the given Mesh if it has already been loaded, or
-    /// loads it using given filepath and returns it.
-    //////////////////////////////////////////////////////////////////////
-    Mesh get ( const std::string& name , const std::string& filepath );
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the given Mesh if it has already been loaded.
-    //////////////////////////////////////////////////////////////////////
-    const Mesh get ( const std::string& name ) const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Unload given Mesh.
-    //////////////////////////////////////////////////////////////////////
-    void unload ( const std::string& name );
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Clear every Mesh's loaded in this Manager.
-    //////////////////////////////////////////////////////////////////////
-    void clearMeshes();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the MeshLoaderFactory.
-    //////////////////////////////////////////////////////////////////////
-    MeshLoaderFactory& getLoaderFactory();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the MeshLoaderFactory.
-    //////////////////////////////////////////////////////////////////////
-    const MeshLoaderFactory& getLoaderFactory() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Clear the Manager.
-    //////////////////////////////////////////////////////////////////////
-    void clear();
+    virtual MeshUser findFirstFile ( const std::string & filepath ) ;
     
 protected:
     
-    /// @brief The MeshLoader's Factory.
-    MeshLoaderFactory iLoaders;
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Converts the Mesh to the underlying API , if possible.
+    /// This function should only use the srcmesh to create buffers on the
+    /// GPU memory . Those buffers goes to another mesh. If the returned
+    /// mesh is valid , it will be used instead of the loaded mesh.
+    //////////////////////////////////////////////////////////////////////
+    virtual MeshHolder iConvertMesh ( const MeshHolder & srcmesh ) const ;
     
-    /// @brief A set of Mesh loaded by this Manager.
-    MeshHolderList iMeshes;
+public:
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns or creates the corresponding square to given surface.
+    //////////////////////////////////////////////////////////////////////
+    virtual MeshHolder iCreateSquare ( const Surface & surface ) ;
+    
+protected:
+    
+    /// @brief A Map containing every loaded mesh using 'MeshManager::CreateSquare()'.
+    std::map < Surface , MeshHolder > iSquares ;
 };
+
+/// @brief SpecializedCountedObjectHolder for MeshManager.
+typedef SpecializedCountedObjectHolder < MeshManager > MeshManagerHolder ;
 
 GreEndNamespace
 

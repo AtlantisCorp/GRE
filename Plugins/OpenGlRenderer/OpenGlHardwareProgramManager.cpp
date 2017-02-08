@@ -63,7 +63,7 @@ HardwareShader OpenGlHardwareProgramManager::loadShader(const ShaderType& stype,
     if(shaderText.empty())
     {
 #ifdef GreIsDebugMode
-        GreDebugPretty() << "No File '" << filepath << "'." << std::endl;
+        GreDebugPretty() << "No File '" << filepath << "'." << Gre::gendl;
 #endif
         return HardwareShader::Null;
     }
@@ -78,7 +78,7 @@ HardwareProgram OpenGlHardwareProgramManager::createHardwareProgram(const std::s
     if(vertexShader.expired() || fragmentShader.expired())
     {
 #ifdef GreIsDebugMode
-        GreDebugPretty() << "Vertex or Fragment shader null !" << std::endl;
+        GreDebugPretty() << "Vertex or Fragment shader null !" << Gre::gendl;
 #endif
         return HardwareProgram::Null;
     }
@@ -91,7 +91,7 @@ HardwareProgram OpenGlHardwareProgramManager::createHardwareProgram(const std::s
     }
     
 #ifdef GreIsDebugMode
-    GreDebugPretty() << "Can't allocate new HardwareProgram '" << name << "'." << std::endl;
+    GreDebugPretty() << "Can't allocate new HardwareProgram '" << name << "'." << Gre::gendl;
 #endif
     return HardwareProgram::Null;
 }

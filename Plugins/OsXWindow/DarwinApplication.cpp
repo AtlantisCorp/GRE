@@ -51,7 +51,7 @@ void DarwinApplication::run()
     // order to let Gre::Window object use 'iPollEvent' . To achieve this , we launch a new thread to call
     // 'Application::run()' and then launch 'NSGlobalApplicationRun()' .
     
-    std::thread runloopthread ( [] (ApplicationPrivate* app) {
+    iRunloop = std::thread ( [] (ApplicationPrivate* app) {
         
         app->ApplicationPrivate::run();
         
@@ -59,6 +59,8 @@ void DarwinApplication::run()
     
     // Only call the NSApplication run function.
     NSGlobalApplicationRun () ;
+    
+    iRunloop.join() ;
 }
 
 void DarwinApplication::terminate()

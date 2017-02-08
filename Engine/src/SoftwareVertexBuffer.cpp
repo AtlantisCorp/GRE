@@ -34,8 +34,8 @@
 
 GreBeginNamespace
 
-SoftwareVertexBufferPrivate::SoftwareVertexBufferPrivate(const std::string& name)
-: HardwareVertexBufferPrivate(name)
+SoftwareVertexBuffer::SoftwareVertexBuffer(const std::string& name)
+: HardwareVertexBuffer(name)
 , iVertexData(nullptr)
 , iSize(0)
 , iBoundingBoxInvalid(false)
@@ -43,22 +43,22 @@ SoftwareVertexBufferPrivate::SoftwareVertexBufferPrivate(const std::string& name
     
 }
 
-SoftwareVertexBufferPrivate::~SoftwareVertexBufferPrivate()
+SoftwareVertexBuffer::~SoftwareVertexBuffer()
 {
     clearData();
 }
 
-void SoftwareVertexBufferPrivate::bind() const
+void SoftwareVertexBuffer::bind() const
 {
     
 }
 
-void SoftwareVertexBufferPrivate::unbind() const
+void SoftwareVertexBuffer::unbind() const
 {
     
 }
 
-void SoftwareVertexBufferPrivate::update()
+void SoftwareVertexBuffer::update()
 {
     if ( iBoundingBoxInvalid )
     {
@@ -66,12 +66,12 @@ void SoftwareVertexBufferPrivate::update()
     }
 }
 
-bool SoftwareVertexBufferPrivate::isDataInvalid() const
+bool SoftwareVertexBuffer::isDataInvalid() const
 {
     return !( iVertexData && iSize );
 }
 
-void SoftwareVertexBufferPrivate::addData(const char *vdata, size_t sz)
+void SoftwareVertexBuffer::addData(const char *vdata, size_t sz)
 {
     if ( iVertexData )
     {
@@ -94,12 +94,12 @@ void SoftwareVertexBufferPrivate::addData(const char *vdata, size_t sz)
     }
 }
 
-const char* SoftwareVertexBufferPrivate::getData() const
+const char* SoftwareVertexBuffer::getData() const
 {
     return iVertexData;
 }
 
-void SoftwareVertexBufferPrivate::clearData()
+void SoftwareVertexBuffer::clearData()
 {
     if ( iVertexData && iSize )
     {
@@ -113,7 +113,7 @@ void SoftwareVertexBufferPrivate::clearData()
     else if ( iVertexData )
     {
 #ifdef GreIsDebugMode
-        GreDebugPretty() << "Freeing 'iVertexData' but 'iSize' is 0." << std::endl;
+        GreDebugPretty() << "Freeing 'iVertexData' but 'iSize' is 0." << Gre::gendl;
 #endif
         free(iVertexData);
         iVertexData = nullptr;
@@ -123,12 +123,12 @@ void SoftwareVertexBufferPrivate::clearData()
     }
 }
 
-size_t SoftwareVertexBufferPrivate::getSize() const
+size_t SoftwareVertexBuffer::getSize() const
 {
     return iSize;
 }
 
-size_t SoftwareVertexBufferPrivate::count() const
+size_t SoftwareVertexBuffer::count() const
 {
     if ( iVertexData && iSize )
     {
@@ -141,12 +141,12 @@ size_t SoftwareVertexBufferPrivate::count() const
     }
 }
 
-const BoundingBox& SoftwareVertexBufferPrivate::getBoundingBox() const
+const BoundingBox& SoftwareVertexBuffer::getBoundingBox() const
 {
     return iBoundingBox;
 }
 
-void SoftwareVertexBufferPrivate::makeBoundingBox()
+void SoftwareVertexBuffer::makeBoundingBox()
 {
     if ( iBoundingBoxInvalid || iBoundingBox.isInvalid() )
     {
@@ -180,7 +180,7 @@ void SoftwareVertexBufferPrivate::makeBoundingBox()
 #ifdef GreIsDebugMode
             else
             {
-                GreDebugPretty() << "No 'VertexComponentType::Position' in VertexDescriptor." << std::endl;
+                GreDebugPretty() << "No 'VertexComponentType::Position' in VertexDescriptor." << Gre::gendl;
             }
 #endif
             
@@ -192,12 +192,12 @@ void SoftwareVertexBufferPrivate::makeBoundingBox()
 #ifdef GreIsDebugMode
     else
     {
-        GreDebugPretty() << "No need to update BoundingBox as 'iBoundingBoxInvalid' is false." << std::endl;
+        GreDebugPretty() << "No need to update BoundingBox as 'iBoundingBoxInvalid' is false." << Gre::gendl;
     }
 #endif
 }
 
-void SoftwareVertexBufferPrivate::setData(const HardwareVertexBufferHolder &holder)
+void SoftwareVertexBuffer::setData(const HardwareVertexBufferHolder &holder)
 {
     clearData();
     
@@ -208,69 +208,14 @@ void SoftwareVertexBufferPrivate::setData(const HardwareVertexBufferHolder &hold
     }
 }
 
-void SoftwareVertexBufferPrivate::onUpdateEvent(const Gre::UpdateEvent &e)
+void SoftwareVertexBuffer::onUpdateEvent(const Gre::UpdateEvent &e)
 {
-    HardwareVertexBufferPrivate::onUpdateEvent(e);
+    HardwareVertexBuffer::onUpdateEvent(e);
     
     if ( iBoundingBoxInvalid )
     {
         makeBoundingBox();
     }
 }
-
-// ---------------------------------------------------------------------------------------------------
-
-SoftwareVertexBuffer::SoftwareVertexBuffer(const SoftwareVertexBufferPrivate* pointer)
-: ResourceUser(pointer)
-, HardwareVertexBuffer(pointer)
-{
-    
-}
-
-SoftwareVertexBuffer::SoftwareVertexBuffer(const SoftwareVertexBufferHolder& holder)
-: ResourceUser(holder)
-, HardwareVertexBuffer(holder.get())
-{
-    
-}
-
-SoftwareVertexBuffer::SoftwareVertexBuffer(const SoftwareVertexBuffer& user)
-: ResourceUser(user)
-, HardwareVertexBuffer(user)
-{
-    
-}
-
-SoftwareVertexBuffer::~SoftwareVertexBuffer()
-{
-    
-}
-
-SoftwareVertexBufferHolder SoftwareVertexBuffer::lock()
-{
-    return GreUserLockCast(SoftwareVertexBufferHolder, SoftwareVertexBufferPrivate, HardwareVertexBuffer);
-}
-
-const SoftwareVertexBufferHolder SoftwareVertexBuffer::lock() const
-{
-    return GreUserConstLockCast(SoftwareVertexBufferHolder, SoftwareVertexBufferPrivate, HardwareVertexBuffer);
-}
-
-const BoundingBox& SoftwareVertexBuffer::getBoundingBox() const
-{
-    auto ptr = lock();
-    if ( ptr )
-        return ptr->getBoundingBox();
-    throw GreInvalidUserException("SoftwareVertexBuffer");
-}
-
-void SoftwareVertexBuffer::makeBoundingBox()
-{
-    auto ptr = lock();
-    if ( ptr )
-        ptr->makeBoundingBox();
-}
-
-SoftwareVertexBuffer SoftwareVertexBuffer::Null = SoftwareVertexBuffer(nullptr);
 
 GreEndNamespace

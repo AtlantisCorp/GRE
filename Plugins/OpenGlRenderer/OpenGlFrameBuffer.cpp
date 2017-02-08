@@ -55,7 +55,7 @@ void OpenGlFrameBuffer::construct()
 #ifdef GreIsDebugMode
             if(!_mfboid)
             {
-                GreDebugPretty() << "Oh no, the OpenGlFrameBuffer object '" << getName() << "' could not be generated..." << std::endl;
+                GreDebugPretty() << "Oh no, the OpenGlFrameBuffer object '" << getName() << "' could not be generated..." << Gre::gendl;
                 throw OpenGlGenFrameBuffer(getName() + " (glGenFrameBuffers)");
             }
 #endif
@@ -66,7 +66,7 @@ void OpenGlFrameBuffer::construct()
 #ifdef GreIsDebugMode
         else
         {
-            GreDebugPretty() << "No Framebuffer supported in this OpenGl implementation..." << std::endl;
+            GreDebugPretty() << "No Framebuffer supported in this OpenGl implementation..." << Gre::gendl;
             throw OpenGlNoFramebuffer(getName() + " (No Framebuffer)");
         }
 #endif
@@ -88,7 +88,7 @@ void OpenGlFrameBuffer::destroy()
 #ifdef GreIsDebugMode
             else
             {
-                GreDebugPretty() << "_mfboid is not initialized but we are in debug mode. UNREACHABLE normally. ('" << getName() << "')." << std::endl;
+                GreDebugPretty() << "_mfboid is not initialized but we are in debug mode. UNREACHABLE normally. ('" << getName() << "')." << Gre::gendl;
                 throw OpenGlDeleteFrameBuffer(getName() + " (glDeleteFrameBuffers)");
             }
 #endif
@@ -97,7 +97,7 @@ void OpenGlFrameBuffer::destroy()
 #ifdef GreIsDebugMode
         else
         {
-            GreDebugPretty() << "No Framebuffer supported in this OpenGl implementation..." << std::endl;
+            GreDebugPretty() << "No Framebuffer supported in this OpenGl implementation..." << Gre::gendl;
             throw OpenGlNoFramebuffer(getName() + " (No Framebuffer)");
         }
 #endif
@@ -126,7 +126,7 @@ void OpenGlFrameBuffer::bind() const
 #ifdef GreIsDebugMode
         else
         {
-            GreDebugPretty() << "No Framebuffer supported in this OpenGl implementation..." << std::endl;
+            GreDebugPretty() << "No Framebuffer supported in this OpenGl implementation..." << Gre::gendl;
             throw OpenGlNoFramebuffer(getName() + " (No Framebuffer)");
         }
 #endif
@@ -145,7 +145,7 @@ void OpenGlFrameBuffer::unbind() const
 #ifdef GreIsDebugMode
         else
         {
-            GreDebugPretty() << "No Framebuffer supported in this OpenGl implementation..." << std::endl;
+            GreDebugPretty() << "No Framebuffer supported in this OpenGl implementation..." << Gre::gendl;
             throw OpenGlNoFramebuffer(getName() + " (No Framebuffer)");
         }
 #endif
@@ -186,7 +186,7 @@ GLuint GreAttachementToOpenGlAttachement(FrameBufferPrivate::Attachement attache
 #ifdef GreIsDebugMode
     if((uint32_t) attachement >= glMaxColorAttachement)
     {
-        GreDebugPretty() << "Sorry, Color attachement " << (uint32_t) attachement << " not present on this Machine." << std::endl;
+        GreDebugPretty() << "Sorry, Color attachement " << (uint32_t) attachement << " not present on this Machine." << Gre::gendl;
         throw OpenGlMaxColorAttachement(std::string("Max Color Attachement reached (") + std::to_string(glMaxColorAttachement) + ").");
     }
 #endif
@@ -202,7 +202,7 @@ void OpenGlFrameBuffer::attachTexture(FrameBufferPrivate::Attachement attachemen
 #ifdef GreIsDebugMode
         if(glAttach == 0)
         {
-            GreDebugPretty() << "Sorry, bad attachement given : " << (uint32_t) attachement << "." << std::endl;
+            GreDebugPretty() << "Sorry, bad attachement given : " << (uint32_t) attachement << "." << Gre::gendl;
             throw OpenGlGreAttachementToGl(getName() + " (GreAttachementToOpenGlAttachement)");
         }
 #endif
@@ -216,7 +216,7 @@ void OpenGlFrameBuffer::attachTexture(FrameBufferPrivate::Attachement attachemen
             GLuint glTextureId = *((GLuint*) texture.getCustomData("OpenGlId"));
             if(glTextureId == 0)
             {
-                GreDebugPretty() << "('" << getName() << "') glTextureId is invalid !" << std::endl;
+                GreDebugPretty() << "('" << getName() << "') glTextureId is invalid !" << Gre::gendl;
                 throw OpenGlBindFrameBuffer(getName() + " (glFrameBufferTexture)");
             }
             
@@ -230,7 +230,7 @@ void OpenGlFrameBuffer::attachTexture(FrameBufferPrivate::Attachement attachemen
 #ifdef GreIsDebugMode
         else
         {
-            GreDebugPretty() << "('" << getName() << "') _mfboid is not initialized but tried to bind it anyway !" << std::endl;
+            GreDebugPretty() << "('" << getName() << "') _mfboid is not initialized but tried to bind it anyway !" << Gre::gendl;
             throw OpenGlBindFrameBuffer(getName() + " (glFrameBufferTexture)");
         }
 #endif
@@ -239,7 +239,7 @@ void OpenGlFrameBuffer::attachTexture(FrameBufferPrivate::Attachement attachemen
 #ifdef GreIsDebugMode
     else
     {
-        GreDebugPretty() << "No Framebuffer supported in this OpenGl implementation..." << std::endl;
+        GreDebugPretty() << "No Framebuffer supported in this OpenGl implementation..." << Gre::gendl;
         throw OpenGlNoFramebuffer(getName() + " (No Framebuffer)");
     }
 #endif

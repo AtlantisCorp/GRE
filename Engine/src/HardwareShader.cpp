@@ -34,86 +34,16 @@
 
 GreBeginNamespace
 
-HardwareShaderPrivate::HardwareShaderPrivate(const std::string& name, const ShaderType& type)
-: Resource(name), iType(type), iSource(), iCompiled(false)
+HardwareShader::HardwareShader(const std::string& name, const ShaderType& type)
+: Resource(ResourceIdentifier::New() , name), iType(type), iSource(), iCompiled(false)
 {
     
 }
 
-HardwareShaderPrivate::HardwareShaderPrivate(const std::string& name, const ShaderType& type, const std::string& text)
-: Resource(name), iType(type), iSource(text), iCompiled(false)
+HardwareShader::HardwareShader(const std::string& name, const ShaderType& type, const std::string& text)
+: Resource(ResourceIdentifier::New() , name), iType(type), iSource(text), iCompiled(false)
 {
 
-}
-
-HardwareShaderPrivate::~HardwareShaderPrivate()
-{
-    
-}
-
-ShaderType HardwareShaderPrivate::getType() const
-{
-    return iType;
-}
-
-void HardwareShaderPrivate::setSource(const std::string &source)
-{
-    iSource = source;
-    iCompiled = false;
-}
-
-const std::string& HardwareShaderPrivate::getSource() const
-{
-    return iSource;
-}
-
-bool HardwareShaderPrivate::compile()
-{
-    return iCompiled;
-}
-
-bool HardwareShaderPrivate::isCompiled() const
-{
-    return iCompiled;
-}
-
-void HardwareShaderPrivate::clear()
-{
-    iSource.clear();
-    iCompiled = false;
-}
-
-const std::string& HardwareShaderPrivate::getFilepath() const
-{
-    return iFilepath;
-}
-
-void HardwareShaderPrivate::setFilepath(const std::string &filepath)
-{
-    iFilepath = filepath;
-}
-
-// ---------------------------------------------------------------------------------------------------
-
-HardwareShader::HardwareShader(const HardwareShaderPrivate* pointer)
-: Gre::ResourceUser(pointer)
-, SpecializedResourceUser<HardwareShaderPrivate>(pointer)
-{
-    
-}
-
-HardwareShader::HardwareShader(const HardwareShaderHolder& holder)
-: Gre::ResourceUser(holder)
-, SpecializedResourceUser<HardwareShaderPrivate>(holder)
-{
-    
-}
-
-HardwareShader::HardwareShader(const HardwareShader& user)
-: Gre::ResourceUser(user)
-, SpecializedResourceUser<HardwareShaderPrivate>(user)
-{
-    
 }
 
 HardwareShader::~HardwareShader()
@@ -123,48 +53,44 @@ HardwareShader::~HardwareShader()
 
 ShaderType HardwareShader::getType() const
 {
-    auto ptr = lock();
-    if(ptr)
-        return ptr->getType();
-    return ShaderType::Null;
+    return iType;
 }
 
 void HardwareShader::setSource(const std::string &source)
 {
-    auto ptr = lock();
-    if(ptr)
-        ptr->setSource(source);
+    iSource = source;
+    iCompiled = false;
 }
 
-const std::string HardwareShader::getSource() const
+const std::string& HardwareShader::getSource() const
 {
-    auto ptr = lock();
-    if(ptr)
-        return ptr->getSource();
-    return std::string();
+    return iSource;
 }
 
-bool HardwareShader::compile() const
+bool HardwareShader::compile()
 {
-    auto ptr = lock();
-    if(ptr)
-        return ptr->compile();
-    return false;
+    return iCompiled;
 }
 
 bool HardwareShader::isCompiled() const
 {
-    auto ptr = lock();
-    if(ptr)
-        return ptr->isCompiled();
-    return false;
+    return iCompiled;
 }
 
 void HardwareShader::clear()
 {
-    auto ptr = lock();
-    if(ptr)
-        ptr->clear();
+    iSource.clear();
+    iCompiled = false;
+}
+
+const std::string& HardwareShader::getFilepath() const
+{
+    return iFilepath;
+}
+
+void HardwareShader::setFilepath(const std::string &filepath)
+{
+    iFilepath = filepath;
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -178,9 +104,5 @@ HardwareShaderLoader::~HardwareShaderLoader()
 {
     
 }
-
-HardwareShader HardwareShader::Null = HardwareShader(nullptr);
-HardwareShader HardwareShader::VertexPassThrough = HardwareShader(nullptr);
-HardwareShader HardwareShader::FragmentPassThrough = HardwareShader(nullptr);
 
 GreEndNamespace

@@ -37,29 +37,34 @@
 #include "RenderContext.h"
 #include "LoopBehaviours.h"
 #include "RenderTarget.h"
+#include "Variant.h"
 
 GreBeginNamespace
 
-typedef std::pair<int, int> WindowSize;
+/// @brief A Dictionnary to set the Informations a Window can have at initialization.
+/// 'Window.title' : Title of the Window.
+/// 'Window.surface' : Surface the Window should have on the screen.
+typedef VariantDictionnary WindowInfo ;
 
 //////////////////////////////////////////////////////////////////////
 /// @brief A Window Object.
 ///
-/// A Window is a specific RenderTarget, which should also contains
-/// a RenderContext. The Window should also provides handling of the
-/// Hardware Keyboard when focused, and Hardware Mouse.
+/// A Window is a specific RenderTarget normally visible by the User on
+/// the Screen .
 ///
-/// The Window object is highly platform-dependent, and should be
-/// different for each platforms.
+/// ### Subclassing 'Gre::Window'
 ///
-/// In order to draw onto this Window, you should select a RenderScene
-/// using RenderTarget::selectScene(), and then register this RenderTarget
-/// to the RendererDrawLoop using ResourceManager::getRendererDrawLoop().registerRenderTarget().
-/// Also, don't forget to associate a RenderContext using RenderTarget::setRenderContext().
-/// Remember this RenderContext must be created by the Renderer.
+/// The 'Gre::Application' object is responsible for sending 'UpdateEvent'
+/// to the 'WindowManger' . This Manager sends events to every Window
+/// registered.
+///
+/// In consequence , one should always overwrite the 'Gre::Resource::onUpdateEvent()'
+/// in order to process every updates things , like polling events , and
+/// others. He should also call 'WindowPrivate::onUpdateEvent()' at the
+/// end of the function.
 ///
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC WindowPrivate : public RenderTargetPrivate
+class DLL_PUBLIC Window : public RenderTarget
 {
 public:
     
@@ -67,23 +72,11 @@ public:
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    WindowPrivate (const std::string& name);
+    Window ( const std::string& name ) ;
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    virtual ~WindowPrivate() noexcept(false);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Treat Event in the Event Queue, if it has one.
-    /// @return True if an Event has been treated. The return value of this
-    /// function is not an Error check.
-    //////////////////////////////////////////////////////////////////////
-    virtual bool pollEvent() = 0;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Return True if Window is not opened.
-    //////////////////////////////////////////////////////////////////////
-    virtual bool isClosed() const;
+    virtual ~Window() noexcept(false);
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Set a new title for this Window.
@@ -95,28 +88,24 @@ public:
     //////////////////////////////////////////////////////////////////////
     virtual Surface getSurface() const;
     
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Called after pollEvent.
-    //////////////////////////////////////////////////////////////////////
-    virtual void update();
+public: // Visibility Functions .
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns true if the Window is visible by the User.
-    /// @note Window::isExposed() and Window::isClosed() can return the same
-    /// value (false) if Window is minimized.
+    /// @brief Return True if Window has been destroyed .
+    //////////////////////////////////////////////////////////////////////
+    virtual bool isClosed() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns true if Window is currently visible .
     //////////////////////////////////////////////////////////////////////
     virtual bool isExposed() const;
     
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns true if this RenderTarget contains a RenderContext
-    /// and should be drawed by the Renderer during the first phase.
-    //////////////////////////////////////////////////////////////////////
-    virtual bool holdsRenderContext() const;
+public: // RenderContext Functions .
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Change the RenderContext used by this Window.
     //////////////////////////////////////////////////////////////////////
-    virtual void setRenderContext(const RenderContext& renderCtxt);
+    virtual void setRenderContext(const RenderContextUser& renderCtxt);
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the RenderContext used by this Window.
@@ -129,32 +118,45 @@ public:
     virtual const RenderContextHolder getRenderContext() const;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Adds a loop behaviour function.
+    /// @brief Returns true if this RenderTarget contains a RenderContext
+    /// and should be drawed by the Renderer during the first phase.
     //////////////////////////////////////////////////////////////////////
-    virtual void addLoopBehaviour(LoopBehaviour behaviour);
+    virtual bool holdsRenderContext() const;
+    
+public: // RenderFramebuffer Functions .
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Erases every Loop Behaviours.
+    /// @brief Returns 'RenderFramebuffer ( nullptr )' .
     //////////////////////////////////////////////////////////////////////
-    virtual void clearLoopBehaviour();
+    virtual RenderFramebufferHolder getFramebuffer();
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns true if the Window has been exposed, then closed.
+    /// @brief Returns 'RenderFramebuffer ( nullptr )' .
     //////////////////////////////////////////////////////////////////////
-    virtual bool hasBeenClosed() const;
+    virtual const RenderFramebufferHolder getFramebuffer() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns false .
+    //////////////////////////////////////////////////////////////////////
+    virtual bool holdsFramebuffer() const;
   
 protected:
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Internal function to set a title to the Window.
+    //////////////////////////////////////////////////////////////////////
+    virtual void iSetTitle ( const std::string& title ) const = 0 ;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Internal function to set the RenderContext to the Window.
+    //////////////////////////////////////////////////////////////////////
+    virtual void iSetRenderContext ( const RenderContextHolder& ctxt ) const = 0 ;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Called when receiving Update Event.
     /// [thread-safe]
     //////////////////////////////////////////////////////////////////////
     virtual void onUpdateEvent(const UpdateEvent& e);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Updates 'iLastUpdate' and calls 'iLoopBehaviours'.
-    //////////////////////////////////////////////////////////////////////
-    virtual void iUpdateTimerAndBehaviours();
     
 protected:
     
@@ -164,140 +166,27 @@ protected:
     /// @brief Surface used by the Window.
     Surface iSurface;
     
-    /// @brief True if Window is exposed.
+    /// @brief True if Window is mapped on the screen.
     bool iExposed;
     
-    /// @brief True if Window is closed.
+    /// @brief True if Window is destroyed.
     bool iClosed;
+    
+    /// @brief True if the Window has the focus.
+    bool iFocused;
     
     /// @brief Holds the RenderContext linked to this Window.
     RenderContextHolder iRenderContext;
-    
-    /// @brief Helper object to hold LoopBehaviour functions.
-    LoopBehaviours iLoopBehaviours;
-    
-    /// @brief Last Update time.
-    UpdateTime iLastUpdate;
 };
 
-/// @brief SpecializedResourceHolder for WindowPrivate.
-typedef SpecializedResourceHolder<WindowPrivate> WindowHolder;
+/// @brief SpecializedCountedObjectHolder for WindowPrivate.
+typedef SpecializedCountedObjectHolder < Window > WindowHolder ;
 
 /// @brief SpecializedResourceHolderList for WindowPrivate.
-typedef SpecializedResourceHolderList<WindowPrivate> WindowHolderList;
+typedef SpecializedResourceHolderList < Window > WindowHolderList ;
 
-//////////////////////////////////////////////////////////////////////
 /// @brief SpecializedResourceUser for WindowPrivate.
-//////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC Window : public RenderTarget
-{
-public:
-    
-    POOLED(Pools::Resource)
-
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Constructs a Window from pointer.
-    //////////////////////////////////////////////////////////////////////
-    Window (const WindowPrivate* pointer);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Constructs a Window from holder.
-    //////////////////////////////////////////////////////////////////////
-    Window (const WindowHolder& holder);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Constructs a Window from user.
-    //////////////////////////////////////////////////////////////////////
-    Window (const Window& user);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Destructs the Window.
-    //////////////////////////////////////////////////////////////////////
-    virtual ~Window();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Creates a new ResourceHolder in order to use the Resource.
-    //////////////////////////////////////////////////////////////////////
-    WindowHolder lock();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Creates a new ResourceHolder in order to use the Resource.
-    //////////////////////////////////////////////////////////////////////
-    const WindowHolder lock() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Treat Event in the Event Queue, if it has one.
-    /// @return True if an Event has been treated. The return value of this
-    /// function is not an Error check.
-    //////////////////////////////////////////////////////////////////////
-    virtual bool pollEvent();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Return True if Window is not opened.
-    //////////////////////////////////////////////////////////////////////
-    virtual bool isClosed() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Set a new title for this Window.
-    //////////////////////////////////////////////////////////////////////
-    virtual void setTitle(const std::string& title);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns a description of the Surface this Window covers.
-    //////////////////////////////////////////////////////////////////////
-    virtual Surface getSurface() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Called after pollEvent.
-    //////////////////////////////////////////////////////////////////////
-    virtual void update();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns true if the Window is visible by the User.
-    /// @note Window::isExposed() and Window::isClosed() can return the same
-    /// value (false) if Window is minimized.
-    //////////////////////////////////////////////////////////////////////
-    virtual bool isExposed() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns true if this RenderTarget contains a RenderContext
-    /// and should be drawed by the Renderer during the first phase.
-    //////////////////////////////////////////////////////////////////////
-    virtual bool holdsRenderContext() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Change the RenderContext used by this Window.
-    //////////////////////////////////////////////////////////////////////
-    virtual void setRenderContext(const RenderContext& renderCtxt);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the RenderContext used by this Window.
-    //////////////////////////////////////////////////////////////////////
-    virtual RenderContextHolder getRenderContext();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the RenderContext used by this Window.
-    //////////////////////////////////////////////////////////////////////
-    virtual const RenderContextHolder getRenderContext() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Adds a loop behaviour function.
-    //////////////////////////////////////////////////////////////////////
-    virtual void addLoopBehaviour(LoopBehaviour behaviour);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Erases every Loop Behaviours.
-    //////////////////////////////////////////////////////////////////////
-    virtual void clearLoopBehaviour();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns true if the Window has been exposed, then closed.
-    //////////////////////////////////////////////////////////////////////
-    virtual bool hasBeenClosed() const;
-    
-    /// @brief A Null Window object.
-    static Window Null;
-};
+typedef SpecializedCountedObjectUser < Window > WindowUser ;
 
 //////////////////////////////////////////////////////////////////////
 /// @brief ResourceLoader for WindowPrivate.
@@ -319,102 +208,98 @@ public:
     //////////////////////////////////////////////////////////////////////
     /// @brief Creates a Window.
     //////////////////////////////////////////////////////////////////////
-    virtual WindowHolder load ( const std::string& name , int x0 , int y0 , int wid , int height ) const = 0;
+    virtual WindowHolder load ( const std::string& name , const WindowInfo & info ) const = 0;
 };
 
 /// @brief ResourceLoaderFactory for WindowLoader.
 typedef ResourceLoaderFactory<WindowLoader> WindowLoaderFactory;
 
 //////////////////////////////////////////////////////////////////////
-/// @brief Window Manager for Window .
+/// @brief SpecializedResourceManager for Window.
+///
+/// The WindowManager is only responsible for polling events from the
+/// platform and from the Engine, thus transmetting it correctly to
+/// every Windows.
+///
+/// You can use the WindowManager to listen to every Key events. To
+/// achieve this purpose, use 'addGlobalKeyListener()' . The manager
+/// use and internal Listener which listens to every Window.
+///
 //////////////////////////////////////////////////////////////////////
-class WindowManager : public Resource
+class DLL_PUBLIC WindowManager : public SpecializedResourceManager< Window , WindowLoader >
 {
 public:
     
-    POOLED ( Pools::Resource )
+    POOLED ( Pools::Manager )
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    WindowManager( const std::string& name = "DefaultWindowManager" );
+    WindowManager ( const std::string & name = "DefaultWindowManager" ) ;
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    virtual ~WindowManager() noexcept ( false ) ;
+    virtual ~WindowManager ( ) noexcept ( false ) ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Loads a Window from given arguments.
+    /// @brief Loads a new Window given its parameters.
     //////////////////////////////////////////////////////////////////////
-    virtual Window load ( const std::string& name , int x0 , int y0 , int wid , int height );
+    virtual WindowUser load ( const std::string & name , const WindowInfo & info ) ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Loads a Window into this Manager.
-    /// Returns Window::Null if the Window already exists in this Manager.
+    /// @brief Adds a Listener to the Global Key Listener.
     //////////////////////////////////////////////////////////////////////
-    virtual Window load ( const WindowHolder& holder );
+    virtual void addGlobalKeyListener ( const EventProceederUser & proceeder ) ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Window described by given name.
+    /// @brief Polls Event and returns when an event has been treated.
     //////////////////////////////////////////////////////////////////////
-    virtual Window get ( const std::string& name );
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Window described by given name.
-    //////////////////////////////////////////////////////////////////////
-    virtual const Window get ( const std::string& name ) const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the first active Window.
-    //////////////////////////////////////////////////////////////////////
-    virtual Window getFirstActive();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns every Windows.
-    //////////////////////////////////////////////////////////////////////
-    virtual WindowHolderList& getWindows();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns every Windows.
-    //////////////////////////////////////////////////////////////////////
-    virtual const WindowHolderList& getWindows() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Removes Window described by given name.
-    /// Also launch a WindowMustClose event to this Window.
-    //////////////////////////////////////////////////////////////////////
-    virtual void remove ( const std::string& name );
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Removes every Window.
-    //////////////////////////////////////////////////////////////////////
-    virtual void clearWindows();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the 'iFactory' property.
-    //////////////////////////////////////////////////////////////////////
-    virtual WindowLoaderFactory& getWindowLoaderFactory();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the 'iFactory' property.
-    //////////////////////////////////////////////////////////////////////
-    virtual const WindowLoaderFactory& getWindowLoaderFactory() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Clears Windows and Factory.
-    //////////////////////////////////////////////////////////////////////
-    virtual void clear();
+    virtual void pollEvents ( const Duration& elapsed ) const ;
     
 protected:
     
-    /// @brief Windows loaded into this Manager.
-    WindowHolderList iWindows;
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Implementation specific poll events.
+    //////////////////////////////////////////////////////////////////////
+    virtual void _pollEvents () const = 0 ;
     
-    /// @brief WindowLoaderFactory.
-    WindowLoaderFactory iFactory;
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Called when receiving Update Event.
+    //////////////////////////////////////////////////////////////////////
+    virtual void onUpdateEvent(const UpdateEvent& e);
+    
+protected:
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief An internal listener to listen for key events.
+    //////////////////////////////////////////////////////////////////////
+    class KeyListener : public EventProceeder
+    {
+    public:
+        
+        POOLED ( Pools::Referenced )
+        
+        KeyListener () ; ~KeyListener () ;
+        
+    protected:
+        
+        //////////////////////////////////////////////////////////////////////
+        /// @brief Called when a Key is up.
+        //////////////////////////////////////////////////////////////////////
+        void onKeyUpEvent(const KeyUpEvent& e);
+        
+        //////////////////////////////////////////////////////////////////////
+        /// @brief Called when a Key is down.
+        //////////////////////////////////////////////////////////////////////
+        void onKeyDownEvent(const KeyDownEvent& e);
+    };
+    
+    /// @brief Listens to every Windows.
+    KeyListener iGlobalKeylistener ;
+    
 };
 
 /// @brief Holder for WindowManager Resource .
-typedef SpecializedResourceHolder < WindowManager > WindowManagerHolder ;
+typedef SpecializedCountedObjectHolder < WindowManager > WindowManagerHolder ;
 
 GreEndNamespace
 #endif /* defined(__GResource__Window__) */

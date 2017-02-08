@@ -34,16 +34,16 @@
 
 GreBeginNamespace
 
-NodePrivate::NodePrivate(const std::string& name)
-: Resource(name)
+Node::Node(const std::string& name)
+: Resource(ResourceIdentifier::New() , name)
 {
     iParent = nullptr;
     iType = Type::Root;
     iParentingBehaviour = ParentingBehaviour::TakePlace;
 }
 
-NodePrivate::NodePrivate(const std::string& name, NodePrivate* parent)
-: Resource(name)
+Node::Node(const std::string& name, Node* parent)
+: Resource(ResourceIdentifier::New() , name)
 {
     iParentingBehaviour = ParentingBehaviour::TakePlace;
     iParent = parent;
@@ -59,7 +59,7 @@ NodePrivate::NodePrivate(const std::string& name, NodePrivate* parent)
     }
 }
 
-NodePrivate::~NodePrivate()
+Node::~Node()
 {
     if(iParent)
     {
@@ -75,51 +75,49 @@ NodePrivate::~NodePrivate()
     }
 }
 
-NodePrivate* NodePrivate::getParent()
+Node* Node::getParent()
 {
     return iParent;
 }
 
-const NodePrivate* NodePrivate::getParent() const
+const Node* Node::getParent() const
 {
     return iParent;
 }
 
-NodePrivate* NodePrivate::findChild(const std::string &name)
+Node* Node::findChild(const std::string &name)
 {
     for(auto child : iChildren)
     {
-        Node childnode (child);
-        if(childnode.getName() == name)
+        if(child->getName() == name)
             return child;
     }
     
     return nullptr;
 }
 
-const NodePrivate* NodePrivate::findChild(const std::string &name) const
+const Node* Node::findChild(const std::string &name) const
 {
     for(auto child : iChildren)
     {
-        Node childnode (child);
-        if(childnode.getName() == name)
+        if(child->getName() == name)
             return child;
     }
     
     return nullptr;
 }
 
-bool NodePrivate::isRoot() const
+bool Node::isRoot() const
 {
     return iType == Type::Root;
 }
 
-NodePrivate::Type NodePrivate::getType() const
+Node::Type Node::getType() const
 {
     return iType;
 }
 
-void NodePrivate::setParent(Gre::NodePrivate *parent)
+void Node::setParent(Gre::Node *parent)
 {
     if(iParent)
     {
@@ -134,7 +132,7 @@ void NodePrivate::setParent(Gre::NodePrivate *parent)
     }
 }
 
-void NodePrivate::addChild(Gre::NodePrivate *node)
+void Node::addChild(Gre::Node *node)
 {
     if(node)
     {
@@ -146,11 +144,11 @@ void NodePrivate::addChild(Gre::NodePrivate *node)
     }
 }
 
-void NodePrivate::removeChild(const std::string &name)
+void Node::removeChild(const std::string &name)
 {
     for(auto it = iChildren.begin(); it != iChildren.end(); it++)
     {
-        NodePrivate* child = *it;
+        Node* child = *it;
         if(child->getName() == name)
         {
             iChildren.erase(it);
@@ -159,11 +157,11 @@ void NodePrivate::removeChild(const std::string &name)
     }
 }
 
-void NodePrivate::removeChild(Gre::NodePrivate *node)
+void Node::removeChild(Gre::Node *node)
 {
     for(auto it = iChildren.begin(); it != iChildren.end(); it++)
     {
-        NodePrivate* child = *it;
+        Node* child = *it;
         if(child == node)
         {
             iChildren.erase(it);
@@ -173,24 +171,24 @@ void NodePrivate::removeChild(Gre::NodePrivate *node)
     }
 }
 
-void NodePrivate::removeAllChildren()
+void Node::removeAllChildren()
 {
     while(!iChildren.empty())
     {
-        NodePrivate* node = (*iChildren.begin());
+        Node* node = (*iChildren.begin());
         iChildren.erase(iChildren.begin());
         node->onParentRemoved(this);
     }
 }
 
-void NodePrivate::onChildConstructed(Gre::NodePrivate *child)
+void Node::onChildConstructed(Gre::Node *child)
 {
     if(!child)
         return;
     
     // Child has been constructed with argument us for parent.
     // We can add it without much assertions. We must avoid using
-    // NodePrivate::addChild() because it would call onParentAdded(), which
+    // Node::addChild() because it would call onParentAdded(), which
     // would call setParent() which would call onChildRemoved() then onChildAdded(),
     // and this would call addChild()...
     
@@ -200,7 +198,7 @@ void NodePrivate::onChildConstructed(Gre::NodePrivate *child)
     }
 }
 
-void NodePrivate::onChildDestroyed(Gre::NodePrivate *child)
+void Node::onChildDestroyed(Gre::Node *child)
 {
     if(!child)
         return;
@@ -215,7 +213,7 @@ void NodePrivate::onChildDestroyed(Gre::NodePrivate *child)
     }
 }
 
-void NodePrivate::onParentDestroyed(Gre::NodePrivate *parent)
+void Node::onParentDestroyed(Gre::Node *parent)
 {
     if(parent == iParent)
     {
@@ -241,7 +239,7 @@ void NodePrivate::onParentDestroyed(Gre::NodePrivate *parent)
     }
 }
 
-void NodePrivate::onChildRemoved(Gre::NodePrivate *child)
+void Node::onChildRemoved(Gre::Node *child)
 {
     if(!child)
         return;
@@ -256,7 +254,7 @@ void NodePrivate::onChildRemoved(Gre::NodePrivate *child)
     }
 }
 
-void NodePrivate::onChildAdded(Gre::NodePrivate *child)
+void Node::onChildAdded(Gre::Node *child)
 {
     if(!child)
         return;
@@ -268,12 +266,12 @@ void NodePrivate::onChildAdded(Gre::NodePrivate *child)
     }
 }
 
-void NodePrivate::onParentAdded(Gre::NodePrivate *parent)
+void Node::onParentAdded(Gre::Node *parent)
 {
     iParent = parent;
 }
 
-void NodePrivate::onParentRemoved(Gre::NodePrivate *parent)
+void Node::onParentRemoved(Gre::Node *parent)
 {
     // We assume 'destroying' a Parent and 'removing' a parent from the
     // Node's tree has, for a Child Node, the same meaning but subclass
@@ -281,146 +279,5 @@ void NodePrivate::onParentRemoved(Gre::NodePrivate *parent)
     
     onParentDestroyed(parent);
 }
-
-// ---------------------------------------------------------------------------------------------------
-
-Node::Node(const NodePrivate* node)
-: ResourceUser(node)
-, SpecializedResourceUser<Gre::NodePrivate>(node)
-{
-    
-}
-
-Node::Node(const NodeHolder& holder)
-: ResourceUser(holder)
-, SpecializedResourceUser<Gre::NodePrivate>(holder)
-{
-    
-}
-
-Node::Node(const Node& user)
-: ResourceUser(user)
-, SpecializedResourceUser<Gre::NodePrivate>(user)
-{
-    
-}
-
-Node::~Node()
-{
-    
-}
-
-Node Node::getParent()
-{
-    auto ptr = lock();
-    if(ptr)
-    {
-        return Node (ptr->getParent());
-    }
-    
-    return Node::Null;
-}
-
-const Node Node::getParent() const
-{
-    auto ptr = lock();
-    if(ptr)
-    {
-        return Node (ptr->getParent());
-    }
-    
-    return Node::Null;
-}
-
-Node Node::findChild(const std::string &name)
-{
-    auto ptr = lock();
-    if(ptr)
-    {
-        return Node (ptr->findChild(name));
-    }
-    
-    return Node::Null;
-}
-
-const Node Node::findChild(const std::string &name) const
-{
-    auto ptr = lock();
-    if(ptr)
-    {
-        return Node (ptr->findChild(name));
-    }
-    
-    return Node::Null;
-}
-
-bool Node::isRoot() const
-{
-    auto ptr = lock();
-    if(ptr)
-    {
-        return ptr->isRoot();
-    }
-    
-    return Node::Null;
-}
-
-NodePrivate::Type Node::getType() const
-{
-    auto ptr = lock();
-    if(ptr)
-    {
-        return ptr->getType();
-    }
-    
-    return NodePrivate::Type::Root;
-}
-
-void Node::setParent(Gre::Node parent)
-{
-    auto ptr = lock();
-    if(ptr)
-    {
-        ptr->setParent(parent.lock().get());
-    }
-}
-
-void Node::addChild(Gre::Node node)
-{
-    auto ptr = lock();
-    if(ptr)
-    {
-        ptr->addChild(node.lock().get());
-    }
-}
-
-void Node::removeChild(const std::string &name)
-{
-    auto ptr = lock();
-    if(ptr)
-    {
-        ptr->removeChild(name);
-    }
-}
-
-void Node::removeChild(Gre::Node node)
-{
-    auto ptr = lock();
-    if(ptr)
-    {
-        ptr->removeChild(node.lock().get());
-    }
-}
-
-void Node::removeAllChildren()
-{
-    auto ptr = lock();
-    if(ptr)
-    {
-        ptr->removeAllChildren();
-    }
-}
-
-Node Node::Null = Node (nullptr);
 
 GreEndNamespace

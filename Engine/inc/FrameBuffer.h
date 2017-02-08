@@ -80,7 +80,7 @@ enum class RenderFramebufferAttachementType
 /// without using a Window.
 ///
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC RenderFramebufferPrivate : public Resource
+class DLL_PUBLIC RenderFramebuffer : public Resource
 {
 public:
     
@@ -88,11 +88,11 @@ public:
 
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    RenderFramebufferPrivate(const std::string& name);
+    RenderFramebuffer(const std::string& name);
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    virtual ~RenderFramebufferPrivate();
+    virtual ~RenderFramebuffer();
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Make the FrameBuffer usable.
@@ -108,13 +108,13 @@ public:
     /// @brief Returns the Texture attached to the given attachement.
     /// This Texture can be invalid.
     //////////////////////////////////////////////////////////////////////
-    virtual Texture getTextureAttachement(const RenderFramebufferAttachement& attachement);
+    virtual TextureUser getTextureAttachement(const RenderFramebufferAttachement& attachement);
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the Texture attached to the given attachement.
     /// This Texture can be invalid.
     //////////////////////////////////////////////////////////////////////
-    virtual const Texture getTextureAttachement(const RenderFramebufferAttachement& attachement) const;
+    virtual const TextureUser getTextureAttachement(const RenderFramebufferAttachement& attachement) const;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the Surface associated with a given Attachement.
@@ -181,90 +181,14 @@ protected:
     AttachementMap iAttachements;
 };
 
-/// @brief SpecializedResourceHolder for RenderFramebuffer.
-typedef SpecializedResourceHolder<RenderFramebufferPrivate> RenderFramebufferHolder;
+/// @brief SpecializedCountedObjectHolder for RenderFramebuffer.
+typedef SpecializedCountedObjectHolder<RenderFramebuffer> RenderFramebufferHolder;
 
 /// @brief SpecializedResourceHolderList for RenderFramebuffer.
-typedef SpecializedResourceHolderList<RenderFramebufferPrivate> RenderFramebufferHolderList;
+typedef SpecializedResourceHolderList<RenderFramebuffer> RenderFramebufferHolderList;
 
-//////////////////////////////////////////////////////////////////////
-/// @brief SpecializedResourceUser for RenderFramebuffer.
-//////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC RenderFramebuffer : public SpecializedResourceUser<RenderFramebufferPrivate>
-{
-public:
-    
-    POOLED(Pools::Resource)
-    
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    RenderFramebuffer(const RenderFramebufferPrivate* pointer);
-    
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    RenderFramebuffer(const RenderFramebufferHolder& holder);
-    
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    RenderFramebuffer(const RenderFramebuffer& user);
-    
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    virtual ~RenderFramebuffer();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Make the FrameBuffer usable.
-    //////////////////////////////////////////////////////////////////////
-    virtual void bind() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Make the FrameBuffer unusable.
-    //////////////////////////////////////////////////////////////////////
-    virtual void unbind() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Texture attached to the given attachement.
-    /// This Texture can be invalid.
-    //////////////////////////////////////////////////////////////////////
-    virtual Texture getTextureAttachement(const RenderFramebufferAttachement& attachement);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Texture attached to the given attachement.
-    /// This Texture can be invalid.
-    //////////////////////////////////////////////////////////////////////
-    virtual const Texture getTextureAttachement(const RenderFramebufferAttachement& attachement) const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Surface associated with a given Attachement.
-    //////////////////////////////////////////////////////////////////////
-    virtual Surface getAttachementSurface(const RenderFramebufferAttachement& attachement) const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Attachs the given texture object to the given Attachement.
-    //////////////////////////////////////////////////////////////////////
-    virtual void setAttachement(const RenderFramebufferAttachement& attachement, TextureHolder& holder);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Maximum Width a Framebuffer Attachement can
-    /// have.
-    //////////////////////////////////////////////////////////////////////
-    virtual int getMaximumWidth() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Maximum Height a Framebuffer Attachement can
-    /// have.
-    //////////////////////////////////////////////////////////////////////
-    virtual int getMaximumHeight() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Maximum number of Color Attachement a Framebuffer
-    /// can have.
-    //////////////////////////////////////////////////////////////////////
-    virtual int getMaximumColorAttachementCount() const;
-    
-    /// @brief A Null FrameBuffer.
-    static RenderFramebuffer Null;
-};
+/// @brief SpecializedCountedObjectUser for RenderFramebuffer.
+typedef SpecializedCountedObjectUser<RenderFramebuffer> RenderFramebufferUser;
 
 //////////////////////////////////////////////////////////////////////
 /// @brief ResourceLoader for RenderFramebuffer.
@@ -284,15 +208,10 @@ public:
     virtual ~RenderFramebufferLoader();
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns true if Resource::Type is ::FrameBuff.
-    //////////////////////////////////////////////////////////////////////
-    virtual bool isTypeSupported(Resource::Type type) const;
-    
-    //////////////////////////////////////////////////////////////////////
     /// @brief Loads a FrameBuffer.
     /// Default implementation returns a null pointer.
     //////////////////////////////////////////////////////////////////////
-    virtual Resource* load(Resource::Type type, const std::string& name) const;
+    virtual RenderFramebufferHolder load ( const std::string& name ) const = 0 ;
 };
 
 /// @brief ResourceLoaderFactory for RenderFramebufferLoader.

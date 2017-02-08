@@ -47,12 +47,6 @@
     [glView setEventQueue:iEventQueue];
 }
 
-/// @brief Returns the current WindowBufEntry.
-- (WindowBufEntry*) getWindowEntry
-{
-    return _nsWindowEntry;
-}
-
 /// @brief Tells if the Window has been closed.
 - (bool) isClosed
 {
@@ -94,17 +88,6 @@
     
     [self setAcceptsMouseMovedEvents:YES];
     //[self isReleasedWhenClosed] = YES;
-    
-    _nsWindowEntry = NULL;
-    
-    // Here we register the Window in an entry.
-    WindowBufEntry* nextAvailableEntry = FindNextAvailableWindowEntry();
-    if(nextAvailableEntry) {
-        nextAvailableEntry->window = self;
-        nextAvailableEntry->closed = false;
-        nextAvailableEntry->exposed = false;
-        _nsWindowEntry = nextAvailableEntry;
-    }
     
     return self;
 }

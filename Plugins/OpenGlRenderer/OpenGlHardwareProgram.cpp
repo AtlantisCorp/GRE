@@ -21,7 +21,7 @@ OpenGlHardwareProgram::OpenGlHardwareProgram(const std::string& name, const Hard
         GLuint fsid = *((const GLuint*)(fs.getCustomData("OpenGlId")));
         
 #ifdef GreIsDebugMode
-        GreDebugPretty() << "Linking Program '" << name << "'." << std::endl;
+        GreDebugPretty() << "Linking Program '" << name << "'." << Gre::gendl;
 #endif
         
         _mProgramId = glGlobalContext->getGl().CreateProgram();
@@ -36,7 +36,7 @@ OpenGlHardwareProgram::OpenGlHardwareProgram(const std::string& name, const Hard
         if(infoLogLenght > 0) {
             std::vector<char> programErrorMessage(infoLogLenght+1);
             glGlobalContext->getGl().GetProgramInfoLog(_mProgramId, infoLogLenght, NULL, &programErrorMessage[0]);
-            GreDebugPretty() << "Glsl Linker Error : " << &programErrorMessage[0] << std::endl;
+            GreDebugPretty() << "Glsl Linker Error : " << &programErrorMessage[0] << Gre::gendl;
         }
         
         glGlobalContext->getGl().DetachShader(_mProgramId, vsid);
@@ -50,7 +50,7 @@ OpenGlHardwareProgram::OpenGlHardwareProgram(const std::string& name, const Hard
 #ifdef GreIsDebugMode
     else
     {
-        GreDebugPretty() << "Tried to create OpenGlHardwareProgram without vertex/fragment shader." << std::endl;
+        GreDebugPretty() << "Tried to create OpenGlHardwareProgram without vertex/fragment shader." << Gre::gendl;
     }
 #endif
 }
@@ -124,7 +124,7 @@ void OpenGlHardwareProgram::finalize()
         if(infoLogLenght > 0) {
             std::vector<char> programErrorMessage(infoLogLenght+1);
             glGlobalContext->getGl().GetProgramInfoLog(_mProgramId, infoLogLenght, NULL, &programErrorMessage[0]);
-            GreDebugPretty() << "Glsl Linker Error : " << &programErrorMessage[0] << std::endl;
+            GreDebugPretty() << "Glsl Linker Error : " << &programErrorMessage[0] << Gre::gendl;
         }
         
         glGlobalContext->getGl().DetachShader(_mProgramId, vsid);

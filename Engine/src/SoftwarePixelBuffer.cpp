@@ -34,13 +34,13 @@
 
 GreBeginNamespace
 
-SoftwarePixelBufferPrivate::SoftwarePixelBufferPrivate(const std::string& name)
-: HardwarePixelBufferPrivate(name), iPixBuffer(nullptr)
+SoftwarePixelBuffer::SoftwarePixelBuffer(const std::string& name)
+: HardwarePixelBuffer(name), iPixBuffer(nullptr)
 {
     
 }
 
-SoftwarePixelBufferPrivate::~SoftwarePixelBufferPrivate()
+SoftwarePixelBuffer::~SoftwarePixelBuffer()
 {
     if ( iPixBuffer )
     {
@@ -48,28 +48,28 @@ SoftwarePixelBufferPrivate::~SoftwarePixelBufferPrivate()
     }
 }
 
-void SoftwarePixelBufferPrivate::setPixelFormat(const Gre::HardwarePixelFormat &pixformat)
+void SoftwarePixelBuffer::setPixelFormat(const Gre::HardwarePixelFormat &pixformat)
 {
     iPixFormat = pixformat;
     // No need to set the 'dirty' flag to true, as every data is stored here.
 }
 
-char* SoftwarePixelBufferPrivate::getData()
+char* SoftwarePixelBuffer::getData()
 {
     return iPixBuffer;
 }
 
-const char* SoftwarePixelBufferPrivate::getData() const
+const char* SoftwarePixelBuffer::getData() const
 {
     return iPixBuffer;
 }
 
-size_t SoftwarePixelBufferPrivate::getSize() const
+size_t SoftwarePixelBuffer::getSize() const
 {
     return iSize;
 }
 
-size_t SoftwarePixelBufferPrivate::count() const
+size_t SoftwarePixelBuffer::count() const
 {
     HardwarePixelFormatDescriptor desc = HardwarePixelFormatDescriptorManager::Instance.getDescriptor(iPixFormat);
     if( desc.iSize != 0 )
@@ -80,7 +80,7 @@ size_t SoftwarePixelBufferPrivate::count() const
     return 0;
 }
 
-void SoftwarePixelBufferPrivate::setData(const char *data, size_t sz)
+void SoftwarePixelBuffer::setData(const char *data, size_t sz)
 {
     if( iPixBuffer )
     {
@@ -89,6 +89,7 @@ void SoftwarePixelBufferPrivate::setData(const char *data, size_t sz)
     
     iSize = sz;
     iPixBuffer = (char*) malloc(sz);
+    memset(iPixBuffer, 0, sz) ;
     
     // We must check for data validity , because one can create an empty buffer.
     
@@ -99,92 +100,5 @@ void SoftwarePixelBufferPrivate::setData(const char *data, size_t sz)
 }
 
 // ---------------------------------------------------------------------------------------------------
-
-SoftwarePixelBuffer::SoftwarePixelBuffer(const SoftwarePixelBufferPrivate* pointer)
-: ResourceUser(pointer)
-, HardwarePixelBuffer(pointer)
-, SpecializedResourceUser<SoftwarePixelBufferPrivate>(pointer)
-{
-    
-}
-
-SoftwarePixelBuffer::SoftwarePixelBuffer(const SoftwarePixelBufferHolder& holder)
-: ResourceUser(holder)
-, HardwarePixelBuffer(holder.get())
-, SpecializedResourceUser<SoftwarePixelBufferPrivate>(holder)
-{
-    
-}
-
-SoftwarePixelBuffer::SoftwarePixelBuffer(const SoftwarePixelBuffer& user)
-: ResourceUser(user)
-, HardwarePixelBuffer(user)
-, SpecializedResourceUser<SoftwarePixelBufferPrivate>(user)
-{
-    
-}
-
-SoftwarePixelBuffer::~SoftwarePixelBuffer()
-{
-    
-}
-
-SoftwarePixelBufferHolder SoftwarePixelBuffer::lock()
-{
-    return SpecializedResourceUser<SoftwarePixelBufferPrivate>::lock();
-}
-
-const SoftwarePixelBufferHolder SoftwarePixelBuffer::lock() const
-{
-    return SpecializedResourceUser<SoftwarePixelBufferPrivate>::lock();
-}
-
-void SoftwarePixelBuffer::setPixelFormat(const Gre::HardwarePixelFormat &pixformat)
-{
-    auto ptr = lock();
-    if ( ptr )
-        ptr->setPixelFormat(pixformat);
-}
-
-char* SoftwarePixelBuffer::getData()
-{
-    auto ptr = lock();
-    if ( ptr )
-        return ptr->getData();
-    return nullptr;
-}
-
-const char* SoftwarePixelBuffer::getData() const
-{
-    auto ptr = lock();
-    if ( ptr )
-        return ptr->getData();
-    return nullptr;
-}
-
-size_t SoftwarePixelBuffer::getSize() const
-{
-    auto ptr = lock();
-    if ( ptr )
-        return ptr->getSize();
-    return 0;
-}
-
-size_t SoftwarePixelBuffer::count() const
-{
-    auto ptr = lock();
-    if ( ptr )
-        return ptr->count();
-    return 0;
-}
-
-void SoftwarePixelBuffer::setData(const char *data, size_t sz)
-{
-    auto ptr = lock();
-    if ( ptr )
-        ptr->setData(data, sz);
-}
-
-SoftwarePixelBuffer SoftwarePixelBuffer::Null = SoftwarePixelBuffer(nullptr);
 
 GreEndNamespace

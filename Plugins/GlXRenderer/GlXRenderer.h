@@ -1,0 +1,139 @@
+//////////////////////////////////////////////////////////////////////
+//
+//  GlXRenderer.h
+//  This source file is part of Gre
+//		(Gang's Resource Engine)
+//
+//  Copyright (c) 2015 - 2016 Luk2010
+//  Created on 23/10/2016.
+//
+//////////////////////////////////////////////////////////////////////
+/*
+ -----------------------------------------------------------------------------
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal
+ in the Software without restriction, including without limitation the rights
+ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
+ 
+ The above copyright notice and this permission notice shall be included in
+ all copies or substantial portions of the Software.
+ 
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ THE SOFTWARE.
+ -----------------------------------------------------------------------------
+ */
+
+#ifndef GlXRenderer_h
+#define GlXRenderer_h
+
+#include "GlX11Headers.h"
+#include "GlXContext.h"
+
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+class GlXRenderer : public Gre::RendererPrivate
+{
+public:
+    
+    POOLED ( Gre::Pools::Render )
+    
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    GlXRenderer ( const std::string& name ) ;
+    
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    virtual ~GlXRenderer () noexcept ( false ) ;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Calls the API - dependent 'drawVertexBuffer' stuff.
+    //////////////////////////////////////////////////////////////////////
+    void drawVertexBufferPrivate(const Gre::HardwareVertexBuffer& vbuf, const Gre::HardwareProgramHolder& program);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Calls the API - dependent 'drawIndexBuffer' stuff.
+    //////////////////////////////////////////////////////////////////////
+    void drawIndexBufferPrivate(const Gre::HardwareIndexBuffer& ibuf, const Gre::HardwareVertexBuffer& vbuf, const Gre::HardwareProgramHolder& program);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Sets the buffer's base color when clearing it.
+    /// @sa glClearColor()
+    //////////////////////////////////////////////////////////////////////
+    void setClearColor(const Gre::Color& color);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Sets the buffer's base depth when clearing it.
+    /// @sa glClearDepth()
+    //////////////////////////////////////////////////////////////////////
+    void setClearDepth(float depth);
+    
+protected:
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Internal method to create a Vertex buffer.
+    //////////////////////////////////////////////////////////////////////
+    Gre::HardwareVertexBufferHolder iCreateVertexBuffer ( const std::string& name , size_t sz ) const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Creates a Texture Object with given name, initialize it
+    /// using API calls. ( like glGenTextures )
+    //////////////////////////////////////////////////////////////////////
+    Gre::TextureHolder iCreateTexturePrivate ( const std::string& name ) const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Creates a RenderContext object.
+    //////////////////////////////////////////////////////////////////////
+    Gre::RenderContextHolder iCreateRenderContext ( const std::string& name , const Gre::RenderContextInfo& info ) const;
+    
+protected:
+    
+    /// @brief Global OpenGl Context .
+    Gre::RenderContextHolder iGlobalContext ;
+};
+
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+class GlXRendererLoader : public Gre::RendererLoader
+{
+public:
+    
+    POOLED ( Gre::Pools::Loader )
+    
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    GlXRendererLoader();
+    
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    ~GlXRendererLoader();
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns 'true' if the given RenderingApiDescriptor is compatible
+    /// with the Renderer loaded by this object.
+    //////////////////////////////////////////////////////////////////////
+    bool isCompatible ( const Gre::RenderingApiDescriptor& apidescriptor ) const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Creates a new Renderer Object.
+    //////////////////////////////////////////////////////////////////////
+    Gre::RendererHolder load ( const std::string& name ) const;
+    
+    ////////////////////////////////////////////////////////////////////////
+    /// @brief Returns a clone of this object.
+    ////////////////////////////////////////////////////////////////////////
+    Gre::ResourceLoader* clone() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns always false.
+    //////////////////////////////////////////////////////////////////////
+    bool isLoadable( const std::string& filepath ) const;
+};
+
+#endif /* GlXRenderer_h */

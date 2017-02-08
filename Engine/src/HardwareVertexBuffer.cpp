@@ -34,46 +34,8 @@
 
 GreBeginNamespace
 
-HardwareVertexBufferPrivate::HardwareVertexBufferPrivate(const std::string& name)
-: Gre::HardwareBufferPrivate(name)
-{
-    
-}
-
-HardwareVertexBufferPrivate::~HardwareVertexBufferPrivate()
-{
-    
-}
-
-const VertexDescriptor& HardwareVertexBufferPrivate::getVertexDescriptor() const
-{
-    return iComponents;
-}
-
-void HardwareVertexBufferPrivate::setVertexDescriptor(const Gre::VertexDescriptor &vdesc)
-{
-    iComponents = vdesc;
-}
-
-// ---------------------------------------------------------------------------------------------------
-
-HardwareVertexBuffer::HardwareVertexBuffer(const HardwareVertexBufferPrivate* pointer)
-: ResourceUser(pointer)
-, HardwareBuffer(pointer)
-{
-    
-}
-
-HardwareVertexBuffer::HardwareVertexBuffer(const HardwareVertexBufferHolder& holder)
-: ResourceUser(holder)
-, HardwareBuffer(holder.get())
-{
-    
-}
-
-HardwareVertexBuffer::HardwareVertexBuffer(const HardwareVertexBuffer& user)
-: ResourceUser(user)
-, HardwareBuffer(user)
+HardwareVertexBuffer::HardwareVertexBuffer(const std::string& name)
+: Gre::HardwareBuffer(name)
 {
     
 }
@@ -83,38 +45,14 @@ HardwareVertexBuffer::~HardwareVertexBuffer()
     
 }
 
-HardwareVertexBufferHolder HardwareVertexBuffer::lock()
-{
-    return GreUserLockCast(HardwareVertexBufferHolder, HardwareVertexBufferPrivate, HardwareBuffer);
-}
-
-const HardwareVertexBufferHolder HardwareVertexBuffer::lock() const
-{
-    return GreUserConstLockCast(HardwareVertexBufferHolder, HardwareVertexBufferPrivate, HardwareBuffer);
-}
-
 const VertexDescriptor& HardwareVertexBuffer::getVertexDescriptor() const
 {
-    auto ptr = lock();
-    if ( ptr )
-        return ptr->getVertexDescriptor();
-    return VertexDescriptor::Default;
+    return iComponents;
 }
 
 void HardwareVertexBuffer::setVertexDescriptor(const Gre::VertexDescriptor &vdesc)
 {
-    auto ptr = lock();
-    if ( ptr )
-        ptr->setVertexDescriptor(vdesc);
+    iComponents = vdesc;
 }
-
-void HardwareVertexBuffer::setData(const HardwareVertexBufferHolder &holder)
-{
-    auto ptr = lock();
-    if ( ptr )
-        ptr->setData(holder);
-}
-
-HardwareVertexBuffer HardwareVertexBuffer::Null = HardwareVertexBuffer(nullptr);
 
 GreEndNamespace

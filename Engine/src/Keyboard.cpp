@@ -47,71 +47,38 @@ Key KeyFromChar ( char key )
 
 // ---------------------------------------------------------------------------------------------------
 
-KeyboardPrivate::KeyboardPrivate(const std::string& name)
-: Resource(name)
-{
-    setShouldTransmitEvents(true);
-}
-
-KeyboardPrivate::~KeyboardPrivate()
+Keyboard::Keyboard(const std::string& name)
+: Resource(ResourceIdentifier::New() , name)
 {
     
 }
 
-bool KeyboardPrivate::isKeyDown(Key k) const
-{
-    if(ikeyDown.find(k) != ikeyDown.end())
-        return ikeyDown.at(k);
-    return false;
-}
-
-void KeyboardPrivate::onKeyUpEvent(const Gre::KeyUpEvent &e)
-{
-    ikeyDown[e.iKey] = false;
-}
-
-void KeyboardPrivate::onKeyDownEvent(const Gre::KeyDownEvent &e)
-{
-    ikeyDown[e.iKey] = true;
-}
-
-// ---------------------------------------------------------------------------------------------------
-
-Keyboard::Keyboard(const KeyboardPrivate* resource)
-: Gre::ResourceUser(resource)
-, SpecializedResourceUser<KeyboardPrivate>(resource)
-{
-    
-}
-
-Keyboard::Keyboard(const KeyboardHolder& holder)
-: Gre::ResourceUser(holder)
-, SpecializedResourceUser<KeyboardPrivate>(holder)
-{
-    
-}
-
-Keyboard::Keyboard(const Keyboard& user)
-: Gre::ResourceUser(user)
-, SpecializedResourceUser<Gre::KeyboardPrivate>(user)
-{
-    
-}
-
-Keyboard::~Keyboard() noexcept(false)
+Keyboard::~Keyboard() noexcept ( false )
 {
     
 }
 
 bool Keyboard::isKeyDown(Key k) const
 {
-    auto ptr = lock();
-    if(ptr)
-        return ptr->isKeyDown(k);
+    if(ikeyDown.find(k) != ikeyDown.end())
+        return ikeyDown.at(k);
     return false;
 }
 
-Keyboard Keyboard::Null = Keyboard ( nullptr );
+void Keyboard::onKeyUpEvent(const Gre::KeyUpEvent &e)
+{
+    ikeyDown[e.iKey] = false;
+}
+
+void Keyboard::onKeyDownEvent(const Gre::KeyDownEvent &e)
+{
+    ikeyDown[e.iKey] = true;
+}
+
+void Keyboard::unload()
+{
+    ikeyDown.clear() ;
+}
 
 // ---------------------------------------------------------------------------------------------------
 
@@ -127,7 +94,7 @@ KeyboardLoader::~KeyboardLoader() noexcept(false)
 
 KeyboardHolder KeyboardLoader::load(const std::string &name) const
 {
-    return KeyboardHolder ( new KeyboardPrivate ( name ) );
+    return KeyboardHolder ( new Keyboard ( name ) );
 }
 
 bool KeyboardLoader::isLoadable(const std::string &filepath) const
@@ -138,6 +105,103 @@ bool KeyboardLoader::isLoadable(const std::string &filepath) const
 ResourceLoader* KeyboardLoader::clone() const
 {
     return new KeyboardLoader();
+}
+
+// ---------------------------------------------------------------------------------------------------
+
+KeyboardManager::KeyboardManager ()
+: Gre::SpecializedResourceManager < Keyboard , KeyboardLoader > ()
+, iKeyboardListener(new KeyboardListener(this))
+{
+    
+}
+
+KeyboardManager::KeyboardManager ( const std::string & name )
+: Gre::SpecializedResourceManager < Keyboard , KeyboardLoader > ( name )
+, iKeyboardListener ( new KeyboardListener(this) )
+{
+    
+}
+
+KeyboardManager::~KeyboardManager () noexcept ( false )
+{
+    
+}
+
+KeyboardUser KeyboardManager::load(const std::string &kbdname)
+{
+    GreAutolock ;
+    
+    KeyboardHolder kbd ( new Keyboard ( kbdname ) ) ;
+    
+    if ( !kbd.isInvalid() )
+    {
+        iHolders.add(kbd);
+        addListener( KeyboardUser(kbd) ) ;
+        
+        if ( !iKeyboardListener.isInvalid() )
+        {
+            kbd->addListener( SpecializedCountedObjectUser<EventProceeder>(iKeyboardListener) ) ;
+        }
+        
+        return KeyboardUser ( kbd ) ;
+    }
+    
+    else
+    {
+        return KeyboardUser ( nullptr ) ;
+    }
+}
+
+void KeyboardManager::addGlobalKeyListener(const SpecializedCountedObjectUser<Gre::EventProceeder> &listener)
+{
+    GreAutolock ; iGlobalKeyListeners.push_back(listener) ;
+}
+
+void KeyboardManager::clearGlobalKeyListeners()
+{
+    GreAutolock ; iGlobalKeyListeners.clear() ;
+}
+
+void KeyboardManager::iSendGlobalKeyEvent(EventHolder &e)
+{
+    GreAutolock ;
+    
+    for ( EventProceederUser & proceeder : iGlobalKeyListeners )
+    {
+        if ( !proceeder.isInvalid() )
+        {
+            EventProceederHolder pholder = proceeder.lock() ;
+            pholder->onEvent( e ) ;
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------------------------------
+
+KeyboardManager::KeyboardListener::KeyboardListener ( KeyboardManager * creator )
+: Gre::EventProceeder() , iManager(creator)
+{
+    if ( !creator )
+    {
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "KeyboardManager::KeyboardListener can't be initialized with a null manager." << Gre::gendl ;
+#endif
+        throw GreExceptionWithText ("KeyboardManager::KeyboardListener can't be initialized with a null manager.") ;
+    }
+}
+
+KeyboardManager::KeyboardListener::~KeyboardListener() noexcept ( false ) 
+{
+    
+}
+
+void KeyboardManager::KeyboardListener::onEvent(EventHolder &e)
+{
+    if ( iManager )
+    {
+        iManager->iSendGlobalKeyEvent(e) ;
+    }
 }
 
 GreEndNamespace
