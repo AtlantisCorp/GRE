@@ -351,6 +351,25 @@ public:
         ResourceManagerBase < Class > :: unload () ;
     }
     
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the first loader with given name.
+    /// If name is empty, returns the first loader.
+    //////////////////////////////////////////////////////////////////////
+    virtual ClassLoader * findLoader ( const std::string & name = std::string() )
+    {
+        auto & loaderlist = iLoaders.getLoaders () ;
+        
+        for ( auto it = loaderlist.begin() ; it != loaderlist.end() ; it++ )
+        {
+            if ( it->first == name )
+            {
+                return it->second.get() ;
+            }
+        }
+        
+        return nullptr ;
+    }
+    
 protected:
     
     ////////////////////////////////////////////////////////////////////////

@@ -152,6 +152,8 @@
 #include <glm/glm.hpp>
 #include <glm/ext.hpp>
 
+GreBeginNamespace
+
 #ifdef GrePlatformUnix
     template<typename T> using TVector2 = glm::details::tvec2<T, glm::highp>;
     template<typename T> using TVector3 = glm::details::tvec3<T, glm::highp>;
@@ -184,6 +186,8 @@ typedef std::chrono::duration < float > Duration ;
 /// @brief Delta of two Time , in milliseconds.
 typedef std::chrono::milliseconds DurationMilli ;
 
+GreEndNamespace
+
 // This file is here to includes some third-party code help.
 #include "ThirdParty.h"
 #include "Exceptions.h"
@@ -194,7 +198,7 @@ GreBeginNamespace
 
 #define GreVersionMajor 0             ///< @brief GRE Major version.
 #define GreVersionMinor 0             ///< @brief GRE Minor version.
-#define GreVersionBuild 19            ///< @brief GRE Build number.
+#define GreVersionBuild 20            ///< @brief GRE Build number.
 
 /// @brief Defines the Version structure.
 typedef struct Version

@@ -83,30 +83,108 @@ void Event::setShouldStopPropagating(bool value)
 
 // ---------------------------------------------------------------------------------------------------
 
-KeyDownEvent::KeyDownEvent ( const EventProceeder * emitter , Key key )
+KeyDownEvent::KeyDownEvent ( const EventProceeder * emitter , Key key , int mods )
 : Gre::Event( emitter , EventType::KeyDown )
-, iKey(key)
+, iKey(key) , iModifiers(mods)
 {
     
 }
 
 Event* KeyDownEvent::clone() const
 {
-    return new KeyDownEvent ( iEmitter->lock().getObject() , iKey ) ;
+    return new KeyDownEvent ( iEmitter->lock().getObject() , iKey , iModifiers ) ;
 }
 
 // ---------------------------------------------------------------------------------------------------
 
-KeyUpEvent::KeyUpEvent ( const EventProceeder * emitter , Key key )
+KeyUpEvent::KeyUpEvent ( const EventProceeder * emitter , Key key , int mods )
 : Gre::Event( emitter , EventType::KeyUp )
-, iKey(key)
+, iKey(key) , iModifiers(mods)
 {
     
 }
 
 Event* KeyUpEvent::clone() const
 {
-    return new KeyUpEvent ( iEmitter->lock().getObject() , iKey ) ;
+    return new KeyUpEvent ( iEmitter->lock().getObject() , iKey , iModifiers ) ;
+}
+
+// ---------------------------------------------------------------------------------------------------
+
+LeftMousePressEvent::LeftMousePressEvent ( const EventProceeder* emitter )
+: Gre::Event ( emitter , EventType::LeftMousePress )
+{
+    
+}
+
+Event* LeftMousePressEvent::clone() const
+{
+    return new LeftMousePressEvent ( iEmitter->lock().getObject() ) ;
+}
+
+// ---------------------------------------------------------------------------------------------------
+
+LeftMouseReleaseEvent::LeftMouseReleaseEvent ( const EventProceeder* emitter )
+: Gre::Event ( emitter , EventType::LeftMouseRelease )
+{
+    
+}
+
+Event* LeftMouseReleaseEvent::clone() const
+{
+    return new LeftMouseReleaseEvent ( iEmitter->lock().getObject() ) ;
+}
+
+// ---------------------------------------------------------------------------------------------------
+
+RightMousePressEvent::RightMousePressEvent ( const EventProceeder* emitter )
+: Gre::Event ( emitter , EventType::RightMousePress )
+{
+    
+}
+
+Event* RightMousePressEvent::clone() const
+{
+    return new RightMousePressEvent ( iEmitter->lock().getObject() ) ;
+}
+
+// ---------------------------------------------------------------------------------------------------
+
+RightMouseReleaseEvent::RightMouseReleaseEvent ( const EventProceeder* emitter )
+: Gre::Event ( emitter , EventType::RightMouseRelease )
+{
+    
+}
+
+Event* RightMouseReleaseEvent::clone() const
+{
+    return new RightMouseReleaseEvent ( iEmitter->lock().getObject() ) ;
+}
+
+// ---------------------------------------------------------------------------------------------------
+
+MouseExitedWindowEvent::MouseExitedWindowEvent ( const EventProceeder* emitter )
+: Gre::Event ( emitter , EventType::MouseExitedWindow )
+{
+    
+}
+
+Event* MouseExitedWindowEvent::clone() const
+{
+    return new MouseExitedWindowEvent ( iEmitter->lock().getObject() ) ;
+}
+
+// ---------------------------------------------------------------------------------------------------
+
+MouseEnteredWindowEvent::MouseEnteredWindowEvent ( const EventProceeder* emitter )
+: Gre::Event ( emitter , EventType::MouseEnteredWindow )
+{
+    
+}
+
+Event* MouseEnteredWindowEvent::clone() const
+{
+    return new MouseEnteredWindowEvent ( iEmitter->lock().getObject() ) ;
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -371,6 +449,32 @@ Event* RendererUnregisteredTargetEvent::clone() const
     } else {
         return new RendererUnregisteredTargetEvent ( iEmitter->lock().getObject() , nullptr ) ;
     }
+}
+
+// ---------------------------------------------------------------------------------------------------
+
+RenderScenePreRenderEvent::RenderScenePreRenderEvent ( const EventProceeder * emitter )
+: Gre::Event( emitter , EventType::RenderScenePreRender )
+{
+    
+}
+
+Event* RenderScenePreRenderEvent::clone() const
+{
+    return new RenderScenePreRenderEvent ( iEmitter->lock().getObject() ) ;
+}
+
+// ---------------------------------------------------------------------------------------------------
+
+RenderScenePostRenderEvent::RenderScenePostRenderEvent ( const EventProceeder * emitter )
+: Gre::Event( emitter , EventType::RenderScenePostRender )
+{
+    
+}
+
+Event* RenderScenePostRenderEvent::clone() const
+{
+    return new RenderScenePostRenderEvent ( iEmitter->lock().getObject() ) ;
 }
 
 // ---------------------------------------------------------------------------------------------------

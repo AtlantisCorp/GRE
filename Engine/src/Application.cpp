@@ -231,13 +231,29 @@ ApplicationHolder Application::Create(const std::string &name , const std::strin
 {
     ApplicationLoaderFactory & f = ResourceManager::Get().getApplicationFactory() ;
     ApplicationLoader* l = f.getFirst() ;
-    if ( l )
-    {
-        return l->load(name, author, description);
+    
+    if ( l ) {
+        ApplicationHolder app = l->load(name, author, description) ;
+        if ( !app.isInvalid() ) iSharedApplication = app ;
+        return app ;
     }
     
     return ApplicationHolder ( nullptr ) ;
 }
+
+ApplicationHolder Application::GetShared ()
+{
+    return iSharedApplication ;
+}
+
+void Application::Destroy()
+{
+    if ( !iSharedApplication.isInvalid() ) {
+        iSharedApplication.clear() ;
+    }
+}
+
+ApplicationHolder Application::iSharedApplication = ApplicationHolder ( nullptr ) ;
 
 // ---------------------------------------------------------------------------------------------------
 

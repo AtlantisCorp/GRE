@@ -42,7 +42,7 @@ GreBeginNamespace
 
 typedef std::chrono::high_resolution_clock Clock;
 
-Renderer::Renderer (const std::string& name)
+Renderer::Renderer (const std::string& name, const RendererOptions& options)
 : Gre::Resource( name )
 , iDefaultProgram(nullptr) , iDefaultTexturedProgram(nullptr)
 , iDefaultMaterial(nullptr)
@@ -79,6 +79,17 @@ void Renderer::draw(const Gre::RenderingQuery &query) const
         
         postNode ( node , query.getCamera() , query.getHardwareProgram() ) ;
     }
+}
+
+void Renderer::preRender ( const Color& clearcolor ) const
+{
+    _setClearColor(clearcolor) ;
+    _preRender () ;
+}
+
+void Renderer::postRender () const
+{
+    _postRender () ;
 }
 
 void Renderer::setHardwareProgram ( const HardwareProgramUser& program ) const
@@ -250,33 +261,6 @@ void Renderer::installManagers ()
         }
     }
     
-    RenderContextManagerHolder ctxtmanager = iCreateRenderContextManager () ;
-    
-    if ( ctxtmanager.isInvalid() )
-    {
-        iInstalled = false ;
-#ifdef GreIsDebugMode
-        GreDebugPretty () << "No RenderContext Manager can be installed." << Gre::gendl ;
-#endif
-    }
-    else
-    {
-        if ( ResourceManager::Get().getRenderContextManager().isInvalid() )
-        {
-            ResourceManager::Get().setRenderContextManager ( ctxtmanager ) ;
-#ifdef GreIsDebugMode
-            GreDebugPretty () << "RenderContext Manager installed." << Gre::gendl ;
-#endif
-        }
-        else
-        {
-            iInstalled = false ;
-#ifdef GreIsDebugMode
-            GreDebugPretty () << "RenderContext Manager already present and cannot be installed." << Gre::gendl ;
-#endif
-        }
-    }
-    
     HardwareProgramManagerHolder pmanager = iCreateProgramManager () ;
     
     if ( pmanager.isInvalid() )
@@ -320,7 +304,6 @@ void Renderer::unload ( )
     {
         ResourceManager::Get() .setMeshManager ( MeshManagerHolder(nullptr) ) ;
         ResourceManager::Get() .setTextureManager ( TextureManagerHolder(nullptr) ) ;
-        ResourceManager::Get() .setRenderContextManager ( RenderContextManagerHolder(nullptr) ) ;
         ResourceManager::Get() .setHardwareProgramManager ( HardwareProgramManagerHolder(nullptr) ) ;
         iInstalled = false ;
     }
@@ -397,7 +380,7 @@ RendererManager::~RendererManager() noexcept ( false )
     
 }
 
-RendererUser RendererManager::load(const std::string &name, const Gre::RendererInfo &info)
+RendererUser RendererManager::load(const std::string &name, const Gre::RendererOptions &options)
 {
     GreAutolock ;
     
@@ -419,9 +402,9 @@ RendererUser RendererManager::load(const std::string &name, const Gre::RendererI
             
             if ( loader )
             {
-                if ( loader->isCompatible(info) )
+                if ( loader->isCompatible(options) )
                 {
-                    RendererHolder rholder = loader->load(name);
+                    RendererHolder rholder = loader->load(name, options);
                     
                     if ( rholder.isInvalid() )
                     {

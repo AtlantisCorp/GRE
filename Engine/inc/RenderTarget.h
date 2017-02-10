@@ -125,25 +125,25 @@ public:
     /// @brief Returns an holder to the RenderContext associated to this
     /// RenderTarget, or null.
     //////////////////////////////////////////////////////////////////////
-    virtual RenderContextHolder getRenderContext() = 0;
+    virtual RenderContextUser getRenderContext() = 0;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns an holder to the RenderContext associated to this
     /// RenderTarget, or null.
     //////////////////////////////////////////////////////////////////////
-    virtual const RenderContextHolder getRenderContext() const = 0;
+    virtual const RenderContextUser getRenderContext() const = 0;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the RenderFramebufferHolder this RenderTarget contains,
     /// or null.
     //////////////////////////////////////////////////////////////////////
-    virtual RenderFramebufferHolder getFramebuffer() = 0;
+    virtual RenderFramebufferUser getFramebuffer() = 0;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the RenderFramebufferHolder this RenderTarget contains,
     /// or null.
     //////////////////////////////////////////////////////////////////////
-    virtual const RenderFramebufferHolder getFramebuffer() const = 0;
+    virtual const RenderFramebufferUser getFramebuffer() const = 0;
 };
 
 /// @brief SpecializedCountedObjectHolder for RenderTargetPrivate.

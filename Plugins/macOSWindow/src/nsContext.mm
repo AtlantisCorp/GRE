@@ -1,11 +1,11 @@
 //////////////////////////////////////////////////////////////////////
 //
-//  Technique.cpp
+//  nsContext.mm
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
 //  Copyright (c) 2015 - 2017 Luk2010
-//  Created on 08/02/2017.
+//  Created on 10/02/2017.
 //
 //////////////////////////////////////////////////////////////////////
 /*
@@ -30,59 +30,41 @@
  -----------------------------------------------------------------------------
  */
 
-#include "Technique.h"
+#include "nsContext.h"
 
-GreBeginNamespace
+// ---------------------------------------------------------------------------------------------------------
+// nsContext C++
 
-Technique::Technique ( const std::string & name )
-: Gre::Resource(name)
-{
-    iActivated = true ;
-}
-
-Technique::~Technique() noexcept ( false )
+nsContext::nsContext ( const std::string & name , const RenderContextInfo& info , id obj , id pix )
+: Gre::RenderContext(name, info) , nsglContext(obj) , nsglPixelFormat(pix)
 {
     
 }
 
-const std::vector < RenderPassHolder > & Technique::getPasses() const
+nsContext::~nsContext() noexcept ( false )
 {
-    GreAutolock ; return iPasses ;
+    [nsglPixelFormat release] ;
+    nsglPixelFormat = nil ;
+    
+    [nsglContext release] ;
+    nsglContext = nil ;
 }
 
-const CameraHolder & Technique::getCamera() const
+void nsContext::bind() const
 {
-    GreAutolock ; return iCamera ;
+    [nsglContext makeCurrentContext];
+    iIsBinded = true ;
 }
 
-const Viewport & Technique::getViewport () const
+void nsContext::unbind() const
 {
-    GreAutolock ; return iViewport ;
+    [NSOpenGLContext clearCurrentContext];
+    iIsBinded = false ;
 }
 
-bool Technique::isExclusive () const
+void nsContext::flush()
 {
-    GreAutolock ; return iExclusive ;
+    [nsglContext flushBuffer];
 }
 
-const std::vector < RenderNodeHolder > & Technique::getNodes() const
-{
-    GreAutolock ; return iRenderedNodes ;
-}
 
-bool Technique::hasSubtechniques () const
-{
-    GreAutolock ; return iSubtechniques.size() > 0 ;
-}
-
-const std::vector < TechniqueHolder > & Technique::getSubtechniques () const
-{
-    GreAutolock ; return iSubtechniques ;
-}
-
-bool Technique::isActivated () const
-{
-    return iActivated ;
-}
-
-GreEndNamespace

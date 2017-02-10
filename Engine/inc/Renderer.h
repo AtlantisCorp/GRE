@@ -64,7 +64,7 @@ class RenderingQuery ;
 typedef std::chrono::milliseconds ElapsedTime;
 
 /// @brief Info structure for Renderer.
-typedef VariantDictionnary RendererInfo ;
+typedef VariantDictionnary RendererOptions ;
 
 /// @brief Matrix Types used by the Engine.
 enum class MatrixType
@@ -95,17 +95,19 @@ enum class RendererFeature
 /// @class RendererPrivate
 /// @brief Base class for Renderer Objects.
 ///
-/// The Renderer is responsible for rendering any RenderTarget the user
-/// pass to it . This rendering does not have to be synchronized.
+/// A 'Renderer' is an object, that use a defined Rendering API (as
+/// OpenGl, DirectX, Vulkan) to draw a defined 'RenderingQuery'. Normally,
+/// this 'RenderingQuery' is defined by a 'RenderScene'.
 ///
-/// The Renderer is also responsible for installing managers to the
-/// ResourceManager . If those managers are already installed , you can
-/// use the functions 'create*Manager()' to create the Manager corresponding
-/// to this Renderer.
+/// The Renderer is not responsible for RenderContext creation/management.
+/// This is done in order to have the following situation : an OpenGl
+/// Renderer has to be written once in a plugin. Then, different plugins
+/// can create OpenGl Window with RenderContext creation depending on
+/// the platform, for example Cocoa OpenGl RenderContext or GlX Contexts.
 ///
-/// Many managers have to be created by the Renderer object , as the
-/// MeshManager or the TextureManager , in order to convert those objects
-/// to API - dependant objects .
+/// @note
+/// The Renderer can install some managers into the Engine. Those
+/// managers are dependent from him. 
 ///
 //////////////////////////////////////////////////////////////////////
 class DLL_PUBLIC Renderer : public Resource
@@ -116,7 +118,7 @@ public:
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    Renderer ( const std::string& name );
+    Renderer ( const std::string& name , const RendererOptions& options );
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
@@ -131,7 +133,32 @@ public:
     //////////////////////////////////////////////////////////////////////
     virtual void draw ( const RenderingQuery & query ) const ;
     
+    ////////////////////////////////////////////////////////////////////////
+    /// @brief Prepare a new rendering process.
+    ////////////////////////////////////////////////////////////////////////
+    virtual void preRender ( const Color& clearcolor ) const ;
+    
+    ////////////////////////////////////////////////////////////////////////
+    /// @brief Ends the current rendering process.
+    ////////////////////////////////////////////////////////////////////////
+    virtual void postRender () const ;
+    
 protected:
+    
+    ////////////////////////////////////////////////////////////////////////
+    /// @brief Sets the clearing color.
+    ////////////////////////////////////////////////////////////////////////
+    virtual void _setClearColor ( const Color& color ) const = 0 ;
+    
+    ////////////////////////////////////////////////////////////////////////
+    /// @brief Do some action before rendering.
+    ////////////////////////////////////////////////////////////////////////
+    virtual void _preRender () const = 0 ;
+    
+    ////////////////////////////////////////////////////////////////////////
+    /// @brief Do some action after rendering.
+    ////////////////////////////////////////////////////////////////////////
+    virtual void _postRender () const = 0 ;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Sets the current Viewport.
@@ -205,11 +232,6 @@ public:
     /// @brief Creates a TextureManager for this Renderer.
     //////////////////////////////////////////////////////////////////////
     virtual TextureManagerHolder iCreateTextureManager ( ) const = 0 ;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Creates a RenderContextManager.
-    //////////////////////////////////////////////////////////////////////
-    virtual RenderContextManagerHolder iCreateRenderContextManager ( ) const = 0 ;
     
 public:
     
@@ -308,12 +330,12 @@ public:
     /// @brief Returns 'true' if the given RenderingApiDescriptor is compatible
     /// with the Renderer loaded by this object.
     //////////////////////////////////////////////////////////////////////
-    virtual bool isCompatible ( const RendererInfo& info ) const = 0;
+    virtual bool isCompatible ( const RendererOptions& options ) const = 0;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Creates a new Renderer Object.
     //////////////////////////////////////////////////////////////////////
-    virtual RendererHolder load ( const std::string& name ) const = 0;
+    virtual RendererHolder load ( const std::string& name , const RendererOptions& options ) const = 0;
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -341,7 +363,7 @@ public:
     //////////////////////////////////////////////////////////////////////
     /// @brief Creates a new Renderer , following given rules.
     //////////////////////////////////////////////////////////////////////
-    virtual RendererUser load ( const std::string & name , const RendererInfo & info ) ;
+    virtual RendererUser load ( const std::string & name , const RendererOptions & options ) ;
 };
 
 /// @brief SpecializedCountedObjectHolder for RendererManager.

@@ -1,11 +1,11 @@
 //////////////////////////////////////////////////////////////////////
 //
-//  Technique.cpp
+//  PluginMain.cpp
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
 //  Copyright (c) 2015 - 2017 Luk2010
-//  Created on 08/02/2017.
+//  Created on 09/02/2017.
 //
 //////////////////////////////////////////////////////////////////////
 /*
@@ -30,59 +30,39 @@
  -----------------------------------------------------------------------------
  */
 
-#include "Technique.h"
+#include <ResourceManager.h>
+#include "macOSWindowManager.h"
+#include "macOSWindow.h"
 
-GreBeginNamespace
+using namespace Gre ;
 
-Technique::Technique ( const std::string & name )
-: Gre::Resource(name)
+extern "C" void* GetPluginName (void)
 {
-    iActivated = true ;
+    return (void*) "macOS Window Manager" ;
 }
 
-Technique::~Technique() noexcept ( false )
+extern "C" void StartPlugin (void)
 {
+    // Create a Window Manager and initialize Appkit.
+    macOSWindowManager* wmanager = new macOSWindowManager() ;
+    initializeAppkit ( wmanager ) ;
     
+    // Registers the Window Loader.
+    wmanager->getFactory().registers("macOS Window Loader", new macOSWindowLoader());
+    
+    // Here , we only have to register the macOSWindowManager.
+    ResourceManager::Get().setWindowManager(WindowManagerHolder(wmanager));
 }
 
-const std::vector < RenderPassHolder > & Technique::getPasses() const
+extern "C" void StopPlugin (void)
 {
-    GreAutolock ; return iPasses ;
+    // Retrieve the Window Manager and terminate appkit.
+    macOSWindowManager* manager = reinterpret_cast<macOSWindowManager*>(ResourceManager::Get().getWindowManager().getObject());
+    terminateAppkit(manager);
+    
+    // Unloads the Window Manager.
+    ResourceManager::Get().setWindowManager(WindowManagerHolder(nullptr));
 }
 
-const CameraHolder & Technique::getCamera() const
-{
-    GreAutolock ; return iCamera ;
-}
 
-const Viewport & Technique::getViewport () const
-{
-    GreAutolock ; return iViewport ;
-}
 
-bool Technique::isExclusive () const
-{
-    GreAutolock ; return iExclusive ;
-}
-
-const std::vector < RenderNodeHolder > & Technique::getNodes() const
-{
-    GreAutolock ; return iRenderedNodes ;
-}
-
-bool Technique::hasSubtechniques () const
-{
-    GreAutolock ; return iSubtechniques.size() > 0 ;
-}
-
-const std::vector < TechniqueHolder > & Technique::getSubtechniques () const
-{
-    GreAutolock ; return iSubtechniques ;
-}
-
-bool Technique::isActivated () const
-{
-    return iActivated ;
-}
-
-GreEndNamespace

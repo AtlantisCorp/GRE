@@ -45,17 +45,14 @@ void ResourceManager::Create()
 
 void ResourceManager::Destroy()
 {
-    if( iManager )
-    {
-        delete iManager;
-    }
-    
 #ifdef GreIsDebugMode
-    else
-    {
-        GreDebugPretty() << "Called ResourceManager::Destroy() more than once, or before ResourceManager::Create()." << Gre::gendl;
+    if ( !iManager ) {
+        GreDebug("[WARN] ResourceManager is already 'null'.") << Gre::gendl ;
     }
 #endif
+    
+    Application::Destroy() ;
+    if ( iManager ) delete iManager ;
 }
 
 ResourceManager& ResourceManager::Get()
@@ -251,17 +248,25 @@ int ResourceManager::loadPluginsIn(const std::string &dirname)
             if (d_name == "." || d_name == "..")
                 continue;
             
-            PluginUser plugin = iPluginManager->load(std::string(ent->d_name) + "-plugin", dirname + "/" + ent->d_name);
+            std::string plugname = d_name + "-plugin" ;
+            std::string plugpath = dirname + "/" + d_name ;
             
-#ifdef GreIsDebugMode
-            if( plugin.isInvalid() )
+            PluginUser plugin = iPluginManager->load(plugname, plugpath);
+            
             {
-                GreDebugPretty() << "Couldn't load plugin '" << ent->d_name << "'." << Gre::gendl;
-                continue;
-            }
+                auto pluginholder = plugin.lock();
+                if ( pluginholder.isInvalid() ) {
+#ifdef GreIsDebugMode
+                    GreDebug("[WARN] Plugin '") << d_name << "' not loaded correctly." << Gre::gendl;
 #endif
-            
-            plugin.lock() ->start();
+                } else {
+                    pluginholder -> start() ;
+#ifdef GreIsDebugMode
+                    GreDebug("[INFO] Plugin '") << pluginholder -> getName() << "' started." << Gre::gendl ;
+#endif
+                    res ++ ;
+                }
+            }
         }
         
         closedir (dir);
@@ -269,8 +274,9 @@ int ResourceManager::loadPluginsIn(const std::string &dirname)
     
     else
     {
-        /* could not open directory */
-        perror("");
+#ifdef GreIsDebugMode
+        GreDebug("[WARN] Directory '") << dirname << "' not found." << Gre::gendl ;
+#endif
         return 0;
     }
     

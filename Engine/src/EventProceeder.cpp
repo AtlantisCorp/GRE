@@ -73,6 +73,11 @@ void EventProceeder::sendEvent(EventHolder &holder)
     }
 }
 
+void EventProceeder::sendEvent(EventHolder &holder) const
+{
+    const_cast<EventProceeder*>(this)->sendEvent(holder) ;
+}
+
 void EventProceeder::onEvent(EventHolder &holder)
 {
     GreAutolock ;
@@ -96,6 +101,30 @@ void EventProceeder::onEvent(EventHolder &holder)
                 
             case EventType::KeyUp:
                 onKeyUpEvent(event->to<KeyUpEvent>());
+                break;
+                
+            case EventType::LeftMousePress:
+                onLeftMousePressEvent(event->to<LeftMousePressEvent>());
+                break;
+                
+            case EventType::LeftMouseRelease:
+                onLeftMouseReleaseEvent(event->to<LeftMouseReleaseEvent>());
+                break;
+                
+            case EventType::RightMousePress:
+                onRightMousePressEvent(event->to<RightMousePressEvent>());
+                break;
+                
+            case EventType::RightMouseRelease:
+                onRightMouseReleaseEvent(event->to<RightMouseReleaseEvent>());
+                break;
+                
+            case EventType::MouseExitedWindow:
+                onMouseExitedWindowEvent(event->to<MouseExitedWindowEvent>());
+                break;
+                
+            case EventType::MouseEnteredWindow:
+                onMouseEnteredWindowEvent(event->to<MouseEnteredWindowEvent>());
                 break;
                 
             case EventType::Update:
@@ -164,6 +193,14 @@ void EventProceeder::onEvent(EventHolder &holder)
                 
             case EventType::RendererUnregisteredTarget:
                 onRendererUnregisteredTargetEvent(event->to<RendererUnregisteredTargetEvent>());
+                break;
+                
+            case EventType::RenderScenePreRender:
+                onRenderScenePreRenderEvent(event->to<RenderScenePreRenderEvent>());
+                break;
+                
+            case EventType::RenderScenePostRender:
+                onRenderScenePostRenderEvent(event->to<RenderScenePostRenderEvent>());
                 break;
                 
             case EventType::ResourceUnloaded:
@@ -289,6 +326,36 @@ void EventProceeder::onKeyDownEvent(const Gre::KeyDownEvent &e)
     
 }
 
+void EventProceeder::onLeftMousePressEvent(const Gre::LeftMousePressEvent &e)
+{
+    
+}
+
+void EventProceeder::onLeftMouseReleaseEvent(const Gre::LeftMouseReleaseEvent &e)
+{
+    
+}
+
+void EventProceeder::onRightMousePressEvent(const Gre::RightMousePressEvent &e)
+{
+    
+}
+
+void EventProceeder::onRightMouseReleaseEvent(const Gre::RightMouseReleaseEvent &e)
+{
+    
+}
+
+void EventProceeder::onMouseExitedWindowEvent(const Gre::MouseExitedWindowEvent &e)
+{
+    
+}
+
+void EventProceeder::onMouseEnteredWindowEvent(const Gre::MouseEnteredWindowEvent &e)
+{
+    
+}
+
 void EventProceeder::onWindowMovedEvent(const Gre::WindowMovedEvent &e)
 {
     
@@ -365,6 +432,16 @@ void EventProceeder::onRendererRegisteredTargetEvent(const Gre::RendererRegister
 }
 
 void EventProceeder::onRendererUnregisteredTargetEvent(const Gre::RendererUnregisteredTargetEvent &e)
+{
+    
+}
+
+void EventProceeder::onRenderScenePreRenderEvent(const Gre::RenderScenePreRenderEvent &e)
+{
+    
+}
+
+void EventProceeder::onRenderScenePostRenderEvent(const Gre::RenderScenePostRenderEvent &e)
 {
     
 }

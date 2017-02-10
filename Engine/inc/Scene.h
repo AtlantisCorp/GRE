@@ -44,6 +44,13 @@ THE SOFTWARE.
 
 GreBeginNamespace
 
+/// @brief Options to initialize the RenderScene.
+/// A list of options possible are :
+///   - "Technique" -> string : Name of the Technique object to load. ( Default = "Default" )
+///   - "Loader" -> string : Name of the desired loader. ( Default = "" ) 
+
+typedef std::map < std::string , Variant > RenderSceneOptions ;
+
 //////////////////////////////////////////////////////////////////////
 /// @brief A Filter to sort RenderSceneNode.
 //////////////////////////////////////////////////////////////////////
@@ -114,7 +121,7 @@ public:
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    RenderScene(const std::string& name);
+    RenderScene(const std::string& name , const RenderSceneOptions & options = RenderSceneOptions());
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
@@ -183,12 +190,42 @@ public:
     //////////////////////////////////////////////////////////////////////
     virtual void draw ( const EventHolder& elapsed ) const ;
     
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Changes 'iTechnique'.
+    //////////////////////////////////////////////////////////////////////
+    virtual void setTechnique ( const TechniqueUser& technique ) ;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Changes 'iRenderer'.
+    //////////////////////////////////////////////////////////////////////
+    virtual void setRenderer ( const RendererUser& renderer ) ;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Changes 'iRenderTarget'.
+    //////////////////////////////////////////////////////////////////////
+    virtual void setRenderTarget ( const RenderTargetUser& target ) ;
+    
+    ////////////////////////////////////////////////////////////////////////
+    /// @brief Changes 'iClearColor'.
+    ////////////////////////////////////////////////////////////////////////
+    virtual void setClearColor ( const Color& color ) ;
+    
 protected:
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Draw the main technique or sub-techniques ( viewports ) .
     //////////////////////////////////////////////////////////////////////
     virtual void drawTechnique ( const TechniqueHolder& technique , const EventHolder& elapsed ) const ;
+    
+    ////////////////////////////////////////////////////////////////////////
+    /// @brief Do some action before rendering.
+    ////////////////////////////////////////////////////////////////////////
+    virtual void _preRender () const ;
+    
+    ////////////////////////////////////////////////////////////////////////
+    /// @brief Do some action after rendering.
+    ////////////////////////////////////////////////////////////////////////
+    virtual void _postRender () const ;
     
 protected:
     
@@ -203,6 +240,9 @@ protected:
     
     /// @brief Renderer we use to draw this RenderScene.
     RendererUser iRenderer ;
+    
+    /// @brief
+    Color iClearColor ;
 };
 
 /// @brief Common typedef to Specialize ResourceHolder.
@@ -247,12 +287,9 @@ public:
     virtual bool isLoadable( const std::string& filepath ) const;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Loads a scene from a given filepath , if possible.
-    /// Notes that default implementation is not able to load a RenderScene
-    /// from a file.
+    /// @brief Loads a scene with given options.
     //////////////////////////////////////////////////////////////////////
-    virtual RenderSceneHolder load ( const std::string& name , const std::string& filepath = std::string() ) const;
-    
+    virtual RenderSceneHolder load ( const std::string & name , const RenderSceneOptions & options ) const ;
 };
 
 /// @brief ResourceLoaderFactory for RenderSceneLoader.
@@ -276,20 +313,29 @@ public:
     virtual ~RenderSceneManager () noexcept ( false );
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Loads a RenderScene into the RenderScene list.
-    /// If 'filename' is empty, the function will use the Default RenderSceneLoader.
-    //////////////////////////////////////////////////////////////////////
-    virtual RenderSceneUser load ( const std::string& name , const std::string& filename = std::string() );
-    
-    //////////////////////////////////////////////////////////////////////
     /// @brief Loads a RenderSceneHolder directly to the list.
     //////////////////////////////////////////////////////////////////////
     virtual RenderSceneUser load ( const RenderSceneHolder& holder );
     
     //////////////////////////////////////////////////////////////////////
+    ///@brief Creates a new RenderScene with given options.
+    //////////////////////////////////////////////////////////////////////
+    virtual RenderSceneUser load ( const std::string & name , const RenderSceneOptions & options ) ;
+    
+    //////////////////////////////////////////////////////////////////////
     /// @brief This function should draw every RenderScene object.
     //////////////////////////////////////////////////////////////////////
     virtual void drawScenes ( const EventHolder& e ) const ;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the technique with given name.
+    //////////////////////////////////////////////////////////////////////
+    virtual TechniqueUser findTechnique ( const std::string & name ) ;
+    
+protected:
+    
+    /// @brief Technique registered.
+    std::vector < TechniqueHolder > iTechniques ;
 };
 
 /// @brief SpecializedCountedObjectHolder for RenderSceneManager.

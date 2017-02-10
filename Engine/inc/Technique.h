@@ -103,6 +103,11 @@ public:
     //////////////////////////////////////////////////////////////////////
     virtual const std::vector < TechniqueHolder > & getSubtechniques () const ;
     
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns 'iActivated'.
+    //////////////////////////////////////////////////////////////////////
+    virtual bool isActivated () const ;
+    
 protected:
     
     /// @brief
@@ -122,6 +127,9 @@ protected:
     
     /// @brief
     std::vector < TechniqueHolder > iSubtechniques ;
+    
+    /// @brief True if this Technique can be used to draw the RenderScene.
+    bool iActivated ;
 };
 
 /// @brief

@@ -109,11 +109,30 @@ public:
     //////////////////////////////////////////////////////////////////////
     bool shouldTerminate () const ;
     
+public:
+    
     //////////////////////////////////////////////////////////////////////
     /// @brief Uses the ResourceManager to create an Application using the
     /// first loader encountered.
+    /// @note If an Application already exists, this function returns an
+    /// invalid Holder.
     //////////////////////////////////////////////////////////////////////
     static ApplicationHolder Create ( const std::string& name , const std::string& author = std::string() , const std::string& description = std::string() ) ;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the Global Application object.
+    /// @note If it doesn't exists yet, it returns an invalid object.
+    //////////////////////////////////////////////////////////////////////
+    static ApplicationHolder GetShared () ;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Destroys the Global Applicatio object and resets the
+    /// holder.
+    //////////////////////////////////////////////////////////////////////
+    static void Destroy () ;
+    
+    /// @brief The Shared Application objet.
+    static ApplicationHolder iSharedApplication ;
     
 protected:
     

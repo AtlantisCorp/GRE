@@ -3,10 +3,3 @@
 
 # First , run cmake with given generator.
 cmake -H. -BCMakeFiles -G "$1"
-
-# Then , make the Engine.
-cd CMakeFiles
-make
-cd ..
-
-# And we are done !

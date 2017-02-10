@@ -1,11 +1,11 @@
 //////////////////////////////////////////////////////////////////////
 //
-//  Technique.cpp
+//  macOSPlatform.h
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
 //  Copyright (c) 2015 - 2017 Luk2010
-//  Created on 08/02/2017.
+//  Created on 09/02/2017.
 //
 //////////////////////////////////////////////////////////////////////
 /*
@@ -30,59 +30,14 @@
  -----------------------------------------------------------------------------
  */
 
-#include "Technique.h"
+#ifndef macOSPlatform_h
+#define macOSPlatform_h
 
-GreBeginNamespace
+#if defined(__OBJC__)
+#   import <Cocoa/Cocoa.h>
+#else
+#   include <ApplicationServices/ApplicationServices.h>
+    typedef void* id;
+#endif
 
-Technique::Technique ( const std::string & name )
-: Gre::Resource(name)
-{
-    iActivated = true ;
-}
-
-Technique::~Technique() noexcept ( false )
-{
-    
-}
-
-const std::vector < RenderPassHolder > & Technique::getPasses() const
-{
-    GreAutolock ; return iPasses ;
-}
-
-const CameraHolder & Technique::getCamera() const
-{
-    GreAutolock ; return iCamera ;
-}
-
-const Viewport & Technique::getViewport () const
-{
-    GreAutolock ; return iViewport ;
-}
-
-bool Technique::isExclusive () const
-{
-    GreAutolock ; return iExclusive ;
-}
-
-const std::vector < RenderNodeHolder > & Technique::getNodes() const
-{
-    GreAutolock ; return iRenderedNodes ;
-}
-
-bool Technique::hasSubtechniques () const
-{
-    GreAutolock ; return iSubtechniques.size() > 0 ;
-}
-
-const std::vector < TechniqueHolder > & Technique::getSubtechniques () const
-{
-    GreAutolock ; return iSubtechniques ;
-}
-
-bool Technique::isActivated () const
-{
-    return iActivated ;
-}
-
-GreEndNamespace
+#endif /* macOSPlatform_h */

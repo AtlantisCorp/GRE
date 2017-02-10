@@ -14,48 +14,68 @@
 GreBeginNamespace
 
 /// @brief An enumeration of every keys in the Engine available to the
-/// user. This list is based on the ASCII representation of characters.
-
-enum class Key
+/// user.
+enum class Key : int
 {
-    Null = 0 ,
-    SOH = 1 ,
-    SOT = 2 ,
-    EOT = 3 ,
-    EOTransmission = 4 ,
-    Backspace = 8 ,
-    HorizontalTab = 9 ,
-    CarriageReturn = 13 ,
-    ShiftOut = 14 ,
-    ShiftIn = 15 ,
-    Escape = 27 ,
-    Space = 32 ,
+    Null = 0,
     
-    NumberBegin = 48 ,
-    Num0 = 48 ,
-    Num1 = 49 ,
-    Num2 = 50 ,
-    Num3 = 51 ,
-    Num4 = 52 ,
-    Num5 = 53 ,
-    Num6 = 54 ,
-    Num7 = 55 ,
-    Num8 = 56 ,
-    Num9 = 57 ,
-    NumberEnd = 57 ,
+    K0, K1, K2, K3, K4, K5, K6, K7, K8, K9,
+    A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z,
     
-    CapitalsBegin = 65 ,
-    CapitalsEnd = 90 ,
+    Apostrophe,
+    Backslash,
+    Comma,
+    Equal,
+    GraveAccent,
+    LeftBracket,
+    Minus,
+    Period,
+    RightBracket,
+    Semicolon,
+    Slash,
+    World1,
     
-    MinusculsBegin = 97 ,
-    MinusculsEnd = 122
+    Backspace,
+    CapsLock,
+    Delete,
+    Down,
+    End,
+    Enter,
+    Escape,
+    F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14, F15, F16, F17, F18,
+    F19, F20,
+    Home,
+    Insert,
+    Left,
+    LeftAlt,
+    LeftControl,
+    LeftShift,
+    LeftSuper,
+    Menu,
+    NumLock,
+    PageDown,
+    PageUp,
+    Right,
+    RightAlt,
+    RightControl,
+    RightShift,
+    RightSuper,
+    Space,
+    Tab,
+    Up,
+    
+    KP0, KP1, KP2, KP3, KP4, KP5, KP6, KP7, KP8, KP9,
+    KPAdd, KPDecimal, KPDivide, KPEnter, KPEqual, KPMultiply, KPSubstract
 };
 
-/// @brief Translate given Key to char.
-extern "C" DLL_PUBLIC char KeyToChar ( const Key& key );
-
-/// @brief Translate an ASCII char character to Key .
-extern "C" DLL_PUBLIC Key KeyFromAscii ( char key ) ;
+/// @brief Defines some modifiers that can be handled in the same time of a key.
+enum class KeyModifier : int
+{
+    Shift = 0x0001,
+    Control = 0x0002,
+    Alt = 0x0004,
+    Super = 0x0008
+};
 
 GreEndNamespace
 #endif

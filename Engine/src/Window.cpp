@@ -4,7 +4,7 @@
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
-//  Copyright (c) 2015 - 2016 Luk2010
+//  Copyright (c) 2015 - 2017 Luk2010
 //  Created on 07/11/2015.
 //
 //////////////////////////////////////////////////////////////////////
@@ -34,8 +34,8 @@
 
 GreBeginNamespace
 
-Window::Window(const std::string& name)
-: RenderTarget(name) , iRenderContext(nullptr)
+Window::Window(const std::string& name, const WindowOptions& options)
+: RenderTarget(name)
 {
     iTitle = name;
     iSurface.top = 0;
@@ -63,7 +63,7 @@ void Window::setTitle(const std::string &title)
     GreAutolock ; iTitle = title;
     
     // Call internal function .
-    iSetTitle(title);
+    _setTitle(title);
 }
 
 Surface Window::getSurface() const
@@ -78,58 +78,24 @@ bool Window::isExposed() const
     return iExposed;
 }
 
-bool Window::holdsRenderContext() const
+RenderFramebufferUser Window::getFramebuffer()
 {
-    GreAutolock ;
-    return !iRenderContext.isInvalid();
+    return RenderFramebufferUser ( nullptr ) ;
 }
 
-void Window::setRenderContext(const RenderContextUser &renderCtxt)
+const RenderFramebufferUser Window::getFramebuffer() const
 {
-    GreAutolock ;
+    return RenderFramebufferUser ( nullptr ) ;
+}
+
+void Window::bindFramebuffer() const
+{
     
-    if ( holdsRenderContext() )
-    {
-        iRenderContext->unbind();
-        
-        // Here , we send an event to inform the RenderContext that this Window is detaching it.
-        EventHolder event ( new WindowDetachContextEvent ( this ) ) ;
-        iRenderContext->onEvent(event) ;
-        
-        removeListener ( RenderContextUser ( iRenderContext ) ) ;
-    }
+}
+
+void Window::unbindFramebuffer() const
+{
     
-    iRenderContext = renderCtxt.lock();
-    addListener( renderCtxt );
-    
-    // Call the internal function .
-    iSetRenderContext(iRenderContext);
-    
-    // Notifiate the new RenderContext from attaching this Window .
-    EventHolder event ( new WindowAttachContextEvent ( this ) ) ;
-    iRenderContext->onEvent(event) ;
-}
-
-RenderContextHolder Window::getRenderContext()
-{
-    GreAutolock ;
-    return iRenderContext;
-}
-
-const RenderContextHolder Window::getRenderContext() const
-{
-    GreAutolock ;
-    return iRenderContext;
-}
-
-RenderFramebufferHolder Window::getFramebuffer()
-{
-    return RenderFramebufferHolder ( nullptr ) ;
-}
-
-const RenderFramebufferHolder Window::getFramebuffer() const
-{
-    return RenderFramebufferHolder ( nullptr ) ;
 }
 
 bool Window::holdsFramebuffer() const
@@ -170,7 +136,7 @@ WindowManager::~WindowManager() noexcept ( false )
     
 }
 
-WindowUser WindowManager::load ( const std::string & name , const WindowInfo & info )
+WindowUser WindowManager::load ( const std::string & name , const WindowOptions & info )
 {
     GreAutolock ;
     
@@ -179,7 +145,7 @@ WindowUser WindowManager::load ( const std::string & name , const WindowInfo & i
     if ( !bestloader )
     {
 #ifdef GreIsDebugMode
-        GreDebugPretty () << "No loader found." << Gre::gendl ;
+        GreDebugPretty () << "[WARN] No loader found." << Gre::gendl ;
 #endif
         return WindowUser ( nullptr ) ;
     }
@@ -189,14 +155,18 @@ WindowUser WindowManager::load ( const std::string & name , const WindowInfo & i
     if ( holder.isInvalid() )
     {
 #ifdef GreIsDebugMode
-        GreDebugPretty () << "Window '" << name << "' could not be loaded." << Gre::gendl ;
+        GreDebugPretty () << "[WARN] Window '" << name << "' could not be loaded." << Gre::gendl ;
 #endif
         return WindowUser ( nullptr ) ;
     }
     
     iHolders.add ( holder ) ;
     addListener ( WindowUser(holder) ) ;
-    iGlobalKeylistener.addListener( EventProceederUser(holder) ) ;
+    holder->addListener(EventProceederUser(&iGlobalKeylistener));
+    
+#ifdef GreIsDebugMode
+    GreDebug("[INFO] Loaded Window '") << name << "'." << Gre::gendl ;
+#endif
     
     return holder ;
 }
@@ -226,13 +196,22 @@ void WindowManager::onUpdateEvent(const Gre::UpdateEvent &e)
         {
             if ( win->isClosed() )
             {
-                // We must unregister the Window from here. This will invalidate the iterator , so we can relaunch
-                // the function .
+                // Unregister the window from Listener's list and destroy it.
+                removeListener(EventProceederUser(win));
                 remove ( win ) ;
+                
                 onUpdateEvent ( e ) ;
             }
         }
     }
+}
+
+void WindowManager::closeWindows ()
+{
+    GreAutolock ;
+    
+    clearListeners();
+    iHolders.clear();
 }
 
 // ---------------------------------------------------------------------------------------------------

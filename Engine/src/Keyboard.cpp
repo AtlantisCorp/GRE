@@ -34,17 +34,6 @@
 
 GreBeginNamespace
 
-char KeyToChar ( const Key& key )
-{
-    // As Key is based on ASCII , just convert it to char .
-    return (char) key ;
-}
-
-Key KeyFromChar ( char key )
-{
-    return (Key) key ;
-}
-
 // ---------------------------------------------------------------------------------------------------
 
 Keyboard::Keyboard(const std::string& name)
