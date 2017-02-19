@@ -4,7 +4,7 @@
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
-//  Copyright (c) 2015 - 2016 Luk2010
+//  Copyright (c) 2015 - 2017 Luk2010
 //  Created on 09/03/2016.
 //
 //////////////////////////////////////////////////////////////////////
@@ -34,8 +34,9 @@
 
 GreBeginNamespace
 
-Viewport::Viewport(const std::string& name, float top, float left, float width, float height, bool activated)
-: _mName(name), _mActivated(activated), _mBorderWidth(width), _mBorderHeight(height), _mBorderTop(top), _mBorderLeft(left)
+Viewport::Viewport( float top, float left, float width, float height )
+: _mBorderWidth(width), _mBorderHeight(height)
+, _mBorderTop(top), _mBorderLeft(left)
 {
     _mSurface.height = 0;
     _mSurface.left = 0;
@@ -50,8 +51,6 @@ Viewport::~Viewport() noexcept ( false )
 
 Viewport& Viewport::operator= (const Viewport& rhs)
 {
-    _mName = rhs._mName;
-    _mActivated = rhs._mActivated;
     _mBorderWidth = rhs._mBorderWidth;
     _mBorderHeight = rhs._mBorderHeight;
     _mBorderLeft = rhs._mBorderLeft;
@@ -62,27 +61,15 @@ Viewport& Viewport::operator= (const Viewport& rhs)
 
 void Viewport::onBordersChanged(const Surface &parentSurface)
 {
-    _mSurface.height = (int) (_mBorderHeight * parentSurface.height);
-    _mSurface.width = (int) (_mBorderWidth * parentSurface.width);
-    _mSurface.top = (int) (_mBorderTop * parentSurface.top);
-    _mSurface.left = (int) (_mBorderLeft * parentSurface.left);
-}
-
-const std::string& Viewport::getName() const
-{
-    return _mName;
-}
-
-bool Viewport::isActivated() const
-{
-    return _mActivated;
+    _mSurface.height    = (int) (_mBorderHeight * parentSurface.height);
+    _mSurface.width     = (int) (_mBorderWidth  * parentSurface.width);
+    _mSurface.top       = (int) (_mBorderTop    * parentSurface.top);
+    _mSurface.left      = (int) (_mBorderLeft   * parentSurface.left);
 }
 
 const Surface& Viewport::getSurface() const
 {
     return _mSurface;
 }
-
-const std::list<Viewport> Viewport::EmptyList = std::list<Viewport>();
 
 GreEndNamespace

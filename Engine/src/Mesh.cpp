@@ -41,7 +41,7 @@ GreBeginNamespace
 Mesh::Mesh ( )
 : Gre::Resource( )
 , iIndexBuffer ( nullptr ) , iBoundingBox ( )
-, iAutomateBoundingBox( false ), iOriginalFile ( "" )
+, iOriginalFile ( "" ) , iDefaultMaterial(nullptr)
 {
     
 }
@@ -49,7 +49,7 @@ Mesh::Mesh ( )
 Mesh::Mesh ( const std::string & name )
 : Gre::Resource( ResourceIdentifier::New() , name )
 , iIndexBuffer( nullptr ) , iBoundingBox ( )
-, iAutomateBoundingBox( false ) , iOriginalFile( "" )
+, iOriginalFile( "" ) , iDefaultMaterial(nullptr)
 {
     
 }
@@ -59,62 +59,19 @@ Mesh::~Mesh() noexcept ( false )
     
 }
 
-void Mesh::setVertexBuffers(const MeshAttributeList &attributes)
+void Mesh::setVertexBuffers(const HardwareVertexBufferHolderList &attributes)
 {
-    GreAutolock ;
-    
-    if ( !iVertexBuffers.empty() )
-        clearVertexBuffers () ;
-    
-    for ( const MeshAttribute & attribute : attributes )
-        addVertexBuffer(attribute) ;
+    GreAutolock ; iVertexBuffers = attributes ;
 }
 
-const MeshAttributeList & Mesh::getVertexBuffers() const
+const HardwareVertexBufferHolderList & Mesh::getVertexBuffers() const
 {
     GreAutolock ; return iVertexBuffers ;
 }
 
-void Mesh::addVertexBuffer(const Gre::MeshAttribute &attribute)
-{
-    GreAutolock ;
-    
-    iVertexBuffers.push_back(attribute) ;
-    addListener( HardwareVertexBufferUser(attribute.buffer) ) ;
-    
-    if ( attribute.enabled )
-    {
-        if ( !attribute.buffer.isInvalid() )
-        {
-            if ( attribute.buffer->getVertexDescriptor().getComponentLocation(VertexComponentType::Position) != -1 )
-            {
-                // This buffer has Positions Vertex , so register on next update event to update the bounding
-                // box , if we can . The workaround to use the lambda is to pass a pointer to the mesh attribute
-                // in order not to copy it. In fact, the lambda will copy the pointer. In libc++, a 'bug' disallow
-                // the bracing of objects with a throw possibility.
-                // We assume that the mesh attribute will not be destroyed betwen this and the update event, wich
-                // should be a very little time.
-                if ( iAutomateBoundingBox )
-                {
-                    const MeshAttribute* ptr = &attribute ;
-                    addNextEventCallback(EventType::Update, [this , ptr] (const EventHolder &) {
-                        this->iUpdateBoundingBox ( *ptr ) ;
-                    });
-                }
-            }
-        }
-    }
-}
-
 void Mesh::setIndexBuffer(const HardwareIndexBufferHolder &buffer)
 {
-    GreAutolock ;
-    
-    if ( !iIndexBuffer.isInvalid() )
-        clearIndexBuffer () ;
-    
-    iIndexBuffer = buffer ;
-    addListener( HardwareIndexBufferUser(buffer) ) ;
+    GreAutolock ; iIndexBuffer = buffer ;
 }
 
 const HardwareIndexBufferHolder & Mesh::getIndexBuffer() const
@@ -129,45 +86,19 @@ void Mesh::unload ()
     iVertexBuffers.clear() ;
     iIndexBuffer.clear() ;
     iBoundingBox.clear() ;
-    iAutomateBoundingBox = true ;
+    iDefaultMaterial.clear() ;
+    
     Resource::unload() ;
-}
-
-void Mesh::bind() const
-{
-    GreAutolock ;
-    
-    // This is an example of what to do , but you should really overwrite it.
-    // Here we only bind every buffers enabled , more the index buffer if there
-    // is one . But one can bind other things related to API - specific data.
-    
-    for ( const MeshAttribute & attr : iVertexBuffers )
-    {
-        if ( attr.enabled && !attr.buffer.isInvalid() )
-        {
-            attr.buffer->bind() ;
-        }
-    }
-    
-    if ( !iIndexBuffer.isInvalid() )
-        iIndexBuffer->bind() ;
 }
 
 void Mesh::clearVertexBuffers()
 {
-    GreAutolock ;
-    
-    for ( MeshAttribute& attr : iVertexBuffers )
-        removeListener( HardwareVertexBufferUser(attr.buffer) ) ;
-    iVertexBuffers.clear() ;
+    GreAutolock ; iVertexBuffers.clear() ;
 }
 
 void Mesh::clearIndexBuffer()
 {
-    GreAutolock ;
-    
-    removeListener( HardwareIndexBufferUser(iIndexBuffer) ) ;
-    iIndexBuffer.clear() ;
+    GreAutolock ; iIndexBuffer.clear() ;
 }
 
 void Mesh::setBoundingBox ( const BoundingBox & bbox )
@@ -180,31 +111,6 @@ const BoundingBox & Mesh::getBoundingBox ( ) const
     GreAutolock ; return iBoundingBox ;
 }
 
-void Mesh::iUpdateBoundingBox(const Gre::MeshAttribute &attribute)
-{
-    GreAutolock ;
-    
-    // When calling this function , the BoundingBox should be updated using the Positions
-    // in the given buffer .
-    if ( iAutomateBoundingBox && attribute.enabled && !attribute.buffer.isInvalid() )
-    {
-        int positionloc = attribute.buffer->getVertexDescriptor().getComponentLocation(VertexComponentType::Position) ;
-        size_t stride = attribute.buffer->getVertexDescriptor().getStride(VertexComponentType::Position) ;
-        size_t positioncount = attribute.buffer->count() ;
-        size_t positioncur = 0 ;
-        
-        if ( positionloc >= -1 )
-        {
-            for ( const char * first = attribute.buffer->getData() + positionloc ; positioncur != positioncount ;
-                 first += stride , positioncur ++ )
-            {
-                const Vector3 * pos = (const Vector3 *) first ;
-                iBoundingBox.add( *pos ) ;
-            }
-        }
-    }
-}
-
 const std::string & Mesh::getOriginalFilepath () const
 {
     GreAutolock ; return iOriginalFile ;
@@ -213,6 +119,16 @@ const std::string & Mesh::getOriginalFilepath () const
 void Mesh::setOriginalFilepath ( const std::string & filepath )
 {
     GreAutolock ; iOriginalFile = filepath ;
+}
+
+const MaterialHolder & Mesh::getPreferredMaterial() const
+{
+    GreAutolock ; return iDefaultMaterial ;
+}
+
+void Mesh::setPreferredMaterial(const MaterialHolder &material)
+{
+    GreAutolock ; iDefaultMaterial = material ;
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -229,21 +145,6 @@ MeshLoader::~MeshLoader () noexcept ( false )
 
 // ---------------------------------------------------------------------------------------------------
 
-MeshHolder MeshManager::CreateSquare ( const Surface & surface )
-{
-    MeshManagerHolder manager = ResourceManager::Get() .getMeshManager() ;
-    
-    if ( manager.isInvalid() )
-    {
-#ifdef GreIsDebugMode
-        GreDebugPretty () << "Please load a MeshManager before using this function." << Gre::gendl;
-#endif
-        return MeshHolder ( nullptr ) ;
-    }
-    
-    return manager->iCreateSquare ( surface ) ;
-}
-
 MeshManager::MeshManager ( )
 : SpecializedResourceManager ( )
 {
@@ -255,60 +156,59 @@ MeshManager::~MeshManager ( ) noexcept ( false )
     
 }
 
-MeshUser MeshManager::load ( const std::string & name , const std::string & filepath )
+std::vector < MeshUser > MeshManager::load ( const std::string & name , const std::string & filepath )
 {
     GreAutolock ;
     
+    // See if this file wasn't already loaded. If true, we returns the meshes
+    // that were already loaded.
+    
     {
-        MeshUser check = findFirst ( name ) ;
+        std::vector < MeshUser > meshes ;
         
-        if ( !check.isInvalid() )
+        for ( auto it : iHolders )
         {
-            return load ( name + "*" , filepath ) ;
+            if ( !it.isInvalid() ) {
+                if ( it->getOriginalFilepath() == filepath ) {
+                    meshes.push_back(MeshUser(it));
+                }
+            }
         }
         
-        check = findFirstFile ( filepath ) ;
-        
-        if ( !check.isInvalid() )
-        {
-            return check ;
-        }
+        if ( !meshes.empty() )
+            return meshes ;
     }
     
-    MeshLoader * bestloader = iFindBestLoader ( filepath ) ;
+    // Find a correct loader to load this file.
     
-    if ( !bestloader )
-    {
+    MeshLoader* loader = iFindBestLoader(filepath) ;
+    if ( !loader ) {
 #ifdef GreIsDebugMode
-        GreDebugPretty () << "No loader found for filepath '" << filepath << "'." << Gre::gendl ;
+        GreDebug("[WARN] No loader found for Mesh '") << name << "'." << Gre::gendl ;
 #endif
-        return MeshUser ( nullptr ) ;
+        return std::vector < MeshUser > () ;
     }
     
-    MeshHolder holder = bestloader->load ( name , filepath ) ;
+    // Loads the file.
     
-    if ( holder.isInvalid() )
-    {
+    MeshHolderList meshes = loader->load(name, filepath);
+    if ( meshes.empty() ) {
 #ifdef GreIsDebugMode
-        GreDebugPretty () << "Filepath '" << filepath << "' could not be loaded." << Gre::gendl ;
+        GreDebug("[WARN] Can't load '") << filepath << "'." << Gre::gendl ;
 #endif
-        return MeshUser ( nullptr ) ;
+        return std::vector < MeshUser > () ;
     }
     
-    MeshHolder convertedmesh = iConvertMesh ( holder ) ;
+    std::vector < MeshUser > retvalue ;
     
-    if ( convertedmesh.isInvalid() )
-    {
+    iHolders.insert(iHolders.end(), meshes.begin(), meshes.end());
+    retvalue.insert(retvalue.begin(), meshes.begin(), meshes.end());
+    
 #ifdef GreIsDebugMode
-        GreDebugPretty () << "Filepath '" << filepath << "' could not be converted to Gre::Mesh." << Gre::gendl ;
+    GreDebug("[INFO] Loaded ") << retvalue.size() << " meshes." << Gre::gendl ;
 #endif
-        return MeshUser ( nullptr ) ;
-    }
     
-    iHolders.add ( convertedmesh ) ;
-    addListener ( MeshUser(convertedmesh) ) ;
-    
-    return convertedmesh ;
+    return retvalue ;
 }
 
 MeshUser MeshManager::findFirstFile(const std::string &filepath)
@@ -316,72 +216,9 @@ MeshUser MeshManager::findFirstFile(const std::string &filepath)
     for ( auto mesh : iHolders ) {
         if ( !mesh.isInvalid() && mesh->getOriginalFilepath() == filepath )
             return mesh ;
-        
     }
     
     return MeshUser ( nullptr ) ;
-}
-
-MeshHolder MeshManager::iConvertMesh ( const MeshHolder & srcmesh ) const
-{
-    return srcmesh ;
-}
-
-MeshHolder MeshManager::iCreateSquare ( const Surface & surface )
-{
-    float squarepos [] =
-    {
-        static_cast<float>(surface.top) , static_cast<float>(surface.left) , 0.0f ,
-        static_cast<float>(surface.top) , static_cast<float>(surface.left + surface.width) , 0.0f ,
-        static_cast<float>(surface.top + surface.height) , static_cast<float>(surface.left + surface.width) , 0.0f ,
-        static_cast<float>(surface.top + surface.height) , static_cast<float>(surface.left) , 0.0f
-    } ;
-    
-    unsigned short squaretri [] =
-    {
-        0 , 1 , 2 ,
-        2 , 3 , 0
-    } ;
-    
-    // Create our Mesh .
-    
-    MeshHolder mesh = MeshHolder ( new Mesh () ) ;
-    
-    // Creates the SoftwareVertexBuffer .
-    
-    SoftwareVertexBufferHolder vbuf = SoftwareVertexBufferHolder ( new SoftwareVertexBuffer("") ) ;
-    
-    VertexDescriptor vdesc ; vdesc.addComponent ( VertexComponentType::Position ) ;
-    vbuf->setVertexDescriptor ( vdesc ) ;
-    
-    vbuf->addData ( (const char*) squarepos , 4 * sizeof(float) ) ;
-    mesh->addVertexBuffer ({ vbuf , true }) ;
-    
-    // Creates the SoftwareIndexBuffer .
-    
-    SoftwareIndexBufferHolder ibuf = SoftwareIndexBufferHolder ( new SoftwareIndexBuffer("") ) ;
-    
-    IndexDescriptor idesc ; idesc.setType ( IndexType::UnsignedShort ) ;
-    ibuf->setIndexDescriptor ( idesc , 0 ) ;
-    
-    ibuf->addData ( (const char*) squaretri , sizeof ( unsigned short ) * 6 ) ;
-    mesh->setIndexBuffer ( ibuf ) ;
-    
-    // Try to convert this mesh . If we did not success , just return the not converted mesh .
-    
-    MeshHolder converted = iConvertMesh ( mesh ) ;
-    
-    if ( converted.isInvalid() )
-    {
-        iSquares [surface] = mesh ;
-        return mesh ;
-    }
-    
-    else
-    {
-        iSquares [surface] = converted ;
-        return converted ;
-    }
 }
 
 GreEndNamespace

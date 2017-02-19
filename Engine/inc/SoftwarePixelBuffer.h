@@ -4,7 +4,7 @@
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
-//  Copyright (c) 2015 - 2016 Luk2010
+//  Copyright (c) 2015 - 2017 Luk2010
 //  Created on 02/07/2016.
 //
 //////////////////////////////////////////////////////////////////////
@@ -34,15 +34,54 @@
 #define SoftwarePixelBuffer_h
 
 #include "Pools.h"
-#include "HardwarePixelBuffer.h"
+#include "Resource.h"
 
 GreBeginNamespace
 
 //////////////////////////////////////////////////////////////////////
-/// @brief A HardwarePixelBuffer but that can be stored only in the
-/// CPU's RAM.
+/// @brief PixelFormat possibilities.
+enum class PixelFormat : int
+{
+    None , RGB , BGR , RGBA , BGRA , Red , RG ,
+    StencilIndex , DepthComponent , DepthStencil
+};
+
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC SoftwarePixelBuffer : public HardwarePixelBuffer
+/// @brief InternalPixelFormat possibilities.
+enum class InternalPixelFormat : int
+{
+    DepthComponent, DepthStencil, Red, RG, RGB, RGBA,
+    RGB4, RGB8, RGB12, RGB16, RGB32,
+    RGBA2, RGBA4, RGBA8, RGBA12, RGBA16, RGBA32,
+    
+    CompressedRed , CompressedRG , CompressedRGB ,
+    CompressedRGBA
+};
+
+//////////////////////////////////////////////////////////////////////
+/// @brief PixelType Possibilities.
+enum class PixelType : int
+{
+    UnsignedByte, Byte,
+    UnsignedShort, Short,
+    UnsignedInt, Int,
+    Float
+};
+
+//////////////////////////////////////////////////////////////////////
+/// @brief Represents a static buffer filled with pixels.
+///
+/// The pixels are represented following the given pixel format. This format
+/// can be compressed or not. You should not change the pixels datas in
+/// this buffer, as the data represention of the pixels is not always
+/// none.
+///
+/// Pass this object to a texture to create a new texture from the
+/// pixels in this buffer. The PixelFormat should be a valid format
+/// handled by the driver, as welll as the InternalPixelFormat.
+///
+//////////////////////////////////////////////////////////////////////
+class DLL_PUBLIC SoftwarePixelBuffer : public Resource
 {
 public:
     
@@ -50,43 +89,41 @@ public:
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    SoftwarePixelBuffer(const std::string& name);
+    SoftwarePixelBuffer () ;
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    virtual ~SoftwarePixelBuffer();
+    virtual ~SoftwarePixelBuffer() noexcept ( false ) ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Changes the HardwarePixelFormat.
+    /// @brief Returns 'iInternalPixelFormat'.
     //////////////////////////////////////////////////////////////////////
-    virtual void setPixelFormat(const HardwarePixelFormat& pixformat);
+    virtual const InternalPixelFormat & getInternalPixelFormat () const ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Should return a pointer to the data stored by the
-    /// HardwarePixelBuffer.
+    /// @brief Returns 'iSurface'.
     //////////////////////////////////////////////////////////////////////
-    virtual char* getData();
+    virtual const Surface & getSurface () const ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Should return a pointer to the data stored by the
-    /// HardwarePixelBuffer.
+    /// @brief Returns 'iPixelFormat'.
     //////////////////////////////////////////////////////////////////////
-    virtual const char* getData() const;
+    virtual const PixelFormat & getPixelFormat () const ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the size of the buffer, in bytes.
+    /// @brief Returns 'iPixelType'.
     //////////////////////////////////////////////////////////////////////
-    virtual size_t getSize() const;
+    virtual const PixelType & getPixelType () const ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the number of elements in the buffer.
+    /// @brief Returns 'iPixBuffer'.
     //////////////////////////////////////////////////////////////////////
-    virtual size_t count() const;
+    virtual const void* getData () const ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Sets the data buffer.
+    /// @brief Returns 'iDepth'.
     //////////////////////////////////////////////////////////////////////
-    virtual void setData(const char* data, size_t sz);
+    virtual int getDepth () const ;
     
 protected:
     
@@ -95,6 +132,22 @@ protected:
     
     /// @brief Size of the data, in bytes.
     size_t iSize;
+    
+    /// @brief Surface represented by the pixel buffer.
+    Surface iSurface ;
+    
+    /// @brief Current Pixel Format.
+    PixelFormat iPixelFormat ;
+    
+    /// @brief Current Pixel Type.
+    PixelType iPixelType ;
+    
+    /// @brief Desired machine Pixel Format.
+    InternalPixelFormat iInternalPixelFormat ;
+    
+    /// @brief if the SoftwarePixelBuffer is a 3D image, it can have a
+    /// depth component. This will be used by the texture to now depth of the image.
+    int iDepth ;
 };
 
 /// @brief SpecializedCountedObjectHolder for SoftwarePixelBufferPrivate.

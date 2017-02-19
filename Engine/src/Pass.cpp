@@ -37,14 +37,14 @@ GreBeginNamespace
 
 RenderPass::RenderPass ( const RenderPassIdentifier& identifier )
 : Gre::Resource(), iIdentifier(identifier)
-, iActivated(false)
+, iActivated(true)
 {
     
 }
 
 RenderPass::RenderPass ( const std::string & name , const RenderPassIdentifier& identifier )
 : Gre::Resource(name), iIdentifier(identifier)
-, iActivated(false)
+, iActivated(true)
 {
     
 }
@@ -72,6 +72,11 @@ bool RenderPass::isActivated() const
 const HardwareProgramUser& RenderPass::getHardwareProgram() const
 {
     GreAutolock ; return iProgram ;
+}
+
+void RenderPass::setHardwareProgram ( const HardwareProgramUser& program )
+{
+    GreAutolock ; iProgram = program ;
 }
 
 GreEndNamespace

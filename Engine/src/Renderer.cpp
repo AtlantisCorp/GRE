@@ -4,7 +4,7 @@
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
-//  Copyright (c) 2015 - 2016 Luk2010
+//  Copyright (c) 2015 - 2017 Luk2010
 //  Created on 08/11/2015.
 //
 //////////////////////////////////////////////////////////////////////
@@ -48,8 +48,9 @@ Renderer::Renderer (const std::string& name, const RendererOptions& options)
 , iDefaultMaterial(nullptr)
 , iDefaultOrthoProjectionMatrix(0) , iDefaultViewMatrix(0) , iDefaultModelMatrix(0)
 , iFeatures( ) , iInstalled(false)
+, iContext ( nullptr )
 {
-    
+    iFeaturesInstalled = false ;
 }
 
 Renderer::~Renderer() noexcept ( false )
@@ -61,9 +62,18 @@ void Renderer::draw(const Gre::RenderingQuery &query) const
 {
     GreAutolock ;
     
+    if ( !iFeaturesInstalled )
+        const_cast<Renderer*>(this)->installDefaultFeatures () ;
+    
     _setViewport ( query.getViewport() ) ;
-    setHardwareProgram ( query.getHardwareProgram() ) ;
-    setCamera ( query.getCamera(), query.getHardwareProgram() ) ;
+    
+    HardwareProgramHolder prog = query.getHardwareProgram().lock() ;
+    if ( prog.isInvalid() && hasFeature(Gre::RendererFeature::LoadDefaultProgram) ) {
+        prog = iDefaultProgram.lock() ;
+    }
+    
+    setHardwareProgram ( prog ) ;
+    setCamera ( query.getCamera(), prog ) ;
     
     for ( const RenderNodeHolder& node : query.getRenderedNodes() )
     {
@@ -73,11 +83,11 @@ void Renderer::draw(const Gre::RenderingQuery &query) const
         
         if ( node->isRenderable() && node->isVisible(query.getCamera()) )
         {
-            setNode ( node , query.getHardwareProgram() ) ;
-            _drawNodeMesh ( node->getMesh() , query.getHardwareProgram() ) ;
+            setNode ( node , prog ) ;
+            _drawNodeMesh ( node->getMesh() , prog ) ;
         }
         
-        postNode ( node , query.getCamera() , query.getHardwareProgram() ) ;
+        postNode ( node , query.getCamera() , prog ) ;
     }
 }
 
@@ -92,30 +102,16 @@ void Renderer::postRender () const
     _postRender () ;
 }
 
-void Renderer::setHardwareProgram ( const HardwareProgramUser& program ) const
+void Renderer::setHardwareProgram ( const HardwareProgramHolder& program ) const
 {
-    HardwareProgramHolder holder = program.lock() ;
-    
-    if ( holder.isInvalid () )
-    {
-        // No HardwarePrograms is set . We can use the default HardwareProgram , if this is the Renderer's
-        // behaviour .
-        if ( hasFeature(RendererFeature::LoadDefaultProgram) && !iDefaultProgram.isInvalid() )
-        {
-            iDefaultProgram.lock() -> use() ;
-        }
-    }
-    
-    else
-    {
-        holder->use();
+    if ( !program.isInvalid() ) {
+        program->use();
     }
 }
 
-void Renderer::setCamera(const CameraUser &camera, const HardwareProgramUser &program) const
+void Renderer::setCamera(const CameraUser &camera, const HardwareProgramHolder &program) const
 {
     CameraHolder camerah = camera.lock() ;
-    HardwareProgramHolder programh = program.isInvalid() ? iDefaultProgram.lock() : program.lock() ;
     
     Matrix4 ProjectionMatrix ;
     Matrix4 ViewMatrix ;
@@ -128,53 +124,47 @@ void Renderer::setCamera(const CameraUser &camera, const HardwareProgramUser &pr
     
     HardwareProgramVariable iProjectionMatrix ;
     iProjectionMatrix.name = "iProjectionMatrix" ;
-    iProjectionMatrix.type = HdwProgVarType::Mat4 ;
-    iProjectionMatrix.value.mat4 = ProjectionMatrix ;
-    programh->setVariable ( iProjectionMatrix ) ;
+    iProjectionMatrix.type = HdwProgVarType::Matrix4 ;
+    iProjectionMatrix.value.m4 = ProjectionMatrix ;
+    program->setVariable ( iProjectionMatrix ) ;
     
     HardwareProgramVariable iViewMatrix ;
     iViewMatrix.name = "iViewMatrix" ;
-    iViewMatrix.type = HdwProgVarType::Mat4 ;
-    iViewMatrix.value.mat4 = ViewMatrix ;
-    programh->setVariable ( iViewMatrix ) ;
+    iViewMatrix.type = HdwProgVarType::Matrix4 ;
+    iViewMatrix.value.m4 = ViewMatrix ;
+    program->setVariable ( iViewMatrix ) ;
     
     _setCamera ( ProjectionMatrix , ViewMatrix ) ;
 }
 
-void Renderer::setNode ( const RenderNodeHolder& node , const HardwareProgramUser& programu ) const
+void Renderer::setNode ( const RenderNodeHolder& node , const HardwareProgramHolder& program ) const
 {
-    HardwareProgramHolder program = programu.isInvalid() ? iDefaultProgram.lock() : programu.lock() ;
-    
     // Sets the 'iModelMatrix' .
     
     const Matrix4 & ModelMatrix = node->getModelMatrix () ;
     
     HardwareProgramVariable iModelMatrix ;
     iModelMatrix.name = "iModelMatrix" ;
-    iModelMatrix.type = HdwProgVarType::Mat4 ;
-    iModelMatrix.value.mat4 = ModelMatrix ;
+    iModelMatrix.type = HdwProgVarType::Matrix4 ;
+    iModelMatrix.value.m4 = ModelMatrix ;
     program->setVariable ( iModelMatrix ) ;
     
     // Configure the node's material .
     
     MaterialHolder material = node->getMaterial() ;
     
-    if ( !material.isInvalid() )
-    {
+    if ( !material.isInvalid() ) {
         material->configureProgram(program);
-        material->bindTextures();
     }
     
-    else if ( hasFeature(RendererFeature::LoadDefaultMaterial) && !iDefaultMaterial.isInvalid() )
-    {
+    else if ( hasFeature(RendererFeature::LoadDefaultMaterial) && !iDefaultMaterial.isInvalid() ) {
         iDefaultMaterial.lock() ->configureProgram(program);
-        iDefaultMaterial.lock() ->bindTextures();
     }
     
     _setNode(node);
 }
 
-void Renderer::postNode ( const RenderNodeHolder & node , const CameraUser& camera , const HardwareProgramUser& program ) const
+void Renderer::postNode ( const RenderNodeHolder & node , const CameraUser& camera , const HardwareProgramHolder& program ) const
 {
     if ( node.isInvalid() ) return ;
     if ( node->hasChildren() )
@@ -202,11 +192,12 @@ void Renderer::postNode ( const RenderNodeHolder & node , const CameraUser& came
     _postNode(node, camera, program);
 }
 
-void Renderer::installManagers ()
+bool Renderer::installManagers ()
 {
     GreAutolock ;
     
     iInstalled = true ;
+    
     MeshManagerHolder meshmanager = iCreateMeshManager () ;
     
     if ( meshmanager.isInvalid() )
@@ -287,6 +278,14 @@ void Renderer::installManagers ()
 #endif
         }
     }
+	
+	if ( iInstalled && !ResourceManager::Get().getRenderSceneManager().isInvalid() )
+	{
+		// Remember we must also initialize the RenderSceneManager.
+		ResourceManager::Get().getRenderSceneManager()->initialize() ;
+	}
+    
+    return iInstalled ;
 }
 
 void Renderer::unload ( )
@@ -353,6 +352,16 @@ void Renderer::removeFeature ( const RendererFeature& feature )
 const std::vector < RendererFeature > & Renderer::getFeatures () const
 {
     GreAutolock ; return iFeatures;
+}
+
+void Renderer::setRenderContext(const RenderContextUser &context)
+{
+    GreAutolock ; iContext = context.lock() ;
+}
+
+const RenderContextHolder& Renderer::getRenderContext() const
+{
+    GreAutolock ; return iContext ;
 }
 
 // ---------------------------------------------------------------------------------------------------

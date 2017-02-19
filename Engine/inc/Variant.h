@@ -34,6 +34,7 @@
 #define GRE_Variant_h
 
 #include "Pools.h"
+#include "Color.h"
 
 GreBeginNamespace
 
@@ -45,22 +46,27 @@ class DLL_PUBLIC Variant
 {
 public:
     
-    enum class Policy
+    enum class Policy : int
     {
         None    = 0,    ///< @brief Nothing is stored.
         Integer = 1,    ///< @brief Stores an Integer.
         Version = 2,    ///< @brief Stores a Version.
         Boolean = 3,    ///< @brief Type 'bool'.
-        String  = 4     ///< @brief std::string.
+        String  = 4,    ///< @brief std::string.
+        Color   = 5,    ///< @brief Color class.
+        Float   = 6
     };
     
     Variant(Policy policy = Policy::None, void* object = nullptr);
     Variant(const Variant& rhs);
     
-    Variant ( int object ) ;
+    explicit Variant ( int object ) ;
+    explicit Variant ( float object ) ;
+    
     Variant ( const Version & object ) ;
     Variant ( bool object ) ;
     Variant ( const std::string & obj ) ;
+    Variant ( const Color& color ) ;
     
     ~Variant();
     
@@ -73,6 +79,11 @@ public:
     /// @brief Sets a new Object.
     //////////////////////////////////////////////////////////////////////
     void reset(int object);
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Sets a new Object.
+    //////////////////////////////////////////////////////////////////////
+    void reset(float object);
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Sets a new Object.
@@ -90,6 +101,11 @@ public:
     void reset(const std::string & object);
     
     //////////////////////////////////////////////////////////////////////
+    /// @brief Sets a new Object.
+    //////////////////////////////////////////////////////////////////////
+    void reset(const Color& color);
+    
+    //////////////////////////////////////////////////////////////////////
     /// @brief Clears the Variant and set it to Policy::None.
     //////////////////////////////////////////////////////////////////////
     void clear();
@@ -99,6 +115,12 @@ public:
     //////////////////////////////////////////////////////////////////////
     int& toInteger();
     const int& toInteger() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the Variant object as an Integer, if one.
+    //////////////////////////////////////////////////////////////////////
+    float& toFloat();
+    const float& toFloat() const;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the Variant object as a Version, if one.
@@ -117,6 +139,12 @@ public:
     //////////////////////////////////////////////////////////////////////
     std::string& toString();
     const std::string& toString() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the Variant object as a Color, if one.
+    //////////////////////////////////////////////////////////////////////
+    Color& toColor() ;
+    const Color& toColor() const ;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns true if policy is Policy::None or Object is nullptr.

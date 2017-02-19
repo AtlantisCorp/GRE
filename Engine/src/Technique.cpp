@@ -50,9 +50,19 @@ const std::vector < RenderPassHolder > & Technique::getPasses() const
     GreAutolock ; return iPasses ;
 }
 
+void Technique::addPass ( const RenderPassHolder& pass )
+{
+    GreAutolock ; iPasses.push_back ( pass ) ;
+}
+
 const CameraHolder & Technique::getCamera() const
 {
     GreAutolock ; return iCamera ;
+}
+
+void Technique::setCamera ( const CameraUser& camera )
+{
+    GreAutolock ; iCamera = camera.lock() ;
 }
 
 const Viewport & Technique::getViewport () const
@@ -60,9 +70,19 @@ const Viewport & Technique::getViewport () const
     GreAutolock ; return iViewport ;
 }
 
+void Technique::setViewport ( const Viewport& viewport )
+{
+    GreAutolock ; iViewport = viewport ;
+}
+
 bool Technique::isExclusive () const
 {
     GreAutolock ; return iExclusive ;
+}
+
+void Technique::setExclusive ( bool value )
+{
+    GreAutolock ; iExclusive = value ;
 }
 
 const std::vector < RenderNodeHolder > & Technique::getNodes() const

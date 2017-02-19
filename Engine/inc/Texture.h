@@ -43,21 +43,104 @@
 
 GreBeginNamespace
 
-/// @brief Resumes the Texture's possible Types.
+//////////////////////////////////////////////////////////////////////
+/// @brief Resumes the Texture's possible targets (types).
 enum class TextureType
 {
-    OneDimension,
-    TwoDimension,
-    ThreeDimension,
-    CubeMap,
-    Null
+    Texture1D, Texture2D, Texture3D,
+    CubeMap, Null
+};
+
+//////////////////////////////////////////////////////////////////////
+/// @brief Lists the parameters available for the Texture at creation.
+enum class TextureParameter : int
+{
+    /// @brief Specifies the mode used to read from depth-stencil format textures.
+    DepthStencilMode ,
+    
+    /// @brief Specifies the index of the lowest defined mipmap level. This is an
+    /// integer value. The initial value is 0.
+    MipmapBaseLevel ,
+    
+    /// @brief Specifies a Color value that define the border values that should
+    /// be used for border texels.
+    BorderColor ,
+    
+    /// @brief Specifies the comparison operator used when TextureCompareMode is set
+    /// to TextureCompareMode::Ref .
+    CompareFunc ,
+    
+    /// @brief Specifies the texture comparison mode for currently bound depth textures.
+    CompareMode ,
+    
+    /// @brief Specifies a fixed bias value that is to be added to the level-of-detail
+    /// parameter for the texture before texture sampling.
+    LODBias ,
+    
+    /// @brief Supplies a function for minifying the texture.
+    MinFilter ,
+    
+    /// @brief Supplies a function for magnifying the texture.
+    MagFilter ,
+    
+    /// @brief Sets the wrap parameter for texture coordinate s.
+    WrapS ,
+    
+    /// @brief Sets the wrap parameter for texture coordinate t.
+    WrapT ,
+    
+    /// @brief Sets the wrap parameter for texture coordinate r.
+    WrapR
+};
+
+//////////////////////////////////////////////////////////////////////
+/// @brief TextureWrap values.
+enum class TextureWrap : int
+{
+    ClampToEdge, ClampToBorder,
+    MirroredRepeat, Repeat,
+    MirrorClampToEdge
+};
+
+//////////////////////////////////////////////////////////////////////
+/// @brief TextureMagFilter values.
+enum class TextureMagFilter : int
+{
+    Nearest, Linear
+};
+
+//////////////////////////////////////////////////////////////////////
+/// @brief TextureMinFilter values.
+enum class TextureMinFilter : int
+{
+    Nearest, Linear,
+    MipmapLinear, MipmapNearest
+};
+
+//////////////////////////////////////////////////////////////////////
+/// @brief TextureCompareMode values.
+enum class TextureCompareMode : int
+{
+    Ref, None
+};
+
+//////////////////////////////////////////////////////////////////////
+/// @brief TextureCompareFunc values.
+enum class TextureCompareFunc : int
+{
+    LessEqual, GreatEqual, Less, Greater,
+    Equal, NotEqual, Always, Never
+};
+
+//////////////////////////////////////////////////////////////////////
+/// @brief Modes for DepthStencilMode.
+enum class TextureDepthStencilMode : int
+{
+    Depth , Stencil
 };
 
 /// @brief Translates the TextureType value to a String.
 std::string TextureTypeToString(const TextureType& type);
-
-/// @brief Translates the TextureType value to HdwProgVarType.
-HdwProgVarType TextureTypeToHdwProgType(const TextureType& type);
 
 //////////////////////////////////////////////////////////////////////
 /// @brief Represents a Texture Resource object.
@@ -65,29 +148,49 @@ HdwProgVarType TextureTypeToHdwProgType(const TextureType& type);
 /// A Texture object should contains the data related to Texture's
 /// objects, as the Images pixels.
 ///
-/// Before being registered to the Renderer, it may holds SoftwarePixelBuffer's
-/// objects to holds the pixels. The SoftwarePixelBuffer is then transfered
-/// to the GPU by the Renderer.
+/// ### Loading a Texture
 ///
-/// Please notes you should load a Texture file to a pre-created Texture
-/// object from the Renderer.
+/// You have to use the TextureManager, registered to the ResourceManager
+/// by the currently installed Renderer. The TextureManager use one of the
+/// TextureFileLoader to loads a pixel format data and then registers the
+/// texture using the underlying Driver ( OpenGl, DirectX ) .
 ///
-/// Example ( Loading file 'textures/wood.png' ) :
+/// ### Creating a TextureFileLoader
 ///
-/// TextureHolder texture = myrenderer.loadTexture("MyWoodTexture", "textures/wood.png");
+/// The TextureFileLoader creates only a SoftwarePixelBuffer wich serves
+/// the TextureManager to load the Texture on the GPU. You should fill it
+/// with the correct PixelFormat and the data from the image file.
 ///
-/// Other example ( Same file ) :
+/// ### Manipulating Texture
 ///
-/// TextureHolder texture = myrenderer.createTexture("MyWoodTexture");
-/// Texture textureuser = myrenderer.getTextureManager().loadTexture(texture, "textures/wood.png");
+/// As Textures objects are creating onto the GPU, you can't directly
+/// modify them. You can get their data by copy, modify it, and then reupload
+/// them into the Texture GPU buffer.
 ///
-/// Other example ( Same file ) :
+/// ### Creating Manual Texture
 ///
-/// Texture textureuser = myrenderer.getTextureManager().loadTexture("MyWoodTexture", "textures/wood.png");
+/// You can also create a Manual Texture by using the second load function,
+/// indicating a SoftwarePixelBuffer ( wich can contains only PixelFormat
+/// but with null data ).
 ///
-/// Using the TextureManager from the Renderer can be useful to have a Texture
-/// user. Using the Renderer to load the Texture lets you with a TextureHolder,
-/// but the Texture is still registered in the Renderer's Texture Manager.
+/// ### Implementation Notes
+///
+/// The Texture should keep a trace of the SoftwarePixelBuffer used to
+/// construct it only if the 'keepCache' flag is true. Also, the Texture
+/// should be able to upload new data to the buffer, and also change its
+/// size dynamically.
+///
+/// The Texture should be rendered by the following pass :
+///   + Activate Texture Unit Desired ( @see Material )
+///   + _bind () , Set Shader Constant .
+///
+/// The Shader may or may not have the correct constant to have this
+/// texture. If the Texture Unit is for example 48 , the texture will be
+/// bound to sampler iTexture48 .
+///
+/// @note
+/// As the TextureType::CubeMap may have up to six textures, the Texture
+/// object stores a list of SoftwarePixelBuffer.
 ///
 //////////////////////////////////////////////////////////////////////
 class DLL_PUBLIC Texture : public Resource
@@ -98,51 +201,32 @@ public:
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    Texture(const std::string& name);
+    Texture ( const std::string& name , const TextureType & type , const SoftwarePixelBufferHolderList& buffers ,
+              bool keepCache = true ) ;
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    virtual ~Texture() noexcept(false);
+    virtual ~Texture () noexcept ( false ) ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Bind the Texture using given Texture Unit.
-    //////////////////////////////////////////////////////////////////////
-    virtual void bindWithTextureUnit ( int texunit ) const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Bind the Texture using activated Texture Unit.
+    /// @brief Bind the Texture.
     //////////////////////////////////////////////////////////////////////
     virtual void bind() const;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Unbind the Texture from activated Texture Unit.
+    /// @brief Unbind the Texture.
     //////////////////////////////////////////////////////////////////////
     virtual void unbind() const;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Activate given Texture Unit.
-    //////////////////////////////////////////////////////////////////////
-    virtual void activateTextureUnit ( int texunit ) const;
-    
-    //////////////////////////////////////////////////////////////////////
     /// @brief Change the first PixelBuffer used by this Texture.
     //////////////////////////////////////////////////////////////////////
-    virtual void setPixelBuffer(const SoftwarePixelBufferUser& pixelbuffer);
+    virtual void setPixelBuffer ( const SoftwarePixelBufferUser& pixelbuffer ) ;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the first PixelBuffer for this Texture, if has one.
     //////////////////////////////////////////////////////////////////////
-    virtual const SoftwarePixelBufferUser getPixelBuffer() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the first PixelBuffer for this Texture, if has one.
-    //////////////////////////////////////////////////////////////////////
-    virtual SoftwarePixelBufferUser getPixelBuffer();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Original file, if one was provided.
-    //////////////////////////////////////////////////////////////////////
-    virtual const std::string& getOriginalFile() const;
+    virtual const SoftwarePixelBufferUser getPixelBuffer () const;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the Surface representing this Texture.
@@ -150,54 +234,41 @@ public:
     virtual const Surface& getSurface() const;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Surface representing this Texture.
-    //////////////////////////////////////////////////////////////////////
-    virtual Surface& getSurface();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Sets the Surface representing this Texture.
-    //////////////////////////////////////////////////////////////////////
-    virtual void setSurface(const Surface& surface);
-    
-    //////////////////////////////////////////////////////////////////////
     /// @brief Returns the Texture's type.
     //////////////////////////////////////////////////////////////////////
-    virtual const TextureType getType() const;
+    virtual const TextureType & getType() const;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Changes the Texture's type.
+    /// @brief Changes current parameter for the Texture object.
     //////////////////////////////////////////////////////////////////////
-    virtual void setType(TextureType textype);
+    virtual void setParameterValue ( const TextureParameter & param , const Variant & value ) ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns true if it holds an HardwareSampler activated.
+    /// @brief Returns the value of given parameter.
     //////////////////////////////////////////////////////////////////////
-    virtual bool hasHardwareSamplerActivated() const;
+    virtual const Variant & getParameterValue ( const TextureParameter & param ) const ;
+    
+protected:
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the activated HardwareSampler.
+    /// @brief Should bind the Texture to the correct target.
     //////////////////////////////////////////////////////////////////////
-    virtual HardwareSamplerUser getHardwareSampler();
+    virtual void _bind () const = 0 ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Configure the given HardwareProgram to have this Texture
-    /// binded to the given TextureUnit .
+    /// @brief Should unbind the Texture from its target.
     //////////////////////////////////////////////////////////////////////
-    virtual void configureProgram ( const HardwareProgramHolder & program , int textureunit ) const ;
+    virtual void _unbind () const = 0 ;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Sets the GPU texture buffer.
+    //////////////////////////////////////////////////////////////////////
+    virtual void _setBuffer ( ) const = 0 ;
     
 protected:
     
     /// @brief Holds the Texture's type.
     TextureType iType;
-    
-    /// @brief True if binded, false otherwise.
-    mutable bool iBinded;
-    
-    /// @brief True if something changed and not updated, false otherwise.
-    mutable bool iDirty;
-    
-    /// @brief If has one, the original filepath.
-    std::string iOriginFile;
     
     /// @brief The SoftwarePixelBuffer list, if has one.
     SoftwarePixelBufferHolderList iPixelBuffers;
@@ -205,8 +276,11 @@ protected:
     /// @brief Surface for this Texture.
     Surface iSurface;
     
-    /// @brief HardwareSampler activated for this Texture.
-    HardwareSamplerHolder iSampler;
+    /// @brief True if binded, false otherwise.
+    mutable bool iBinded;
+    
+    /// @brief Parameters map.
+    std::map < TextureParameter , Variant > iParameters ;
 };
 
 /// @brief SpecializedCountedObjectHolder for TexturePrivate.
@@ -222,40 +296,33 @@ typedef SpecializedCountedObjectUser<Texture> TextureUser ;
 typedef std::list<TextureUser> TextureUserList;
 
 //////////////////////////////////////////////////////////////////////
-/// @brief ResourceLoader base class to load TexturePrivate objects.
+/// @brief Should loads an Image to a SoftwarePixelBuffer.
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC TextureLoader : public ResourceLoader
+class DLL_PUBLIC TextureFileLoader : public ResourceLoader
 {
 public:
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    TextureLoader();
+    TextureFileLoader () ;
     
     ////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////
-    virtual ~TextureLoader();
+    virtual ~TextureFileLoader () noexcept ( false ) ;
     
     ////////////////////////////////////////////////////////////////////////
-    /// @brief Loads a Texture from a file.
-    /// The resulting Texture only has SoftwarePixelBuffer, and cannot be
-    /// used to render objects.
-    ////////////////////////////////////////////////////////////////////////
-    virtual TextureHolder load(const std::string& name, const std::string& filepath) const = 0;
-    
-    ////////////////////////////////////////////////////////////////////////
-    /// @brief Loads a Texture from a file to a pre-created Texture Object.
-    ////////////////////////////////////////////////////////////////////////
-    virtual TextureHolder load(TextureHolder& to, const std::string& filepath) const = 0;
+    /// @brief Loads a file to the given SoftwarePixelBuffer.
+    //////////////////////////////////////////////////////////////////////
+    virtual SoftwarePixelBufferHolder load ( const std::string & filepath ) const = 0 ;
 };
 
 /// @brief ResourceLoaderFactory for TextureLoader.
-typedef ResourceLoaderFactory<TextureLoader> TextureLoaderFactory;
+typedef ResourceLoaderFactory<TextureFileLoader> TextureFileLoaderFactory;
 
 //////////////////////////////////////////////////////////////////////
 /// @brief Manages Texture objects.
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC TextureManager : public SpecializedResourceManager<Texture, TextureLoader>
+class DLL_PUBLIC TextureManager : public SpecializedResourceManager<Texture, TextureFileLoader>
 {
 public:
     
@@ -263,16 +330,23 @@ public:
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    TextureManager();
+    TextureManager( const std::string & name );
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    virtual ~TextureManager();
+    virtual ~TextureManager() noexcept ( false ) ;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Loads a Texture from a file.
     //////////////////////////////////////////////////////////////////////
-    virtual TextureUser load(const std::string& name, const std::string& filepath) = 0 ;
+    virtual TextureUser load (const std::string & name , const TextureType & type ,
+                              const std::string & filepath ) ;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Loads a Texture from a SoftwarePixelBuffer.
+    //////////////////////////////////////////////////////////////////////
+    virtual TextureUser load (const std::string & name , const TextureType & type ,
+                              const SoftwarePixelBufferHolder& buffer ) = 0 ;
 };
 
 /// @brief SpecializedCountedObjectHolder for TextureManager .

@@ -364,9 +364,6 @@ PluginUser PluginManager::get(const std::string &name)
             }
         }
         
-#ifdef GreIsDebugMode
-        GreDebugPretty() << "Plugin Resource '" << name << "' not found." << Gre::gendl;
-#endif
         return PluginUser ( nullptr );
     }
     
@@ -395,10 +392,7 @@ const PluginUser PluginManager::get(const std::string &name) const
                 }
             }
         }
-        
-#ifdef GreIsDebugMode
-        GreDebugPretty() << "Plugin Resource '" << name << "' not found." << Gre::gendl;
-#endif
+		
         return PluginUser ( nullptr );
     }
     
@@ -471,6 +465,14 @@ void PluginManager::clear()
 void PluginManager::unload()
 {
     clear();
+}
+
+void PluginManager::callStops()
+{
+    for ( PluginHolder & plugin : iPlugins )
+    {
+        plugin -> stop () ;
+    }
 }
 
 GreEndNamespace

@@ -199,39 +199,39 @@ void Material::configureProgram(const HardwareProgramHolder &program) const
         HardwareProgramVariable iAmbientColor ;
         iAmbientColor.name = "iAmbientColor" ;
         iAmbientColor.type = HdwProgVarType::Float4 ;
-        iAmbientColor.value.float4 = iAmbient.toFloat4 () ;
+        iAmbientColor.value.f4 = iAmbient.toFloat4 () ;
         program->setVariable(iAmbientColor) ;
         
         HardwareProgramVariable iDiffuseColor ;
         iDiffuseColor.name = "iDiffuseColor" ;
         iDiffuseColor.type = HdwProgVarType::Float4 ;
-        iDiffuseColor.value.float4 = iDiffuse.toFloat4 () ;
+        iDiffuseColor.value.f4 = iDiffuse.toFloat4 () ;
         program->setVariable(iDiffuseColor) ;
         
         HardwareProgramVariable iSpecularColor ;
         iSpecularColor.name = "iSpecularColor" ;
         iSpecularColor.type = HdwProgVarType::Float4 ;
-        iSpecularColor.value.float4 = iSpecular.toFloat4 () ;
+        iSpecularColor.value.f4 = iSpecular.toFloat4 () ;
         program->setVariable(iSpecularColor) ;
         
         HardwareProgramVariable iEmissionColor ;
         iEmissionColor.name = "iEmissionColor" ;
         iEmissionColor.type = HdwProgVarType::Float4 ;
-        iEmissionColor.value.float4 = iEmission.toFloat4 () ;
+        iEmissionColor.value.f4 = iEmission.toFloat4 () ;
         program->setVariable(iEmissionColor) ;
         
         HardwareProgramVariable iShininessVar ;
         iShininessVar.name = "iShininess" ;
         iShininessVar.type = HdwProgVarType::Float1 ;
-        iShininessVar.value.float1 = iShininess ;
+        iShininessVar.value.f1 = iShininess ;
         program->setVariable(iShininessVar) ;
         
         // If we are multitexturing , we must specify it to the HardwareProgram.
         
         HardwareProgramVariable iMultitextureBool ;
         iMultitextureBool.name = "iMultitexture" ;
-        iMultitextureBool.type = HdwProgVarType::Bool ;
-        iMultitextureBool.value.boolean = hasMultitexture() ;
+        iMultitextureBool.type = HdwProgVarType::Int1 ;
+        iMultitextureBool.value.i1 = hasMultitexture() ? 1 : 0 ;
         program->setVariable(iMultitextureBool) ;
         
         int textureunit = 0 ;
@@ -240,25 +240,18 @@ void Material::configureProgram(const HardwareProgramHolder &program) const
         {
             if ( !texture.isInvalid() )
             {
-                texture.lock() ->configureProgram ( program , textureunit ) ;
-                textureunit ++ ;
+                const TextureHolder holder = texture.lock() ;
+                
+                program -> bindTextureUnit ( textureunit ) ;
+                holder -> bind() ;
+                
+                HardwareProgramVariable iTexture ;
+                iTexture.name = std::string ("iTexture") + std::to_string(textureunit) ;
+                iTexture.type = HdwProgVarType::Int1 ;
+                iTexture.value.i1 = textureunit ;
+                program -> setVariable(iTexture) ;
             }
         }
-    }
-}
-
-void Material::bindTextures () const
-{
-    int textureunit = 0 ;
-    
-    for ( const TextureUser & texture : iTextures )
-    {
-        if ( !texture.isInvalid() )
-        {
-            texture.lock() ->bindWithTextureUnit ( textureunit ) ;
-        }
-        
-        textureunit ++ ;
     }
 }
 
@@ -403,10 +396,7 @@ MaterialUser MaterialManager::get(const std::string &name)
                 }
             }
         }
-        
-#ifdef GreIsDebugMode
-        GreDebugPretty() << "Material '" << name << "' not found." << Gre::gendl;
-#endif
+
         return MaterialUser(nullptr);
     }
     

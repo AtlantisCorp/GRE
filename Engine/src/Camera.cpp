@@ -159,7 +159,12 @@ CameraLoader::~CameraLoader () noexcept ( false )
 CameraManager::CameraManager ( const std::string & name )
 : SpecializedResourceManager<Camera, CameraLoader> ( name )
 {
+    // By default, a Camera is available to see from position { 1.0f, 1.0f, 0.0f } to position { 1.0f, 1.0f, 1.0f }
+    // (1 units ahead). This Camera is static, and does not perform anything special.
     
+    CameraHolder camera = CameraHolder ( new Camera("Default", { 1.0f, 1.0f, 0.0f }, {1.0f, 1.0f, 1.0f}) ) ;
+    addListener(EventProceederUser(camera));
+    iHolders.push_back(camera);
 }
 
 CameraManager::~CameraManager () noexcept ( false )

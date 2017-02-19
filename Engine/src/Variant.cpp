@@ -4,7 +4,7 @@
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
-//  Copyright (c) 2015 - 2016 Luk2010
+//  Copyright (c) 2015 - 2017 Luk2010
 //  Created on 25/01/2016.
 //
 //////////////////////////////////////////////////////////////////////
@@ -46,12 +46,19 @@ Variant::Variant(int object)
     
 }
 
+Variant::Variant(float object)
+: _mPolicy(Variant::Policy::Float), _mObject(new float(object))
+{
+    
+}
+
 Variant::Variant(const Variant& rhs)
 : _mPolicy(Variant::Policy::None), _mObject(nullptr)
 {
     if(rhs._mPolicy != Policy::None)
     {
         _mObject = CopyFromPolicy(rhs._mPolicy, rhs._mObject);
+		_mPolicy = rhs._mPolicy ;
     }
 }
 
@@ -73,6 +80,12 @@ Variant::Variant ( const std::string & obj )
     
 }
 
+Variant::Variant ( const Color& color )
+: _mPolicy(Variant::Policy::Color), _mObject(new Color(color))
+{
+    
+}
+
 Variant::~Variant()
 {
     clear();
@@ -84,6 +97,12 @@ void* Variant::CopyFromPolicy(Variant::Policy policy, const void *object)
     {
         const int* tmp = (const int*) object;
         return new int(*tmp);
+    }
+    
+    if ( policy == Policy::Float )
+    {
+        const float* tmp = (const float*) object ;
+        return new float(*tmp);
     }
     
     if(policy == Policy::Version)
@@ -104,6 +123,12 @@ void* Variant::CopyFromPolicy(Variant::Policy policy, const void *object)
         return new std::string(*tmp);
     }
     
+    if ( policy == Policy::Color )
+    {
+        const Color * tmp = (const Color*) object ;
+        return new Color (*tmp) ;
+    }
+    
     return nullptr;
 }
 
@@ -114,6 +139,12 @@ void Variant::DeleteFromPolicy(Variant::Policy policy, void *object)
         int* tmp = (int*) object;
         delete tmp;
         return;
+    }
+    
+    if ( policy == Policy::Float )
+    {
+        float* tmp = (float*) object ;
+        delete tmp ; return ;
     }
     
     if(policy == Policy::Version)
@@ -136,6 +167,12 @@ void Variant::DeleteFromPolicy(Variant::Policy policy, void *object)
         delete tmp;
         return ;
     }
+    
+    if ( policy == Policy::Color )
+    {
+        Color* tmp = (Color*) object ;
+        delete tmp ; return ;
+    }
 }
 
 void Variant::reset(Variant::Policy policy, const void *object)
@@ -153,6 +190,10 @@ void Variant::reset(int object)
 {
     reset(Policy::Integer, &object);
 }
+void Variant::reset(float object)
+{
+    reset(Policy::Float, &object);
+}
 
 void Variant::reset(const Version& object)
 {
@@ -167,6 +208,11 @@ void Variant::reset(bool object)
 void Variant::reset(const std::string &object)
 {
     reset(Policy::String, &object);
+}
+
+void Variant::reset(const Color &color)
+{
+    reset(Policy::Color, &color);
 }
 
 void Variant::clear()
@@ -197,6 +243,20 @@ const int& Variant::toInteger() const
     }
     
     throw VariantBadCast("Trying to get Integer object from none Integer real object.");
+}
+
+float& Variant::toFloat()
+{
+    if ( _mPolicy == Policy::Float )
+        return * ( (float*) _mObject ) ;
+    throw VariantBadCast("Trying to get Float object from none Float real object.");
+}
+
+const float& Variant::toFloat() const
+{
+    if ( _mPolicy == Policy::Float )
+        return * ( (float*) _mObject ) ;
+    throw VariantBadCast("Trying to get Float object from none Float real object.");
 }
 
 Version& Variant::toVersion()
@@ -246,6 +306,7 @@ std::string& Variant::toString()
         return * ( (std::string*) _mObject ) ;
     }
     
+	GreDebug("[WARN] Invalid Variant conversion : 'std::string' instead of '") << (int) _mPolicy << "'." << gendl ; 
     throw VariantBadCast("Trying to get String object from none String real object.");
 }
 
@@ -256,7 +317,28 @@ const std::string& Variant::toString() const
         return * ( (const std::string*) _mObject ) ;
     }
     
+	GreDebug("[WARN] Invalid Variant conversion : 'std::string' instead of '") << (int) _mPolicy << "'." << gendl ;
     throw VariantBadCast("Trying to get String object from none String real object.");
+}
+
+Color& Variant::toColor()
+{
+    if ( _mPolicy == Policy::Color )
+    {
+        return * ( (Color*) _mObject ) ;
+    }
+    
+    throw VariantBadCast("Trying to get Color object from none Color real object.");
+}
+
+const Color& Variant::toColor() const 
+{
+    if ( _mPolicy == Policy::Color )
+    {
+        return * ( (Color*) _mObject ) ;
+    }
+    
+    throw VariantBadCast("Trying to get Color object from none Color real object.");
 }
 
 bool Variant::isNull() const

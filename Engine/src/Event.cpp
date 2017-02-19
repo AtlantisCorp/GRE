@@ -39,7 +39,9 @@ Event::Event(const EventProceeder * emitter , const EventType & etype)
 : iEmitter ( nullptr ) , iType ( etype ) , iShouldStopPropagating( false )
 {
     GreAutolock ;
+    
     iEmitter = new EventProceederUser ( emitter ) ;
+    iNoSublisteners = false ;
     
     if ( !iEmitter )
         throw GreExceptionWithText("'iEmitter' couldn't be allocated.") ;
@@ -79,6 +81,16 @@ void Event::setShouldStopPropagating(bool value)
 {
     GreAutolock ;
     iShouldStopPropagating = value ;
+}
+
+bool Event::noSublisteners() const
+{
+    GreAutolock ; return iNoSublisteners ;
+}
+
+void Event::setNoSublisteners(bool value)
+{
+    GreAutolock ; iNoSublisteners = value ;
 }
 
 // ---------------------------------------------------------------------------------------------------

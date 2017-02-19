@@ -47,30 +47,22 @@
 GreBeginNamespace
 
 //////////////////////////////////////////////////////////////////////
-/// @brief Describes an Attribute for a Mesh buffer . One Attribute
-/// can hold one buffer . This buffer can have one or many Vertex data,
-/// like position , color , texture , normals , ...
-//////////////////////////////////////////////////////////////////////
-struct MeshAttribute
-{
-    HardwareVertexBufferHolder buffer ;
-    bool enabled ;
-};
-
-/// @brief A List of MeshAttribute.
-typedef std::list < MeshAttribute > MeshAttributeList ;
-
-//////////////////////////////////////////////////////////////////////
 /// @brief Describes an object which can be draw on the screen.
 ///
-/// The Mesh is directly loaded from either a file , either a Renderer
-/// for example.
+/// Mesh objects stores HardwareVertexBuffers, wich describes the raw
+/// vertex (points) data. Those buffers can be disabled if necessary.
 ///
-/// When a Loader loads a Mesh , generally the buffers are Software's buffers,
-/// which means the data is on the CPU's RAM . To make this Mesh on the GPU's
-/// RAM , the Renderer should provides the 'convertMesh()' function . Also ,
-/// the Renderer can install a different MeshManager which will convert
-/// the Mesh automatically after loading it with the correct loader.
+/// This object also stores HardwareIndexBuffer, wich describes the link
+/// between the vertexs data.
+///
+/// You can configure every buffers in order to customize the drawing of
+/// your mesh ( enable/disable some buffers at some times ).
+///
+/// A Mesh is a static object loaded from a file, or from a MeshBuilder
+/// object. A Mesh has a preferred material that should be used by default
+/// by every Node that uses this Mesh. Also, the BoundingBox is calculated
+/// when loading the Mesh.
+///
 //////////////////////////////////////////////////////////////////////
 class DLL_PUBLIC Mesh : public Resource
 {
@@ -93,17 +85,12 @@ public:
     //////////////////////////////////////////////////////////////////////
     /// @brief Changes the 'iVertexBuffers' property.
     //////////////////////////////////////////////////////////////////////
-    virtual void setVertexBuffers ( const MeshAttributeList & attributes ) ;
+    virtual void setVertexBuffers ( const HardwareVertexBufferHolderList & attributes ) ;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the 'iVertexBuffers' property.
     //////////////////////////////////////////////////////////////////////
-    virtual const MeshAttributeList & getVertexBuffers ( ) const ;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Adds an Attribute to the Attribute's list.
-    //////////////////////////////////////////////////////////////////////
-    virtual void addVertexBuffer ( const MeshAttribute & attribute ) ;
+    virtual const HardwareVertexBufferHolderList & getVertexBuffers ( ) const ;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Changes the 'iIndexBuffer' property.
@@ -115,16 +102,6 @@ public:
     //////////////////////////////////////////////////////////////////////
     virtual const HardwareIndexBufferHolder & getIndexBuffer ( ) const ;
     
-    ////////////////////////////////////////////////////////////////////////
-    /// @brief Unloads the Resource.
-    ////////////////////////////////////////////////////////////////////////
-    virtual void unload () ;
-    
-    ////////////////////////////////////////////////////////////////////////
-    /// @brief Binds the Mesh for rendering.
-    ////////////////////////////////////////////////////////////////////////
-    virtual void bind ( ) const ;
-    
     //////////////////////////////////////////////////////////////////////
     /// @brief Clears only the Vertex Buffers .
     //////////////////////////////////////////////////////////////////////
@@ -134,6 +111,11 @@ public:
     /// @brief Clears only the index buffer .
     //////////////////////////////////////////////////////////////////////
     virtual void clearIndexBuffer ( ) ;
+    
+    ////////////////////////////////////////////////////////////////////////
+    /// @brief Unloads the Resource.
+    ////////////////////////////////////////////////////////////////////////
+    virtual void unload () ;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Changes 'iBoundingBox' .
@@ -155,40 +137,32 @@ public:
     //////////////////////////////////////////////////////////////////////
     virtual void setOriginalFilepath ( const std::string & filepath ) ;
     
-protected:
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns 'iDefaultMaterial'.
+    //////////////////////////////////////////////////////////////////////
+    virtual const MaterialHolder& getPreferredMaterial () const ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Updates the BoundingBox using given MeshAttribute.
-    /// Generally this function is called when adding or changing one of
-    /// the Vertex's Buffers , but when update events hit the object.
+    /// @brief Changes 'iDefaultMaterial'.
     //////////////////////////////////////////////////////////////////////
-    virtual void iUpdateBoundingBox ( const MeshAttribute & attribute ) ;
+    virtual void setPreferredMaterial ( const MaterialHolder& material ) ;
     
 protected:
     
-    /// @brief List of HardwareVertexBuffers .
-    /// Vertex's buffers can be multiple , because a Mesh can store its Vertex either using multiple buffers ,
-    /// for example one for normals , one for colors , ... , but it can also store every Vertex data in one
-    /// buffer. Each buffer is packed in an MeshAttribute structure which can be enabled or not.
-    MeshAttributeList iVertexBuffers ;
+    /// @brief List of HardwareVertexBuffers.
+    HardwareVertexBufferHolderList iVertexBuffers ;
     
-    /// @brief The index buffer .
-    /// If the Mesh has a valid index buffer , this one will be used to draw the Mesh instead of using
-    /// only the Vertex buffer .
+    /// @brief The index buffer.
     HardwareIndexBufferHolder iIndexBuffer ;
     
     /// @brief BoundingBox for this Mesh.
-    /// The Bounding box is updated only if the user sets 'iAutomateBoundingBox' to true. If false , the user
-    /// has to set himself the bounding box.
     BoundingBox iBoundingBox ;
-    
-    /// @brief True if the bounding box can be updated when changing one of the buffers.
-    /// The bounding box will so be calculated using the 'VertexComponentType::Position' . If the changed buffer
-    /// contains any of this component , the bounding box will be recalculated.
-    bool iAutomateBoundingBox ;
     
     /// @brief The file this mesh comes from, empty if this mesh was created inside the Engine.
     std::string iOriginalFile ;
+    
+    /// @brief Preferred Material for this Mesh.
+    MaterialHolder iDefaultMaterial ;
 };
 
 /// @brief SpecializedCountedObjectHolder for Mesh .
@@ -218,11 +192,11 @@ public:
     virtual ~MeshLoader ( ) noexcept ( false ) ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Loads a Mesh from given file.
-    /// This function should always be provided in order to genrically loads
-    /// a Mesh from a given file.
+    /// @brief Loads one or more Mesh from a file.
+    /// As some files can store more than one mesh (OBJ file for example),
+    /// a MeshLoader should be able to return more than one resource.
     //////////////////////////////////////////////////////////////////////
-    virtual MeshHolder load ( const std::string& name , const std::string& filepath ) const = 0;
+    virtual MeshHolderList load ( const std::string& name , const std::string& filepath ) const = 0;
 };
 
 /// @brief ResourceLoaderFactory for MeshLoader.
@@ -235,18 +209,7 @@ class DLL_PUBLIC MeshManager : public SpecializedResourceManager < Mesh , MeshLo
 {
 public:
     
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Retrieves the MeshManager using ResourceManager , then uses
-    /// 'MeshManager::iCreateSquare()' .
-    /// The squares created with this function are loaded using a private
-    /// map with its corresponding surface. This allow us to return the
-    /// corresponding surface's square with reload it .
-    //////////////////////////////////////////////////////////////////////
-    static MeshHolder CreateSquare ( const Surface & surface ) ;
-    
-public:
-    
-    POOLED ( Pools::Referenced )
+    POOLED ( Pools::Manager )
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
@@ -257,10 +220,9 @@ public:
     virtual ~MeshManager ( ) noexcept ( false ) ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Loads a Mesh and convert it to the underlying Rendering API
-    /// used.
+    /// @brief Loads a file and returns the Meshes found in this file.
     //////////////////////////////////////////////////////////////////////
-    virtual MeshUser load ( const std::string & name , const std::string & filepath ) ;
+    virtual std::vector < MeshUser > load ( const std::string & name , const std::string & filepath ) ;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Finds the first mesh wich origin file corresponds to given
@@ -268,27 +230,15 @@ public:
     //////////////////////////////////////////////////////////////////////
     virtual MeshUser findFirstFile ( const std::string & filepath ) ;
     
-protected:
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Creates a HardwareVertexBuffer with given data.
+    //////////////////////////////////////////////////////////////////////
+    virtual HardwareVertexBufferHolder createVertexBuffer ( const void* data , size_t sz , const VertexDescriptor& desc ) const = 0 ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Converts the Mesh to the underlying API , if possible.
-    /// This function should only use the srcmesh to create buffers on the
-    /// GPU memory . Those buffers goes to another mesh. If the returned
-    /// mesh is valid , it will be used instead of the loaded mesh.
+    /// @brief Creates a HardwareIndexBuffer with given data.
     //////////////////////////////////////////////////////////////////////
-    virtual MeshHolder iConvertMesh ( const MeshHolder & srcmesh ) const ;
-    
-public:
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns or creates the corresponding square to given surface.
-    //////////////////////////////////////////////////////////////////////
-    virtual MeshHolder iCreateSquare ( const Surface & surface ) ;
-    
-protected:
-    
-    /// @brief A Map containing every loaded mesh using 'MeshManager::CreateSquare()'.
-    std::map < Surface , MeshHolder > iSquares ;
+    virtual HardwareIndexBufferHolder createIndexBuffer ( const void* data , size_t sz , const IndexDescriptor& desc ) const = 0 ;
 };
 
 /// @brief SpecializedCountedObjectHolder for MeshManager.

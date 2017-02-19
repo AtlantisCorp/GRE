@@ -35,246 +35,114 @@
 
 GreBeginNamespace
 
-HardwareProgram::HardwareProgram(const std::string& name, const HardwareShaderUser& vertexShader, const HardwareShaderUser& fragmentShader)
-: Resource(name), iVertexShader(vertexShader), iFragmentShader(fragmentShader)
-, iNeedsCompilation(true), iNeedsVarUpdate(false)
+HardwareProgram::HardwareProgram ( const std::string & name )
+: Gre::Resource ( name )
+, iVertexShader ( nullptr ) , iFragmentShader ( nullptr )
+, iCompiled ( false ) , iBinded ( false )
 {
     
 }
 
-HardwareProgram::~HardwareProgram()
+HardwareProgram::HardwareProgram(const std::string& name,
+                                 const HardwareShaderUser& vertexShader,
+                                 const HardwareShaderUser& fragmentShader,
+                                 bool cacheShaders )
+: Resource(name)
+, iVertexShader ( nullptr ) , iFragmentShader ( nullptr )
+, iCompiled ( false ) , iBinded ( false )
+{
+    iComponentLocations [VertexComponentType::Position] = 0 ;
+    iComponentLocations [VertexComponentType::Color]    = 1 ;
+    iComponentLocations [VertexComponentType::Normal]   = 2 ;
+    
+    if ( cacheShaders )
+    {
+        iVertexShader = vertexShader ;
+        iFragmentShader = fragmentShader ;
+    }
+}
+
+HardwareProgram::~HardwareProgram() noexcept ( false )
 {
     
 }
 
 void HardwareProgram::use() const
 {
-    GreAutolock ; iBind () ;
-    iBinded = true ;
+    GreAutolock ;
     
-    // Check if we have some variables to upload.
+    _bind () ;
     
-    for ( const HardwareProgramVariable & var : iCachedVariables )
+    if ( iBinded )
     {
-        iUploadVariable(var);
+        // Check if we have some variables to upload.
+        
+        for ( const HardwareProgramVariable & var : iCachedVariables ) {
+            _setVariable (var) ;
+        }
+        
+        iCachedVariables.clear();
     }
-    
-    iCachedVariables.clear();
 }
 
 void HardwareProgram::unuse() const
 {
-    GreAutolock ; iUnbind() ; iBinded = false ;
+    GreAutolock ; _unbind() ;
 }
 
-void HardwareProgram::attachShader(const HardwareShaderUser& hwdShader)
+void HardwareProgram::setAttribLocation(const std::string &name, const Gre::VertexComponentType &component)
+{
+    GreAutolock ; _setAttribLocation ( name , getAttribLocation(component) ) ;
+}
+
+void HardwareProgram::setAttribLocation(const Gre::VertexComponentType &component, int location)
+{
+    GreAutolock ; iComponentLocations [component] = location ;
+}
+
+int HardwareProgram::getAttribLocation(const Gre::VertexComponentType &component) const
 {
     GreAutolock ;
     
-    if( isCompiled() )
-    {
-        // If program is already ready, we can't change it so we must clear it.
-        // We store the Current Shader in order not to loose them.
-        
-        HardwareShaderUser tmpVertex = iVertexShader;
-        HardwareShaderUser tmpFragment = iFragmentShader;
-        
-        reset();
-        
-        iVertexShader = tmpVertex;
-        iFragmentShader = tmpFragment;
-        
-#ifdef GreIsDebugMode
-        GreDebug("[WARN] HardwareProgram '") << getName() << "' was already compiled." << Gre::gendl ;
-#endif
-    }
-    
-    HardwareShaderHolder sholder = hwdShader.lock () ;
-    
-    if ( sholder.isInvalid() )
-    {
-        // When attaching a null shader, we resest the whole program.
-        iVertexShader = HardwareShaderUser ( nullptr ) ;
-        iFragmentShader = HardwareShaderUser ( nullptr ) ;
-        
-#ifdef GreIsDebugMode
-        GreDebug("[WARN] HardwareProgram '") << getName() << "' was reset because passed shader is invalid." << Gre::gendl ;
-#endif
-    }
-    
+    auto it = iComponentLocations.find ( component ) ;
+    if ( it == iComponentLocations.end() )
+        return -1 ;
     else
-    {
-        if(sholder->getType() == ShaderType::Vertex)
-        {
-            iVertexShader = hwdShader;
-            
-#ifdef GreIsDebugMode
-            GreDebug("[INFO] HardwareProgram '") << getName() << "' was attached with Vertex Shader '"
-            << sholder->getName() << Gre::gendl ;
-#endif
-        }
-        
-        else if(sholder->getType() == ShaderType::Fragment)
-        {
-            iFragmentShader = hwdShader;
-            
-#ifdef GreIsDebugMode
-            GreDebug("[INFO] HardwareProgram '") << getName() << "' was attached with Fragment Shader '"
-            << sholder->getName() << Gre::gendl ;
-#endif
-        }
-        
-        else
-        {
-#ifdef GreIsDebugMode
-            GreDebug("[WARN] Unrecognized HardwareShader '") << sholder->getName() << "' type." << Gre::gendl ;
-#endif
-        }
-    }
-}
-
-void HardwareProgram::finalize()
-{
-    GreAutolock ; iNeedsCompilation = true;
-    
-#ifdef GreIsDebugMode
-    GreDebug("[WARN] Function called not implemented.") << Gre::gendl ;
-#endif
-}
-
-bool HardwareProgram::isReady() const
-{
-    return isCompiled();
-}
-
-int HardwareProgram::getAttribLocation(const std::string& name) const
-{
-#ifdef GreIsDebugMode
-    GreDebug("[WARN] Function called not implemented.") << Gre::gendl ;
-#endif
-    
-    return -1;
+        return it->second ;
 }
 
 bool HardwareProgram::isCompiled() const
 {
-    return iNeedsCompilation;
+    GreAutolock ; return iCompiled ;
 }
 
 void HardwareProgram::reset()
 {
+    GreAutolock ;
+    
     iVertexShader.clear();
     iFragmentShader.clear();
-    iNeedsCompilation = true;
-    iNeedsVarUpdate = false;
-}
-
-bool HardwareProgram::hasOutputLocation(uint16_t location) const
-{
-#ifdef GreIsDebugMode
-    GreDebug("[WARN] Function called not implemented.") << Gre::gendl ;
-#endif
-    return false;
-}
-
-void HardwareProgram::bindTextureUnit(int) const
-{
-#ifdef GreIsDebugMode
-    GreDebug("[WARN] Function called not implemented.") << Gre::gendl ;
-#endif
-}
-
-void HardwareProgram::setCompiled(bool flag)
-{
-    iNeedsCompilation = flag;
-}
-
-void HardwareProgram::bindAttribsVertex(const VertexDescriptor &descriptor, const char* data) const
-{
-    if ( iNeedsCompilation )
-    {
-#ifdef GreIsDebugMode
-        GreDebug("[ERRO] Trying to bind Attributes Vertex Descriptor to HardwareProgram '") << getName()
-        << "' but this one is not compiled." << Gre::gendl ;
-#endif
-        
-        GreThrow( "HardwareProgram:notCompiled" );
-        return;
-    }
     
-    if ( descriptor.getSize() )
-    {
-        VertexComponents components = descriptor.getComponents();
-        
-        for ( auto comp : components )
-        {
-            if ( VertexComponentTypeGetSize(comp) )
-            {
-                int index = getAttribLocation(comp);
-                
-                if ( index >= 0 )
-                {
-                    setAttribData(index, descriptor.getStride(comp), data + descriptor.getComponentLocation(comp) );
-                }
-                
-                else
-                {
-#ifdef GreIsDebugMode
-                    GreDebugPretty() << "Attribute '" << VertexComponentTypeToString(comp) << "' not found in HardwareProgram '" << getName() << "'." << Gre::gendl;
-#endif
-                }
-            }
-        }
-    }
+    _deleteProgram() ;
+    iCompiled = false ;
+    iBinded = false ;
     
-    else
-    {
-#ifdef GreIsDebugMode
-        GreDebugPretty() << "Descriptor given is empty." << Gre::gendl;
-#endif
-    }
-}
-
-int HardwareProgram::getAttribLocation(const VertexComponentType& component) const
-{
-#ifdef GreIsDebugMode
-    GreDebugPretty() << "Not implemented." << Gre::gendl;
-#endif
-    return -1;
-}
-
-void HardwareProgram::setAttribData(int index, size_t stride, const char *data) const
-{
-#ifdef GreIsDebugMode
-    GreDebugPretty() << "Not implemented." << Gre::gendl;
-#endif
-}
-
-void HardwareProgram::bindAttributeLocation(const Gre::VertexComponentType &component, int index)
-{
-#ifdef GreIsDebugMode
-    GreDebugPretty() << "Not implemented." << Gre::gendl;
-#endif
-}
-
-int HardwareProgram::getUniformLocation(const std::string &name) const
-{
-#ifdef GreIsDebugMode
-    GreDebugPretty() << "Not implemented." << Gre::gendl;
-#endif
-    return -1;
+    iComponentLocations.clear() ;
+    iComponentLocations [VertexComponentType::Position] = 0 ;
+    iComponentLocations [VertexComponentType::Color]    = 1 ;
+    iComponentLocations [VertexComponentType::Normal]   = 2 ;
 }
 
 void HardwareProgram::setVariable(const Gre::HardwareProgramVariable &var) const
 {
-    if ( iBinded )
-    {
+    GreAutolock ;
+    
+    if ( iBinded ) {
         // We are binded , so we can upload the variable to the program.
-        iUploadVariable ( var ) ;
+        _setVariable ( var ) ;
     }
     
-    else
-    {
+    else {
         // Cache this Variable for later uploading.
         iCachedVariables.add(var);
     }

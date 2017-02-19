@@ -173,6 +173,20 @@ public:
         return _loaders;
     }
     
+    ////////////////////////////////////////////////////////////////////////
+    /// @brief Removes the found instance by name.
+    ////////////////////////////////////////////////////////////////////////
+    void unregister ( const std::string& name )
+    {
+        for ( auto it = _loaders.begin(); it != _loaders.end(); it++ )
+        {
+            if ( (*it).first == name ) {
+                _loaders.erase(it);
+                return ;
+            }
+        }
+    }
+    
 protected:
     
     /// @brief Loader's list, by name.

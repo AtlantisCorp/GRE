@@ -40,19 +40,62 @@ ResourceManager* iManager = nullptr;
 
 void ResourceManager::Create()
 {
-    iManager = new ResourceManager;
+    if ( !iManager )
+        iManager = new ResourceManager;
+
+#ifdef GreIsDebugMode
+    if ( !iManager ) {
+        GreDebug("[ERRO] Can't allocate ResourceManager.") << gendl;
+    } else {
+		GreDebug("[INFO] ResourceManager created.") << gendl;
+	}
+#endif
+}
+
+bool ResourceManager::CreateAndInitialize()
+{
+	ResourceManager::Create() ;
+	
+	if ( !iManager ) {
+#ifdef GreIsDebugMode
+		GreDebug("[ERRO] Can't create ResourceManager.") << gendl;
+#endif
+		return false ;
+	}
+	
+#ifdef GreIsDebugMode
+	GreDebug("[INFO] Created ResourceManager.") << gendl;
+#endif
+	ResourceManager::Get().initialize() ;
+	
+	if ( iManager->isInitialized() ) {
+#ifdef GreIsDebugMode
+		GreDebug("[INFO] ResourceManager created and initialized.") << gendl;
+#endif
+		return true ;
+	}
+	
+	else {
+#ifdef GreIsDebugMode
+		GreDebug("[ERRO] ResourceManager can't be initialized.") << gendl;
+#endif
+		return false ;
+	}
 }
 
 void ResourceManager::Destroy()
 {
+	if ( iManager )
+	{
+		Application::Destroy() ;
+		
+		delete iManager ;
+		iManager = nullptr ;
+		
 #ifdef GreIsDebugMode
-    if ( !iManager ) {
-        GreDebug("[WARN] ResourceManager is already 'null'.") << Gre::gendl ;
-    }
+		GreDebug("[INFO] ResourceManager destroyed.") << gendl;
 #endif
-    
-    Application::Destroy() ;
-    if ( iManager ) delete iManager ;
+	}
 }
 
 ResourceManager& ResourceManager::Get()
@@ -64,81 +107,210 @@ ResourceManager& ResourceManager::Get()
 
 ResourceManager::ResourceManager()
 : Lockable ( )
-, iRendererManager( new RendererManager() )
-, iWindowManager( nullptr )
-, iRenderSceneManager( new RenderSceneManager() )
-, iMaterialManager ( new MaterialManager() )
-, iPluginManager ( new PluginManager() )
-, iMeshManager ( nullptr )
-, iAnimatorManager ( new AnimatorManager() )
-, iCameraManager ( new CameraManager() )
-, iTextureManager( nullptr )
-, iRenderContextManager( nullptr )
-, iProgramManager( nullptr )
+, iRendererManager( nullptr ) , iWindowManager( nullptr ) , iRenderSceneManager( nullptr )
+, iMaterialManager ( nullptr ) , iPluginManager ( nullptr ) , iMeshManager ( nullptr )
+, iAnimatorManager ( nullptr ) , iCameraManager ( nullptr ) , iTextureManager( nullptr )
+, iRenderContextManager( nullptr ) , iProgramManager( nullptr )
 , iApplicationFactory ()
-, iGlobalEventDispatcher( new EventDispatcher("GlobalEventDispatcher") )
+{   
+    iInitialized = false ;
+}
+
+void ResourceManager::initialize () 
 {
-    GreAutolock ;
-    
+    // Initialization of internal managers here. Notes that some managers has to be initialized by a plugin.
+    // For example, MeshManager, TextureManager and RenderContextManager should be created by the active
+    // Renderer. WindowManager should be specific from the Window Plugin.
+	
+	iPluginManager = new PluginManager () ;
+	
+	if ( iPluginManager.isInvalid() ) {
 #ifdef GreIsDebugMode
-    
-    if ( iGlobalEventDispatcher.isInvalid() )
-    {
-        throw GreConstructorException("ResourceManager", "Error loading 'iGlobalEventDispatcher'") ;
-    }
-    
+		GreDebug("[ERRO] Can't create PluginManager.") << gendl;
+#endif
+		iInitialized = false ;
+		return ;
+	}
+	
+#ifdef GreIsDebugMode
+	GreDebug("Created PluginManager.") << gendl;
 #endif
     
-    iGlobalEventDispatcher->start() ;
+    iRendererManager = new RendererManager () ;
+	
+	if ( iRendererManager.isInvalid() ) {
+#ifdef GreIsDebugMode
+		GreDebug("[ERRO] Can't create RendererManager.") << gendl;
+#endif
+		iInitialized = false ;
+		return ;
+	}
+	
+#ifdef GreIsDebugMode
+	GreDebug("Created RendererManager.") << gendl;
+#endif
+	
+    iRenderSceneManager = new RenderSceneManager () ;
+	
+	if ( iRenderSceneManager.isInvalid() ) {
+#ifdef GreIsDebugMode
+		GreDebug("[ERRO] Can't create RenderSceneManager.") << gendl;
+#endif
+		iInitialized = false ;
+		return ;
+	}
+	
+#ifdef GreIsDebugMode
+	GreDebug("Created RenderSceneManager.") << gendl;
+#endif
+	
+    iMaterialManager = new MaterialManager () ;
+	
+	if ( iMaterialManager.isInvalid() ) {
+#ifdef GreIsDebugMode
+		GreDebug("[ERRO] Can't create MaterialManager.") << gendl;
+#endif
+		iInitialized = false ;
+		return ;
+	}
+	
+#ifdef GreIsDebugMode
+	GreDebug("Created MaterialManager.") << gendl;
+#endif
+    
+    iAnimatorManager = new AnimatorManager () ;
+	
+	if ( iAnimatorManager.isInvalid() ) {
+#ifdef GreIsDebugMode
+		GreDebug("[ERRO] Can't create AnimatorManager.") << gendl;
+#endif
+		iInitialized = false ;
+		return ;
+	}
+	
+#ifdef GreIsDebugMode
+	GreDebug("Created AnimatorManager.") << gendl;
+#endif
+	
+    iCameraManager = new CameraManager () ;
+    
+	if ( iCameraManager.isInvalid() ) {
+#ifdef GreIsDebugMode
+		GreDebug("[ERRO] Can't create CameraManager.") << gendl;
+#endif
+		iInitialized = false ;
+		return ;
+	}
+	
+#ifdef GreIsDebugMode
+	GreDebug("Created CameraManager.") << gendl;
+#endif
+
+	iInitialized = true ;
 }
 
 ResourceManager::~ResourceManager() noexcept(false)
 {
-    
+    unload () ;
 }
 
 void ResourceManager::unload ()
 {
     GreAutolock ;
     
-    iCameraManager->unload();
-    iAnimatorManager->unload();
-    iMaterialManager->unload();
-    iMeshManager->unload();
-    iRenderSceneManager->unload();
-    iWindowManager->unload();
-    iRendererManager->unload();
-    iPluginManager->unload();
+    // We have the necessity to destroy every managers before clearing every plugins
+    // loaded, because some resource allocated in the plugins libraries will not be freed
+    // correctly here (they will be freed when deattaching the library but the application malloc
+    // system is not notified so we have a bad delete here). But, notes that the plugins are stopped
+    // before clearing any manager, in order to let them free their resources correctly.
+    
+    if ( !iPluginManager.isInvalid() ) {
+        iPluginManager -> callStops() ;
+    }
+    
+    if ( !iCameraManager.isInvalid() ) {
+		iCameraManager->unload();
+        iCameraManager.clear() ;
+    }
+    if ( !iAnimatorManager.isInvalid() ) {
+		iAnimatorManager->unload() ;
+        iAnimatorManager.clear() ;
+    }
+    
+    if ( !iMaterialManager.isInvalid() ) {
+		iMaterialManager->unload();
+        iMaterialManager.clear() ;
+    }
+    if ( !iMeshManager.isInvalid() ) {
+		iMeshManager->unload();
+        iMeshManager.clear() ;
+    }
+    
+    if ( !iRenderSceneManager.isInvalid() ) {
+		iRenderSceneManager->unload();
+        iRenderSceneManager.clear() ;
+    }
+    if ( !iWindowManager.isInvalid() ) {
+		iWindowManager->unload();
+        iWindowManager.clear() ;
+    }
+    if ( !iRendererManager.isInvalid() ) {
+		iRendererManager->unload();
+        iRendererManager.clear() ;
+    }
+    
+    if ( !iProgramManager.isInvalid() ) {
+        iProgramManager->unload();
+        iProgramManager.clear() ;
+    }
+    if ( !iTextureManager.isInvalid() ) {
+        iTextureManager->unload() ;
+        iTextureManager.clear() ;
+    }
+    if ( !iRenderContextManager.isInvalid() ) {
+        iRenderContextManager->unload() ;
+        iRenderContextManager.clear() ;
+    }
+    
+    if ( !iPluginManager.isInvalid() ) {
+		iPluginManager->unload() ;
+        iPluginManager.clear() ;
+    }
+}
+
+bool ResourceManager::isInitialized() const
+{
+	return iInitialized ;
 }
 
 void ResourceManager::setApplicationFactory(const ApplicationLoaderFactory &appfactory)
 {
-    GreAutolock ; iApplicationFactory = appfactory ;
+    iApplicationFactory = appfactory ;
 }
 
 ApplicationLoaderFactory & ResourceManager::getApplicationFactory()
 {
-    GreAutolock ; return iApplicationFactory ;
+    return iApplicationFactory ;
 }
 
 void ResourceManager::setRendererManager(const RendererManagerHolder &rendmanager)
 {
-    GreAutolock ; iRendererManager = rendmanager ;
+    iRendererManager = rendmanager ;
 }
 
 RendererManagerHolder ResourceManager::getRendererManager()
 {
-    GreAutolock ; return iRendererManager ;
+    return iRendererManager ;
 }
 
 void ResourceManager::setWindowManager(const WindowManagerHolder &winmanager)
 {
-    GreAutolock ; iWindowManager = winmanager ;
+    iWindowManager = winmanager ;
 }
 
 WindowManagerHolder ResourceManager::getWindowManager()
 {
-    GreAutolock ; return iWindowManager ;
+    return iWindowManager ;
 }
 
 void ResourceManager::setRenderSceneManager(const RenderSceneManagerHolder &rsceneholder)

@@ -42,17 +42,11 @@ GreBeginNamespace
 enum class HdwProgVarType
 {
     None, ///< @brief Reserved for invalid Variables.
-    Vec2, ///< @brief vec2 GLSL type.
-    Vec3, ///< @brief vec3 GLSL type.
-    Vec4, ///< @brief vec4 GLSL type.
-    Mat4, ///< @brief mat4 GLSL type.
-    Uint32, ///< @brief uint GLSL type.
-    Sampler2D, ///< @brief sampler2d GLSL type.
-    Sampler3D, ///< @brief sampler3d GLSL type.
-    Float1, ///< @brief A Float variable.
-    Float4, ///< @brief float4 structure.
-    Integer, ///< @brief int
-    Bool ///< @brief boolean
+    
+    Float1, Float2, Float3, Float4,
+    Int1, Int2, Int3, Int4,
+    
+    Matrix2, Matrix3, Matrix4
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -88,16 +82,11 @@ struct HardwareProgramVariable
     /// @brief Should be self-explainatory.
     union _u
     {
-        Vector2 vec2;
-        Vector3 vec3;
-        Vector4 vec4;
-        Matrix4 mat4;
-        uint32_t uint32;
-        int textureunit;
-        float float1;
-        Float4 float4;
-        int integer;
-        bool boolean;
+        
+        float f1 ; Vector2 f2 ; Vector3 f3 ; Vector4 f4 ;
+        int i1 ; IVector2 i2 ; IVector3 i3 ; IVector4 i4 ;
+        
+        Matrix2 m2 ; Matrix3 m3 ; Matrix4 m4 ;
         
         _u() { memset(this, 0, sizeof(_u)); }
         

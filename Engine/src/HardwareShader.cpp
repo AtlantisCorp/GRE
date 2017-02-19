@@ -34,19 +34,13 @@
 
 GreBeginNamespace
 
-HardwareShader::HardwareShader(const std::string& name, const ShaderType& type)
-: Resource(ResourceIdentifier::New() , name), iType(type), iSource(), iCompiled(false)
-{
-    
-}
-
 HardwareShader::HardwareShader(const std::string& name, const ShaderType& type, const std::string& text)
 : Resource(ResourceIdentifier::New() , name), iType(type), iSource(text), iCompiled(false)
 {
 
 }
 
-HardwareShader::~HardwareShader()
+HardwareShader::~HardwareShader() noexcept ( false )
 {
     
 }
@@ -56,20 +50,9 @@ ShaderType HardwareShader::getType() const
     return iType;
 }
 
-void HardwareShader::setSource(const std::string &source)
-{
-    iSource = source;
-    iCompiled = false;
-}
-
 const std::string& HardwareShader::getSource() const
 {
     return iSource;
-}
-
-bool HardwareShader::compile()
-{
-    return iCompiled;
 }
 
 bool HardwareShader::isCompiled() const
@@ -77,32 +60,9 @@ bool HardwareShader::isCompiled() const
     return iCompiled;
 }
 
-void HardwareShader::clear()
-{
-    iSource.clear();
-    iCompiled = false;
-}
-
 const std::string& HardwareShader::getFilepath() const
 {
     return iFilepath;
-}
-
-void HardwareShader::setFilepath(const std::string &filepath)
-{
-    iFilepath = filepath;
-}
-
-// ---------------------------------------------------------------------------------------------------
-
-HardwareShaderLoader::HardwareShaderLoader()
-{
-    
-}
-
-HardwareShaderLoader::~HardwareShaderLoader()
-{
-    
 }
 
 GreEndNamespace

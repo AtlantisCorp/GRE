@@ -312,6 +312,19 @@ public:
     //////////////////////////////////////////////////////////////////////
     virtual ~RenderSceneManager () noexcept ( false );
     
+	//////////////////////////////////////////////////////////////////////
+	/// @brief Initialize the default behaviour for this manager.
+	/// This installs a default technique with a default program. A valid
+	/// HardwareProgramManager and a valid CameraManager are required to
+	/// use this function.
+	//////////////////////////////////////////////////////////////////////
+	void initialize () ;
+	
+	//////////////////////////////////////////////////////////////////////
+	/// @brief Returns 'iInitialized'.
+	//////////////////////////////////////////////////////////////////////
+	bool isInitialized () const ;
+	
     //////////////////////////////////////////////////////////////////////
     /// @brief Loads a RenderSceneHolder directly to the list.
     //////////////////////////////////////////////////////////////////////
@@ -336,6 +349,9 @@ protected:
     
     /// @brief Technique registered.
     std::vector < TechniqueHolder > iTechniques ;
+	
+	/// @brief true if initialized was successfull.
+	bool iInitialized ;
 };
 
 /// @brief SpecializedCountedObjectHolder for RenderSceneManager.

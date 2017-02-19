@@ -50,25 +50,17 @@ void EventProceeder::sendEvent(EventHolder &holder)
 {
     GreAutolock ;
     
-    if ( !holder.isInvalid() )
+    if ( holder.isInvalid() )
+        return ;
+    
+    for ( EventProceederUser & listener : iListeners)
     {
-        // Sends the Event to every listeners.
+        if ( !listener.isInvalid() ) {
+            listener.lock() -> onEvent(holder) ;
+        }
         
-        for ( auto it = iListeners.begin() ; it != iListeners.end() ; it++ )
-        {
-            if ( !it->isInvalid() )
-            {
-                auto objholder = it->lock() ;
-                if ( !objholder.isInvalid() )
-                {
-                    auto object = objholder.getObject() ;
-                    object->sendEvent(holder) ;
-                    
-                    auto event = holder.getObject() ;
-                    if ( event->shouldStopPropagating() )
-                        break ;
-                }
-            }
+        if ( holder->shouldStopPropagating() ) {
+            break ;
         }
     }
 }
@@ -84,7 +76,8 @@ void EventProceeder::onEvent(EventHolder &holder)
     
     if ( !holder.isInvalid() )
     {
-        if ( iTransmitBehaviour == EventProceederTransmitBehaviour::SendsBefore )
+        if ( iTransmitBehaviour == EventProceederTransmitBehaviour::SendsBefore &&
+             !holder->noSublisteners() )
         {
             sendEvent(holder);
         }
@@ -171,6 +164,10 @@ void EventProceeder::onEvent(EventHolder &holder)
                 onWindowClosedEvent(event->to<WindowClosedEvent>());
                 break;
                 
+            case EventType::LastWindowClosed:
+                onLastWindowClosed(event->to<LastWindowClosedEvent>());
+                break;
+                
             case EventType::RenderTargetWillClose:
                 onRenderTargetWillCloseEvent(event->to<RenderTargetWillCloseEvent>());
                 break;
@@ -231,7 +228,8 @@ void EventProceeder::onEvent(EventHolder &holder)
         
         // See if we have to send the Event to listeners.
         
-        if ( iTransmitBehaviour == EventProceederTransmitBehaviour::SendsAfter )
+        if ( iTransmitBehaviour == EventProceederTransmitBehaviour::SendsAfter &&
+             !holder->noSublisteners() )
         {
             sendEvent(holder);
         }
@@ -402,6 +400,11 @@ void EventProceeder::onWindowUnfocusedEvent(const Gre::WindowUnfocusedEvent &e)
 }
 
 void EventProceeder::onWindowClosedEvent(const Gre::WindowClosedEvent &e)
+{
+    
+}
+
+void EventProceeder::onLastWindowClosed(const Gre::LastWindowClosedEvent &e)
 {
     
 }

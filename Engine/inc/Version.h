@@ -167,10 +167,15 @@ GreBeginNamespace
 typedef TVector2<float> Vector2;
 typedef TVector3<float> Vector3;
 typedef TVector4<float> Vector4;
-typedef glm::mat4 Matrix4;
-typedef glm::quat Quaternion;
 
-typedef Vector4 Float4 ;
+typedef TVector2 < int > IVector2 ;
+typedef TVector3 < int > IVector3 ;
+typedef TVector4 < int > IVector4 ;
+
+typedef glm::mat2 Matrix2 ;
+typedef glm::mat3 Matrix3 ;
+typedef glm::mat4 Matrix4 ;
+typedef glm::quat Quaternion;
 
 // Times definition .
 
@@ -198,7 +203,7 @@ GreBeginNamespace
 
 #define GreVersionMajor 0             ///< @brief GRE Major version.
 #define GreVersionMinor 0             ///< @brief GRE Minor version.
-#define GreVersionBuild 20            ///< @brief GRE Build number.
+#define GreVersionBuild 21            ///< @brief GRE Build number.
 
 /// @brief Defines the Version structure.
 typedef struct Version

@@ -45,59 +45,24 @@ HardwareBuffer::~HardwareBuffer()
     
 }
 
-size_t HardwareBuffer::getSize() const
-{
-    return 0;
-}
-
-size_t HardwareBuffer::count() const
-{
-    return 0;
-}
-
-void HardwareBuffer::bind() const
-{
-    
-}
-
-void HardwareBuffer::unbind() const
-{
-
-}
-
-void HardwareBuffer::update()
-{
-
-}
-
 bool HardwareBuffer::isDirty() const
 {
-    return iIsDirty;
+    GreAutolock ; return iIsDirty;
 }
 
 void HardwareBuffer::setDirty(bool dirty) const
 {
-    iIsDirty = dirty;
+    GreAutolock ; iIsDirty = dirty;
 }
 
-bool HardwareBuffer::isDataInvalid() const
+void HardwareBuffer::setEnabled ( bool value )
 {
-    return true;
+    GreAutolock ; iEnabled = value ;
 }
 
-void HardwareBuffer::addData(const char *vdata, size_t sz)
+bool HardwareBuffer::isEnabled () const
 {
-    
-}
-
-const char* HardwareBuffer::getData() const
-{
-    return nullptr;
-}
-
-void HardwareBuffer::clearData()
-{
-    
+    GreAutolock ; return iEnabled ;
 }
 
 GreEndNamespace

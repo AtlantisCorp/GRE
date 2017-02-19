@@ -231,8 +231,6 @@ ReferenceCountedObjectUser::ReferenceCountedObjectUser ( const ReferenceCountedO
 : iObject ( nullptr )
 , iCounter ( nullptr )
 {
-    GreAutolock ;
-    
     if ( object )
     {
         // See if it has a Counter. If it does not have any counter , the object is not initialized using the
@@ -259,8 +257,6 @@ ReferenceCountedObjectUser::ReferenceCountedObjectUser ( const ReferenceCountedO
 : iObject ( nullptr )
 , iCounter ( nullptr )
 {
-    GreAutolock ;
-    
     ReferenceCountedObject* object = const_cast<ReferenceCountedObject*>( holder.getObject() ) ;
     
     if ( object )
@@ -289,8 +285,6 @@ ReferenceCountedObjectUser::ReferenceCountedObjectUser ( const ReferenceCountedO
 : iObject ( nullptr )
 , iCounter ( nullptr )
 {
-    GreAutolock ;
-    
     ReferenceCountedObject * object = user.iObject ;
     ReferenceCounter* counter = user.iCounter ;
     
@@ -353,9 +347,11 @@ ReferenceCountedObjectHolder ReferenceCountedObjectUser::lock()
     
     ReferenceCountedObjectHolder holder ( iObject ) ;
     
-    // The holder should have created a counter , if it was not already the case.
+    // The holder should have created a counter , if it was not already the case. Notes that 
+	// if we are locking a null holder, we should take in account that this user can also have
+	// been initialized with a null object.
     
-    if ( !iCounter )
+    if ( !iCounter && !holder.isInvalid() )
     {
         iCounter = holder.getObject()->getCounter();
     }
@@ -375,9 +371,11 @@ const ReferenceCountedObjectHolder ReferenceCountedObjectUser::lock() const
     
     ReferenceCountedObjectHolder holder ( iObject ) ;
     
-    // The holder should have created a counter , if it was not already the case.
+    // The holder should have created a counter , if it was not already the case. Notes that 
+	// if we are locking a null holder, we should take in account that this user can also have
+	// been initialized with a null object.
     
-    if ( !iCounter )
+    if ( !iCounter && !holder.isInvalid() )
     {
         iCounter = holder.getObject()->getCounter();
     }

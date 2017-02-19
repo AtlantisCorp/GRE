@@ -33,6 +33,8 @@
 #include "Scene.h"
 #include "RenderingQuery.h"
 
+#include "ResourceManager.h"
+
 GreBeginNamespace
 
 RenderScene::RenderScene(const std::string& name, const RenderSceneOptions& options)
@@ -380,9 +382,8 @@ RenderSceneHolder RenderSceneLoader::load(const std::string &name, const RenderS
 RenderSceneManager::RenderSceneManager ( const std::string& name )
 : SpecializedResourceManager<Gre::RenderScene, Gre::RenderSceneLoader>(name)
 {
-    GreAutolock ;
-    
     iLoaders.registers( "Default" , new RenderSceneLoader() );
+	iInitialized = false ;
 }
 
 RenderSceneManager::~RenderSceneManager() noexcept ( false )
@@ -390,8 +391,51 @@ RenderSceneManager::~RenderSceneManager() noexcept ( false )
     
 }
 
+void RenderSceneManager::initialize()
+{
+	GreAutolock ;
+	
+	if ( iInitialized )
+		return ;
+	
+	// We create here the 'Default' technique. This technique does not do anything special. It loads a
+    // default program. Every nodes are included. And it has, by default, no subtechniques. 
+	// NOTES : This default behaviour can only be loaded when a HardwareProgramManager and a CameraManager
+	// are available. Thus, this can be done ONLY when the Renderer is installed. The Renderer should
+	// use the 'initialize' method from the RenderSceneManager in order to install this.
+	
+	if ( ResourceManager::Get().getCameraManager().isInvalid() ||
+		 ResourceManager::Get().getHardwareProgramManager().isInvalid() ) {
+#ifdef GreIsDebugMode
+		GreDebug("[WARN] Can't initialize RenderSceneManager because CameraManager OR HardwareProgramManager") 
+		<< " are invalid. Please load both of them before initializing the scene manager." << gendl ;
+#endif
+		return ;
+	}
+
+    RenderPassHolder pass = RenderPassHolder ( new RenderPass () ) ;
+    pass->setHardwareProgram ( ResourceManager::Get().getHardwareProgramManager()->getProgram("Default") ) ;
+    
+    TechniqueHolder tech = TechniqueHolder ( new Technique() ) ;
+	tech -> setName ("Default") ;
+    tech -> addPass (pass) ;
+    tech -> setExclusive (false) ;
+    tech -> setViewport ( Viewport(1.0f, 1.0f, 1.0f, 1.0f) ) ;
+    tech -> setCamera ( ResourceManager::Get().getCameraManager()->findFirst("Default") ) ;
+    iTechniques.push_back(tech) ;
+	
+	iInitialized = true ;
+}
+
+bool RenderSceneManager::isInitialized() const 
+{
+	GreAutolock ; return iInitialized ;
+}
+
 RenderSceneUser RenderSceneManager::load(const RenderSceneHolder &holder)
 {
+	GreAutolock ;
+	
     if ( !holder.isInvalid() )
     {
         GreAutolock ;
@@ -423,11 +467,20 @@ RenderSceneUser RenderSceneManager::load(const RenderSceneHolder &holder)
 
 RenderSceneUser RenderSceneManager::load ( const std::string & name , const RenderSceneOptions & options )
 {
+	GreAutolock ;
+	
 #ifdef GreIsDebugMode
     if ( name.empty() ) {
         GreDebug("[WARN] Initialized RenderScene with no name.") << Gre::gendl;
     }
 #endif
+
+	if ( !isInitialized() ) {
+#ifdef GreIsDebugMode
+		GreDebug("[WARN] Not initialized RenderSceneManager when loading '") << name << "'." << gendl ;
+#endif
+		return RenderSceneUser ( nullptr ) ;
+	}
     
     RenderSceneLoader* loader = nullptr ;
     auto it = options.find("Loader" );
@@ -435,7 +488,7 @@ RenderSceneUser RenderSceneManager::load ( const std::string & name , const Rend
     if ( it != options.end() ) {
         loader = findLoader (it->second.toString()) ;
     } else {
-        loader = findLoader () ;
+        loader = findLoader ("Default") ;
     }
     
     if ( !loader )
@@ -456,8 +509,9 @@ RenderSceneUser RenderSceneManager::load ( const std::string & name , const Rend
     
     std::string technique = options.find("Technique") == options.end() ? "Default" : options.at("Technique").toString() ;
     if ( technique.empty() ) technique = "Default" ;
-    
-    scene -> setTechnique ( findTechnique(technique) ) ;
+	
+	TechniqueUser tech = findTechnique(technique);
+    scene -> setTechnique ( tech ) ;
     
     iHolders.push_back(scene);
     addListener(EventProceederUser(scene));
@@ -484,9 +538,11 @@ void RenderSceneManager::drawScenes( const EventHolder& e ) const
 
 TechniqueUser RenderSceneManager::findTechnique ( const std::string & name )
 {
-    for ( TechniqueHolder& tech : iTechniques ) {
+	GreAutolock ;
+	
+    for ( auto tech : iTechniques ) {
         if ( !tech.isInvalid() ) {
-            if ( tech->getName() == name ) return tech ;
+            if ( tech->getName() == name ) return TechniqueUser (tech) ;
         }
     }
     

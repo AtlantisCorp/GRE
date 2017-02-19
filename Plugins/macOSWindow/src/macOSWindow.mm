@@ -514,7 +514,7 @@ void CreateContextForWindow ( macWindow* window )
     ADD_ATTR(NSOpenGLPFAAccelerated);
     ADD_ATTR(NSOpenGLPFAClosestPolicy);
     
-    ADD_ATTR2(NSOpenGLPFAOpenGLProfile, NSOpenGLProfileVersion4_1Core);
+    ADD_ATTR2(NSOpenGLPFAOpenGLProfile, NSOpenGLProfileVersion3_2Core);
     ADD_ATTR(NSOpenGLPFADoubleBuffer);
     
     ADD_ATTR(0);
@@ -598,6 +598,7 @@ WindowHolder macOSWindowLoader::load(const std::string &name, const WindowOption
         title = (*it).second.toString() ;
     
     // Create the macOSWindow class.
+	GreDebug("[INFO] Creating Mac OS X Window class.") << Gre::gendl ;
     
     macWindow* window = new macWindow ( name , info ) ;
     if ( !window )
@@ -605,6 +606,8 @@ WindowHolder macOSWindowLoader::load(const std::string &name, const WindowOption
         GreDebug("[WARN] Can't create Window '") << name << "'." << Gre::gendl ;
         return WindowHolder ( nullptr ) ;
     }
+	
+	GreDebug("[INFO] Creating Mac OS X WindowDelegate class.") << Gre::gendl ;
     
     window->nsDelegate = [[nsWindowDelegate alloc] initWithWindow:window];
     if ( window->nsDelegate == nil )
@@ -613,6 +616,8 @@ WindowHolder macOSWindowLoader::load(const std::string &name, const WindowOption
         delete window ;
         return WindowHolder ( nullptr ) ;
     }
+	
+	GreDebug("[INFO] Creating NSWindow object.") << Gre::gendl ;
     
     NSRect contentrect = NSMakeRect(0, 0, size.first, size.second);
     window->nsWindow = [[nsWindow alloc]
@@ -631,6 +636,8 @@ WindowHolder macOSWindowLoader::load(const std::string &name, const WindowOption
     }
     
     [window->nsWindow center];
+	
+	GreDebug("[INFO] Creating NSView object.") << Gre::gendl ;
     
     window->view = [[nsWindowContentView alloc] initWithWindow:window];
     if ( window->view == nil )
@@ -656,10 +663,27 @@ WindowHolder macOSWindowLoader::load(const std::string &name, const WindowOption
     [window->nsWindow setRestorable:NO];
     
     CreateContextForWindow ( window ) ;
+	
+	if ( window->nsglContext == nil )
+	{
+		GreDebug("[WARN] Can't create NSOpenGLContext object.") << Gre::gendl ;
+		
+		[window->view release];
+		window->view = nil ;
+		[window->nsWindow release];
+        window->nsWindow = nil ;
+        [window->nsDelegate release];
+        window->nsDelegate = nil ;
+        delete window ;
+		
+		return WindowHolder ( nullptr ) ;
+	}
+	
     window->context = RenderContextHolder ( window->nsglContext ) ;
     
     [window->nsWindow orderFront:nil];
     
+	GreDebug("[INFO] Created Mac OS X native Window '") << name << "'." << Gre::gendl ;
     return WindowHolder ( window ) ;
 }
 

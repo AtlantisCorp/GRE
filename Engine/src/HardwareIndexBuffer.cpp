@@ -4,7 +4,7 @@
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
-//  Copyright (c) 2015 - 2016 Luk2010
+//  Copyright (c) 2015 - 2017 Luk2010
 //  Created on 26/11/2015.
 //
 //////////////////////////////////////////////////////////////////////
@@ -37,30 +37,8 @@ GreBeginNamespace
 
 HardwareIndexBuffer::HardwareIndexBuffer(const std::string& name)
 : Gre::HardwareBuffer(name)
-, iElementsCount(0)
-, iElementsSize(0)
-, iDataChanged(false)
 {
-    MaterialUser defaultMat = ResourceManager::Get().getMaterialManager()->get("Default");
     
-    if ( !defaultMat.isInvalid() )
-    {
-        IndexDescriptor defaultDescriptor;
-        defaultDescriptor.setType(IndexType::UnsignedShort);
-        defaultDescriptor.setMaterial(defaultMat);
-        
-        IndexBatch defaultBatch;
-        defaultBatch.setDescriptor(defaultDescriptor);
-        addIndexBatch(defaultBatch);
-    }
-    
-    else
-    {
-#ifdef GreIsDebugMode
-        GreDebugPretty() << "Can't load Material 'Default' from MaterialManager." << Gre::gendl;
-#endif
-        throw GreConstructorException("HardwareIndexBuffer", "Resource 'Materials/Default' not found.");
-    }
 }
 
 HardwareIndexBuffer::~HardwareIndexBuffer()
@@ -68,142 +46,14 @@ HardwareIndexBuffer::~HardwareIndexBuffer()
     
 }
 
-void HardwareIndexBuffer::addData(const char *data, size_t sz)
+void HardwareIndexBuffer::setIndexDescriptor(const Gre::IndexDescriptor &desc)
 {
-    addDataToIndexBatch(data, sz, 0);
+    GreAutolock ; iDescriptor = desc ;
 }
 
-void HardwareIndexBuffer::setIndexDescriptor(const Gre::IndexDescriptor &desc, size_t index)
+const IndexDescriptor& HardwareIndexBuffer::getIndexDescriptor () const
 {
-    if ( index < iBatches.size() )
-    {
-        IndexBatch& batch = iBatches.at(index);
-        batch.setDescriptor(desc);
-    }
-}
-
-void HardwareIndexBuffer::setData(const HardwareIndexBufferHolder &holder)
-{
-    clearBatches();
-    
-    if ( !holder.isInvalid() )
-    {
-        // Add every Batches to this Hardware Buffer.
-        
-        for ( const IndexBatch& batch : holder->getIndexBatches() )
-        {
-            addIndexBatch(batch);
-        }
-    }
-}
-
-void HardwareIndexBuffer::addIndexBatch(const Gre::IndexBatch &batch)
-{
-    iBatches.push_back(batch);
-    iElementsSize += batch.getSize();
-    iElementsCount += batch.getSize() / IndexTypeGetSize(batch.getDescriptor().getType());
-    iDataChanged = true;
-}
-
-void HardwareIndexBuffer::addDataToIndexBatch(const char *data, size_t sz, size_t index)
-{
-    if ( sz && data )
-    {
-        if ( index < iBatches.size() )
-        {
-            IndexBatch& batch = iBatches.at(index);
-            batch.addData(data, sz);
-            iElementsSize += sz;
-            iElementsCount += sz / IndexTypeGetSize(batch.getDescriptor().getType());
-            iDataChanged = true;
-        }
-        
-#ifdef GreIsDebugMode
-        else
-        {
-            GreDebugPretty() << "Invalid index given ('" << index << "')." << Gre::gendl;
-        }
-#endif
-    }
-    
-#ifdef GreIsDebugMode
-    else
-    {
-        GreDebugPretty() << "Invalid arguments given." << Gre::gendl;
-    }
-#endif
-}
-
-const char* HardwareIndexBuffer::getData() const
-{
-    const IndexBatch& batch = iBatches.at(0);
-    return batch.getData();
-}
-
-const IndexBatchVector& HardwareIndexBuffer::getIndexBatches() const
-{
-    return iBatches;
-}
-
-const IndexBatch& HardwareIndexBuffer::getIndexBatch(const size_t &index) const
-{
-    if ( index < iBatches.size() )
-    {
-        return iBatches.at(index);
-    }
-    
-#ifdef GreIsDebugMode
-    GreDebugPretty() << "Invalid index given ('" << index << "')." << Gre::gendl;
-#endif
-    
-    throw GreIndexException("HardwareIndexBuffer", index, iBatches.size());
-}
-
-const IndexBatch& HardwareIndexBuffer::getDefaultBatch() const
-{
-    return iBatches.at(0);
-}
-
-void HardwareIndexBuffer::removeIndexBatch(const size_t &index)
-{
-    if ( index < iBatches.size() )
-    {
-        IndexBatch& batch = iBatches.at(index);
-        iElementsSize -= batch.getSize();
-        iElementsCount -= batch.getSize() / IndexTypeGetSize( batch.getDescriptor().getType() );
-        iBatches.erase(iBatches.begin() + index);
-        iDataChanged = true;
-    }
-    
-#ifdef GreIsDebugMode
-    else
-    {
-        GreDebugPretty() << "Invalid index given ('" << index << "')." << Gre::gendl;
-    }
-#endif
-}
-
-void HardwareIndexBuffer::clearBatches()
-{
-    iElementsCount = 0;
-    iElementsSize = 0;
-    iBatches.clear();
-    iDataChanged = true;
-}
-
-void HardwareIndexBuffer::clearData()
-{
-    clearBatches();
-}
-
-size_t HardwareIndexBuffer::getSize() const
-{
-    return iElementsSize;
-}
-
-size_t HardwareIndexBuffer::count() const
-{
-    return iElementsCount;
+    GreAutolock ; return iDescriptor ;
 }
 
 GreEndNamespace

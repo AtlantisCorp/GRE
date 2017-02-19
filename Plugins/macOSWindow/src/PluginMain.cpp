@@ -36,6 +36,26 @@
 
 using namespace Gre ;
 
+class DefaultApplicationLoader : public ApplicationLoader
+{
+public:
+	
+	DefaultApplicationLoader () { }
+	virtual ~DefaultApplicationLoader () noexcept ( false ) { }
+	virtual ApplicationHolder load (const std::string& name , const std::string& author , const std::string& desc) const 
+	{
+		return ApplicationHolder ( new Application(name, author, desc) );
+	}
+	virtual ResourceLoader* clone () const 
+	{
+		return new DefaultApplicationLoader () ;
+	}
+	virtual bool isLoadable ( const std::string& file ) const
+	{
+		return false ;
+	}
+};
+
 extern "C" void* GetPluginName (void)
 {
     return (void*) "macOS Window Manager" ;
@@ -52,6 +72,10 @@ extern "C" void StartPlugin (void)
     
     // Here , we only have to register the macOSWindowManager.
     ResourceManager::Get().setWindowManager(WindowManagerHolder(wmanager));
+	
+	// Also, think about the ApplicationLoader. Finally, this is the WindowManager wich will 
+	// process OS X events. So, just load a default Application loader.
+	ResourceManager::Get().getApplicationFactory().registers("DefaultApplicationLoader", new DefaultApplicationLoader());
 }
 
 extern "C" void StopPlugin (void)

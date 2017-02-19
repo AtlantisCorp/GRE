@@ -227,6 +227,22 @@ size_t VertexDescriptor::getStride(const Gre::VertexComponentType &vtype) const
     return iSize - VertexComponentTypeGetSize(vtype);
 }
 
+size_t VertexDescriptor::getOffset(const Gre::VertexComponentType &component) const
+{
+    size_t value = 0 ;
+    
+    for ( VertexComponentType comp : iComponents )
+    {
+        if ( comp != component ) {
+            value += VertexComponentTypeGetSize(comp);
+        } else {
+            break ;
+        }
+    }
+    
+    return value ;
+}
+
 VertexDescriptor VertexDescriptor::Default = VertexDescriptor();
 
 // ---------------------------------------------------------------------------------------------------

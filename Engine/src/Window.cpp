@@ -126,12 +126,26 @@ WindowLoader::~WindowLoader()
 
 WindowManager::WindowManager( const std::string& name )
 : Gre::SpecializedResourceManager<Window, WindowLoader> ( name )
-, iGlobalKeylistener()
+, iGlobalListener ( new EventProceeder )
 {
+    // We must use this behaviour in order to let the Windows clean themself when sending
+    // WindowWillCloseEvent. This behaviour does not change many things but the user may consider
+    // this when designing its application.
     
+    EventProceeder::setTransmitBehaviour(EventProceederTransmitBehaviour::SendsBefore);
+    
+    if ( !iGlobalListener.isInvalid() ) {
+        iGlobalListener -> addListener(EventProceederUser(this));
+    }
+    
+#ifdef GreIsDebugMode
+    else {
+        GreDebug("[WARN] 'iGlobalListener' could not be created.") << gendl ;
+    }
+#endif
 }
 
-WindowManager::~WindowManager() noexcept ( false ) 
+WindowManager::~WindowManager() noexcept ( false )
 {
     
 }
@@ -139,8 +153,12 @@ WindowManager::~WindowManager() noexcept ( false )
 WindowUser WindowManager::load ( const std::string & name , const WindowOptions & info )
 {
     GreAutolock ;
-    
-    WindowLoader * bestloader = iFindBestLoader ( std::string() ) ;
+	
+	// Loader specified to load a new Window is either one in the options under name 'Loader', or the
+	// first encountered loader in the registered ones (i.e. default one).
+	
+	std::string loader = info.find("Loader") == info.end() ? std::string() : info.at("Loader").toString() ;
+    WindowLoader * bestloader = findLoader ( loader ) ;
     
     if ( !bestloader )
     {
@@ -162,7 +180,7 @@ WindowUser WindowManager::load ( const std::string & name , const WindowOptions 
     
     iHolders.add ( holder ) ;
     addListener ( WindowUser(holder) ) ;
-    holder->addListener(EventProceederUser(&iGlobalKeylistener));
+    holder->addListener(EventProceederUser(iGlobalListener));
     
 #ifdef GreIsDebugMode
     GreDebug("[INFO] Loaded Window '") << name << "'." << Gre::gendl ;
@@ -175,7 +193,7 @@ void WindowManager::addGlobalKeyListener ( const EventProceederUser & proceeder 
 {
     GreAutolock ;
     assert ( !proceeder.isInvalid() && "'proceeder' is invalid." ) ;
-    iGlobalKeylistener.addListener(proceeder);
+    iGlobalListener->addListener(proceeder);
 }
 
 void WindowManager::pollEvents ( const Duration& elapsed ) const
@@ -185,8 +203,14 @@ void WindowManager::pollEvents ( const Duration& elapsed ) const
 
 void WindowManager::onUpdateEvent(const Gre::UpdateEvent &e)
 {
-    GreAutolock ;
+    // [07.19.2017] NOTES : No need to check for closed Window. In fact,
+    // when a Window is about to close (WindowWillCloseEvent), it sends
+    // an event to the global window listener, wich will also send an event
+    // to this manager. This manager will redirect the event to the window
+    // to notifiate it will close, and then will destroy it. This lets the
+    // window release everything it needs before being released by the manager.
     
+    /*
     // Check if a Window needs to be unregistered.
     for ( auto it = iHolders.begin(); it != iHolders.end(); it++ )
     {
@@ -204,6 +228,7 @@ void WindowManager::onUpdateEvent(const Gre::UpdateEvent &e)
             }
         }
     }
+     */
 }
 
 void WindowManager::closeWindows ()
@@ -214,28 +239,57 @@ void WindowManager::closeWindows ()
     iHolders.clear();
 }
 
-// ---------------------------------------------------------------------------------------------------
-
-WindowManager::KeyListener::KeyListener ()
+void WindowManager::onEvent(EventHolder &holder)
 {
+    if ( holder.isInvalid() )
+        return ;
     
-}
-
-WindowManager::KeyListener::~KeyListener()
-{
+    if ( holder->getType() == EventType::LastWindowClosed )
+        return ;
     
+    GreAutolock ;
+    
+    for ( WindowHolder& win : iHolders )
+    {
+        if ( !holder->getEmitter().isInvalid() ) {
+            if ( (EventProceeder*) win.getObject() == holder->getEmitter().lock().getObject() ) {
+                holder -> setNoSublisteners(true) ;
+                
+                if ( holder->getType() != EventType::WindowWillClose ) {
+                    return ;
+                } else {
+                    win -> onEvent(holder) ;
+                }
+            }
+        }
+    }
+    
+    EventProceeder::onEvent(holder) ;
 }
 
-void WindowManager::KeyListener::onKeyUpEvent(const Gre::KeyUpEvent &e)
+void WindowManager::onWindowWillCloseEvent(const Gre::WindowWillCloseEvent &e)
 {
-    EventHolder holder ( &e ) ;
-    sendEvent ( holder ) ;
-}
-
-void WindowManager::KeyListener::onKeyDownEvent(const Gre::KeyDownEvent &e)
-{
-    EventHolder holder ( &e ) ;
-    sendEvent( holder ) ;
+    GreAutolock ;
+    
+    // We have to release the Window from the holder list.
+    for ( auto it = iHolders.begin() ; it != iHolders.end() ; it++ )
+    {
+        WindowHolder & win = (*it) ;
+        
+        if ( !e.getEmitter().isInvalid() ) {
+            if ( (EventProceeder*) win.getObject() == e.getEmitter().lock().getObject() ) {
+                iHolders.erase(it) ;
+                break ;
+            }
+        }
+    }
+    
+    if ( iHolders.empty() ){
+        // If we are empty, this means the last window has been closed. We now
+        // can send the LastWindowClosed Event to the application.
+        EventHolder lwc = EventHolder ( new LastWindowClosedEvent(this) ) ;
+        sendEvent(lwc) ;
+    }
 }
 
 GreEndNamespace

@@ -141,6 +141,12 @@ public:
     //////////////////////////////////////////////////////////////////////
     virtual size_t getStride(const VertexComponentType& vtype) const;
     
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the offset between the start of the buffer and the
+    /// given component.
+    //////////////////////////////////////////////////////////////////////
+    virtual size_t getOffset ( const VertexComponentType& component ) const ;
+    
     /// @brief Default Vertex Descriptor (Position + Color + Normal + Texture, in this order).
     static VertexDescriptor Default;
     

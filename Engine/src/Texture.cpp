@@ -31,61 +31,48 @@
  */
 
 #include "Texture.h"
-#include "Renderer.h"
-#include "HardwareProgram.h"
 
 GreBeginNamespace
 
 std::string TextureTypeToString(const TextureType& type)
 {
-    if ( type == TextureType::OneDimension )
-    {
-        return "TextureType::1D";
+    if ( type == TextureType::Texture1D ) {
+        return "TextureType::Texture1D";
     }
     
-    if ( type == TextureType::TwoDimension )
-    {
-        return "TextureType::2D";
+    if ( type == TextureType::Texture2D ) {
+        return "TextureType::Texture2D";
     }
     
-    if ( type == TextureType::ThreeDimension )
-    {
-        return "TextureType::3D";
+    if ( type == TextureType::Texture3D ) {
+        return "TextureType::Texture3D";
     }
     
-    if ( type == TextureType::CubeMap )
-    {
+    if ( type == TextureType::CubeMap ) {
         return "TextureType::Cubemap";
     }
     
     return "TextureType::Null";
 }
 
-HdwProgVarType TextureTypeToHdwProgType(const TextureType& type)
-{
-    if ( type == TextureType::TwoDimension )
-    {
-        return HdwProgVarType::Sampler2D;
-    }
-    
-    if ( type == TextureType::ThreeDimension )
-    {
-        return HdwProgVarType::Sampler3D;
-    }
-    
-    return HdwProgVarType::None;
-}
-
 // ---------------------------------------------------------------------------------------------------
 
-Texture::Texture(const std::string& name)
-: Resource(name), iSampler(nullptr)
+Texture::Texture (const std::string& name , const TextureType & type ,
+                  const SoftwarePixelBufferHolderList& buffers , bool keepCache )
+: Gre::Resource(name)
+, iType ( type ) , iPixelBuffers ( buffers ) , iSurface ( { 0, 0, 0, 0 } ) , iBinded ( false )
 {
-    iType = TextureType::Null;
-    iBinded = false;
-    iDirty = false;
-    iOriginFile = "";
-    iSurface = { 0, 0, 0, 0 };
+    iParameters [TextureParameter::DepthStencilMode] = Variant ( (int) TextureDepthStencilMode::Depth ) ;
+    iParameters [TextureParameter::MipmapBaseLevel] = Variant ( (int) 0 ) ;
+    iParameters [TextureParameter::BorderColor] = Variant ( Color(0.0f, 0.0f, 0.0f, 0.0f) ) ;
+    iParameters [TextureParameter::CompareFunc] = Variant ( (int) TextureCompareFunc::Always ) ;
+    iParameters [TextureParameter::CompareMode] = Variant ( (int) TextureCompareMode::None ) ;
+    iParameters [TextureParameter::LODBias] = Variant ( (float) 0.0f ) ;
+    iParameters [TextureParameter::MinFilter] = Variant ( (int) TextureMinFilter::MipmapLinear ) ;
+    iParameters [TextureParameter::MagFilter] = Variant ( (int) TextureMagFilter::Linear ) ;
+    iParameters [TextureParameter::WrapS] = Variant ( (int) TextureWrap::Repeat ) ;
+    iParameters [TextureParameter::WrapT] = Variant ( (int) TextureWrap::Repeat ) ;
+    iParameters [TextureParameter::WrapR] = Variant ( (int) TextureWrap::Repeat ) ;
 }
 
 Texture::~Texture() noexcept(false)
@@ -93,136 +80,101 @@ Texture::~Texture() noexcept(false)
     
 }
 
-void Texture::bindWithTextureUnit(int texunit) const
-{
-    activateTextureUnit(texunit);
-    bind();
-}
-
 void Texture::bind() const
 {
-    iBinded = false;
-#ifdef GreIsDebugMode
-    GreDebugPretty() << "Not implemented." << Gre::gendl;
-#endif
+    GreAutolock ; _bind () ;
 }
 
 void Texture::unbind() const
 {
-    iBinded = false;
-#ifdef GreIsDebugMode
-    GreDebugPretty() << "Not implemented." << Gre::gendl;
-#endif
-}
-
-void Texture::activateTextureUnit(int texunit) const
-{
-#ifdef GreIsDebugMode
-    GreDebugPretty() << "Not implemented." << Gre::gendl;
-#endif
+    GreAutolock ; _unbind () ;
 }
 
 void Texture::setPixelBuffer(const SoftwarePixelBufferUser& pixelbuffer)
 {
-    if( iPixelBuffers.size() >= 1 )
-    {
-        iPixelBuffers.front() = pixelbuffer.lock();
-        iDirty = true;
+    GreAutolock ;
+    
+    if ( !iPixelBuffers.empty() ) {
+        (*iPixelBuffers.begin()) = pixelbuffer.lock() ;
+    } else {
+        iPixelBuffers.add ( pixelbuffer.lock() ) ;
     }
-        
-    else
-    {
-        iPixelBuffers.add(pixelbuffer.lock());
-        iDirty = true;
+    
+    if ( !iPixelBuffers.empty() ) {
+        if ( !(*iPixelBuffers.begin()).isInvalid() ) {
+            iSurface = (*iPixelBuffers.begin()) -> getSurface () ;
+            _setBuffer () ;
+        }
     }
 }
 
 const SoftwarePixelBufferUser Texture::getPixelBuffer() const
 {
-    return SoftwarePixelBufferUser(iPixelBuffers.front());
-}
-
-SoftwarePixelBufferUser Texture::getPixelBuffer()
-{
-    return SoftwarePixelBufferUser(iPixelBuffers.front());
-}
-
-const std::string& Texture::getOriginalFile() const
-{
-    return iOriginFile;
+    GreAutolock ; return SoftwarePixelBufferUser(iPixelBuffers.front());
 }
 
 const Surface& Texture::getSurface() const
 {
-    return iSurface;
+    GreAutolock ; return iSurface;
 }
 
-Surface& Texture::getSurface()
-{
-    return iSurface;
-}
-
-void Texture::setSurface(const Surface& surface)
-{
-    iSurface = surface;
-    iDirty = true;
-}
-
-const TextureType Texture::getType() const
+const TextureType & Texture::getType() const
 {
     return iType;
 }
 
-void Texture::setType(TextureType type)
+void Texture::setParameterValue ( const TextureParameter & param , const Variant & value )
 {
-    iType = type;
-    iDirty = true;
+    GreAutolock ; iParameters [param] = value ;
 }
 
-bool Texture::hasHardwareSamplerActivated() const
+const Variant & Texture::getParameterValue(const Gre::TextureParameter &param) const
 {
-    return iSampler.isInvalid();
+    GreAutolock ; return iParameters .at(param) ;
 }
 
-HardwareSamplerUser Texture::getHardwareSampler()
+// ---------------------------------------------------------------------------------------------------
+
+TextureFileLoader::TextureFileLoader()
 {
-    return iSampler;
+    
 }
 
-void Texture::configureProgram(const HardwareProgramHolder &program, int textureunit) const
+TextureFileLoader::~TextureFileLoader() noexcept ( false )
 {
-    if ( !program.isInvalid() )
-    {
-        HardwareProgramVariable iSamplerVar ;
-        iSamplerVar.name = std::string("iTexture") + std::to_string(textureunit) ;
-        iSamplerVar.type = HdwProgVarType::Integer ;
-        iSamplerVar.value.integer = textureunit ;
-        program->setVariable(iSamplerVar) ;
+    
+}
+
+// ---------------------------------------------------------------------------------------------------
+
+TextureManager::TextureManager( const std::string & name )
+: SpecializedResourceManager<Gre::Texture, Gre::TextureFileLoader>(name)
+{
+    
+}
+
+TextureManager::~TextureManager() noexcept ( false )
+{
+    
+}
+
+TextureUser TextureManager::load ( const std::string & name , const TextureType & type, const std::string & filepath )
+{
+    TextureFileLoader* loader = iFindBestLoader ( filepath ) ;
+    
+    if ( !loader ) {
+        GreDebug("[WARN] No TextureFileLoader to load texture '") << name << "'." << Gre::gendl ;
+        return TextureUser ( nullptr ) ;
     }
-}
-
-// ---------------------------------------------------------------------------------------------------
-
-TextureLoader::TextureLoader()
-{
     
-}
-
-TextureLoader::~TextureLoader()
-{
+    SoftwarePixelBufferHolder buffer = loader -> load ( filepath ) ;
     
-}
-
-// ---------------------------------------------------------------------------------------------------
-
-TextureManager::TextureManager()
-{
+    if ( buffer.isInvalid() ) {
+        GreDebug("[WARN] Can't load SoftwarePixelBuffer to load texture '") << name << "'." << Gre::gendl ;
+        return TextureUser ( nullptr ) ;
+    }
     
-}
-
-TextureManager::~TextureManager()
-{
-    
+    return load ( name , type, buffer ) ;
 }
 
 GreEndNamespace

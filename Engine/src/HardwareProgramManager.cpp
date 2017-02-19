@@ -247,8 +247,6 @@ HardwareProgramUser HardwareProgramManager::createHardwareProgramFromFiles(const
             return HardwareProgramUser ( nullptr );
         }
         
-        vshader->compile();
-        
         // Try to load Fragment shader.
         
         HardwareShaderHolder fshader = loadShaderHolder(ShaderType::Fragment, name + "/fragmentshader", fragmentshaderpath);
@@ -261,8 +259,6 @@ HardwareProgramUser HardwareProgramManager::createHardwareProgramFromFiles(const
             return HardwareProgramUser ( nullptr );
         }
         
-        fshader->compile();
-        
         // Create the HardwareProgram.
         
         HardwareProgramHolder program = iCreateHardwareProgram(name, vshader, fshader);
@@ -274,8 +270,6 @@ HardwareProgramUser HardwareProgramManager::createHardwareProgramFromFiles(const
 #endif
             return HardwareProgramUser ( nullptr );
         }
-        
-        program->finalize();
         
         // Load the HardwareProgram to the database.
         
@@ -357,7 +351,6 @@ HardwareShaderHolder HardwareProgramManager::loadShaderHolder(const Gre::ShaderT
             return HardwareShaderHolder ( nullptr );
         }
         
-        shader->setFilepath(filepath);
         iShaders.add(shader);
         return shader;
     }
@@ -431,8 +424,8 @@ HardwareProgramVariable& HardwareProgramManager::setGlobalVariableMat4(const std
     
     HardwareProgramVariable nVar;
     nVar.name = name;
-    nVar.type = HdwProgVarType::Mat4;
-    nVar.value.mat4 = mat4;
+    nVar.type = HdwProgVarType::Matrix4;
+    nVar.value.m4 = mat4;
     iGlobals.add(nVar);
     return iGlobals.get(name);
 }

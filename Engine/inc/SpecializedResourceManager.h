@@ -358,6 +358,10 @@ public:
     virtual ClassLoader * findLoader ( const std::string & name = std::string() )
     {
         auto & loaderlist = iLoaders.getLoaders () ;
+		
+		if ( name.empty() && loaderlist.size() ) {
+			return loaderlist.begin()->second.get() ;
+		}
         
         for ( auto it = loaderlist.begin() ; it != loaderlist.end() ; it++ )
         {

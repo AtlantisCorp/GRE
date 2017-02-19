@@ -72,12 +72,6 @@ public:
     //////////////////////////////////////////////////////////////////////
     virtual void setVertexDescriptor(const VertexDescriptor& vdesc);
     
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Sets data from another HardwareVertexBuffer object, erasing
-    /// prior data and updating new one.
-    //////////////////////////////////////////////////////////////////////
-    virtual void setData ( const HardwareVertexBufferHolder& holder ) = 0;
-    
 protected:
     
     /// @brief Vertex's Descriptor map.

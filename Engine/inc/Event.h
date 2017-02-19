@@ -181,6 +181,16 @@ public:
     void setShouldStopPropagating ( bool value ) ;
     
     //////////////////////////////////////////////////////////////////////
+    /// @brief Returns 'iNoSublisteners'.
+    //////////////////////////////////////////////////////////////////////
+    bool noSublisteners () const ;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Changes 'iNoSublisteners'.
+    //////////////////////////////////////////////////////////////////////
+    void setNoSublisteners ( bool value ) ;
+    
+    //////////////////////////////////////////////////////////////////////
     /// @brief Returns the event but according to its real type.
     //////////////////////////////////////////////////////////////////////
     template < typename T > const T & to() const
@@ -211,6 +221,9 @@ protected:
     /// @brief True if you want to stop the propagation of this Event to other
     /// listeners of the emitter. At construction , this value is always 'false'.
     bool iShouldStopPropagating ;
+    
+    /// @brief True if this event should not be send to sublisteners.
+    bool iNoSublisteners ;
 };
 
 /// @brief A Generic Event callback.

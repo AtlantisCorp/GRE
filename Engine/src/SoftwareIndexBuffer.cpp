@@ -47,7 +47,7 @@ SoftwareIndexBuffer::~SoftwareIndexBuffer() noexcept(false)
 
 void SoftwareIndexBuffer::onUpdateEvent(const Gre::UpdateEvent &e)
 {
-    iDataChanged = false;
+    
 }
 
 GreEndNamespace

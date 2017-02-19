@@ -161,8 +161,8 @@ void Application::run()
     
     // Those managers have a Worker Thread but at least , normally they don't need one .
     
-    addWorkerThread( EventProceederUser (ResourceManager::Get() .getRenderContextManager()) ) ;
-    addWorkerThread( EventProceederUser (ResourceManager::Get() .getPluginManager()) ) ;
+    addWorkerThread ( EventProceederUser (ResourceManager::Get() .getRenderContextManager()) ) ;
+    addWorkerThread ( EventProceederUser (ResourceManager::Get() .getPluginManager()) ) ;
     
     addWorkerThread ( EventProceederUser (ResourceManager::Get() .getWindowManager()) ) ;
     addWorkerThread ( EventProceederUser (ResourceManager::Get() .getRendererManager()) ) ;
@@ -237,6 +237,12 @@ ApplicationHolder Application::Create(const std::string &name , const std::strin
         if ( !app.isInvalid() ) iSharedApplication = app ;
         return app ;
     }
+	
+#ifdef GreIsDebugMode
+	else {
+		GreDebug("No loader found for Application '") << name << "'." << gendl ;
+	}
+#endif
     
     return ApplicationHolder ( nullptr ) ;
 }

@@ -4,7 +4,7 @@
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
-//  Copyright (c) 2015 - 2016 Luk2010
+//  Copyright (c) 2015 - 2017 Luk2010
 //  Created on 02/07/2016.
 //
 //////////////////////////////////////////////////////////////////////
@@ -34,69 +34,46 @@
 
 GreBeginNamespace
 
-SoftwarePixelBuffer::SoftwarePixelBuffer(const std::string& name)
-: HardwarePixelBuffer(name), iPixBuffer(nullptr)
+SoftwarePixelBuffer::SoftwarePixelBuffer ( )
+: Gre::Resource ( "" )
 {
     
 }
 
-SoftwarePixelBuffer::~SoftwarePixelBuffer()
+SoftwarePixelBuffer::~SoftwarePixelBuffer() noexcept ( false )
 {
     if ( iPixBuffer )
-    {
-        free(iPixBuffer);
-    }
+        free ( iPixBuffer ) ;
 }
 
-void SoftwarePixelBuffer::setPixelFormat(const Gre::HardwarePixelFormat &pixformat)
+const InternalPixelFormat & SoftwarePixelBuffer::getInternalPixelFormat() const
 {
-    iPixFormat = pixformat;
-    // No need to set the 'dirty' flag to true, as every data is stored here.
+    GreAutolock ; return iInternalPixelFormat ;
 }
 
-char* SoftwarePixelBuffer::getData()
+const Surface & SoftwarePixelBuffer::getSurface() const
 {
-    return iPixBuffer;
+    GreAutolock ; return iSurface ;
 }
 
-const char* SoftwarePixelBuffer::getData() const
+const PixelFormat & SoftwarePixelBuffer::getPixelFormat() const
 {
-    return iPixBuffer;
+    GreAutolock ; return iPixelFormat ;
 }
 
-size_t SoftwarePixelBuffer::getSize() const
+const PixelType & SoftwarePixelBuffer::getPixelType() const
 {
-    return iSize;
+    GreAutolock ; return iPixelType ;
 }
 
-size_t SoftwarePixelBuffer::count() const
+const void* SoftwarePixelBuffer::getData () const
 {
-    HardwarePixelFormatDescriptor desc = HardwarePixelFormatDescriptorManager::Instance.getDescriptor(iPixFormat);
-    if( desc.iSize != 0 )
-    {
-        return iSize / desc.iSize;
-    }
-    
-    return 0;
+    GreAutolock ; return (const void*) iPixBuffer ;
 }
 
-void SoftwarePixelBuffer::setData(const char *data, size_t sz)
+int SoftwarePixelBuffer::getDepth () const
 {
-    if( iPixBuffer )
-    {
-        free(iPixBuffer);
-    }
-    
-    iSize = sz;
-    iPixBuffer = (char*) malloc(sz);
-    memset(iPixBuffer, 0, sz) ;
-    
-    // We must check for data validity , because one can create an empty buffer.
-    
-    if ( data )
-    {
-        memcpy(iPixBuffer, data, sz);
-    }
+    GreAutolock ; return iDepth ;
 }
 
 // ---------------------------------------------------------------------------------------------------

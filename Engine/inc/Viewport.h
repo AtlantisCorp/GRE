@@ -44,6 +44,7 @@ GreBeginNamespace
 /// if you set a width ratio of 0.5f, when RenderContext calls
 /// onBordersChanged() with the RenderContext new width of 400 px, the
 /// width given by getSurface().width will be 400*0.5f = 200.
+///
 //////////////////////////////////////////////////////////////////////
 class DLL_PUBLIC Viewport
 {
@@ -51,7 +52,7 @@ public:
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    Viewport(const std::string& name = "", float top = 0.0f, float left = 0.0f, float width = 1.0f, float height = 1.0f, bool activated = true);
+    Viewport ( float top = 0.0f, float left = 0.0f, float width = 1.0f, float height = 1.0f ) ;
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
@@ -62,37 +63,16 @@ public:
     Viewport& operator = (const Viewport& rhs);
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Updates the Viewport. This function should be called by the
-    /// RenderContext object.
+    /// @brief Updates the Viewport.
     //////////////////////////////////////////////////////////////////////
     virtual void onBordersChanged(const Surface& parentSurface);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Name of this Viewport.
-    //////////////////////////////////////////////////////////////////////
-    const std::string& getName() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns true if this Viepwort should be rendered.
-    //////////////////////////////////////////////////////////////////////
-    bool isActivated() const;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the Surface covered by this Viewport.
     //////////////////////////////////////////////////////////////////////
     const Surface& getSurface() const;
     
-    /// @brief An empty const vector of Viewport.
-    static const std::list<Viewport> EmptyList;
-    
 protected:
-    
-    /// @brief Name of this Viewport.
-    std::string _mName;
-    
-    /// @brief Is this Viewport activated ?
-    /// Default value is 'true'.
-    bool _mActivated;
     
     /// @brief Width border ratio.
     float _mBorderWidth;
@@ -109,9 +89,6 @@ protected:
     /// @brief Surface object updated with Viewport::onBordersChanged().
     Surface _mSurface;
 };
-
-/// @brief std::list<> for Viewport.
-typedef std::list<Viewport> ViewportList;
 
 GreEndNamespace
 

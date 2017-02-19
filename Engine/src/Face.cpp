@@ -68,7 +68,7 @@ size_t IndexTypeGetSize(const IndexType& itype)
 // ---------------------------------------------------------------------------------------------------
 
 IndexDescriptor::IndexDescriptor()
-: iType(IndexType::Null), iMaterial(nullptr)
+: iType(IndexType::UnsignedInteger), iMode(IndexDrawmode::Triangles)
 {
     
 }
@@ -88,115 +88,16 @@ void IndexDescriptor::setType(const Gre::IndexType &type)
     iType = type;
 }
 
-const MaterialUser& IndexDescriptor::getMaterial() const
+const IndexDrawmode& IndexDescriptor::getMode () const
 {
-    return iMaterial;
+    return iMode ;
 }
 
-void IndexDescriptor::setMaterial(const Gre::MaterialUser &material)
+void IndexDescriptor::setMode ( const IndexDrawmode& mode )
 {
-    iMaterial = material;
+    iMode = mode ;
 }
 
 IndexDescriptor IndexDescriptor::Default = IndexDescriptor();
-
-// ---------------------------------------------------------------------------------------------------
-
-IndexBatch::IndexBatch()
-: iDescriptor()
-, iSize (0)
-, iData (nullptr)
-{
-    
-}
-
-IndexBatch::IndexBatch(const IndexBatch& rhs)
-: iDescriptor(rhs.iDescriptor)
-, iSize(0)
-, iData(nullptr)
-{
-    setData(rhs.getData(), rhs.getSize());
-}
-
-IndexBatch::~IndexBatch()
-{
-    clear();
-}
-
-const IndexDescriptor& IndexBatch::getDescriptor() const
-{
-    return iDescriptor;
-}
-
-void IndexBatch::setDescriptor(const Gre::IndexDescriptor &desc)
-{
-    iDescriptor = desc;
-}
-
-const char* IndexBatch::getData() const
-{
-    return iData;
-}
-
-size_t IndexBatch::getSize() const
-{
-    return iSize;
-}
-
-void IndexBatch::addData(const char* data, size_t sz)
-{
-    if ( iData )
-    {
-        char* tmp = iData;
-        iData = (char*) malloc(sizeof(char) * (sz + iSize));
-        memcpy(iData, tmp, iSize);
-        memcpy(iData + iSize, data, sz);
-        iSize = iSize + sz;
-    }
-    
-    else
-    {
-        setData(data, sz);
-    }
-}
-
-void IndexBatch::setData(const char *data, size_t sz)
-{
-    if ( iData )
-    {
-        clear();
-    }
-    
-    iData = (char*) malloc (sz * sizeof(char));
-    memcpy(iData, data, sz);
-    iSize = sz;
-}
-
-void IndexBatch::clear()
-{
-    if ( iData && iSize )
-    {
-        free(iData);
-        iData = nullptr;
-        iSize = 0;
-    }
-    
-    if ( iData )
-    {
-#ifdef GreIsDebugMode
-        GreDebugPretty() << "Freeing 'IndexBatch::iData' but 'iSize' is invalid." << Gre::gendl;
-#endif
-        free(iData);
-        iData = nullptr;
-        iSize = 0;
-    }
-}
-
-IndexBatch& IndexBatch::operator=(const Gre::IndexBatch &rhs)
-{
-    setDescriptor(rhs.getDescriptor());
-    setData(rhs.getData(), rhs.getSize());
-    return *this;
-}
 
 GreEndNamespace

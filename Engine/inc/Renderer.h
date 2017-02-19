@@ -168,12 +168,12 @@ protected:
     //////////////////////////////////////////////////////////////////////
     /// @brief Sets the current HardwareProgram.
     //////////////////////////////////////////////////////////////////////
-    virtual void setHardwareProgram ( const HardwareProgramUser& program ) const ;
+    virtual void setHardwareProgram ( const HardwareProgramHolder& program ) const ;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Sets the current camera to the used hardware program.
     //////////////////////////////////////////////////////////////////////
-    virtual void setCamera ( const CameraUser& camera , const HardwareProgramUser& program ) const ;
+    virtual void setCamera ( const CameraUser& camera , const HardwareProgramHolder& program ) const ;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Sets the current camera.
@@ -183,7 +183,7 @@ protected:
     //////////////////////////////////////////////////////////////////////
     /// @brief Sets the current node.
     //////////////////////////////////////////////////////////////////////
-    virtual void setNode ( const RenderNodeHolder & node , const HardwareProgramUser& program ) const ;
+    virtual void setNode ( const RenderNodeHolder & node , const HardwareProgramHolder& program ) const ;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Sets the current node.
@@ -193,24 +193,29 @@ protected:
     //////////////////////////////////////////////////////////////////////
     /// @brief Draws the Mesh using its buffers.
     //////////////////////////////////////////////////////////////////////
-    virtual void _drawNodeMesh ( const MeshUser& mesh , const HardwareProgramUser& program ) const = 0 ;
+    virtual void _drawNodeMesh ( const MeshUser& mesh , const HardwareProgramHolder& program ) const = 0 ;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief If the node has children, draws it too.
     //////////////////////////////////////////////////////////////////////
-    virtual void postNode ( const RenderNodeHolder & node , const CameraUser& camera , const HardwareProgramUser& program ) const ;
+    virtual void postNode ( const RenderNodeHolder & node , const CameraUser& camera , const HardwareProgramHolder& program ) const ;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Post-drawing function.
     //////////////////////////////////////////////////////////////////////
-    virtual void _postNode ( const RenderNodeHolder & node , const CameraUser& camera , const HardwareProgramUser& program ) const = 0 ;
+    virtual void _postNode ( const RenderNodeHolder & node , const CameraUser& camera , const HardwareProgramHolder& program ) const = 0 ;
     
 public:
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Installs managers this Renderer has to the ResourceManager .
     //////////////////////////////////////////////////////////////////////
-    virtual void installManagers ( ) ;
+    virtual bool installManagers ( ) ;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Should installs as many default features it can have.
+    //////////////////////////////////////////////////////////////////////
+    virtual void installDefaultFeatures () = 0 ;
     
     ////////////////////////////////////////////////////////////////////////
     /// @brief Unloads the Resource.
@@ -232,6 +237,16 @@ public:
     /// @brief Creates a TextureManager for this Renderer.
     //////////////////////////////////////////////////////////////////////
     virtual TextureManagerHolder iCreateTextureManager ( ) const = 0 ;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Changes 'iContext'.
+    //////////////////////////////////////////////////////////////////////
+    virtual void setRenderContext ( const RenderContextUser& context ) ;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns 'iContext'.
+    //////////////////////////////////////////////////////////////////////
+    virtual const RenderContextHolder& getRenderContext () const ;
     
 public:
     
@@ -289,6 +304,12 @@ protected:
     
     /// @brief True if this renderer has installed every managers to the resource manager.
     bool iInstalled ;
+    
+    /// @brief True if 'installDefaultFeatures' has been called successfully.
+    bool iFeaturesInstalled ;
+    
+    /// @brief The RenderContext this Renderer is attached to.
+    RenderContextHolder iContext ;
 };
 
 /// @brief SpecializedCountedObjectHolder for RendererPrivate.
