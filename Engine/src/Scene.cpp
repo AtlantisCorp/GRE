@@ -258,7 +258,16 @@ void RenderScene::draw(const EventHolder &elapsed) const
 
 void RenderScene::setTechnique(const TechniqueUser &technique)
 {
-    GreAutolock ; iTechnique = technique.lock() ;
+    GreAutolock ;
+    
+    if ( !iTechnique.isInvalid() )
+        removeListener(EventProceederUser(iTechnique)) ;
+    
+    iTechnique = technique.lock() ;
+    
+    if ( !iTechnique.isInvalid() )
+        addListener(EventProceederUser(iTechnique)) ;
+    
 #ifdef GreIsDebugMode
     if ( technique.isInvalid() ) {
         GreDebug("[WARN] Setting invalid Technique to RenderScene '") << getName() << "'." << Gre::gendl ;
@@ -266,9 +275,20 @@ void RenderScene::setTechnique(const TechniqueUser &technique)
 #endif
 }
 
+TechniqueHolder& RenderScene::getTechnique ()
+{
+    GreAutolock ; return iTechnique ;
+}
+
+const TechniqueHolder& RenderScene::getTechnique () const
+{
+    GreAutolock ; return iTechnique ;
+}
+
 void RenderScene::setRenderer ( const RendererUser& renderer )
 {
     GreAutolock ; iRenderer = renderer ;
+    
 #ifdef GreIsDebugMode
     if ( renderer.isInvalid() ) {
         GreDebug("[WARN] Setting invalid Renderer to RenderScene '") << getName() << "'." << Gre::gendl ;
@@ -278,7 +298,16 @@ void RenderScene::setRenderer ( const RendererUser& renderer )
 
 void RenderScene::setRenderTarget(const RenderTargetUser &target)
 {
-    GreAutolock ; iRenderTarget = target.lock() ;
+    GreAutolock ;
+    
+    if ( !iRenderTarget.isInvalid() )
+        iRenderTarget -> removeListener(EventProceederUser(this)) ;
+    
+    iRenderTarget = target.lock() ;
+    
+    if ( !iRenderTarget.isInvalid() )
+        iRenderTarget -> addListener(EventProceederUser(this)) ;
+    
 #ifdef GreIsDebugMode
     if ( target.isInvalid() ) {
         GreDebug("[WARN] Setting invalid RenderTarget to RenderScene '") << getName() << "'." << Gre::gendl ;
@@ -423,6 +452,7 @@ void RenderSceneManager::initialize()
     tech -> setViewport ( Viewport(1.0f, 1.0f, 1.0f, 1.0f) ) ;
     tech -> setCamera ( ResourceManager::Get().getCameraManager()->findFirst("Default") ) ;
     iTechniques.push_back(tech) ;
+    addListener(EventProceederUser(tech));
 	
 	iInitialized = true ;
 }
@@ -547,6 +577,11 @@ TechniqueUser RenderSceneManager::findTechnique ( const std::string & name )
     }
     
     return TechniqueUser ( nullptr ) ;
+}
+
+void RenderSceneManager::onUpdateEvent ( const UpdateEvent& e )
+{
+    
 }
 
 GreEndNamespace

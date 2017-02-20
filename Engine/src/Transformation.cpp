@@ -116,7 +116,10 @@ const Vector3& Transformation::getScale() const
 
 Matrix4 Transformation::get() const
 {
-    return glm::translate(glm::scale(glm::toMat4(iRotation), iScale), iTranslation);
+    Matrix4 rotation = glm::toMat4(iRotation) ;
+    Matrix4 identity = glm::mat4 (1.0f) ;
+    
+    return glm::translate(glm::scale(rotation * identity, iScale), iTranslation);
 }
 
 void Transformation::apply(const Gre::Transformation &transformation)

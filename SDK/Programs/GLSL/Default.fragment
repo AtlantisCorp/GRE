@@ -7,4 +7,5 @@ out vec4 oFragment ;
 void main ()
 {
     oFragment = oColor ;
+    oFragment = vec4(1.0,0.0,0.0,1.0) ;
 }

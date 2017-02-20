@@ -209,6 +209,21 @@ class DLL_PUBLIC MeshManager : public SpecializedResourceManager < Mesh , MeshLo
 {
 public:
     
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Creates a Cube of given vertice size.
+    /// A valid MeshManager should have been registered to the ResourceManager
+    /// to use this method. Also, a valid render context should have been
+    /// given to the renderer.
+    //////////////////////////////////////////////////////////////////////
+    static MeshUser Cube ( float sz ) ;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Creates a triangle.
+    //////////////////////////////////////////////////////////////////////
+    static MeshUser Triangle ( float sz ) ;
+    
+public:
+    
     POOLED ( Pools::Manager )
     
     //////////////////////////////////////////////////////////////////////

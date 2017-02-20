@@ -77,15 +77,23 @@ void Application::EscapeKeyListener::onKeyDownEvent(const Gre::KeyDownEvent &e)
 
 // ---------------------------------------------------------------------------------------------------
 
-void Application::WorkerThreadMain ( const Application * app , SpecializedCountedObjectUser<EventProceeder> proceeder )
+void Application::WorkerThreadMain ( Application * app )
 {
     TimePoint t = Time::now() ;
     
     while ( !app->shouldTerminate() )
     {
         EventHolder uevent = EventHolder ( new UpdateEvent( (const EventProceeder*) app , Time::now() - t ) ) ;
-        if ( !proceeder.isInvalid() )
-            proceeder.lock() -> onEvent(uevent) ;
+        
+        app -> threadLock() ;
+        
+        for ( EventProceederHolder & listener : app->iWorkers )
+        {
+            if ( !listener.isInvalid() )
+                listener -> onEvent ( uevent ) ;
+        }
+        
+        app -> threadUnlock() ;
         
         t = Time::now() ;
     }
@@ -96,7 +104,7 @@ Application::Application ( const std::string& name , const std::string& author ,
 , iAuthor(author), iDescription(description), iShouldTerminate(false)
 , iWindowManager(nullptr), iRenderSceneManager(nullptr)
 {
-    
+    iWorkerThread = std::thread ( Application::WorkerThreadMain , this ) ;
 }
 
 Application::~Application() noexcept ( false )
@@ -108,69 +116,70 @@ Application::~Application() noexcept ( false )
             iShouldTerminate = true ;
     }
         
-    for ( std::thread & t : iWorkerThreads )
-        t.join();
+    iWorkerThread.join() ;
 }
 
 void Application::run()
 {
-    GreAutolock ;
-    
-    if ( iRunAlreadyCalled )
     {
+        GreAutolock ;
+        
+        if ( iRunAlreadyCalled )
+        {
 #ifdef GreIsDebugMode
-        GreDebugPretty() << "'Application::run' has already been called elsewhere." << Gre::gendl ;
+            GreDebugPretty() << "'Application::run' has already been called elsewhere." << Gre::gendl ;
 #endif
-        throw GreExceptionWithText ( "'Application::run' has already been called elsewhere." ) ;
-    }
-    
-    iRunAlreadyCalled = true ;
-    
-    // The Hardware Thread ( or 'Main Thread' ) is actually updating the Window Manager ( which updates every
-    // Window ) , and the RendererManager ( which renders every registered RenderTarget ) .
-    
-    // The Renderer is responsible for updating the MeshManager , the RenderContextManager , the TextureManager
-    // and the HardwareProgramManager .
-    
-    if ( !ResourceManager::Get() .getWindowManager() .isInvalid() )
-    {
-        // If the CloseBehaviour 'AllWindowClosed' is set , we must see when the Window Manager is empty. For this
-        // purpose , we listen to him .
+            throw GreExceptionWithText ( "'Application::run' has already been called elsewhere." ) ;
+        }
         
-        iAllWindowClosedListener = AllWindowClosedListenerHolder ( new AllWindowClosedListener ( this ) ) ;
-        ResourceManager::Get() .getWindowManager() -> addListener ( EventProceederUser ( iAllWindowClosedListener ) ) ;
-    }
-    
-    if ( !ResourceManager::Get() .getWindowManager() .isInvalid() )
-    {
-        // If the CloseBehaviour 'EscapeKey' is set , we must rely on the Keyboard Manager to send us key events.
+        iRunAlreadyCalled = true ;
         
-        iEscapeListener = EscapeKeyListenerHolder ( new EscapeKeyListener ( this ) ) ;
-        ResourceManager::Get() .getWindowManager() -> addGlobalKeyListener ( EventProceederUser( iEscapeListener ) ) ;
+        // The Hardware Thread ( or 'Main Thread' ) is actually updating the Window Manager ( which updates every
+        // Window ) , and the RendererManager ( which renders every registered RenderTarget ) .
+        
+        // The Renderer is responsible for updating the MeshManager , the RenderContextManager , the TextureManager
+        // and the HardwareProgramManager .
+        
+        if ( !ResourceManager::Get() .getWindowManager() .isInvalid() )
+        {
+            // If the CloseBehaviour 'AllWindowClosed' is set , we must see when the Window Manager is empty. For this
+            // purpose , we listen to him .
+            
+            iAllWindowClosedListener = AllWindowClosedListenerHolder ( new AllWindowClosedListener ( this ) ) ;
+            ResourceManager::Get() .getWindowManager() -> addListener ( EventProceederUser ( iAllWindowClosedListener ) ) ;
+        }
+        
+        if ( !ResourceManager::Get() .getWindowManager() .isInvalid() )
+        {
+            // If the CloseBehaviour 'EscapeKey' is set , we must rely on the Keyboard Manager to send us key events.
+            
+            iEscapeListener = EscapeKeyListenerHolder ( new EscapeKeyListener ( this ) ) ;
+            ResourceManager::Get() .getWindowManager() -> addGlobalKeyListener ( EventProceederUser( iEscapeListener ) ) ;
+        }
+        
+        // The Logicals Threads are threads spawned for every 'logical' managers ( or 'Workers Threads' ) . They
+        // are spawned for the RenderSceneManager ( which updates every Node ) , the AnimationManager , the
+        // MaterialManager , the PluginManager , the CameraManager . They are updated in parallel with the main
+        // thread.
+        
+        addWorkerThread ( EventProceederUser (ResourceManager::Get() .getRenderSceneManager()) ) ;
+        addWorkerThread ( EventProceederUser (ResourceManager::Get() .getAnimatorManager()) ) ;
+        addWorkerThread ( EventProceederUser (ResourceManager::Get() .getMaterialManager()) ) ;
+        addWorkerThread ( EventProceederUser (ResourceManager::Get() .getCameraManager()) ) ;
+        
+        // Those managers have a Worker Thread but at least , normally they don't need one .
+        
+        addWorkerThread ( EventProceederUser (ResourceManager::Get() .getRenderContextManager()) ) ;
+        addWorkerThread ( EventProceederUser (ResourceManager::Get() .getPluginManager()) ) ;
+        
+        // addWorkerThread ( EventProceederUser (ResourceManager::Get() .getWindowManager()) ) ;
+        addWorkerThread ( EventProceederUser (ResourceManager::Get() .getRendererManager()) ) ;
+        
+        // Adds the WindowManager and the RenderSceneManager to the Application.
+        
+        iWindowManager = ResourceManager::Get().getWindowManager() ;
+        iRenderSceneManager = ResourceManager::Get().getRenderSceneManager() ;
     }
-    
-    // The Logicals Threads are threads spawned for every 'logical' managers ( or 'Workers Threads' ) . They
-    // are spawned for the RenderSceneManager ( which updates every Node ) , the AnimationManager , the
-    // MaterialManager , the PluginManager , the CameraManager . They are updated in parallel with the main
-    // thread.
-    
-    addWorkerThread ( EventProceederUser (ResourceManager::Get() .getRenderSceneManager()) ) ;
-    addWorkerThread ( EventProceederUser (ResourceManager::Get() .getAnimatorManager()) ) ;
-    addWorkerThread ( EventProceederUser (ResourceManager::Get() .getMaterialManager()) ) ;
-    addWorkerThread ( EventProceederUser (ResourceManager::Get() .getCameraManager()) ) ;
-    
-    // Those managers have a Worker Thread but at least , normally they don't need one .
-    
-    addWorkerThread ( EventProceederUser (ResourceManager::Get() .getRenderContextManager()) ) ;
-    addWorkerThread ( EventProceederUser (ResourceManager::Get() .getPluginManager()) ) ;
-    
-    addWorkerThread ( EventProceederUser (ResourceManager::Get() .getWindowManager()) ) ;
-    addWorkerThread ( EventProceederUser (ResourceManager::Get() .getRendererManager()) ) ;
-    
-    // Adds the WindowManager and the RenderSceneManager to the Application.
-    
-    iWindowManager = ResourceManager::Get().getWindowManager() ;
-    iRenderSceneManager = ResourceManager::Get().getRenderSceneManager() ;
     
     iMainStart = Time::now() ;
     iMainThreadLoop () ;
@@ -178,7 +187,7 @@ void Application::run()
 
 void Application::addWorkerThread ( SpecializedCountedObjectUser<EventProceeder> eventproceeder )
 {
-    GreAutolock ; iWorkerThreads.push_back ( std::thread(Application::WorkerThreadMain , this , eventproceeder) ) ;
+    GreAutolock ; iWorkers.push_back ( eventproceeder.lock() ) ;
 }
 
 void Application::addMainThread ( EventProceederHolder holder )

@@ -145,6 +145,92 @@ MeshLoader::~MeshLoader () noexcept ( false )
 
 // ---------------------------------------------------------------------------------------------------
 
+MeshUser MeshManager::Cube(float sz)
+{
+    MeshManagerHolder holder = ResourceManager::Get().getMeshManager() ;
+    if ( holder.isInvalid() ) return MeshUser ( nullptr ) ;
+    
+    std::vector<float> vertexdata = {
+        0.0f, 0.0f, 0.0f,
+        0.0f, 0.0f,   sz,
+        0.0f,   sz,   sz,
+        0.0f,   sz, 0.0f,
+        
+          sz, 0.0f, 0.0f,
+          sz, 0.0f,   sz,
+          sz,   sz,   sz,
+          sz,   sz, 0.0f
+    };
+    
+    std::vector<unsigned short> indexdata = {
+        0, 1, 2, 2, 3, 0,
+        0, 4, 7, 7, 3, 0,
+        0, 1, 5, 5, 4, 0,
+        4, 5, 6, 6, 7, 4,
+        1, 5, 6, 6, 2, 1,
+        3, 7, 6, 6, 2, 3
+    };
+    
+    VertexDescriptor desc ;
+    desc.addComponent(VertexComponentType::Position) ;
+    HardwareVertexBufferHolder vbuf = holder -> createVertexBuffer(& vertexdata[0],
+                                                                   vertexdata.size() * sizeof(float),
+                                                                   desc) ;
+    vbuf -> setEnabled(true) ;
+    HardwareVertexBufferHolderList vbuflist ; vbuflist.add(vbuf) ;
+    
+    IndexDescriptor idesc ;
+    idesc.setMode(IndexDrawmode::Triangles) ;
+    idesc.setType(IndexType::UnsignedShort) ;
+    HardwareIndexBufferHolder ibuf = holder -> createIndexBuffer(& indexdata[0],
+                                                                 indexdata.size() * sizeof(unsigned short),
+                                                                 idesc) ;
+    ibuf -> setEnabled(true) ;
+    
+    BoundingBox bbox = BoundingBox({0.0f, 0.0f, 0.0f}, {sz, sz, sz}) ;
+    
+    MeshHolder mesh = MeshHolder ( new Mesh("Cube") ) ;
+    mesh -> setBoundingBox(bbox) ;
+    mesh -> setVertexBuffers(vbuflist) ;
+    mesh -> setIndexBuffer(ibuf) ;
+    
+    holder -> iHolders.add(mesh) ;
+    return MeshUser ( mesh ) ;
+}
+
+MeshUser MeshManager::Triangle(float sz)
+{
+    MeshManagerHolder holder = ResourceManager::Get().getMeshManager() ;
+    if ( holder.isInvalid() ) return MeshUser ( nullptr ) ;
+    
+    float vertex [] = {
+        - sz , 0.0f , 0.0f ,
+          sz , 0.0f , 0.0f ,
+        0.0f ,   sz , 0.0f
+    } ;
+    
+    unsigned int indices [] = { 0, 1, 2 } ;
+    
+    VertexDescriptor vdesc ; vdesc.addComponent(VertexComponentType::Position) ;
+    HardwareVertexBufferHolder vbuf = holder -> createVertexBuffer(vertex, sizeof(vertex), vdesc) ;
+    HardwareVertexBufferHolderList vbuflist ; vbuflist.add(vbuf) ;
+    vbuf->setEnabled(true);
+    
+    IndexDescriptor idesc ; idesc.setMode(IndexDrawmode::Triangles) ;
+    idesc.setType(IndexType::UnsignedInteger) ;
+    HardwareIndexBufferHolder ibuf = holder -> createIndexBuffer(indices, sizeof(indices), idesc) ;
+    ibuf->setEnabled(true) ;
+    
+    MeshHolder mesh = MeshHolder ( new Mesh("Triangle") ) ;
+    mesh -> setVertexBuffers(vbuflist) ;
+    mesh -> setIndexBuffer(ibuf) ;
+    
+    holder -> iHolders.add(mesh) ;
+    return MeshUser ( mesh ) ;
+}
+
+// ---------------------------------------------------------------------------------------------------
+
 MeshManager::MeshManager ( )
 : SpecializedResourceManager ( )
 {

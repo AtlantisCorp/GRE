@@ -1,17 +1,19 @@
 #version 330
 
+layout(location = 0) in vec3 iPosition ;
+layout(location = 1) in vec4 iColor ;
+layout(location = 2) in vec3 iNormal ;
+
 uniform mat4 iProjection ;
 uniform mat4 iView ;
 uniform mat4 iModel ;
-
-in vec3 iPosition ;
-in vec4 iColor ;
-in vec3 iNormal ;
 
 out vec4 oColor ;
 
 void main ()
 {
     oColor = iColor ;
-    gl_Position = iModel * iView * iProjection * vec4(iPosition,1.0) ;
+
+    mat4 MVP = iProjection * iView * iModel ;
+    gl_Position = MVP * vec4(iPosition,1.0) ;
 }

@@ -139,7 +139,7 @@ protected:
     //////////////////////////////////////////////////////////////////////
     /// @brief Main function for every Worker Thread.
     //////////////////////////////////////////////////////////////////////
-    static void WorkerThreadMain ( const Application * app , SpecializedCountedObjectUser<EventProceeder> proceeder ) ;
+    static void WorkerThreadMain ( Application * app ) ;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Main function for the Main Thread.
@@ -214,7 +214,10 @@ protected:
     std::bitset < (size_t) ApplicationCloseBehaviour::Invalid > iCloseBehaviours ;
     
     /// @brief List of Worker Threads executed by this Application.
-    std::vector < std::thread > iWorkerThreads ;
+    std::vector < EventProceederHolder > iWorkers ;
+    
+    /// @brief Workers' thread.
+    std::thread iWorkerThread ;
     
     /// @brief List of Event Proceeder to update in Main Thread.
     std::vector < EventProceederHolder > iMainProceeders ;

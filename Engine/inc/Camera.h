@@ -66,48 +66,38 @@ public:
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    Camera(const std::string& name, const Vector3& position, const Vector3& to);
-    
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    Camera(const std::string& name, const Vector3& position, const Radian& angle, const Vector3& direction);
+    Camera( const std::string& name, const Vector3& position, const Vector3& to, const Vector3& up = Vector3(.0f,1.0f,.0f) );
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     virtual ~Camera();
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Changes the Camera's absolute position.
+    /// @brief Looks to the given position, from given position, and with
+    /// given up vector.
     //////////////////////////////////////////////////////////////////////
-    virtual void setPosition(const Vector3& position);
+    virtual void lookAt ( const Vector3& origin, const Vector3& point, const Vector3& up = Vector3(.0f,1.0f,.0f) ) ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Camera's absolute position.
+    /// @brief Returns 'iPosition'.
     //////////////////////////////////////////////////////////////////////
-    virtual Vector3 getPosition() const;
+    virtual const Vector3& getPosition () const ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Compute a View Matrix to make this Camera look at the given
-    /// point.
+    /// @brief Returns 'iTarget'.
     //////////////////////////////////////////////////////////////////////
-    virtual void lookAt(const Vector3& position);
+    virtual const Vector3& getTarget () const ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Compute a View Matrix to make this Camera look at the given
-    /// direction.
+    /// @brief Returns 'iUpwardDirection'.
     //////////////////////////////////////////////////////////////////////
-    virtual void lookAt(const Radian& angle, const Vector3& direction);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Sets up the Frustrum from the Orientation Matrix cached.
-    //////////////////////////////////////////////////////////////////////
-    virtual void lookAtCache();
+    virtual const Vector3& getUp () const ;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns true if an object is inside the Frustrum from this
     /// Camera.
     //////////////////////////////////////////////////////////////////////
-    virtual bool contains (const Vector3& object) const;
+    virtual bool contains ( const Vector3& object ) const;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns true if given BoundingBox is visible by this Camera.
@@ -127,23 +117,20 @@ public:
 protected:
     
     /// @brief Absolute position of the Camera.
-    Vector3 iPosition;
+    Vector3 iPosition ;
+    
+    /// @brief Where the Camera look at.
+    Vector3 iTarget ;
+    
+    /// @brief The 'up' direction for this camera.
+    /// If (0,-1,0), the camera will be upside-down.
+    Vector3 iUpwardDirection ;
     
     /// @brief The Frustrum object.
-    Frustrum iFrustrum;
+    Frustrum iFrustrum ;
     
     /// @brief Max Vertical Angle the Camera can reach. (Default is 89.0f)
-    float iMaxVerticalAngle;
-    
-    /// @brief Defines cached data.
-    struct Cache
-    {
-        Vector3 iLookDirection;
-        Matrix4 iOrientation;
-    };
-    
-    /// @brief Holds Cached data.
-    Cache iCache;
+    float iMaxVerticalAngle ;
 };
 
 /// @brief SpecializedCountedObjectHolder for Camera.

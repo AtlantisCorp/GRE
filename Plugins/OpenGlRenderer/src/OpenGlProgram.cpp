@@ -116,7 +116,80 @@ void OpenGlProgram::_finalize()
         return ;
     
     glLinkProgram(iGlProgram);
+    
+    GLint status ; glGetProgramiv(iGlProgram, GL_LINK_STATUS, &status) ;
+    if ( status == GL_FALSE ) {
+        GLint infosz ; glGetProgramiv(iGlProgram, GL_INFO_LOG_LENGTH, &infosz) ;
+        GLsizei lenght ;
+        GLchar* buf = (GLchar*) malloc ( infosz + 1 ) ;
+        glGetProgramInfoLog(iGlProgram, infosz, &lenght, buf) ;
+        buf[lenght] = '\0' ;
+        
+        GreDebug("[WARN] Can't link program '") << getName() << "' : " << std::string(buf) << Gre::gendl ;
+    }
+    
     iCompiled = true ;
+    
+    // Try to iterate through the program uniforms.
+    
+    GLint uniformcount = 0 ;
+    GLint uniformmaxlenght = 0 ;
+    
+    glGetProgramiv(iGlProgram, GL_ACTIVE_UNIFORMS, &uniformcount) ;
+    GreDebug("Found ") << uniformcount << " uniforms." << Gre::gendl ;
+    
+    if ( uniformcount )
+    {
+        glGetProgramiv(iGlProgram, GL_ACTIVE_UNIFORM_MAX_LENGTH, &uniformmaxlenght) ;
+        GreDebug("Uniform Max Lenght = ") << uniformmaxlenght << Gre::gendl ;
+        
+        if ( uniformmaxlenght )
+        {
+            for ( int i = 0 ; i < uniformcount ; ++i )
+            {
+                char* buf = (char*) malloc ( uniformmaxlenght+1 ) ;
+                GLsizei lenght = 0 ;
+                
+                glGetActiveUniformName(iGlProgram, i, uniformmaxlenght, &lenght, buf);
+                buf [uniformmaxlenght] = '\0' ;
+                
+                GreDebug("Uniform name = '") << std::string(buf) << "'." << Gre::gendl ;
+                
+                GLint location = glGetUniformLocation(iGlProgram, buf) ;
+                GreDebug("Uniform location = ") << location << "." << Gre::gendl ;
+            }
+        }
+    }
+    
+    // Try to iterate through Attributes.
+    
+    GLint attrcount = 0 ;
+    GLint attrmaxlenght = 0 ;
+    
+    glGetProgramiv(iGlProgram, GL_ACTIVE_ATTRIBUTES, &attrcount) ;
+    GreDebug("Found ") << attrcount << " attributes." << Gre::gendl ;
+    
+    if ( attrcount )
+    {
+        glGetProgramiv(iGlProgram, GL_ACTIVE_ATTRIBUTE_MAX_LENGTH, &attrmaxlenght) ;
+        GreDebug("AttrMaxLenght = ") << attrmaxlenght << Gre::gendl ;
+        
+        if ( attrmaxlenght )
+        {
+            for ( int i = 0 ; i < attrcount ; ++i )
+            {
+                char* buf = (char*) malloc ( attrmaxlenght+1 ) ;
+                GLsizei lenght = 0 ;
+                
+                glGetActiveAttrib(iGlProgram, i, attrmaxlenght, &lenght, NULL, NULL, buf) ;
+                buf [lenght] = '\0' ;
+                GreDebug("ActivAttrib = '") << std::string(buf) << "'." << Gre::gendl ;
+                
+                GLint location = glGetAttribLocation(iGlProgram, buf) ;
+                GreDebug("Location = ") << location << Gre::gendl ;
+            }
+        }
+    }
 }
 
 void OpenGlProgram::_deleteProgram()

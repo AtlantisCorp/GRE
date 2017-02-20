@@ -253,11 +253,11 @@ void WindowManager::onEvent(EventHolder &holder)
     {
         if ( !holder->getEmitter().isInvalid() ) {
             if ( (EventProceeder*) win.getObject() == holder->getEmitter().lock().getObject() ) {
-                holder -> setNoSublisteners(true) ;
                 
                 if ( holder->getType() != EventType::WindowWillClose ) {
                     return ;
                 } else {
+                    holder -> setNoSublisteners(true) ;
                     win -> onEvent(holder) ;
                 }
             }

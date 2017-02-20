@@ -40,16 +40,11 @@ Camera::Camera(const std::string& name)
     
 }
 
-Camera::Camera(const std::string& name, const Vector3& position, const Vector3& to)
-: Gre::Resource(ResourceIdentifier::New() , name), iPosition(position), iMaxVerticalAngle(89.0f)
+Camera::Camera(const std::string& name, const Vector3& position, const Vector3& to, const Vector3& up)
+: Gre::Resource(ResourceIdentifier::New() , name)
+, iMaxVerticalAngle(89.0f)
 {
-    lookAt(to);
-}
-
-Camera::Camera(const std::string& name, const Vector3& position, const Radian& angle, const Vector3& direction)
-: Gre::Resource(ResourceIdentifier::New() , name), iPosition(position), iMaxVerticalAngle(89.0f)
-{
-    lookAt(angle, direction);
+    lookAt(position, to, up) ;
 }
 
 Camera::~Camera()
@@ -57,69 +52,30 @@ Camera::~Camera()
     
 }
 
-void Camera::setPosition(const Vector3 &position)
+const Vector3& Camera::getPosition() const
 {
-    iPosition = position;
-    lookAtCache();
+    GreAutolock ; return iPosition ;
 }
 
-Vector3 Camera::getPosition() const
+const Vector3& Camera::getTarget() const
 {
-    return iPosition;
+    GreAutolock ; return iTarget ;
 }
 
-void Camera::lookAt(const Vector3 &position)
+const Vector3& Camera::getUp() const
 {
-    Vector3 direction = glm::normalize (position - iPosition);
-    lookAt(0.0f, direction);
+    GreAutolock ; return iUpwardDirection ;
 }
 
-void Camera::lookAt(const Radian &angle, const Vector3 &direction)
+void Camera::lookAt(const Vector3 &origin, const Vector3 &point, const Vector3& up)
 {
-    if(iCache.iLookDirection != direction)
-    {
-        float iVerticalAngle = glm::radians(asinf(-direction.y));
-        float iHorizontalAngle = -glm::radians(atan2f(-direction.x, -direction.z));
-        
-        iHorizontalAngle = fmodf(iHorizontalAngle, 360.0f);
-        //fmodf can return negative values, but this will make them all positive
-        if(iHorizontalAngle < 0.0f)
-            iHorizontalAngle += 360.0f;
-        
-        if(iVerticalAngle > iMaxVerticalAngle)
-            iVerticalAngle = iMaxVerticalAngle;
-        else if(iVerticalAngle < -iMaxVerticalAngle)
-            iVerticalAngle = -iMaxVerticalAngle;
-        
-        Matrix4 orientation;
-        orientation = glm::rotate(orientation, glm::radians(iVerticalAngle), Vector3(1,0,0));
-        orientation = glm::rotate(orientation, glm::radians(iHorizontalAngle), Vector3(0,1,0));
-        orientation = glm::rotate(orientation, glm::radians(angle), Vector3(0,0,1));
-        
-        Matrix4 view = orientation * glm::translate( glm::mat4(), -iPosition );
-        iFrustrum.setView(view);
-        
-        // Cache computed data.
-        iCache.iLookDirection = direction;
-        iCache.iOrientation = orientation;
-        
-        // Compute Planes for Frustrum.
-        iFrustrum.computePlanes();
-    }
+    Matrix4 view = glm::lookAt(origin, point, up) ;
+    iFrustrum.setView(view) ;
+    iFrustrum.computePlanes() ;
     
-    else
-    {
-        Matrix4 view = iCache.iOrientation * glm::translate( glm::mat4(), -iPosition );
-        iFrustrum.setView(view);
-        iFrustrum.computePlanes();
-    }
-}
-
-void Camera::lookAtCache()
-{
-    Matrix4 view = iCache.iOrientation * glm::translate( glm::mat4(), -iPosition );
-    iFrustrum.setView(view);
-    iFrustrum.computePlanes();
+    iPosition = origin ;
+    iTarget = point ;
+    iUpwardDirection = up ;
 }
 
 bool Camera::contains(const Vector3 &object) const
@@ -159,10 +115,11 @@ CameraLoader::~CameraLoader () noexcept ( false )
 CameraManager::CameraManager ( const std::string & name )
 : SpecializedResourceManager<Camera, CameraLoader> ( name )
 {
-    // By default, a Camera is available to see from position { 1.0f, 1.0f, 0.0f } to position { 1.0f, 1.0f, 1.0f }
-    // (1 units ahead). This Camera is static, and does not perform anything special.
+    // Default Camera is centered at the beginning of the scene, looking straith forward.
     
-    CameraHolder camera = CameraHolder ( new Camera("Default", { 1.0f, 1.0f, 0.0f }, {1.0f, 1.0f, 1.0f}) ) ;
+    CameraHolder camera = CameraHolder ( new Camera("Default") ) ;
+    camera -> lookAt({2.0f, 2.0f, -2.0f}, {2.0f, 2.0f, 5.0f});
+    
     addListener(EventProceederUser(camera));
     iHolders.push_back(camera);
 }

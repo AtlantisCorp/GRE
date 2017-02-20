@@ -54,6 +54,7 @@ HardwareProgram::HardwareProgram(const std::string& name,
     iComponentLocations [VertexComponentType::Position] = 0 ;
     iComponentLocations [VertexComponentType::Color]    = 1 ;
     iComponentLocations [VertexComponentType::Normal]   = 2 ;
+    iComponentLocations [VertexComponentType::Texture]  = 3 ;
     
     if ( cacheShaders )
     {
@@ -131,6 +132,7 @@ void HardwareProgram::reset()
     iComponentLocations [VertexComponentType::Position] = 0 ;
     iComponentLocations [VertexComponentType::Color]    = 1 ;
     iComponentLocations [VertexComponentType::Normal]   = 2 ;
+    iComponentLocations [VertexComponentType::Texture]  = 3 ;
 }
 
 void HardwareProgram::setVariable(const Gre::HardwareProgramVariable &var) const

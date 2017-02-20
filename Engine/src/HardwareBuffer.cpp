@@ -37,7 +37,7 @@ GreBeginNamespace
 HardwareBuffer::HardwareBuffer(const std::string& name)
 : Resource(ResourceIdentifier::New() , name)
 {
-    
+    iEnabled = false ;
 }
 
 HardwareBuffer::~HardwareBuffer()

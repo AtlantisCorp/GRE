@@ -41,11 +41,11 @@ RenderNode::RenderNode()
 , iChilds()
 , iParent(nullptr)
 , iBoundingBox()
-, iModelMatrix(0.0f)
 , iTransformationChanged(false)
 , iRenderableChanged(false)
 {
     setName ( std::string("RenderNode#") + std::to_string(getIdentifier()) ) ;
+    iModelMatrix = glm::mat4 (1.0f) ;
 }
 
 RenderNode::RenderNode(const std::string& name)

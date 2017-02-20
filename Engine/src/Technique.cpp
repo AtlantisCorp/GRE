@@ -105,4 +105,14 @@ bool Technique::isActivated () const
     return iActivated ;
 }
 
+void Technique::onUpdateEvent(const Gre::UpdateEvent &e)
+{
+    
+}
+
+void Technique::onWindowSizedEvent(const Gre::WindowSizedEvent &e)
+{
+    GreAutolock ; iViewport.onBordersChanged({0, 0, e.Width, e.Height});
+}
+
 GreEndNamespace

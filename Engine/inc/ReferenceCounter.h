@@ -34,6 +34,7 @@
 #define GRE_ReferenceCounter_h
 
 #include "Pools.h"
+#include "Lockable.h"
 
 GreBeginNamespace
 
@@ -53,7 +54,7 @@ GreBeginNamespace
 /// to store itself. Then, when destroying the Resource (the iHolderCount reach
 /// 0), it should call ReferenceCounter::unuse() to unstore itself.
 ////////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC ReferenceCounter
+class DLL_PUBLIC ReferenceCounter : public Lockable
 {
 public:
     

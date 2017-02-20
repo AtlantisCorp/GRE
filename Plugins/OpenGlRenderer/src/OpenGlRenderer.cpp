@@ -57,6 +57,18 @@ GLenum translateGlType ( const Gre::IndexType& type )
 }
 
 // ---------------------------------------------------------------------------------------------------------
+// OpenGL Error handler.
+
+void checkOpenGlError ( void )
+{
+    GLenum error ;
+    while ( (error = glGetError()) != GL_NO_ERROR )
+    {
+        
+    }
+}
+
+// ---------------------------------------------------------------------------------------------------------
 
 OpenGlRenderer::OpenGlRenderer ( const std::string& name , const Gre::RendererOptions& options )
 : Gre::Renderer(name, options)
@@ -112,19 +124,6 @@ void OpenGlRenderer::_drawNodeMesh(const Gre::MeshUser &mesh, const Gre::Hardwar
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
     
-    // Gets every VertexComponents locations. Those locations can be changed by the user,
-    // by using 'HardwareProgram::setAttribLocation()'.
-    
-    GLuint locpos = program->getAttribLocation(Gre::VertexComponentType::Position) ;
-    GLuint loccol = program->getAttribLocation(Gre::VertexComponentType::Color) ;
-    GLuint locnor = program->getAttribLocation(Gre::VertexComponentType::Normal) ;
-    
-    // Enables every VertexComponents.
-    
-    glEnableVertexAttribArray(locpos);
-    glEnableVertexAttribArray(loccol);
-    glEnableVertexAttribArray(locnor);
-    
     // Loop through every HardwareVertexBuffer to set the correct pointer to OpenGl. Notes
     // that if two buffers are enabled to the same component, the second one will overwrite
     // the first one. You should use only one buffer by component.
@@ -143,29 +142,66 @@ void OpenGlRenderer::_drawNodeMesh(const Gre::MeshUser &mesh, const Gre::Hardwar
             {
                 if ( component == Gre::VertexComponentType::Position )
                 {
-                    glVertexAttribPointer(locpos,
-                                          3,
-                                          GL_FLOAT, GL_FALSE,
-                                          desc.getStride(component),
-                                          buffer->getData() + desc.getOffset(component) ) ;
+                    // Enables attribute position.
+                    GLuint locpos = program->getAttribLocation(Gre::VertexComponentType::Position) ;
+                    
+                    if ( locpos != -1 )
+                    {
+                        glEnableVertexAttribArray(locpos);
+                        glVertexAttribPointer(locpos,
+                                              3,
+                                              GL_FLOAT, GL_FALSE,
+                                              desc.getStride(component),
+                                              buffer->getData() + desc.getOffset(component) ) ;
+                    }
                 }
                 
                 else if ( component == Gre::VertexComponentType::Color )
                 {
-                    glVertexAttribPointer(loccol,
-                                          4,
-                                          GL_UNSIGNED_INT, GL_FALSE,
-                                          desc.getStride(component),
-                                          buffer->getData() + desc.getOffset(component) ) ;
+                    // Enables attribute Color.
+                    GLuint loccol = program->getAttribLocation(Gre::VertexComponentType::Color) ;
+                    
+                    if ( loccol != -1 )
+                    {
+                        glEnableVertexAttribArray(loccol);
+                        glVertexAttribPointer(loccol,
+                                              4,
+                                              GL_UNSIGNED_INT, GL_FALSE,
+                                              desc.getStride(component),
+                                              buffer->getData() + desc.getOffset(component) ) ;
+                    }
                 }
                 
                 else if ( component == Gre::VertexComponentType::Normal )
                 {
-                    glVertexAttribPointer(locnor,
-                                          3,
-                                          GL_FLOAT, GL_TRUE,
-                                          desc.getStride(component),
-                                          buffer->getData() + desc.getOffset(component) ) ;
+                    // Enables attribute Normal.
+                    GLuint locnor = program->getAttribLocation(Gre::VertexComponentType::Normal) ;
+                    
+                    if ( locnor != -1 )
+                    {
+                        glEnableVertexAttribArray(locnor);
+                        glVertexAttribPointer(locnor,
+                                              3,
+                                              GL_FLOAT, GL_TRUE,
+                                              desc.getStride(component),
+                                              buffer->getData() + desc.getOffset(component) ) ;
+                    }
+                }
+                
+                else if ( component == Gre::VertexComponentType::Texture )
+                {
+                    // Enables attribute texture.
+                    GLuint loctex = program->getAttribLocation(Gre::VertexComponentType::Texture) ;
+                    
+                    if ( loctex != -1 )
+                    {
+                        glEnableVertexAttribArray(loctex);
+                        glVertexAttribPointer(loctex,
+                                              2,
+                                              GL_FLOAT, GL_FALSE,
+                                              desc.getStride(component),
+                                              buffer->getData() + desc.getOffset(component) ) ;
+                    }
                 }
                 
                 else
@@ -186,13 +222,8 @@ void OpenGlRenderer::_drawNodeMesh(const Gre::MeshUser &mesh, const Gre::Hardwar
                    translateGlType(index->getIndexDescriptor().getType()),
                    index->getData());
     
-    // Disables every components.
-    
-    glDisableVertexAttribArray(locpos);
-    glDisableVertexAttribArray(loccol);
-    glDisableVertexAttribArray(locnor);
-    
     glBindVertexArray(0);
+    glDeleteVertexArrays(1, &vao) ;
 }
 
 void OpenGlRenderer::_postNode(const Gre::RenderNodeHolder &node, const Gre::CameraUser &camera, const Gre::HardwareProgramHolder &program) const

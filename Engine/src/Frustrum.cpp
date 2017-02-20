@@ -37,11 +37,14 @@ GreBeginNamespace
 Frustrum::Frustrum()
 : iPerspective(0), iView(0)
 {
-    
+    // Loads default perspective matrix.
+    iPerspective = glm::perspective(45.0f, 4.0f/3.0f, 0.1f, 100.0f) ;
+    // Loads default view matrix.
+    iView = glm::mat4 () ;
 }
 
 Frustrum::Frustrum(const Matrix4& perspective)
-: iPerspective(perspective), iView(0)
+: iPerspective(perspective), iView(1.0f)
 {
     
 }

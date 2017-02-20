@@ -73,14 +73,18 @@ enum class Pools
 ////////////////////////////////////////////////////////////////////////
 #define POOLED(pooltype)                                                                    \
     void* operator new (size_t sz) {                                                        \
+        Gre:: Pool < pooltype > :: Lock () ;                                                \
         if( Gre:: Pool< pooltype > ::Get().canAttach(sz) == false) throw std::bad_alloc();  \
         void* ptr = malloc (sz) ; if ( !ptr ) throw std::bad_alloc() ;                      \
         Gre:: Pool< pooltype > :: Get().attach(ptr, sz);                                    \
+        Gre:: Pool < pooltype > :: Unlock () ;                                              \
     return ptr; }                                                                           \
                                                                                             \
     void  operator delete (void* p) noexcept {                                              \
         if(p) free (p);                                                                     \
-        Gre:: Pool< pooltype > :: Get().detach(p); }
+        Gre:: Pool < pooltype > :: Lock () ;                                                \
+        Gre:: Pool< pooltype > :: Get().detach(p);                                          \
+        Gre:: Pool < pooltype > :: Unlock () ; }
 
 ////////////////////////////////////////////////////////////////////////
 /// @brief A Basic memory pool.
@@ -89,6 +93,21 @@ template < Pools pooltype >
 class DLL_PUBLIC Pool
 {
 public:
+    
+    /// @brief Pool's internal mutex.
+    static std::recursive_mutex Mutex ;
+    
+    ////////////////////////////////////////////////////////////////////////
+    /// @brief Locks the generic Pool mutex.
+    static void Lock () {
+        Mutex .lock () ;
+    }
+    
+    ////////////////////////////////////////////////////////////////////////
+    /// @brief Unlocks the generic Pool mutex.
+    static void Unlock () {
+        Mutex .unlock () ;
+    }
     
     ////////////////////////////////////////////////////////////////////////
     /// @brief Return the Pool corresponding to the template argument.
@@ -172,6 +191,8 @@ private:
     unsigned                _totalsz;
     unsigned                _maxsz;
 };
+
+template < Pools p > std::recursive_mutex Pool<p>::Mutex ;
 
 #endif // GreIsDebugMode
 

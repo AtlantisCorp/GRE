@@ -72,7 +72,7 @@ void Renderer::draw(const Gre::RenderingQuery &query) const
         prog = iDefaultProgram.lock() ;
     }
     
-    setHardwareProgram ( prog ) ;
+    // setHardwareProgram ( prog ) ;
     setCamera ( query.getCamera(), prog ) ;
     
     for ( const RenderNodeHolder& node : query.getRenderedNodes() )
@@ -81,9 +81,10 @@ void Renderer::draw(const Gre::RenderingQuery &query) const
             continue ;
         
         
-        if ( node->isRenderable() && node->isVisible(query.getCamera()) )
+        if ( node->isRenderable()/* && node->isVisible(query.getCamera())*/ )
         {
             setNode ( node , prog ) ;
+            setHardwareProgram(prog) ;
             _drawNodeMesh ( node->getMesh() , prog ) ;
         }
         
@@ -123,13 +124,13 @@ void Renderer::setCamera(const CameraUser &camera, const HardwareProgramHolder &
     }
     
     HardwareProgramVariable iProjectionMatrix ;
-    iProjectionMatrix.name = "iProjectionMatrix" ;
+    iProjectionMatrix.name = "iProjection" ;
     iProjectionMatrix.type = HdwProgVarType::Matrix4 ;
     iProjectionMatrix.value.m4 = ProjectionMatrix ;
     program->setVariable ( iProjectionMatrix ) ;
     
     HardwareProgramVariable iViewMatrix ;
-    iViewMatrix.name = "iViewMatrix" ;
+    iViewMatrix.name = "iView" ;
     iViewMatrix.type = HdwProgVarType::Matrix4 ;
     iViewMatrix.value.m4 = ViewMatrix ;
     program->setVariable ( iViewMatrix ) ;
@@ -144,7 +145,7 @@ void Renderer::setNode ( const RenderNodeHolder& node , const HardwareProgramHol
     const Matrix4 & ModelMatrix = node->getModelMatrix () ;
     
     HardwareProgramVariable iModelMatrix ;
-    iModelMatrix.name = "iModelMatrix" ;
+    iModelMatrix.name = "iModel" ;
     iModelMatrix.type = HdwProgVarType::Matrix4 ;
     iModelMatrix.value.m4 = ModelMatrix ;
     program->setVariable ( iModelMatrix ) ;
