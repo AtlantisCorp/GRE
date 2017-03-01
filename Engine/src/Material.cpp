@@ -36,11 +36,13 @@ GreBeginNamespace
 
 Material::Material(const std::string& name)
 : Gre::Resource(ResourceIdentifier::New() , name)
-, iAmbient(Color::Black)
-, iDiffuse(Color::Black)
-, iSpecular(Color::Black)
-, iEmission(Color::Black)
-, iShininess(0.0f)
+, iEmission(Color(1.0f, 1.0f, 1.0f, 1.0f))
+, iAmbient(Color(1.0f, 1.0f, 1.0f, 1.0f))
+, iDiffuse(Color(1.0f, 1.0f, 1.0f, 1.0f))
+, iSpecular(Color(1.0f, 1.0f, 1.0f, 1.0f))
+, iShininess(32.0f)
+, iNormalMap(nullptr) , iNormalMapEnabled(false)
+, iSpecularTexture(nullptr) , iSpecularTextureEnabled(false)
 {
     
 }
@@ -197,41 +199,42 @@ void Material::configureProgram(const HardwareProgramHolder &program) const
     if ( !program.isInvalid() )
     {
         HardwareProgramVariable iAmbientColor ;
-        iAmbientColor.name = "iAmbientColor" ;
+        iAmbientColor.name = "material.ambient" ;
         iAmbientColor.type = HdwProgVarType::Float4 ;
         iAmbientColor.value.f4 = iAmbient.toFloat4 () ;
         program->setVariable(iAmbientColor) ;
         
         HardwareProgramVariable iDiffuseColor ;
-        iDiffuseColor.name = "iDiffuseColor" ;
+        iDiffuseColor.name = "material.diffuse" ;
         iDiffuseColor.type = HdwProgVarType::Float4 ;
         iDiffuseColor.value.f4 = iDiffuse.toFloat4 () ;
         program->setVariable(iDiffuseColor) ;
         
         HardwareProgramVariable iSpecularColor ;
-        iSpecularColor.name = "iSpecularColor" ;
+        iSpecularColor.name = "material.specular" ;
         iSpecularColor.type = HdwProgVarType::Float4 ;
         iSpecularColor.value.f4 = iSpecular.toFloat4 () ;
         program->setVariable(iSpecularColor) ;
         
         HardwareProgramVariable iEmissionColor ;
-        iEmissionColor.name = "iEmissionColor" ;
+        iEmissionColor.name = "material.emission" ;
         iEmissionColor.type = HdwProgVarType::Float4 ;
         iEmissionColor.value.f4 = iEmission.toFloat4 () ;
         program->setVariable(iEmissionColor) ;
         
         HardwareProgramVariable iShininessVar ;
-        iShininessVar.name = "iShininess" ;
+        iShininessVar.name = "material.shininess" ;
         iShininessVar.type = HdwProgVarType::Float1 ;
         iShininessVar.value.f1 = iShininess ;
         program->setVariable(iShininessVar) ;
         
-        // If we are multitexturing , we must specify it to the HardwareProgram.
+        // If we have multiple Color Textures , we should specify the number  of
+        // Color Textures to the shader.
         
         HardwareProgramVariable iMultitextureBool ;
         iMultitextureBool.name = "iMultitexture" ;
         iMultitextureBool.type = HdwProgVarType::Int1 ;
-        iMultitextureBool.value.i1 = hasMultitexture() ? 1 : 0 ;
+        iMultitextureBool.value.i1 = iTextures.size() ;
         program->setVariable(iMultitextureBool) ;
         
         int textureunit = 0 ;
@@ -250,9 +253,99 @@ void Material::configureProgram(const HardwareProgramHolder &program) const
                 iTexture.type = HdwProgVarType::Int1 ;
                 iTexture.value.i1 = textureunit ;
                 program -> setVariable(iTexture) ;
+                
+                textureunit ++ ;
+            }
+        }
+        
+        // Specify the normal map if we have one.
+        
+        if ( iNormalMapEnabled )
+        {
+            HardwareProgramVariable NormalMapEnabled ;
+            NormalMapEnabled.name = "material.normalmap_enabled" ;
+            NormalMapEnabled.type = HdwProgVarType::Int1 ;
+            NormalMapEnabled.value.i1 = 1 ;
+            program -> setVariable(NormalMapEnabled) ;
+            
+            if ( !iNormalMap.isInvalid() )
+            {
+                const TextureHolder normalmap = iNormalMap.lock() ;
+                
+                program -> bindTextureUnit(textureunit) ;
+                normalmap -> bind() ;
+                
+                NormalMapEnabled.name = "material.normalmap" ;
+                NormalMapEnabled.type = HdwProgVarType::Int1 ;
+                NormalMapEnabled.value.i1 = textureunit ;
+                program -> setVariable(NormalMapEnabled) ;
+                
+                textureunit ++ ;
+            }
+        }
+        
+        //////////////////////////////////////////////////////////////////////
+        // Specular Texture Enabling.
+        
+        if ( iSpecularTextureEnabled )
+        {
+            HardwareProgramVariable specular ;
+            specular.name = "material.hasSpecularMap" ;
+            specular.type = HdwProgVarType::Int1 ;
+            specular.value.i1 = 1 ;
+            program -> setVariable(specular) ;
+            
+            if ( !iSpecularTexture.isInvalid() )
+            {
+                specular.name = "material.specularMap" ;
+                specular.type = HdwProgVarType::Int1 ;
+                specular.value.i1 = textureunit ;
+                program -> setVariable(specular) ;
+                
+                textureunit ++ ;
             }
         }
     }
+}
+
+const TextureUser & Material::getNormalMap() const
+{
+    GreAutolock ; return iNormalMap ;
+}
+
+void Material::setNormalMap(const TextureUser &texture)
+{
+    GreAutolock ; iNormalMap = texture ;
+}
+
+bool Material::isNormalMapEnabled() const
+{
+    GreAutolock ; return iNormalMapEnabled ;
+}
+
+void Material::setNormalMapEnabled(bool value)
+{
+    GreAutolock ; iNormalMapEnabled = value ;
+}
+
+const TextureUser & Material::getSpecularTexture() const
+{
+    GreAutolock ; return iSpecularTexture ;
+}
+
+void Material::setSpecularTexture(const TextureUser &texture)
+{
+    GreAutolock ; iSpecularTexture = texture ;
+}
+
+bool Material::isSpecularTextureEnabled() const
+{
+    GreAutolock ; return iSpecularTextureEnabled ;
+}
+
+void Material::setSpecularTextureEnabled(bool value)
+{
+    GreAutolock ; iSpecularTextureEnabled = value ;
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -291,6 +384,16 @@ MaterialManager::MaterialManager(const std::string& name)
 MaterialManager::~MaterialManager()
 {
     
+}
+
+MaterialHolder MaterialManager::create(const std::string &name)
+{
+    GreAutolock ;
+    
+    MaterialHolder value = MaterialHolder ( new Material(name) ) ;
+    load ( value ) ;
+    
+    return value ;
 }
 
 MaterialVector MaterialManager::load(const std::string &filepath)

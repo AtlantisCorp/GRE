@@ -43,7 +43,7 @@ EventProceeder::EventProceeder ()
 
 EventProceeder::~EventProceeder() noexcept ( false )
 {
-    
+    clear () ;
 }
 
 void EventProceeder::sendEvent(EventHolder &holder)
@@ -118,6 +118,10 @@ void EventProceeder::onEvent(EventHolder &holder)
                 
             case EventType::MouseEnteredWindow:
                 onMouseEnteredWindowEvent(event->to<MouseEnteredWindowEvent>());
+                break;
+                
+            case EventType::CursorMoved:
+                onCursorMovedEvent(event->to<CursorMovedEvent>());
                 break;
                 
             case EventType::Update:
@@ -267,6 +271,7 @@ void EventProceeder::removeListener(const SpecializedCountedObjectUser<Gre::Even
         if ( (*it) == proceeder )
         {
             iListeners.erase(it);
+            break ;
         }
     }
 }
@@ -350,6 +355,11 @@ void EventProceeder::onMouseExitedWindowEvent(const Gre::MouseExitedWindowEvent 
 }
 
 void EventProceeder::onMouseEnteredWindowEvent(const Gre::MouseEnteredWindowEvent &e)
+{
+    
+}
+
+void EventProceeder::onCursorMovedEvent(const Gre::CursorMovedEvent &e)
 {
     
 }

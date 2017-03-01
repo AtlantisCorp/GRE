@@ -105,4 +105,14 @@ const std::vector < RenderNodeHolder > & RenderingQuery::getRenderedNodes() cons
     GreAutolock ; return iRenderedNodes ;
 }
 
+void RenderingQuery::setLights(const std::vector<Light> &lights)
+{
+    GreAutolock ; iLights = lights ;
+}
+
+const std::vector < Light > & RenderingQuery::getLights () const
+{
+    GreAutolock ; return iLights ;
+}
+
 GreEndNamespace

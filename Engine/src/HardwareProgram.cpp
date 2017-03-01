@@ -51,10 +51,12 @@ HardwareProgram::HardwareProgram(const std::string& name,
 , iVertexShader ( nullptr ) , iFragmentShader ( nullptr )
 , iCompiled ( false ) , iBinded ( false )
 {
-    iComponentLocations [VertexComponentType::Position] = 0 ;
-    iComponentLocations [VertexComponentType::Color]    = 1 ;
-    iComponentLocations [VertexComponentType::Normal]   = 2 ;
-    iComponentLocations [VertexComponentType::Texture]  = 3 ;
+    iComponentLocations [VertexComponentType::Position]  = 0 ;
+    iComponentLocations [VertexComponentType::Color]     = 1 ;
+    iComponentLocations [VertexComponentType::Normal]    = 2 ;
+    iComponentLocations [VertexComponentType::Texture]   = 3 ;
+    iComponentLocations [VertexComponentType::Tangents]  = 4 ;
+    iComponentLocations [VertexComponentType::Binormals] = 5 ;
     
     if ( cacheShaders )
     {
@@ -129,10 +131,12 @@ void HardwareProgram::reset()
     iBinded = false ;
     
     iComponentLocations.clear() ;
-    iComponentLocations [VertexComponentType::Position] = 0 ;
-    iComponentLocations [VertexComponentType::Color]    = 1 ;
-    iComponentLocations [VertexComponentType::Normal]   = 2 ;
-    iComponentLocations [VertexComponentType::Texture]  = 3 ;
+    iComponentLocations [VertexComponentType::Position]  = 0 ;
+    iComponentLocations [VertexComponentType::Color]     = 1 ;
+    iComponentLocations [VertexComponentType::Normal]    = 2 ;
+    iComponentLocations [VertexComponentType::Texture]   = 3 ;
+    iComponentLocations [VertexComponentType::Tangents]  = 4 ;
+    iComponentLocations [VertexComponentType::Binormals] = 5 ;
 }
 
 void HardwareProgram::setVariable(const Gre::HardwareProgramVariable &var) const
@@ -147,6 +151,89 @@ void HardwareProgram::setVariable(const Gre::HardwareProgramVariable &var) const
     else {
         // Cache this Variable for later uploading.
         iCachedVariables.add(var);
+    }
+}
+
+void HardwareProgram::setLights(const std::vector<Light> &lights) const
+{
+    for ( int i = 0 ; i < lights.size() ; ++i )
+    {
+        std::string lightname = std::string("lights[") + std::to_string(i) + "]." ;
+        
+        if ( lights[i].isEnabled() )
+        {
+            HardwareProgramVariable lighttype ;
+            lighttype.name = lightname + "type" ;
+            lighttype.type = HdwProgVarType::Int1 ;
+            lighttype.value.i1 = (int) lights[i].getType() ;
+            setVariable(lighttype) ;
+            
+            lighttype.name = lightname + "enabled" ;
+            lighttype.type = HdwProgVarType::Int1 ;
+            lighttype.value.i1 = 1 ;
+            setVariable(lighttype) ;
+            
+            lighttype.name = lightname + "position" ;
+            lighttype.type = HdwProgVarType::Float3 ;
+            lighttype.value.f3 = lights[i].getPosition() ;
+            setVariable(lighttype) ;
+            
+            lighttype.name = lightname + "direction" ;
+            lighttype.type = HdwProgVarType::Float3 ;
+            lighttype.value.f3 = lights[i].getDirection() ;
+            setVariable(lighttype) ;
+            
+            lighttype.name = lightname + "ambient" ;
+            lighttype.type = HdwProgVarType::Float4 ;
+            lighttype.value.f4 = lights[i].getAmbient().toFloat4() ;
+            setVariable(lighttype) ;
+            
+            lighttype.name = lightname + "diffuse" ;
+            lighttype.type = HdwProgVarType::Float4 ;
+            lighttype.value.f4 = lights[i].getDiffuse().toFloat4() ;
+            setVariable(lighttype) ;
+            
+            lighttype.name = lightname + "specular" ;
+            lighttype.type = HdwProgVarType::Float4 ;
+            lighttype.value.f4 = lights[i].getSpecular().toFloat4() ;
+            setVariable(lighttype) ;
+            
+            lighttype.name = lightname + "shininess" ;
+            lighttype.type = HdwProgVarType::Float1 ;
+            lighttype.value.f1 = lights[i].getShininess() ;
+            setVariable(lighttype) ;
+            
+            if ( lights[i].getType() != LightType::Directionnal )
+            {
+                lighttype.name = lightname + "attenuationConstant" ;
+                lighttype.type = HdwProgVarType::Float1 ;
+                lighttype.value.f1 = lights[i].getAttenuationCst() ;
+                setVariable(lighttype) ;
+                
+                lighttype.name = lightname + "attenuationLinear" ;
+                lighttype.type = HdwProgVarType::Float1 ;
+                lighttype.value.f1 = lights[i].getAttenuationLinear() ;
+                setVariable(lighttype) ;
+                
+                lighttype.name = lightname + "attenuationQuadratique" ;
+                lighttype.type = HdwProgVarType::Float1 ;
+                lighttype.value.f1 = lights[i].getAttenuationQuad() ;
+                setVariable(lighttype) ;
+            }
+            
+            if ( lights[i].getType() == LightType::Spot )
+            {
+                lighttype.name = lightname + "angle" ;
+                lighttype.type = HdwProgVarType::Float1 ;
+                lighttype.value.f1 = lights[i].getAngle() ;
+                setVariable(lighttype) ;
+                
+                lighttype.name = lightname + "exposition" ;
+                lighttype.type = HdwProgVarType::Float1 ;
+                lighttype.value.f1 = lights[i].getExposition() ;
+                setVariable(lighttype) ;
+            }
+        }
     }
 }
 

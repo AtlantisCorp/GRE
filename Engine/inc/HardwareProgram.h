@@ -38,6 +38,7 @@
 #include "HardwareShader.h"
 #include "HardwareProgramVariables.h"
 #include "VertexDescriptor.h"
+#include "Light.h"
 
 GreBeginNamespace
 
@@ -55,6 +56,13 @@ GreBeginNamespace
 /// @note
 /// When subclassing HardwareProgram, you should make your constructor
 /// compiling the given arguments if the program was given some.
+///
+/// @note
+/// HardwareProgram comes with built-in GRE variables for your shaders.
+/// Those variables are :
+/// - A material structure for the current object. ("material")
+/// - A lights array filled with lights structure for the current scene.
+/// - A Camera structure for the current camera.
 ///
 //////////////////////////////////////////////////////////////////////
 class DLL_PUBLIC HardwareProgram : public Resource
@@ -181,6 +189,11 @@ public:
     /// @brief Manually sets a Variable.
     //////////////////////////////////////////////////////////////////////
     virtual void _setVariable ( const HardwareProgramVariable & var ) const = 0 ;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Activates given lights.
+    //////////////////////////////////////////////////////////////////////
+    virtual void setLights ( const std::vector < Light > & lights ) const ;
     
 protected:
     

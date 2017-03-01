@@ -65,6 +65,11 @@ const SpecializedCountedObjectUser<EventProceeder> & Event::getEmitter() const
     return * iEmitter ;
 }
 
+const EventProceeder* Event::getEmitterPointer() const
+{
+    GreAutolock ; return iEmitter->lock().getObject() ;
+}
+
 const EventType& Event::getType() const
 {
     GreAutolock ;
@@ -123,80 +128,15 @@ Event* KeyUpEvent::clone() const
 
 // ---------------------------------------------------------------------------------------------------
 
-LeftMousePressEvent::LeftMousePressEvent ( const EventProceeder* emitter )
-: Gre::Event ( emitter , EventType::LeftMousePress )
+CursorMovedEvent::CursorMovedEvent ( const EventProceeder* emitter , const float deltax , const float deltay )
+: Gre::Event ( emitter , EventType::CursorMoved ) , DeltaX ( deltax ) , DeltaY ( deltay )
 {
     
 }
 
-Event* LeftMousePressEvent::clone() const
+Event* CursorMovedEvent::clone() const
 {
-    return new LeftMousePressEvent ( iEmitter->lock().getObject() ) ;
-}
-
-// ---------------------------------------------------------------------------------------------------
-
-LeftMouseReleaseEvent::LeftMouseReleaseEvent ( const EventProceeder* emitter )
-: Gre::Event ( emitter , EventType::LeftMouseRelease )
-{
-    
-}
-
-Event* LeftMouseReleaseEvent::clone() const
-{
-    return new LeftMouseReleaseEvent ( iEmitter->lock().getObject() ) ;
-}
-
-// ---------------------------------------------------------------------------------------------------
-
-RightMousePressEvent::RightMousePressEvent ( const EventProceeder* emitter )
-: Gre::Event ( emitter , EventType::RightMousePress )
-{
-    
-}
-
-Event* RightMousePressEvent::clone() const
-{
-    return new RightMousePressEvent ( iEmitter->lock().getObject() ) ;
-}
-
-// ---------------------------------------------------------------------------------------------------
-
-RightMouseReleaseEvent::RightMouseReleaseEvent ( const EventProceeder* emitter )
-: Gre::Event ( emitter , EventType::RightMouseRelease )
-{
-    
-}
-
-Event* RightMouseReleaseEvent::clone() const
-{
-    return new RightMouseReleaseEvent ( iEmitter->lock().getObject() ) ;
-}
-
-// ---------------------------------------------------------------------------------------------------
-
-MouseExitedWindowEvent::MouseExitedWindowEvent ( const EventProceeder* emitter )
-: Gre::Event ( emitter , EventType::MouseExitedWindow )
-{
-    
-}
-
-Event* MouseExitedWindowEvent::clone() const
-{
-    return new MouseExitedWindowEvent ( iEmitter->lock().getObject() ) ;
-}
-
-// ---------------------------------------------------------------------------------------------------
-
-MouseEnteredWindowEvent::MouseEnteredWindowEvent ( const EventProceeder* emitter )
-: Gre::Event ( emitter , EventType::MouseEnteredWindow )
-{
-    
-}
-
-Event* MouseEnteredWindowEvent::clone() const
-{
-    return new MouseEnteredWindowEvent ( iEmitter->lock().getObject() ) ;
+    return new CursorMovedEvent ( iEmitter->lock().getObject() , DeltaX , DeltaY ) ;
 }
 
 // ---------------------------------------------------------------------------------------------------

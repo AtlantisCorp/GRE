@@ -85,6 +85,7 @@ protected:
     virtual void _setBuffer ( ) const ;
     
     virtual void _setParameters ( GLenum target ) const ;
+    virtual void _applySwizzling ( GLenum target , const Gre::SoftwarePixelBufferHolder& buffer ) const ;
     
 protected:
     
@@ -96,7 +97,7 @@ protected:
 //////////////////////////////////////////////////////////////////////
 /// @brief OpenGl Texture Manager.
 //////////////////////////////////////////////////////////////////////
-class OpenGlTextureManager : public Gre::TextureManager
+class OpenGlTextureCreator : public Gre::TextureInternalCreator
 {
 public:
     
@@ -104,17 +105,17 @@ public:
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    OpenGlTextureManager ( const std::string & name , const Gre::Renderer* renderer ) ;
+    OpenGlTextureCreator ( const Gre::Renderer* renderer ) ;
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    virtual ~OpenGlTextureManager () noexcept ( false ) ;
+    virtual ~OpenGlTextureCreator () ;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Loads a Texture from a SoftwarePixelBuffer.
     //////////////////////////////////////////////////////////////////////
-    virtual Gre::TextureUser load (const std::string & name , const Gre::TextureType & type ,
-                                   const Gre::SoftwarePixelBufferHolder& buffer) ;
+    virtual Gre::Texture* create (const std::string & name , const Gre::TextureType & type ,
+                                   const Gre::SoftwarePixelBufferHolderList& buffer) const ;
     
 protected:
     
@@ -234,6 +235,9 @@ protected:
     
     /// @brief
     GLuint iGlProgram ;
+    
+    /// @brief Stores every encountered uniforms with their location.
+    std::map < std::string , int > iUniformsByName ;
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -517,7 +521,7 @@ public:
     //////////////////////////////////////////////////////////////////////
     /// @brief Creates a TextureManager for this Renderer.
     //////////////////////////////////////////////////////////////////////
-    virtual Gre::TextureManagerHolder iCreateTextureManager ( ) const ;
+    virtual Gre::TextureInternalCreator* iCreateTextureCreator ( ) const ;
 };
 
 //////////////////////////////////////////////////////////////////////

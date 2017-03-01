@@ -56,12 +56,14 @@ int ReferenceCounter::unuse()
 
 int ReferenceCounter::getHolderCount() const
 {
-    GreAutolock ; return iHolderCount;
+    GreAutolock ;
+    return iHolderCount;
 }
 
 int ReferenceCounter::getUserCount() const
 {
-    GreAutolock ; return iUserCount;
+    GreAutolock ;
+    return iUserCount;
 }
 
 GreEndNamespace

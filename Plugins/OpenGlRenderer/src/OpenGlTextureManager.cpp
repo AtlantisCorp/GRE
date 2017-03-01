@@ -32,42 +32,36 @@
 
 #include "OpenGlRenderer.h"
 
-OpenGlTextureManager::OpenGlTextureManager ( const std::string & name , const Gre::Renderer* renderer )
-: Gre::TextureManager(name) , iRenderer(renderer)
+OpenGlTextureCreator::OpenGlTextureCreator ( const Gre::Renderer* renderer )
+: iRenderer(renderer)
 {
     if ( !iRenderer ) {
         GreDebug("[WARN] Initializing OpenGlTextureManager without renderer has undefined behaviour.") << Gre::gendl ;
     }
 }
 
-OpenGlTextureManager::~OpenGlTextureManager() noexcept ( false )
+OpenGlTextureCreator::~OpenGlTextureCreator()
 {
     
 }
 
-Gre::TextureUser OpenGlTextureManager::load(const std::string &name, const Gre::TextureType & type ,
-                                            const Gre::SoftwarePixelBufferHolder &buffer)
+Gre::Texture* OpenGlTextureCreator::create(const std::string &name, const Gre::TextureType & type ,
+                                            const Gre::SoftwarePixelBufferHolderList &list) const
 {
-    if ( !buffer.isInvalid () && iRenderer )
+    if ( iRenderer )
     {
         // Check if the RenderContext is actually binded.
         iRenderer->getRenderContext()->bind() ;
         
-        Gre::SoftwarePixelBufferHolderList list ;
-        list.add(buffer);
-        
         OpenGlTexture* tex = new OpenGlTexture ( name , type , list ) ;
         if ( !tex -> isGlTextureValid() ) {
             GreDebug("[WARN] Can't create OpenGlTexture '") << name << "'." << Gre::gendl ;
-            delete tex ; return Gre::TextureUser ( nullptr ) ;
+            delete tex ; return nullptr ;
         }
         
-        Gre::TextureHolder holder ( tex ) ;
-        iHolders.push_back(holder);
-        
-        return Gre::TextureUser ( holder ) ;
+        return tex ;
     }
     
-    return Gre::TextureUser ( nullptr ) ;
+    return nullptr ;
 }
 

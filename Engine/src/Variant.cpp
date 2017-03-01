@@ -137,7 +137,7 @@ void Variant::DeleteFromPolicy(Variant::Policy policy, void *object)
     if(policy == Policy::Integer)
     {
         int* tmp = (int*) object;
-        delete tmp;
+        //delete tmp;
         return;
     }
     

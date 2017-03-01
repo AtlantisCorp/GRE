@@ -45,6 +45,7 @@ Window::Window(const std::string& name, const WindowOptions& options)
     iExposed = false;
     iClosed = false;
     iFocused = false;
+    iCenterCursor = false ;
 }
 
 Window::~Window() noexcept(false)
@@ -78,6 +79,16 @@ bool Window::isExposed() const
     return iExposed;
 }
 
+bool Window::isFocused () const
+{
+    GreAutolock ; return iFocused ;
+}
+
+void Window::setCursorCentered(bool value)
+{
+    GreAutolock ; iCenterCursor = value ;
+}
+
 RenderFramebufferUser Window::getFramebuffer()
 {
     return RenderFramebufferUser ( nullptr ) ;
@@ -108,6 +119,12 @@ void Window::onUpdateEvent(const Gre::UpdateEvent &e)
     // We just call the parent's onUpdateEvent function. A subclass should treat Window's events
     // specifically in this function.
     RenderTarget::onUpdateEvent(e);
+    
+    GreAutolock ;
+    
+    if ( iCenterCursor ) {
+        centerCursor() ;
+    }
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -143,6 +160,8 @@ WindowManager::WindowManager( const std::string& name )
         GreDebug("[WARN] 'iGlobalListener' could not be created.") << gendl ;
     }
 #endif
+    
+    iEventLaunched = false ;
 }
 
 WindowManager::~WindowManager() noexcept ( false )
@@ -203,7 +222,7 @@ void WindowManager::pollEvents ( const Duration& elapsed ) const
 
 void WindowManager::onUpdateEvent(const Gre::UpdateEvent &e)
 {
-    // [07.19.2017] NOTES : No need to check for closed Window. In fact,
+    // [02.19.2017] NOTES : No need to check for closed Window. In fact,
     // when a Window is about to close (WindowWillCloseEvent), it sends
     // an event to the global window listener, wich will also send an event
     // to this manager. This manager will redirect the event to the window
@@ -244,27 +263,48 @@ void WindowManager::onEvent(EventHolder &holder)
     if ( holder.isInvalid() )
         return ;
     
-    if ( holder->getType() == EventType::LastWindowClosed )
-        return ;
-    
     GreAutolock ;
     
-    for ( WindowHolder& win : iHolders )
+    if ( iEventLaunched )
+        return ;
+    
+    iEventLaunched = true ;
+    
+    // If the holder is the global listener, we do not want to process ANY events, except the
+    // WindowWillClose event which we listen in order to do proper cleaning. Being the global listener
+    // means the emitter is one of the registered windows.
+    
+    if ( _findWindow ( holder->getEmitter().lock().getObject() ) )
     {
-        if ( !holder->getEmitter().isInvalid() ) {
-            if ( (EventProceeder*) win.getObject() == holder->getEmitter().lock().getObject() ) {
-                
-                if ( holder->getType() != EventType::WindowWillClose ) {
-                    return ;
-                } else {
-                    holder -> setNoSublisteners(true) ;
-                    win -> onEvent(holder) ;
-                }
-            }
+        if ( holder->getType() == EventType::WindowWillClose )
+        {
+            holder -> setNoSublisteners(true) ;
+        }
+        
+        else
+        {
+            iEventLaunched = false ;
+            return ;
         }
     }
     
+    // If the holder is not the global listener, we can think this event is not related to any of the
+    // children's windows. So we can treat normally this event.
+    
     EventProceeder::onEvent(holder) ;
+    iEventLaunched = false ;
+}
+
+bool WindowManager::_findWindow(const Gre::EventProceeder *window) const
+{
+    for ( const WindowHolder& holder : iHolders )
+    {
+        if ( (const EventProceeder*) holder.getObject() == window ) {
+            return true ;
+        }
+    }
+    
+    return false ;
 }
 
 void WindowManager::onWindowWillCloseEvent(const Gre::WindowWillCloseEvent &e)

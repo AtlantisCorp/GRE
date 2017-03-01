@@ -32,6 +32,60 @@
 
 #include "OpenGlRenderer.h"
 
+std::string GetFileContent ( const std::string & path )
+{
+    // Loading the source from file.
+    // http://stackoverflow.com/questions/2602013/read-whole-ascii-file-into-c-stdstring
+    
+    std::ifstream srcstream ( path );
+    
+    if ( !srcstream )
+    {
+#ifdef GreIsDebugMode
+        GreDebugPretty() << "Can't open file '" << path << "'." << Gre::gendl;
+#endif
+        return std::string () ;
+    }
+    
+    std::string src;
+    
+    srcstream.seekg(0, std::ios::end);
+    src.reserve(srcstream.tellg());
+    srcstream.seekg(0, std::ios::beg);
+    
+    src.assign( (std::istreambuf_iterator<char>(srcstream)), std::istreambuf_iterator<char>() );
+    return src ;
+}
+
+std::string OpenGlShaderMakeSource ( const std::string & source )
+{
+    std::string value ;
+    
+    char c = 0 ;
+    std::stringstream stream ( source ) ;
+    while ( stream >> std::noskipws >> c )
+    {
+        if ( c == '#' )
+        {
+            std::string word ; stream >> word ;
+            if ( word == "include" ) {
+                stream >> std::skipws >> word ;
+                value . append( OpenGlShaderMakeSource(GetFileContent(word)) ) ;
+            } else {
+                value . push_back(c) ;
+                value . append(word) ;
+            }
+        }
+        
+        else
+        {
+            value . push_back(c) ;
+        }
+    }
+    
+    return value ;
+}
+
 GLenum translateGlShader ( const Gre::ShaderType& type )
 {
     if ( type == Gre::ShaderType::Vertex )
@@ -46,11 +100,13 @@ OpenGlShader::OpenGlShader ( const std::string & name , const Gre::ShaderType& t
 {
     GreAutolock ;
     
+    std::string realsource = OpenGlShaderMakeSource(source) ;
+    
     iGlShader = glCreateShader(translateGlShader(type));
     if ( iGlShader )
     {
-        const char* src = source.c_str() ;
-        GLint lenght = source.size() ;
+        const char* src = realsource.c_str() ;
+        GLint lenght = realsource.size() ;
         
         glShaderSource(iGlShader, 1, &src, &lenght);
         glCompileShader(iGlShader);

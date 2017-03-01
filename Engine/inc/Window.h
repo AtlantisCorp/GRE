@@ -88,6 +88,27 @@ public:
     //////////////////////////////////////////////////////////////////////
     virtual Surface getSurface() const;
     
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Hides/Unhides the cursor if the window is focused.
+    //////////////////////////////////////////////////////////////////////
+    virtual void toggleCursor ( bool hidden ) = 0 ;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Centers the cursor if the window is focused.
+    //////////////////////////////////////////////////////////////////////
+    virtual void centerCursor ( ) const = 0 ;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Sets to true if you want this Window to center the Cursor
+    /// at each update.
+    //////////////////////////////////////////////////////////////////////
+    virtual void setCursorCentered ( bool value ) ;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns true if the Window is focused.
+    //////////////////////////////////////////////////////////////////////
+    virtual bool isFocused () const ;
+    
 public: // Visibility Functions .
     
     //////////////////////////////////////////////////////////////////////
@@ -156,6 +177,9 @@ protected:
     
     /// @brief True if the Window has the focus.
     bool iFocused;
+    
+    /// @brief True if this Window has to center the Cursor at each update.
+    bool iCenterCursor ;
 };
 
 /// @brief SpecializedCountedObjectHolder for WindowPrivate.
@@ -262,11 +286,18 @@ protected:
     //////////////////////////////////////////////////////////////////////
     virtual void onWindowWillCloseEvent ( const WindowWillCloseEvent& e ) ;
     
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Finds the given proceeder in the window list.
+    //////////////////////////////////////////////////////////////////////
+    virtual bool _findWindow ( const EventProceeder* window ) const ;
+    
 protected:
     
     /// @brief Listens to every Windows.
     EventProceederHolder iGlobalListener ;
     
+    /// @brief True if this WindowManager has already launched the events.
+    mutable bool iEventLaunched ;
 };
 
 /// @brief Holder for WindowManager Resource .

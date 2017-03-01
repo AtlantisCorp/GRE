@@ -65,7 +65,13 @@ enum class VertexComponentType
     Normal = 12,
     
     /// @brief A UV Texture Component. (Size = sizeof(float) * 2)
-    Texture = 13
+    Texture = 13,
+    
+    /// @brief Tangents components. ( Size = normal )
+    Tangents = 14,
+    
+    /// @brief Binormals component ( Size = normal )
+    Binormals = 15
 };
 
 /// @brief A VertexPosition.

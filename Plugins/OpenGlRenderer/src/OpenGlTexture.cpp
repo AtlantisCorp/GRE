@@ -212,9 +212,9 @@ GLenum translateGlPixelFormat ( PixelFormat format )
     else if ( format == PixelFormat::DepthStencil )
         return GL_DEPTH_STENCIL ;
     
-    else if ( format == PixelFormat::Red )
+    else if ( format == PixelFormat::Red || format == PixelFormat::Luminance )
         return GL_RED ;
-    else if ( format == PixelFormat::RG )
+    else if ( format == PixelFormat::RG || format == PixelFormat::LuminanceAlpha )
         return GL_RG ;
     else if ( format == PixelFormat::RGB )
         return GL_RGB ;
@@ -338,6 +338,24 @@ void OpenGlTexture::_setParameters ( GLenum target ) const
 #endif
 }
 
+void OpenGlTexture::_applySwizzling ( GLenum target , const Gre::SoftwarePixelBufferHolder& buffer ) const
+{
+    if ( !buffer.isInvalid() )
+    {
+        if ( buffer -> getPixelFormat() == Gre::PixelFormat::Luminance )
+        {
+            GLint swizzleMask [] = { GL_RED , GL_RED , GL_RED , GL_ONE } ;
+            glTexParameteriv(target, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask);
+        }
+        
+        else if ( buffer -> getPixelFormat() == Gre::PixelFormat::LuminanceAlpha )
+        {
+            GLint swizzleMask [] = { GL_RED , GL_RED , GL_RED , GL_GREEN } ;
+            glTexParameteriv(target, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask);
+        }
+    }
+}
+
 void OpenGlTexture::_bind() const
 {
     GreAutolock ; glBindTexture(translateGlTexture(getType()), iGlTexture);
@@ -367,6 +385,7 @@ void OpenGlTexture::_setBuffer () const
         const Gre::SoftwarePixelBufferHolder & buffer = *iPixelBuffers.begin() ;
         
         _setParameters ( GL_TEXTURE_1D ) ;
+        _applySwizzling( GL_TEXTURE_1D, buffer ) ;
         
         glTexImage1D(GL_TEXTURE_1D, 0,
                      translateGlInternalPixelFormat(buffer->getInternalPixelFormat()),
@@ -392,6 +411,7 @@ void OpenGlTexture::_setBuffer () const
         const Gre::SoftwarePixelBufferHolder & buffer = *iPixelBuffers.begin() ;
         
         _setParameters ( GL_TEXTURE_2D ) ;
+        _applySwizzling( GL_TEXTURE_2D, buffer ) ;
         
         glTexImage2D(GL_TEXTURE_2D, 0,
                      translateGlInternalPixelFormat(buffer->getInternalPixelFormat()),
@@ -417,6 +437,7 @@ void OpenGlTexture::_setBuffer () const
         const Gre::SoftwarePixelBufferHolder & buffer = *iPixelBuffers.begin() ;
         
         _setParameters ( GL_TEXTURE_3D ) ;
+        _applySwizzling( GL_TEXTURE_3D, buffer ) ;
         
         glTexImage3D(GL_TEXTURE_3D, 0,
                      translateGlInternalPixelFormat(buffer->getInternalPixelFormat()),
@@ -441,15 +462,19 @@ void OpenGlTexture::_setBuffer () const
         glBindTexture(GL_TEXTURE_CUBE_MAP, iGlTexture);
         _setParameters ( GL_TEXTURE_CUBE_MAP ) ;
         
+        int layer = 0 ;
         for ( const Gre::SoftwarePixelBufferHolder & it : iPixelBuffers )
         {
             const Gre::SoftwarePixelBufferHolder & buffer = it ;
-            glTexImage2D(GL_TEXTURE_2D, 0,
+            _applySwizzling( GL_TEXTURE_CUBE_MAP_POSITIVE_X + layer , buffer ) ;
+            
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + layer , 0,
                          translateGlInternalPixelFormat(buffer->getInternalPixelFormat()),
                          buffer->getSurface().width, buffer->getSurface().height, 0,
                          translateGlPixelFormat(buffer->getPixelFormat()),
                          translateGlPixelType(buffer->getPixelType()),
                          buffer->getData());
+            layer ++ ;
         }
         
         glGenerateMipmap(GL_TEXTURE_CUBE_MAP);

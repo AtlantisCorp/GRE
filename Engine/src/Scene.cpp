@@ -38,7 +38,7 @@
 GreBeginNamespace
 
 RenderScene::RenderScene(const std::string& name, const RenderSceneOptions& options)
-: Gre::Resource(name) , iRootNode(nullptr)
+: Gre::Resource(name) , iRootNode(nullptr) , iGlobalLight(Vector3(-1000.0f, 1000.0f, -1000.0f))
 {
     
 }
@@ -320,6 +320,21 @@ void RenderScene::setClearColor ( const Color& color )
     GreAutolock ; iClearColor = color ;
 }
 
+const Light& RenderScene::getGlobalLight () const
+{
+    GreAutolock ; return iGlobalLight ;
+}
+
+Light& RenderScene::getGlobalLight ()
+{
+    GreAutolock ; return iGlobalLight ;
+}
+
+void RenderScene::setGlobalLight ( const Light& light )
+{
+    GreAutolock ; iGlobalLight = light ;
+}
+
 void RenderScene::drawTechnique( const TechniqueHolder& technique , const EventHolder &elapsed) const
 {
 #ifdef GreIsDebugMode
@@ -351,6 +366,10 @@ void RenderScene::drawTechnique( const TechniqueHolder& technique , const EventH
             } else {
                 query.setRenderedNodes ( { getRootNode().lock() } ) ;
             }
+            
+            std::vector < Light > lights ;
+            lights.push_back(iGlobalLight) ;
+            query.setLights(lights) ;
             
             RendererHolder rholder = iRenderer.lock() ;
             if ( rholder.isInvalid() )

@@ -192,7 +192,7 @@ void RenderNode::addNode(const RenderNodeHolder &node)
             }
             
             // If we don't have any Parent, this means we are Root, but Root::getBoundingBox() should return
-            // an infinite BoundingBox.
+            // an infinite BoundingBox or, at least, the world limits bounding box.
         }
     }
 }
@@ -366,6 +366,11 @@ const BoundingBox& RenderNode::getBoundingBox() const
     return iBoundingBox;
 }
 
+void RenderNode::setBoundingBox(const Gre::BoundingBox &bbox)
+{
+    GreAutolock ; iBoundingBox = bbox ;
+}
+
 void RenderNode::translate(const Vector3 &vec)
 {
     GreAutolock ;
@@ -395,7 +400,17 @@ void RenderNode::setParent(const RenderNodeHolder &parent)
 
 const MaterialHolder& RenderNode::getMaterial() const
 {
-    GreAutolock ; return iMaterial ;
+    GreAutolock ;
+    
+    if ( iMaterial.isInvalid() && !iRenderable.isInvalid() )
+        return iRenderable.lock() -> getPreferredMaterial() ;
+        
+    return iMaterial ;
+}
+
+void RenderNode::setMaterial(const MaterialHolder &material)
+{
+    GreAutolock ; iMaterial = material ;
 }
 
 bool RenderNode::isVisible(const CameraUser &camera) const

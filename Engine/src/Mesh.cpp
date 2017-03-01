@@ -35,6 +35,7 @@
 // Because of 'MeshManager::CreateSquare()' , we must use the ResourceManager to retrieve the
 // MeshManager in place .
 #include "ResourceManager.h"
+#include "ObjMeshLoader.h"
 
 GreBeginNamespace
 
@@ -150,52 +151,10 @@ MeshUser MeshManager::Cube(float sz)
     MeshManagerHolder holder = ResourceManager::Get().getMeshManager() ;
     if ( holder.isInvalid() ) return MeshUser ( nullptr ) ;
     
-    std::vector<float> vertexdata = {
-        0.0f, 0.0f, 0.0f,
-        0.0f, 0.0f,   sz,
-        0.0f,   sz,   sz,
-        0.0f,   sz, 0.0f,
-        
-          sz, 0.0f, 0.0f,
-          sz, 0.0f,   sz,
-          sz,   sz,   sz,
-          sz,   sz, 0.0f
-    };
-    
-    std::vector<unsigned short> indexdata = {
-        0, 1, 2, 2, 3, 0,
-        0, 4, 7, 7, 3, 0,
-        0, 1, 5, 5, 4, 0,
-        4, 5, 6, 6, 7, 4,
-        1, 5, 6, 6, 2, 1,
-        3, 7, 6, 6, 2, 3
-    };
-    
-    VertexDescriptor desc ;
-    desc.addComponent(VertexComponentType::Position) ;
-    HardwareVertexBufferHolder vbuf = holder -> createVertexBuffer(& vertexdata[0],
-                                                                   vertexdata.size() * sizeof(float),
-                                                                   desc) ;
-    vbuf -> setEnabled(true) ;
-    HardwareVertexBufferHolderList vbuflist ; vbuflist.add(vbuf) ;
-    
-    IndexDescriptor idesc ;
-    idesc.setMode(IndexDrawmode::Triangles) ;
-    idesc.setType(IndexType::UnsignedShort) ;
-    HardwareIndexBufferHolder ibuf = holder -> createIndexBuffer(& indexdata[0],
-                                                                 indexdata.size() * sizeof(unsigned short),
-                                                                 idesc) ;
-    ibuf -> setEnabled(true) ;
-    
-    BoundingBox bbox = BoundingBox({0.0f, 0.0f, 0.0f}, {sz, sz, sz}) ;
-    
-    MeshHolder mesh = MeshHolder ( new Mesh("Cube") ) ;
-    mesh -> setBoundingBox(bbox) ;
-    mesh -> setVertexBuffers(vbuflist) ;
-    mesh -> setIndexBuffer(ibuf) ;
-    
-    holder -> iHolders.add(mesh) ;
-    return MeshUser ( mesh ) ;
+    std::vector < MeshUser > meshes = holder -> load("Cube", "Models/OBJ/Cube.obj") ;
+    if ( meshes.size() )
+        return meshes.at(0) ;
+    return MeshUser ( nullptr ) ;
 }
 
 MeshUser MeshManager::Triangle(float sz)
@@ -234,7 +193,7 @@ MeshUser MeshManager::Triangle(float sz)
 MeshManager::MeshManager ( )
 : SpecializedResourceManager ( )
 {
-    
+    getFactory().registers("OBJ File Loader", new ObjMeshLoader ()) ;
 }
 
 MeshManager::~MeshManager ( ) noexcept ( false )

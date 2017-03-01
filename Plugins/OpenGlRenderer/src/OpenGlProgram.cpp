@@ -157,6 +157,9 @@ void OpenGlProgram::_finalize()
                 
                 GLint location = glGetUniformLocation(iGlProgram, buf) ;
                 GreDebug("Uniform location = ") << location << "." << Gre::gendl ;
+                
+                // We can save the uniform for saving time on 'glGetUniformLocation'.
+                iUniformsByName [std::string(buf)] = location ;
             }
         }
     }
@@ -237,10 +240,9 @@ int OpenGlProgram::getUniformLocation(const std::string &name) const
 {
     GreAutolock ;
     
-    if ( iGlProgram ) {
-        return glGetUniformLocation(iGlProgram, name.c_str());
-    }
-    
+    auto it = iUniformsByName.find(name) ;
+    if ( it != iUniformsByName.end() )
+        return it->second ;
     return -1 ;
 }
 

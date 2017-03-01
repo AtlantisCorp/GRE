@@ -88,7 +88,11 @@ void OpenGlRenderer::_setClearColor(const Gre::Color &color) const
 
 void OpenGlRenderer::_preRender() const
 {
-    glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+    glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
+    glPolygonMode ( GL_FRONT_AND_BACK , GL_FILL ) ;
+    
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS) ; glClearDepth(1.0);
 }
 
 void OpenGlRenderer::_postRender() const
@@ -166,7 +170,7 @@ void OpenGlRenderer::_drawNodeMesh(const Gre::MeshUser &mesh, const Gre::Hardwar
                         glEnableVertexAttribArray(loccol);
                         glVertexAttribPointer(loccol,
                                               4,
-                                              GL_UNSIGNED_INT, GL_FALSE,
+                                              GL_FLOAT, GL_FALSE,
                                               desc.getStride(component),
                                               buffer->getData() + desc.getOffset(component) ) ;
                     }
@@ -199,6 +203,20 @@ void OpenGlRenderer::_drawNodeMesh(const Gre::MeshUser &mesh, const Gre::Hardwar
                         glVertexAttribPointer(loctex,
                                               2,
                                               GL_FLOAT, GL_FALSE,
+                                              desc.getStride(component),
+                                              buffer->getData() + desc.getOffset(component) ) ;
+                    }
+                }
+                
+                else if ( component == Gre::VertexComponentType::Tangents ||
+                          component == Gre::VertexComponentType::Binormals )
+                {
+                    GLuint loctan = program -> getAttribLocation(component) ;
+                    
+                    if ( loctan != -1 )
+                    {
+                        glEnableVertexAttribArray(loctan) ;
+                        glVertexAttribPointer(loctan, 3, GL_FLOAT, GL_TRUE,
                                               desc.getStride(component),
                                               buffer->getData() + desc.getOffset(component) ) ;
                     }
@@ -245,6 +263,14 @@ void OpenGlRenderer::installDefaultFeatures()
         }
     }
     
+    {
+        // Try to load default Material.
+        iDefaultMaterial = Gre::ResourceManager::Get().getMaterialManager() -> get("Default") ;
+        if ( !iDefaultMaterial.isInvalid() ) {
+            setFeature(Gre::RendererFeature::LoadDefaultMaterial);
+        }
+    }
+    
     iFeaturesInstalled = true ;
 }
 
@@ -258,9 +284,9 @@ Gre::HardwareProgramManagerHolder OpenGlRenderer::iCreateProgramManager() const
     return Gre::HardwareProgramManagerHolder ( new OpenGlProgramManager(this) ) ;
 }
 
-Gre::TextureManagerHolder OpenGlRenderer::iCreateTextureManager() const
+Gre::TextureInternalCreator* OpenGlRenderer::iCreateTextureCreator() const
 {
-    return Gre::TextureManagerHolder ( new OpenGlTextureManager("OpenGlTextureManager" , this) ) ;
+    return new OpenGlTextureCreator(this) ;
 }
 
 

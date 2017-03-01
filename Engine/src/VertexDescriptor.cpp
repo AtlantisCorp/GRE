@@ -70,7 +70,7 @@ size_t VertexComponentTypeGetSize(const VertexComponentType& vtype)
     
     else if ( vtype == VertexComponentType::Color )
     {
-        totsz += 4 * sizeof(uint32_t);
+        totsz += 4 * sizeof(float);
     }
     
     else if ( vtype == VertexComponentType::Normal )
@@ -82,6 +82,11 @@ size_t VertexComponentTypeGetSize(const VertexComponentType& vtype)
     {
         totsz += 2 * sizeof(float);
     }
+    
+    else if ( vtype == VertexComponentType::Tangents )
+        return VertexComponentTypeGetSize(VertexComponentType::Normal) ;
+    else if ( vtype == VertexComponentType::Binormals )
+        return VertexComponentTypeGetSize(VertexComponentType::Normal) ;
     
 #ifdef GreIsDebugMode
     else
@@ -139,6 +144,11 @@ std::string VertexComponentTypeToString(const VertexComponentType& component)
     {
         return "Color";
     }
+    
+    else if ( component == VertexComponentType::Tangents )
+        return "Tangents" ;
+    else if ( component == VertexComponentType::Binormals )
+        return "Binormals" ;
     
 #ifdef GreIsDebugMode
     else
@@ -224,11 +234,17 @@ int VertexDescriptor::getComponentLocation(const Gre::VertexComponentType &compo
 
 size_t VertexDescriptor::getStride(const Gre::VertexComponentType &vtype) const
 {
-    return iSize - VertexComponentTypeGetSize(vtype);
+    if ( iComponents.size() == 1 )
+        return 0 ;
+    
+    return iSize ;
 }
 
 size_t VertexDescriptor::getOffset(const Gre::VertexComponentType &component) const
 {
+    if (iComponents.size() == 1)
+        return 0 ;
+    
     size_t value = 0 ;
     
     for ( VertexComponentType comp : iComponents )

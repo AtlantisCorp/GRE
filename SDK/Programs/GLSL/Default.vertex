@@ -1,19 +1,32 @@
+// A basic Vertex shader.
 #version 330
+
+#include Programs/GLSL/BaseConstants.glsl
 
 layout(location = 0) in vec3 iPosition ;
 layout(location = 1) in vec4 iColor ;
 layout(location = 2) in vec3 iNormal ;
+layout(location = 3) in vec2 iTexture ;
+layout(location = 4) in vec3 iTangent ;
+layout(location = 5) in vec3 iBinormal ;
 
-uniform mat4 iProjection ;
-uniform mat4 iView ;
-uniform mat4 iModel ;
-
-out vec4 oColor ;
+out VertexOutput vertex_output ;
 
 void main ()
 {
-    oColor = iColor ;
-
     mat4 MVP = iProjection * iView * iModel ;
     gl_Position = MVP * vec4(iPosition,1.0) ;
+    
+    vertex_output.color = iColor ;
+    vertex_output.position = vec3( iModel * vec4(iPosition, 1.0f) ) ;
+    vertex_output.normal = mat3(transpose(inverse(iModel))) * iNormal ;
+    vertex_output.texcoord = iTexture ;
+    
+    if ( material.normalmap_enabled == 1 )
+    {
+        vec3 T = normalize(vec3(iModel * vec4(iTangent,  0.0)));
+        vec3 B = normalize(vec3(iModel * vec4(iBinormal, 0.0)));
+        vec3 N = normalize(vec3(iModel * vec4(iNormal,   0.0)));
+        vertex_output.bumpmapTBN = mat3(T, B, N) ;
+    }
 }

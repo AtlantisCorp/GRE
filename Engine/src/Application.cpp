@@ -104,7 +104,7 @@ Application::Application ( const std::string& name , const std::string& author ,
 , iAuthor(author), iDescription(description), iShouldTerminate(false)
 , iWindowManager(nullptr), iRenderSceneManager(nullptr)
 {
-    iWorkerThread = std::thread ( Application::WorkerThreadMain , this ) ;
+    
 }
 
 Application::~Application() noexcept ( false )
@@ -115,8 +115,10 @@ Application::~Application() noexcept ( false )
         if ( !iShouldTerminate )
             iShouldTerminate = true ;
     }
-        
-    iWorkerThread.join() ;
+    
+    if ( iWorkerThread.joinable() ) {
+        iWorkerThread.join() ;
+    }
 }
 
 void Application::run()
@@ -172,6 +174,12 @@ void Application::run()
         addWorkerThread ( EventProceederUser (ResourceManager::Get() .getRenderContextManager()) ) ;
         addWorkerThread ( EventProceederUser (ResourceManager::Get() .getPluginManager()) ) ;
         
+        // [03.01.2017] NOTES : WindowManager can't have its own separated Worker Thread. Why ? Because
+        // when a Window object needs to notifiate events like size or close, it will send events to the
+        // window manager. AT THE SAME TIME, this one will be expecting an update event to be send to the
+        // other thread window. So, the window is already locked from one thread and the manager from another,
+        // and we enter to an infinite waiting lock loop.
+        
         // addWorkerThread ( EventProceederUser (ResourceManager::Get() .getWindowManager()) ) ;
         addWorkerThread ( EventProceederUser (ResourceManager::Get() .getRendererManager()) ) ;
         
@@ -212,6 +220,8 @@ bool Application::shouldTerminate () const
 
 void Application::iMainThreadLoop()
 {
+    iWorkerThread = std::thread ( Application::WorkerThreadMain , this ) ;
+    
     while ( !iShouldTerminate )
     {
         Duration delta = Time::now() - iMainStart ;
@@ -223,6 +233,7 @@ void Application::iMainThreadLoop()
         
         iRenderSceneManager -> drawScenes (elapsed) ;
         iWindowManager -> pollEvents (delta) ;
+        iWindowManager -> onEvent(elapsed) ;
     }
 }
 

@@ -72,8 +72,8 @@ void Renderer::draw(const Gre::RenderingQuery &query) const
         prog = iDefaultProgram.lock() ;
     }
     
-    // setHardwareProgram ( prog ) ;
     setCamera ( query.getCamera(), prog ) ;
+    prog -> setLights ( query.getLights() ) ;
     
     for ( const RenderNodeHolder& node : query.getRenderedNodes() )
     {
@@ -135,6 +135,12 @@ void Renderer::setCamera(const CameraUser &camera, const HardwareProgramHolder &
     iViewMatrix.value.m4 = ViewMatrix ;
     program->setVariable ( iViewMatrix ) ;
     
+    HardwareProgramVariable iCameraPosition ;
+    iCameraPosition.name = "camera.position" ;
+    iCameraPosition.type = HdwProgVarType::Float3 ;
+    iCameraPosition.value.f3 = camerah -> getPosition() ;
+    program -> setVariable(iCameraPosition) ;
+    
     _setCamera ( ProjectionMatrix , ViewMatrix ) ;
 }
 
@@ -180,9 +186,10 @@ void Renderer::postNode ( const RenderNodeHolder & node , const CameraUser& came
                 continue ;
             
             
-            if ( child->isRenderable() && child->isVisible(camera) )
+            if ( child->isRenderable() /*&& child->isVisible(camera)*/ )
             {
                 setNode ( child , program ) ;
+                setHardwareProgram(program) ;
                 _drawNodeMesh ( child->getMesh() , program ) ;
             }
             
@@ -226,9 +233,9 @@ bool Renderer::installManagers ()
         }
     }
     
-    TextureManagerHolder texturemanager = iCreateTextureManager () ;
+    TextureInternalCreator* texturemanager = iCreateTextureCreator () ;
     
-    if ( texturemanager.isInvalid() )
+    if ( !texturemanager )
     {
         iInstalled = false ;
 #ifdef GreIsDebugMode
@@ -237,18 +244,18 @@ bool Renderer::installManagers ()
     }
     else
     {
-        if ( ResourceManager::Get().getTextureManager().isInvalid() )
+        if ( !ResourceManager::Get().getTextureManager().isInvalid() )
         {
-            ResourceManager::Get().setTextureManager ( texturemanager ) ;
+            ResourceManager::Get().getTextureManager()->setInternalCreator(texturemanager) ;
 #ifdef GreIsDebugMode
-            GreDebugPretty () << "Texture Manager installed." << Gre::gendl ;
+            GreDebugPretty () << "Texture Creator installed." << Gre::gendl ;
 #endif
         }
         else
         {
             iInstalled = false ;
 #ifdef GreIsDebugMode
-            GreDebugPretty () << "Texture Manager already present and cannot be installed." << Gre::gendl ;
+            GreDebugPretty () << "Texture Manager not present and cannot be installed." << Gre::gendl ;
 #endif
         }
     }

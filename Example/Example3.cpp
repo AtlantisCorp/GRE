@@ -25,7 +25,11 @@ class BasicKeyListener : public EventProceeder
 {
 public:
     
-    BasicKeyListener ( const CameraHolder & holder ) : EventProceeder () , mycamera(holder) { }
+    BasicKeyListener ( const CameraHolder & holder , const RenderSceneHolder& sceneholder , const WindowHolder& win )
+    : EventProceeder () , mycamera(holder) , linearattenuation(0.0f)
+    , scene(sceneholder) , angle ( glm::cos(glm::radians(12.5f)) ) , exp(64.0f) , window(win)
+    { }
+    
     ~BasicKeyListener () noexcept ( false ) { }
     
 protected:
@@ -37,38 +41,90 @@ protected:
     void onKeyDownEvent ( const KeyDownEvent& event ) {
         GreDebug("[INFO] Key pressed : '") << (int) event.iKey << "' Modifiers : " << event.iModifiers << " ." << gendl ;
         
-        if ( event.iKey == Key::C ) {
-            // Display camera matrixes.
-            GreDebug("[INFO] Camera Matrix : ") << gendl ;
-            displayMatrix ( mycamera->getProjectionMatrix() ) ;
-            displayMatrix ( mycamera->getViewMatrix() ) ;
-        }
-        
         if (event.iKey == Key::Down ) {
             // Backward
             mycamera -> lookAt(mycamera->getPosition() - Vector3({0.0f,0.0f, 0.4f}), mycamera->getTarget());
-            displayMatrix(mycamera->getViewMatrix());
         }
         
         if ( event.iKey == Key::Up ) {
             // Upward
             mycamera -> lookAt( mycamera->getPosition() + Vector3({0.0f, 0.0f, 0.4f}), mycamera->getTarget() ) ;
-            displayMatrix(mycamera->getViewMatrix());
         }
         
         if ( event.iKey == Key::Left ) {
             // left
             mycamera -> lookAt(mycamera->getPosition() + Vector3({0.4f, 0.0f, 0.0f}), mycamera->getTarget() ) ;
-            displayMatrix(mycamera->getViewMatrix());
         }
         
         if ( event.iKey == Key::Right ) {
             mycamera -> lookAt(mycamera->getPosition() - Vector3({0.4f, 0.0f, 0.0f}), mycamera->getTarget() ) ;
-            displayMatrix(mycamera->getViewMatrix());
+        }
+        
+        if ( event.iKey == Key::A ) {
+            linearattenuation += 0.1f ;
+            if ( !scene.isInvalid() ) {
+                scene.lock() -> getGlobalLight().setAttenuationLinear ( linearattenuation ) ;
+            }
+        }
+        
+        if ( event.iKey == Key::S ) {
+            linearattenuation -= 0.1f ;
+            if ( !scene.isInvalid() ) {
+                scene.lock() -> getGlobalLight().setAttenuationLinear ( linearattenuation ) ;
+            }
+        }
+        
+        if ( event.iKey == Key::Z ) {
+            angle += glm::radians(1.0f) ;
+            if ( !scene.isInvalid() ) {
+                scene.lock() -> getGlobalLight().setAngle(angle) ;
+            }
+        }
+        
+        if ( event.iKey == Key::X ) {
+            angle -= glm::radians(1.0f) ;
+            if ( !scene.isInvalid() ) {
+                scene.lock() -> getGlobalLight().setAngle(angle) ;
+            }
+        }
+        
+        if ( event.iKey == Key::Q ) {
+            exp += 0.1f ;
+            if ( !scene.isInvalid() ) {
+                scene.lock() -> getGlobalLight().setExposition(exp);
+            }
+        }
+        
+        if ( event.iKey == Key::W ) {
+            exp -= 0.1f ;
+            if ( !scene.isInvalid() ) {
+                scene.lock() -> getGlobalLight().setExposition(exp);
+            }
+        }
+        
+        if ( event.iKey == Key::P ) {
+            window -> setCursorCentered(true) ;
+        }
+        
+        if ( event.iKey == Key::O ) {
+            window -> setCursorCentered(false) ;
+        }
+        
+        if ( event.iKey == Key::I ) {
+            window -> toggleCursor(true) ;
+        }
+        
+        if ( event.iKey == Key::U ) {
+            window -> toggleCursor(false) ;
         }
     }
     
     CameraHolder mycamera ;
+    float linearattenuation ;
+    RenderSceneUser scene ;
+    float angle ;
+    float exp ;
+    WindowHolder window ;
 };
 
 int main ( int argc , char ** argv )
@@ -105,6 +161,9 @@ int main ( int argc , char ** argv )
 		
 		GreDebug("[INFO] Application created.") << Gre::gendl ;
         
+        // Create the key listener and register it.
+        EventProceederHolder keylistener = EventProceederHolder ( nullptr ) ;
+        
         {
             // Gets some managers.
             auto rmanager = ResourceManager::Get().getRendererManager() ;
@@ -139,23 +198,76 @@ int main ( int argc , char ** argv )
                 scenelock -> setRenderTarget ( window ) ;
                 scenelock -> setClearColor ( Color(0.4f, 0.4f, 0.4f) ) ;
                 
-                // Now we will try to load a Cube, and add it as root of the RenderScene. This will be the
-                // scene root point.
+                // Sets a new light for the scene.
+                Light globlight = Light(Vector3( 0.0f, 10.0f, -10.0f ) ,
+                                        Color ( 0.4f, 0.4f, 0.4f, 1.0f) ,
+                                        Color ( 0.5f, 0.5f, 0.5f, 1.0f) ,
+                                        Color ( 0.8f, 0.8f, 0.8f, 1.0f) ,
+                                        32.0f) ;
+                globlight.setType(LightType::Spot) ;
+                globlight.setDirection(Vector3( 2.0f, 2.0f, 5.0f ));
+                globlight.setAngle(15.0f);
+                scenelock -> setGlobalLight( globlight );
+                
+                // Create our Root node for the scene.
+                RenderNodeHolder root = scenelock -> setRootNode(scenelock->createNode()) ;
+                root -> setBoundingBox ( BoundingBox({-1000.0f, -1000.0f, -1000.0f} , {1000.0f, 1000.0f, 1000.0f}) ) ;
+                
+                // Now we will try to load a Cube, and add it to the RenderScene.
                 MeshUser cube = MeshManager::Cube ( 2.0f ) ;
                 if ( cube.isInvalid() ) exit(4) ;
                 
-                RenderNodeHolder cubenode = scenelock -> setRootNode(scenelock->createNode()) ;
+                RenderNodeHolder cubenode = scenelock -> createNode() ;
                 if ( cubenode.isInvalid() ) exit(5) ;
                 
                 cubenode -> setMesh(cube) ;
-                cubenode -> translate({0.0f, 0.0f, 2.0f}) ;
+                cubenode -> translate({-2.0f, 2.0f, 2.0f}) ;
+                scenelock -> addNode(cubenode) ;
+                
+                // Try to load the teapot model and translate it a bit further.
+                MeshUser teapot = ResourceManager::Get().getMeshManager()->load("Teapot", "Models/OBJ/Teapot.obj").at(0) ;
+                if ( teapot.isInvalid() ) exit(7) ;
+                
+                RenderNodeHolder teapotnode = scenelock -> createNode() ;
+                if ( teapot.isInvalid() ) exit(8) ;
+                
+                teapotnode -> setMesh(teapot) ;
+                teapotnode -> rotate(glm::pi<float>(), Vector3(0.0f, 1.0f, 0.0f)) ;
+                teapotnode -> translate({2.0f, 0.0f, 6.0f}) ;
+                scenelock -> addNode(teapotnode) ;
+                
+                // Create a material for the teapot.
+                MaterialHolder material = ResourceManager::Get().getMaterialManager() -> create("teapot") ;
+                if ( material.isInvalid() ) exit (9) ;
+                
+                teapotnode -> setMaterial ( material ) ;
+                material -> setAmbient(Color(1.0f, 0.5f, 0.31f, 1.0f)) ;
+                material -> setDiffuse(Color(1.0f, 0.5f, 0.31f, 1.0f)) ;
+                material -> setSpecular(Color(0.5f, 0.5f, 0.5f, 1.0f)) ;
+                material -> setShininess(32.0f) ;
+                
+                // Create a material for the cube.
+                MaterialHolder cubemat = ResourceManager::Get().getMaterialManager() -> create("cubemat") ;
+                if ( cubemat.isInvalid() ) exit(10) ;
+                
+                cubenode -> setMaterial(cubemat) ;
+                TextureUser cubetext = ResourceManager::Get().getTextureManager() -> load("cubetext", TextureType::Texture2D, "Textures/Cube.png") ;
+                if ( cubetext.isInvalid() ) exit(11) ;
+                cubemat -> setTexture(cubetext) ;
+                cubemat -> setSpecular(Color(0.0f, 0.0f, 0.0f, 0.0f)) ;
+                material -> setShininess(0.0f) ;
+                
+                TextureUser cubespecimg = ResourceManager::Get().getTextureManager()
+                -> load("CubeSpecularMap", TextureType::Texture2D, "Textures/CubeSpecular.png") ;
+                if ( cubespecimg.isInvalid() ) exit(12) ;
+                cubemat -> setSpecularTexture ( cubespecimg ) ;
+                cubemat -> setSpecularTextureEnabled ( true ) ;
+                
+                keylistener =  EventProceederHolder ( new BasicKeyListener(ResourceManager::Get().getCameraManager()->findFirst("Default").lock() , scenelock , window.lock() ) ) ;
+                ResourceManager::Get().getWindowManager()->addGlobalKeyListener(keylistener) ;
             }
         }
-        
-        // Create the key listener and register it.
-        EventProceederHolder keylistener = EventProceederHolder ( new BasicKeyListener(ResourceManager::Get().getCameraManager()->findFirst("Default").lock()) ) ;
-        ResourceManager::Get().getWindowManager()->addGlobalKeyListener(keylistener) ;
-        
+    
         // Now let the Application loop.
         eApplication -> run () ;
         

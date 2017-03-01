@@ -85,7 +85,7 @@ extern "C" void StopPlugin (void)
     terminateAppkit(manager);
     
     // Unloads the Window Manager.
-    ResourceManager::Get().setWindowManager(WindowManagerHolder(nullptr));
+    // ResourceManager::Get().setWindowManager(WindowManagerHolder(nullptr));
 }
 
 

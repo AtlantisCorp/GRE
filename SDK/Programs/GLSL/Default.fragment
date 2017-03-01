@@ -1,11 +1,15 @@
+// A basic Fragment shader.
 #version 330
+#include Programs/GLSL/BaseConstants.glsl
 
-in vec4 oColor ;
-
+in VertexOutput vertex_output ;
 out vec4 oFragment ;
+
+#include Programs/GLSL/BaseIncludes.glsl
+
+uniform sampler2D iTexture0 ;
 
 void main ()
 {
-    oFragment = oColor ;
-    oFragment = vec4(1.0,0.0,0.0,1.0) ;
+    oFragment = LightsColor() * texture( iTexture0 , vertex_output.texcoord ) ;
 }

@@ -255,6 +255,30 @@ int translateFlags ( NSUInteger flags )
     _window->notifiatePosition ( pos.origin.x , pos.origin.y ) ;
 }
 
+// [03.01.2017] NOTES : NSWindowDidExposeNotification is sent only to 'nunretained' NSWindow
+// subclass. As we need a buffered window, this notification will not be send. We can use
+// NSWindowDidChangeOcclusionState to see if the window is still visible. Then, we update
+// the frame size with NSWindow's frame size.
+
+/*
+- (void) windowDidExpose:(NSNotification*)notification
+{
+    NSRect frame = [[notification object] frame] ;
+    _window -> notifiateSize ( frame.size.width, frame.size.height ) ;
+}
+ */
+
+- (void) windowDidChangeOcclusionState:(NSNotification*) notification
+{
+    NSWindow* win = notification.object ;
+    
+    if ( win.occlusionState & NSWindowOcclusionStateVisible )
+    {
+        NSRect frame = [[notification object] frame] ;
+        _window -> notifiateSize ( frame.size.width, frame.size.height ) ;
+    }
+}
+
 @end
 
 // ---------------------------------------------------------------------------------------------------------
@@ -278,6 +302,7 @@ int translateFlags ( NSUInteger flags )
 @interface nsWindowContentView : NSView
 {
     macWindow* window ;
+    NSTrackingArea* trackingArea ;
 }
 
 - (id) initWithWindow: (macWindow*) win ;
@@ -292,6 +317,7 @@ int translateFlags ( NSUInteger flags )
     if ( self != nil )
     {
         window = win ;
+        trackingArea = nil ;
     }
     
     return self ;
@@ -345,6 +371,21 @@ int translateFlags ( NSUInteger flags )
 - (void) mouseEntered:(NSEvent *)theEvent
 {
     window->notifiateMouseEntered () ;
+}
+
+-(void) updateTrackingAreas
+{
+    if ( trackingArea != nil ) {
+        [self removeTrackingArea:trackingArea] ;
+        [trackingArea release] ;
+    }
+    
+    int opts = (NSTrackingMouseEnteredAndExited | NSTrackingActiveAlways);
+    trackingArea = [ [NSTrackingArea alloc] initWithRect:[self bounds]
+                                                 options:opts
+                                                   owner:self
+                                                userInfo:nil];
+    [self addTrackingArea:trackingArea];
 }
 
 - (void) keyDown:(NSEvent *)theEvent
@@ -418,6 +459,23 @@ RenderContextUser macWindow::getRenderContext()
 const RenderContextUser macWindow::getRenderContext() const
 {
     return RenderContextUser ( context ) ;
+}
+
+void macWindow::toggleCursor ( bool hide )
+{
+    if ( hide ) {
+        [NSCursor hide];
+    } else {
+        [NSCursor unhide];
+    }
+}
+
+void macWindow::centerCursor() const
+{
+    const NSRect localRect = NSMakeRect(iSurface.width/2, iSurface.height/2 - 1, 0, 0);
+    const NSRect globalRect = [nsWindow convertRectToScreen:localRect];
+    const NSPoint globalPoint = globalRect.origin ;
+    CGWarpMouseCursorPosition(CGPointMake( globalPoint.x , CGDisplayBounds(CGMainDisplayID()).size.height - globalPoint.y ));
 }
 
 void macWindow::notifiateWindowShouldClose()
@@ -516,6 +574,8 @@ void CreateContextForWindow ( macWindow* window )
     
     ADD_ATTR2(NSOpenGLPFAOpenGLProfile, NSOpenGLProfileVersion3_2Core);
     ADD_ATTR(NSOpenGLPFADoubleBuffer);
+    
+    ADD_ATTR2(NSOpenGLPFADepthSize, 24) ;
     
     ADD_ATTR(0);
     
@@ -681,7 +741,8 @@ WindowHolder macOSWindowLoader::load(const std::string &name, const WindowOption
 	
     window->context = RenderContextHolder ( window->nsglContext ) ;
     
-    [window->nsWindow orderFront:nil];
+    [window->nsWindow makeKeyAndOrderFront:nil];
+    [window->nsWindow makeMainWindow];
     
 	GreDebug("[INFO] Created Mac OS X native Window '") << name << "'." << Gre::gendl ;
     return WindowHolder ( window ) ;

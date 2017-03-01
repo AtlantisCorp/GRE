@@ -147,6 +147,18 @@ TextureFileLoader::~TextureFileLoader() noexcept ( false )
 
 // ---------------------------------------------------------------------------------------------------
 
+TextureInternalCreator::TextureInternalCreator ()
+{
+    
+}
+
+TextureInternalCreator::~TextureInternalCreator()
+{
+    
+}
+
+// ---------------------------------------------------------------------------------------------------
+
 TextureManager::TextureManager( const std::string & name )
 : SpecializedResourceManager<Gre::Texture, Gre::TextureFileLoader>(name)
 {
@@ -175,6 +187,33 @@ TextureUser TextureManager::load ( const std::string & name , const TextureType 
     }
     
     return load ( name , type, buffer ) ;
+}
+
+TextureUser TextureManager::load(const std::string &name, const Gre::TextureType &type, const SoftwarePixelBufferHolder &buffer)
+{
+    if ( !buffer.isInvalid () && iCreator )
+    {
+        Gre::SoftwarePixelBufferHolderList list ;
+        list.add(buffer);
+        
+        Texture* tex = iCreator -> create ( name , type , list ) ;
+        if ( !tex ) {
+            GreDebug("[WARN] Can't create Texture '") << name << "'." << Gre::gendl ;
+            delete tex ; return Gre::TextureUser ( nullptr ) ;
+        }
+        
+        Gre::TextureHolder holder ( tex ) ;
+        iHolders.push_back(holder);
+        
+        return Gre::TextureUser ( holder ) ;
+    }
+    
+    return Gre::TextureUser ( nullptr ) ;
+}
+
+void TextureManager::setInternalCreator(Gre::TextureInternalCreator *creator)
+{
+    GreAutolock ; iCreator = creator ;
 }
 
 GreEndNamespace

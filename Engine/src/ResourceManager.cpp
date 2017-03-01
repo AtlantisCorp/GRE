@@ -205,6 +205,20 @@ void ResourceManager::initialize ()
 #ifdef GreIsDebugMode
 	GreDebug("Created CameraManager.") << gendl;
 #endif
+    
+    iTextureManager = new TextureManager () ;
+    
+    if ( iTextureManager.isInvalid() ) {
+#ifdef GreIsDebugMode
+        GreDebug("[ERRO] Can't create TextureManager.") << gendl;
+#endif
+        iInitialized = false ;
+        return ;
+    }
+    
+#ifdef GreIsDebugMode
+    GreDebug("Created TextureManager.") << gendl;
+#endif
 
 	iInitialized = true ;
 }
@@ -228,6 +242,11 @@ void ResourceManager::unload ()
         iPluginManager -> callStops() ;
     }
     
+    if ( !iWindowManager.isInvalid() ) {
+        iWindowManager->unload();
+        iWindowManager.clear() ;
+    }
+    
     if ( !iCameraManager.isInvalid() ) {
 		iCameraManager->unload();
         iCameraManager.clear() ;
@@ -249,10 +268,6 @@ void ResourceManager::unload ()
     if ( !iRenderSceneManager.isInvalid() ) {
 		iRenderSceneManager->unload();
         iRenderSceneManager.clear() ;
-    }
-    if ( !iWindowManager.isInvalid() ) {
-		iWindowManager->unload();
-        iWindowManager.clear() ;
     }
     if ( !iRendererManager.isInvalid() ) {
 		iRendererManager->unload();
