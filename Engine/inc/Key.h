@@ -13,6 +13,14 @@
 
 GreBeginNamespace
 
+//////////////////////////////////////////////////////////////////////
+/// @brief States a key can be.
+enum class KeyState : int
+{
+    Released = 0 ,
+    Pressed  = 1
+};
+
 /// @brief An enumeration of every keys in the Engine available to the
 /// user.
 enum class Key : int
@@ -71,10 +79,10 @@ enum class Key : int
 /// @brief Defines some modifiers that can be handled in the same time of a key.
 enum class KeyModifier : int
 {
-    Shift = 0x0001,
+    Shift   = 0x0001,
     Control = 0x0002,
-    Alt = 0x0004,
-    Super = 0x0008
+    Alt     = 0x0004,
+    Super   = 0x0008
 };
 
 GreEndNamespace

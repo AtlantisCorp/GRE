@@ -31,220 +31,86 @@
  */
 
 //////////////////////////////////////////////////////////////////////
-/// @brief Calculates the given light direction between the light and
-/// the fragment position.
-vec3 LightDirection ( const int i )
+/// @brief Calculates non - attenuated Color Ambient, Diffuse and Specular
+/// from given built-in light.
+vec4 CalculateColor ( VertexOutput Fragment , const Light light )
 {
-    return normalize ( vertex_output.position - lights[i].position ) ;
-}
-
-//////////////////////////////////////////////////////////////////////
-/// @brief Calculates the distance between light and fragment.
-vec3 LightDistance ( const int i )
-{
-    return normalize ( vertex_output.position - lights[i].position ) ;
-}
-
-//////////////////////////////////////////////////////////////////////
-/// @brief Calculates the ambient color for the given light.
-vec3 LightColorDirectionnalAmbient ( const int i )
-{
-    return vec3 ( lights[i].ambient ) * MaterialAmbient () ;
-}
-
-//////////////////////////////////////////////////////////////////////
-/// @brief Calculates diffuse directionnal light color.
-vec3 LightColorDirectionnalDiffuse ( const int i , const vec3 normal , const vec3 lightdir )
-{
-    float diff = max(dot(normal, lightdir), 0.0) ;
-    return lights[i].diffuse.rgb * diff * MaterialDiffuse () ;
-}
-
-//////////////////////////////////////////////////////////////////////
-/// @brief Calculates specular directionnal light color.
-vec3 LightColorDirectionnalSpecular ( const int i , const vec3 norm , const vec3 lightdir , const vec3 viewdist )
-{
-    vec3 reflectdir = reflect ( -lightdir , norm ) ;
-    float spec = pow(max(dot(normalize(viewdist), reflectdir), 0.0), lights[i].shininess) ;
-    return lights[i].specular.rgb * spec * MaterialSpecular () ;
-}
-
-//////////////////////////////////////////////////////////////////////
-/// @brief Calculates the ambient, specular and diffuse color from the
-/// given directionnal light and the current material.
-vec3 LightColorDirectionnal ( const int i , const vec3 normal , const vec3 viewdist )
-{
-    //////////////////////////////////////////////////////////////////////
-    // Temporary datas used by more than one function.
-    vec3 lightdir = normalize ( - lights[i].direction ) ;
+    vec3 ViewLightPosition = vec4( vec4(light.position, 1.0) ).xyz ;
+    vec3 N = normalize(MaterialGetNormal ( Fragment )) ;
+    vec3 L = normalize(ViewLightPosition - Fragment.position) ;
+    vec3 E = normalize(camera.position - Fragment.position ) ;
+    vec3 R = normalize( -reflect( L, N ) ) ;
     
-    //////////////////////////////////////////////////////////////////////
-    // Calculates ambient, diffuse and specular colors.
-    vec3 ambient = LightColorDirectionnalAmbient (i) ;
-    vec3 diffuse = LightColorDirectionnalDiffuse (i, normal, lightdir) ;
-    vec3 specular = LightColorDirectionnalSpecular (i, normal, lightdir, viewdist) ;
+    // Calculate Ambient term.
+    vec4 Ambient = MaterialGetAmbientColor(Fragment) * light.ambient ;
     
-    return ambient + diffuse + specular ;
-}
-
-//////////////////////////////////////////////////////////////////////
-/// @brief Calculates ambient point color.
-vec3 LightColorPointAmbient ( const int i )
-{
-    return vec3 ( lights[i].ambient ) * MaterialAmbient () ;
-}
-
-//////////////////////////////////////////////////////////////////////
-/// @brief Calculates diffuse point color.
-vec3 LightColorPointDiffuse ( const int i , const vec3 normal , const vec3 lightdir )
-{
-    float diff = max(dot(normal, lightdir), 0.0) ;
-    return lights[i].diffuse.rgb * diff * MaterialDiffuse () ;
-}
-
-//////////////////////////////////////////////////////////////////////
-/// @brief Calculates specular point color.
-vec3 LightColorPointSpecular ( const int i , const vec3 normal , const vec3 lightdir , const vec3 viewdist )
-{
-    vec3 reflectdir = reflect ( -lightdir , normal ) ;
-    float spec = pow(max(dot(normalize(viewdist), reflectdir), 0.0), lights[i].shininess) ;
-    return lights[i].specular.rgb * spec * MaterialSpecular () ;
-}
-
-//////////////////////////////////////////////////////////////////////
-/// @brief Calculates attenuation for point.
-float LightAttenuationPoint ( const int i )
-{
-    float d = length( LightDistance(i) ) ;
-    return 1.0f / ( lights[i].attenuationConstant + lights[i].attenuationLinear * d + lights[i].attenuationQuadratique * d * d ) ;
-}
-
-//////////////////////////////////////////////////////////////////////
-/// @brief Calculates the colors for Point Light.
-vec3 LightColorPoint ( const int i , const vec3 normal , const vec3 viewdist )
-{
-    //////////////////////////////////////////////////////////////////////
-    // Temporary datas used by more than one function.
-    vec3 lightdir = LightDirection (i) ;
+    // Calculate Diffuse term.
+    vec4 Diffuse = MaterialGetDiffuseColor(Fragment) * light.diffuse * max(dot(N,L), 0.0) ;
+    Diffuse = clamp ( Diffuse , 0.0 , 1.0 ) ;
     
-    //////////////////////////////////////////////////////////////////////
-    // Calculates ambient, diffuse and specular colors.
-    vec3 ambient = LightColorPointAmbient (i) ;
-    vec3 diffuse = LightColorPointDiffuse (i, normal, lightdir) ;
-    vec3 specular = LightColorPointSpecular (i, normal, lightdir, viewdist) ;
+    // Calculate Specular term.
+    vec4 Specular = MaterialGetSpecularColor(Fragment) * light.specular * pow(max(dot(R,E),0.0), material.shininess) ;
+    Specular = clamp ( Specular , 0.0 , 1.0 ) ;
     
-    //////////////////////////////////////////////////////////////////////
-    // Attenuation thing.
-    float att = LightAttenuationPoint (i) ;
-    
-    ambient = ambient * att ;
-    diffuse = diffuse * att ;
-    specular = specular * att ;
-    
-    return ambient + diffuse + specular ;
+    // Return total color.
+    return Ambient + Diffuse + Specular ;
 }
 
 //////////////////////////////////////////////////////////////////////
-/// @brief calculates the ambient spot color.
-vec3 LightColorSpotAmbient ( const int i )
+/// @brief Calculate normal attenuation from linear, constant and
+/// quadratic values.
+float CalculateAttenuation ( VertexOutput Fragment , const Light light )
 {
-    return vec3 ( lights[i].ambient ) * MaterialAmbient () ;
-}
-
-//////////////////////////////////////////////////////////////////////
-/// @brief Calculates the diffuse spot color.
-vec3 LightColorSpotDiffuse ( const int i , const vec3 normal , const vec3 lightdir )
-{
-    float diff = max(dot(normal, lightdir), 0.0) ;
-    return lights[i].diffuse.rgb * diff * MaterialDiffuse () ;
-}
-
-//////////////////////////////////////////////////////////////////////
-/// @brief Calculates the specular spot color.
-vec3 LightColorSpotSpecular ( const int i , const vec3 normal , const vec3 lightdir , const vec3 viewdist )
-{
-    vec3 reflectdir = reflect ( -lightdir , normal ) ;
-    float spec = pow(max(dot(normalize(viewdist), reflectdir), 0.0), lights[i].shininess) ;
-    return lights[i].specular.rgb * spec * MaterialSpecular () ;
-}
-
-//////////////////////////////////////////////////////////////////////
-/// @brief Calculates the attenuation spot.
-float LightAttenuationSpot ( const int i , const vec3 lightdir )
-{
-    float maxangle = lights[i].angle ;
-    float curangle = acos( dot ( lightdir , normalize(lights[i].direction) ) );
-    float att = 0.0f ;
+    vec3 ViewLightPosition = vec4( vec4(light.position, 1.0) ).xyz ;
+    float D = length ( ViewLightPosition - Fragment.position ) ;
     
-    if ( curangle >= maxangle ) {
+    float Attenuation = light.attenuationConstant + light.attenuationLinear * D + light.attenuationQuadratic * D * D ;
+    
+    if ( Attenuation == 0.0f ) {
+        return 1.0f ;
+    } else {
+        return 1.0f / Attenuation ;
+    }
+}
+
+//////////////////////////////////////////////////////////////////////
+/// @brief Calculate attenuation depending on spotlight values.
+float CalculateAttenuationSpotlight ( VertexOutput Fragment , const Light light )
+{
+    vec3 ViewLightPosition = vec4( vec4(light.position, 1.0) ).xyz ;
+    vec3 LightFragmentDirection = normalize ( ViewLightPosition - Fragment.position ) ;
+    
+    float AngleMax = light.angle ;
+    float Angle = acos( dot ( LightFragmentDirection , -normalize(light.direction) ) ) ;
+    
+    if ( Angle >= AngleMax ) {
         return 0.0f ;
     }
     
-    if ( curangle < maxangle && curangle != 0.0 )
+    float Factor = AngleMax / Angle ;
+    float Intensity = 1.0 - ( 1.0 / pow ( Factor , light.exposition ) ) ;
+    float Attenuation = clamp ( Intensity , 0.0 , 1.0 ) ;
+    
+    return CalculateAttenuation (Fragment, light) * Attenuation ;
+}
+
+//////////////////////////////////////////////////////////////////////
+/// @brief Calculate total amount of color adding every built-in
+/// lights.
+vec4 CalculateLightsColors ( VertexOutput Fragment )
+{
+    vec4 FinalColor = vec4 ( 0.0 , 0.0 , 0.0 , 1.0 ) ;
+    
+    for ( int i = 0 ; i < lightscount ; ++i )
     {
-        float factor = maxangle / curangle ;
-        float intensity = 1.0 - ( 1.0 / pow ( factor , lights[i].exposition ) ) ;
-        att = clamp ( intensity , 0.0 , 1.0 ) ;
+        vec4 Color = CalculateColor ( Fragment , lights[i] ) ;
+        
+        if ( lights[i].type == 1 ) Color = Color * CalculateAttenuation ( Fragment , lights[i] ) ;
+        if ( lights[i].type == 2 ) Color = Color * CalculateAttenuationSpotlight ( Fragment , lights[i] ) ;
+        
+        FinalColor = FinalColor + Color ;
     }
     
-    return LightAttenuationPoint (i) * att ;
-}
-
-//////////////////////////////////////////////////////////////////////
-/// @brief Calculates spot colors.
-vec3 LightColorSpot ( const int i , const vec3 normal , const vec3 viewdist )
-{
-    //////////////////////////////////////////////////////////////////////
-    // Temporary datas used by more than one function.
-    vec3 lightdir = LightDirection (i) ;
-    
-    //////////////////////////////////////////////////////////////////////
-    // Calculates ambient, diffuse and specular colors.
-    vec3 ambient = LightColorSpotAmbient (i) ;
-    vec3 diffuse = LightColorSpotDiffuse (i, normal, lightdir) ;
-    vec3 specular = LightColorSpotSpecular (i, normal, lightdir, viewdist) ;
-    
-    //////////////////////////////////////////////////////////////////////
-    // Attenuation thing.
-    float att = LightAttenuationSpot (i, lightdir) ;
-    
-    ambient = ambient * att ;
-    diffuse = diffuse * att ;
-    specular = specular * att ;
-    
-    return ambient + diffuse + specular ;
-}
-
-//////////////////////////////////////////////////////////////////////
-/// @brief Calculates the color for every lights registered.
-vec4 LightsColor ( void )
-{
-    vec3 finalcolor = vec3(0.0f, 0.0f, 0.0f) ;
-    
-    //////////////////////////////////////////////////////////////////////
-    // Temporary datas used in each functions.
-    vec3 normal = MaterialNormal () ;
-    vec3 viewdist = CameraFragmentDistance () ;
-    
-    //////////////////////////////////////////////////////////////////////
-    // Parse every enabled lights.
-    for ( int i = 0 ; i < GRE_MAX_LIGHT_NUM ; ++i ) {
-        if ( lights[i].enabled == 1 )
-        {
-            if ( lights[i].type == 0 ) {
-                finalcolor = finalcolor + LightColorDirectionnal ( i , normal , viewdist ) ;
-            }
-            
-            else if ( lights[i].type == 1 ) {
-                finalcolor = finalcolor + LightColorPoint ( i , normal , viewdist ) ;
-            }
-            
-            else if ( lights[i].type == 2 ) {
-                finalcolor = finalcolor + LightColorSpot ( i , normal , viewdist ) ;
-            }
-        }
-    }
-    
-    return vec4(finalcolor, 1.0) ;
+    return vec4 ( FinalColor.rgb , 1.0 ) ;
 }
 

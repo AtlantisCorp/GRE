@@ -86,6 +86,12 @@ Variant::Variant ( const Color& color )
     
 }
 
+Variant::Variant ( const Vector3& vec3 )
+    : _mPolicy(Variant::Policy::Vector3), _mObject(new Vector3(vec3))
+{
+
+}
+
 Variant::~Variant()
 {
     clear();
@@ -128,6 +134,12 @@ void* Variant::CopyFromPolicy(Variant::Policy policy, const void *object)
         const Color * tmp = (const Color*) object ;
         return new Color (*tmp) ;
     }
+
+    if ( policy == Policy::Vector3 )
+    {
+        const Vector3 * tmp = (const Vector3*) object ;
+        return new Vector3(*tmp) ;
+    }
     
     return nullptr;
 }
@@ -136,7 +148,7 @@ void Variant::DeleteFromPolicy(Variant::Policy policy, void *object)
 {
     if(policy == Policy::Integer)
     {
-        int* tmp = (int*) object;
+        //int* tmp = (int*) object;
         //delete tmp;
         return;
     }
@@ -171,6 +183,12 @@ void Variant::DeleteFromPolicy(Variant::Policy policy, void *object)
     if ( policy == Policy::Color )
     {
         Color* tmp = (Color*) object ;
+        delete tmp ; return ;
+    }
+
+    if ( policy == Policy::Vector3 )
+    {
+        Vector3* tmp = (Vector3*) object ;
         delete tmp ; return ;
     }
 }
@@ -213,6 +231,11 @@ void Variant::reset(const std::string &object)
 void Variant::reset(const Color &color)
 {
     reset(Policy::Color, &color);
+}
+
+void Variant::reset(const Vector3& object)
+{
+    reset(Policy::Vector3, &object) ;
 }
 
 void Variant::clear()
@@ -335,10 +358,36 @@ const Color& Variant::toColor() const
 {
     if ( _mPolicy == Policy::Color )
     {
-        return * ( (Color*) _mObject ) ;
+        return * ( (const Color*) _mObject ) ;
     }
     
     throw VariantBadCast("Trying to get Color object from none Color real object.");
+}
+
+Vector3& Variant::toVector3()
+{
+    if ( _mPolicy == Policy::Vector3 )
+    {
+        return * ( (Vector3*) _mObject ) ;
+    }
+
+    throw VariantBadCast("Trying to get Vector3 object from none Vector3 real object.");
+}
+
+const Vector3& Variant::toVector3() const
+{
+    if ( _mPolicy == Policy::Vector3 )
+    {
+        return * ( (const Vector3*) _mObject ) ;
+    }
+
+    throw VariantBadCast("Trying to get Vector3 object from none Vector3 real object.");
+}
+
+Variant & Variant::operator=(const Gre::Variant &rhs)
+{
+    reset(rhs._mPolicy, rhs._mObject);
+    return *this ;
 }
 
 bool Variant::isNull() const

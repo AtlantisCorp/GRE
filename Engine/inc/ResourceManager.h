@@ -46,6 +46,7 @@
 #include "Application.h"
 #include "EventDispatcher.h"
 #include "Animator.h"
+#include "Technique.h"
 
 GreBeginNamespace
 
@@ -150,6 +151,9 @@ protected:
     /// @brief HardwareProgram Manager.
     HardwareProgramManagerHolder iProgramManager ;
     
+    /// @brief Technique Manager.
+    TechniqueManagerHolder iTechniqueManager ;
+    
     /// @brief Application Loaders. As there can be only one Application by process, there is no need to have
     /// an ApplicationManager.
     ApplicationLoaderFactory iApplicationFactory ;
@@ -206,7 +210,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
     /// @brief Destroys the ResourceManager and, all the Resource objects.
     ////////////////////////////////////////////////////////////////////////
-    ~ResourceManager() noexcept(false);
+    ~ResourceManager() noexcept(false) ;
     
     ////////////////////////////////////////////////////////////////////////
     /// @brief Initializes every managers.
@@ -352,6 +356,16 @@ public:
     /// @brief Returns 'iPluginManager'.
     //////////////////////////////////////////////////////////////////////
     PluginManagerHolder getPluginManager () ;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Changes 'iTechniqueManager'.
+    //////////////////////////////////////////////////////////////////////
+    void setTechniqueManager ( const TechniqueManagerHolder& manager ) ;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns 'iPluginManager'.
+    //////////////////////////////////////////////////////////////////////
+    TechniqueManagerHolder getTechniqueManager () ;
 };
 
 GreEndNamespace

@@ -34,12 +34,12 @@
 /// @brief Returns the camera direction.
 vec3 CameraDirection ( const int i )
 {
-    return normalize ( camera.position - lights[i].position ) ;
+    return normalize ( lights[i].position - camera.position ) ;
 }
 
 //////////////////////////////////////////////////////////////////////
 /// @brief Returns the distance between camera and fragment.
 vec3 CameraFragmentDistance ()
 {
-    return normalize ( vertex_output.position - camera.position ) ;
+    return vertex_output.position - camera.position ;
 }

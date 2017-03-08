@@ -250,7 +250,7 @@ std::vector < MeshUser > MeshManager::load ( const std::string & name , const st
     retvalue.insert(retvalue.begin(), meshes.begin(), meshes.end());
     
 #ifdef GreIsDebugMode
-    GreDebug("[INFO] Loaded ") << retvalue.size() << " meshes." << Gre::gendl ;
+    GreDebug("[INFO] Loaded ") << retvalue.size() << " mesh(es) from file '" << filepath << "'." << Gre::gendl ;
 #endif
     
     return retvalue ;

@@ -186,6 +186,10 @@ TextureUser TextureManager::load ( const std::string & name , const TextureType 
         return TextureUser ( nullptr ) ;
     }
     
+#ifdef GreIsDebugMode
+    GreDebug("[INFO] Loaded SoftwarePixelBuffer from file '") << filepath << "'." << Gre::gendl ;
+#endif
+    
     return load ( name , type, buffer ) ;
 }
 
@@ -204,6 +208,10 @@ TextureUser TextureManager::load(const std::string &name, const Gre::TextureType
         
         Gre::TextureHolder holder ( tex ) ;
         iHolders.push_back(holder);
+        
+#ifdef GreIsDebugMode
+        GreDebug("[INFO] Created Texture '") << name << "'." << Gre::gendl ;
+#endif
         
         return Gre::TextureUser ( holder ) ;
     }

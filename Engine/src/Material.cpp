@@ -284,6 +284,15 @@ void Material::configureProgram(const HardwareProgramHolder &program) const
             }
         }
         
+        else
+        {
+            HardwareProgramVariable NormalMapEnabled ;
+            NormalMapEnabled.name = "material.normalmap_enabled" ;
+            NormalMapEnabled.type = HdwProgVarType::Int1 ;
+            NormalMapEnabled.value.i1 = 0 ;
+            program -> setVariable(NormalMapEnabled) ;
+        }
+        
         //////////////////////////////////////////////////////////////////////
         // Specular Texture Enabling.
         
@@ -304,6 +313,15 @@ void Material::configureProgram(const HardwareProgramHolder &program) const
                 
                 textureunit ++ ;
             }
+        }
+        
+        else
+        {
+            HardwareProgramVariable specular ;
+            specular.name = "material.hasSpecularMap" ;
+            specular.type = HdwProgVarType::Int1 ;
+            specular.value.i1 = 0 ;
+            program -> setVariable(specular) ;
         }
     }
 }

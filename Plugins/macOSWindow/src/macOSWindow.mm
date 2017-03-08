@@ -388,6 +388,11 @@ int translateFlags ( NSUInteger flags )
     [self addTrackingArea:trackingArea];
 }
 
+- (void) mouseMoved:(NSEvent *)theEvent
+{
+    window -> notifiateMouseMoved ( theEvent.deltaX , theEvent.deltaY ) ;
+}
+
 - (void) keyDown:(NSEvent *)theEvent
 {
     const Key key = translateKey([theEvent keyCode]) ;
@@ -550,6 +555,12 @@ void macWindow::notifiateKeyDown(const Gre::Key &key, int mods)
 void macWindow::notifiateKeyUp(const Gre::Key &key, int mods)
 {
     EventHolder e = EventHolder ( new KeyUpEvent(this, key, mods) ) ;
+    sendEvent(e);
+}
+
+void macWindow::notifiateMouseMoved ( float dx , float dy )
+{
+    EventHolder e = EventHolder ( new CursorMovedEvent(this, dx, dy) ) ;
     sendEvent(e);
 }
 

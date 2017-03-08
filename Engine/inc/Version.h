@@ -203,7 +203,7 @@ GreBeginNamespace
 
 #define GreVersionMajor 0             ///< @brief GRE Major version.
 #define GreVersionMinor 0             ///< @brief GRE Minor version.
-#define GreVersionBuild 23            ///< @brief GRE Build number.
+#define GreVersionBuild 24            ///< @brief GRE Build number.
 
 /// @brief Defines the Version structure.
 typedef struct Version
@@ -383,7 +383,7 @@ public:
     //////////////////////////////////////////////////////////////////////
     const char* what() const throw();
     
-private:
+public:
     
     /// @brief Emitter who send this Exception.
     std::string iEmitter;

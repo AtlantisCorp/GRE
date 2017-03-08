@@ -37,6 +37,52 @@
 
 GreBeginNamespace
 
+LightRenderNode::LightRenderNode ( const std::string& name )
+: RenderNode ( name )
+{
+    
+}
+
+LightRenderNode::LightRenderNode ( const Light& light , const std::string& name )
+: RenderNode ( name ) , iLight(light)
+{
+    
+}
+
+LightRenderNode::~LightRenderNode() noexcept ( false )
+{
+    
+}
+
+const Light& LightRenderNode::getLight() const
+{
+    GreAutolock ; return iLight ;
+}
+
+Light& LightRenderNode::getLight()
+{
+    GreAutolock ; return iLight ;
+}
+
+void LightRenderNode::setLight(const Gre::Light &rhs)
+{
+    GreAutolock ; iLight = rhs ;
+}
+
+void LightRenderNode::onPositionChangedEvent(const Gre::PositionChangedEvent &e)
+{
+    GreAutolock ; iLight.setPosition ( e.Position ) ;
+    RenderNode::onPositionChangedEvent(e) ;
+}
+
+void LightRenderNode::onDirectionChangedEvent(const Gre::DirectionChangedEvent &e)
+{
+    GreAutolock ; iLight.setDirection( e.Direction ) ;
+    RenderNode::onDirectionChangedEvent(e) ;
+}
+
+// ---------------------------------------------------------------------------------------------------
+
 RenderScene::RenderScene(const std::string& name, const RenderSceneOptions& options)
 : Gre::Resource(name) , iRootNode(nullptr) , iGlobalLight(Vector3(-1000.0f, 1000.0f, -1000.0f))
 {
@@ -75,6 +121,25 @@ const RenderNodeHolder& RenderScene::setRootNode(const RenderNodeHolder &rendern
 RenderNodeHolder RenderScene::createNode( const std::string & name ) const
 {
     return RenderNodeHolder ( new RenderNode(name) );
+}
+
+LightRenderNodeHolder RenderScene::createLightNode( const std::string & name ) const
+{
+    return LightRenderNodeHolder ( new LightRenderNode(name) ) ;
+}
+
+LightRenderNodeHolder RenderScene::createLightNode(const Gre::Light &light, const std::string& name) const
+{
+    return LightRenderNodeHolder ( new LightRenderNode(light, name) ) ;
+}
+
+void RenderScene::addLightNode(const LightRenderNodeHolder &lightnode)
+{
+    if ( !lightnode.isInvalid() )
+    {
+        iLightNodes.push_back(lightnode) ;
+        addNode(lightnode) ;
+    }
 }
 
 void RenderScene::addNode(const RenderNodeHolder &rendernode)
@@ -335,6 +400,16 @@ void RenderScene::setGlobalLight ( const Light& light )
     GreAutolock ; iGlobalLight = light ;
 }
 
+void RenderScene::setMainCamera(const CameraUser &camera)
+{
+    GreAutolock ;
+
+    if ( !iTechnique.isInvalid() ) {
+        iTechnique->setCamera(camera);
+    }
+
+}
+
 void RenderScene::drawTechnique( const TechniqueHolder& technique , const EventHolder &elapsed) const
 {
 #ifdef GreIsDebugMode
@@ -349,38 +424,114 @@ void RenderScene::drawTechnique( const TechniqueHolder& technique , const EventH
     
     if ( technique->isActivated() )
     {
-        for ( auto & pass : technique->getPasses() )
+        if ( technique->hasPreTechniques() )
         {
-            RenderingQuery query ;
-            query.setRenderScene ( RenderSceneUser(this) ) ;
-            query.setRenderPass ( pass ) ;
-            query.setCamera ( technique->getCamera() ) ;
-            query.setHardwareProgram ( pass->getHardwareProgram() ) ;
-            query.setViewport ( technique->getViewport() ) ;
-            
-            const UpdateEvent& u = elapsed->to<UpdateEvent>() ;
-            query.setElapsedTime ( u.elapsedTime ) ;
-            
-            if ( technique->isExclusive() ) {
-                query.setRenderedNodes ( technique->getNodes() ) ;
-            } else {
-                query.setRenderedNodes ( { getRootNode().lock() } ) ;
+            for ( auto & tech : technique->getPreTechniques() )
+            {
+                if ( !tech.isInvalid() && tech->isActivated() )
+                {
+                    drawTechnique(tech, elapsed) ;
+                }
             }
-            
+        }
+        
+        RenderingQuery query ;
+        query.setRenderScene ( RenderSceneUser(this) ) ;
+//      query.setRenderPass ( pass ) ;
+        query.setCamera ( technique->getCamera() ) ;
+        query.setHardwareProgram ( technique->getHardwareProgram() ) ;
+        query.setViewport ( technique->getViewport() ) ;
+        
+        const UpdateEvent& u = elapsed->to<UpdateEvent>() ;
+        query.setElapsedTime ( u.elapsedTime ) ;
+        
+        if ( technique->isExclusive() ) {
+            query.setRenderedNodes ( technique->getNodes() ) ;
+        } else {
+            query.setRenderedNodes ( { getRootNode().lock() } ) ;
+        }
+        
+        RendererHolder rholder = iRenderer.lock() ;
+        if ( rholder.isInvalid() )
+            return ;
+        
+        // For shadow mapping, in order to let the technique set some variables, we must associate
+        // a shadow map for each lights. The trick here is to call a special technique function, to
+        // modify the framebuffer in order to bind the light shadowmap texture to the framebuffer.
+        
+        // If the technique is allowed to use every lights in the scene (default behaviour), we compute
+        // every activated lights and give them to the query to be rendered (Blinn-Phong model).
+        
+        if ( technique->getLightingMode () == TechniqueLightingMode::AllLights )
+        {
             std::vector < Light > lights ;
             lights.push_back(iGlobalLight) ;
+            
+            for ( LightRenderNodeUser lightnode : iLightNodes ) {
+                if ( !lightnode.isInvalid() ) {
+                    LightRenderNodeHolder light = lightnode.lock() ;
+                    if ( light -> getLight().isEnabled() ) {
+                        lights.push_back(light -> getLight()) ;
+                    }
+                }
+            }
+            
             query.setLights(lights) ;
-            
-            RendererHolder rholder = iRenderer.lock() ;
-            if ( rholder.isInvalid() )
-                return ;
-            
+            query.setFramebuffer ( technique->getFramebuffer() ) ;
             rholder -> draw ( query ) ;
         }
         
-        if ( technique->hasSubtechniques() )
+        // If the technique wants to be rendered differently for every lights, the 'perlight' flag is on
+        // and we call the technique for each activated light. This let the technique do 'per-light' rendering
+        // like setting light shadowmaps.
+        
+        else if ( technique->getLightingMode () == TechniqueLightingMode::PerLight )
         {
-            for ( const TechniqueHolder & tech : technique->getSubtechniques() )
+            std::vector < Light > lights ;
+            lights.push_back(iGlobalLight) ;
+            
+            for ( LightRenderNodeUser lightnode : iLightNodes ) {
+                if ( !lightnode.isInvalid() ) {
+                    LightRenderNodeHolder light = lightnode.lock() ;
+                    if ( light -> getLight().isEnabled() ) {
+                        lights.push_back(light -> getLight()) ;
+                    }
+                }
+            }
+            
+            for ( Light& light : lights )
+            {
+                std::vector < Light > tmp ;
+                tmp.push_back(light) ;
+                
+                // This is a special function called for each light. This will let the technique change
+                // the framebuffer depth texture to the one created in light.
+                // [07.03.2017] NOTES : As 'onPerLightRendering' might modify some of the techniques properties,
+                // we use this holder's trick to use non-const method on technique. This acts like a threadsafe
+                // const_cast .
+                
+                TechniqueHolder(technique) -> onPerLightRendering ( light ) ;
+                
+                // Next, we bind the light and the technique framebuffer.
+                
+                query.setLights(tmp) ;
+                query.setFramebuffer ( technique->getFramebuffer() ) ;
+                rholder -> draw ( query ) ;
+            }
+        }
+        
+        // If the technique has disabled every lighting, we render it using only the technique's framebuffer
+        // (if has one) and draw the query. The result is generally expected to be black.
+        
+        else
+        {
+            query.setFramebuffer ( technique->getFramebuffer() ) ;
+            rholder -> draw(query) ;
+        }
+        
+        if ( technique->hasPostTechniques() )
+        {
+            for ( const TechniqueHolder & tech : technique->getPostTechniques() )
             {
                 drawTechnique(tech, elapsed) ;
             }
@@ -466,7 +617,6 @@ void RenderSceneManager::initialize()
     
     TechniqueHolder tech = TechniqueHolder ( new Technique() ) ;
 	tech -> setName ("Default") ;
-    tech -> addPass (pass) ;
     tech -> setExclusive (false) ;
     tech -> setViewport ( Viewport(1.0f, 1.0f, 1.0f, 1.0f) ) ;
     tech -> setCamera ( ResourceManager::Get().getCameraManager()->findFirst("Default") ) ;

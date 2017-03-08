@@ -64,6 +64,12 @@ public:
     
     POOLED( Pools::Referenced )
     
+    /// @brief SpecializedCountedObjectHolder for EventProceeder.
+    typedef SpecializedCountedObjectHolder < EventProceeder > EventProceederHolder ;
+    
+    /// @brief SpecializedCountedObjectUser for EventProceeder.
+    typedef SpecializedCountedObjectUser < EventProceeder > EventProceederUser ;
+    
     ////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////
     EventProceeder () ;
@@ -137,6 +143,10 @@ public:
     /// @brief Resets the proceeder.
     ////////////////////////////////////////////////////////////////////////
     virtual void clear () ;
+    
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    virtual void addFilteredListener ( const EventProceederUser& listener , const std::vector<EventType>& filters ) ;
     
 protected:
     
@@ -277,6 +287,14 @@ protected:
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
+    virtual void onPositionChangedEvent ( const PositionChangedEvent& e ) ;
+    
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    virtual void onDirectionChangedEvent ( const DirectionChangedEvent& e ) ;
+    
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
     virtual void onCustomEvent ( const CustomEvent & e ) ;
     
 protected:
@@ -289,6 +307,9 @@ protected:
     
     /// @brief List of functions to do on next event call of given type.
     std::map < EventType , std::vector < EventHolderCallback > > iNextCallbacks ;
+    
+    /// @brief Listeners that only wants some filtered events.
+    std::map < EventProceederUser , std::vector<EventType> > iFilteredListeners ;
 };
 
 /// @brief SpecializedCountedObjectHolder for EventProceeder.

@@ -54,7 +54,8 @@ public:
         Boolean = 3,    ///< @brief Type 'bool'.
         String  = 4,    ///< @brief std::string.
         Color   = 5,    ///< @brief Color class.
-        Float   = 6
+        Float   = 6,
+        Vector3 = 7
     };
     
     Variant(Policy policy = Policy::None, void* object = nullptr);
@@ -64,9 +65,10 @@ public:
     explicit Variant ( float object ) ;
     
     Variant ( const Version & object ) ;
-    Variant ( bool object ) ;
+    explicit Variant ( bool object ) ;
     Variant ( const std::string & obj ) ;
     Variant ( const Color& color ) ;
+    Variant ( const Vector3& vec3 ) ;
     
     ~Variant();
     
@@ -104,7 +106,12 @@ public:
     /// @brief Sets a new Object.
     //////////////////////////////////////////////////////////////////////
     void reset(const Color& color);
-    
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Sets a new Object.
+    //////////////////////////////////////////////////////////////////////
+    void reset(const Vector3& object) ;
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Clears the Variant and set it to Policy::None.
     //////////////////////////////////////////////////////////////////////
@@ -145,11 +152,19 @@ public:
     //////////////////////////////////////////////////////////////////////
     Color& toColor() ;
     const Color& toColor() const ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the Variant object as a Vector3, if one.
+    //////////////////////////////////////////////////////////////////////
+    Vector3& toVector3() ;
+    const Vector3& toVector3() const ;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns true if policy is Policy::None or Object is nullptr.
     //////////////////////////////////////////////////////////////////////
     bool isNull() const;
+        
+    Variant& operator = ( const Variant& rhs ) ;
     
     /// @brief A Null Variant object.
     static Variant Null;

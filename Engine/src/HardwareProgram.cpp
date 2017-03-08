@@ -156,6 +156,12 @@ void HardwareProgram::setVariable(const Gre::HardwareProgramVariable &var) const
 
 void HardwareProgram::setLights(const std::vector<Light> &lights) const
 {
+    HardwareProgramVariable lightcount ;
+    lightcount.name = "lightscount" ;
+    lightcount.type = HdwProgVarType::Int1 ;
+    lightcount.value.i1 = lights.size() ;
+    setVariable(lightcount) ;
+    
     for ( int i = 0 ; i < lights.size() ; ++i )
     {
         std::string lightname = std::string("lights[") + std::to_string(i) + "]." ;
@@ -215,7 +221,7 @@ void HardwareProgram::setLights(const std::vector<Light> &lights) const
                 lighttype.value.f1 = lights[i].getAttenuationLinear() ;
                 setVariable(lighttype) ;
                 
-                lighttype.name = lightname + "attenuationQuadratique" ;
+                lighttype.name = lightname + "attenuationQuadratic" ;
                 lighttype.type = HdwProgVarType::Float1 ;
                 lighttype.value.f1 = lights[i].getAttenuationQuad() ;
                 setVariable(lighttype) ;

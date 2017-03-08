@@ -34,58 +34,58 @@
 /// @brief Calculates the material normal.
 /// If the material contains a normal map, it will calculate the resulting
 /// normal using the normal map texture.
-vec3 MaterialNormal ( void )
+vec3 MaterialGetNormal ( VertexOutput Fragment )
 {
     if ( material.normalmap_enabled == 1 )
     {
-        vec3 bumpmap = texture( material.normalmap , vertex_output.texcoord ).rgb ;
+        vec3 bumpmap = texture( material.normalmap , Fragment.texcoord ).rgb ;
         bumpmap = normalize( bumpmap * 2.0 - 1.0 ) ;
-        bumpmap = normalize( vertex_output.bumpmapTBN * bumpmap ) ;
+        bumpmap = normalize( Fragment.bumpmapTBN * bumpmap ) ;
         
         return bumpmap ;
     }
     
     else
     {
-        return normalize(vertex_output.normal) ;
+        return normalize(Fragment.normal) ;
     }
 }
 
 //////////////////////////////////////////////////////////////////////
 /// @brief Calculates the diffuse color for the material.
-vec3 MaterialDiffuse ( void )
+vec4 MaterialGetDiffuseColor ( VertexOutput Fragment )
 {
     if ( material.hasDiffuseMap == 1 ) {
-        return texture ( material.diffuseMap , vertex_output.texcoord ).rgb ;
+        return texture ( material.diffuseMap , Fragment.texcoord ) ;
     }
     
     else {
-        return material.diffuse.rgb ;
+        return material.diffuse ;
     }
 }
 
 //////////////////////////////////////////////////////////////////////
 /// @brief Calculates the correct ambient color from material.
-vec3 MaterialAmbient ( void )
+vec4 MaterialGetAmbientColor ( VertexOutput Fragment )
 {
     if ( material.useDiffuseAsAmbient == 1 ) {
-        return MaterialDiffuse () ;
+        return MaterialGetDiffuseColor ( Fragment ) ;
     }
     
     else {
-        return material.ambient.rgb ;
+        return material.ambient ;
     }
 }
 
 //////////////////////////////////////////////////////////////////////
 /// @brief Calculates correct specular color from material.
-vec3 MaterialSpecular ( void )
+vec4 MaterialGetSpecularColor ( VertexOutput Fragment )
 {
     if ( material.hasSpecularMap == 1 ) {
-        return texture ( material.specularMap , vertex_output.texcoord ).rgb ;
+        return texture ( material.specularMap , Fragment.texcoord ) ;
     }
     
     else {
-        return material.specular.rgb ;
+        return material.specular ;
     }
 }

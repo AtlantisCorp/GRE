@@ -47,7 +47,7 @@ void ResourceManager::Create()
     if ( !iManager ) {
         GreDebug("[ERRO] Can't allocate ResourceManager.") << gendl;
     } else {
-		GreDebug("[INFO] ResourceManager created.") << gendl;
+		GreDebug("[INFO] Created ResourceManager.") << gendl;
 	}
 #endif
 }
@@ -62,16 +62,10 @@ bool ResourceManager::CreateAndInitialize()
 #endif
 		return false ;
 	}
-	
-#ifdef GreIsDebugMode
-	GreDebug("[INFO] Created ResourceManager.") << gendl;
-#endif
+    
 	ResourceManager::Get().initialize() ;
 	
 	if ( iManager->isInitialized() ) {
-#ifdef GreIsDebugMode
-		GreDebug("[INFO] ResourceManager created and initialized.") << gendl;
-#endif
 		return true ;
 	}
 	
@@ -95,7 +89,7 @@ void ResourceManager::Destroy()
 #ifdef GreIsDebugMode
 		GreDebug("[INFO] ResourceManager destroyed.") << gendl;
 #endif
-	}
+    }
 }
 
 ResourceManager& ResourceManager::Get()
@@ -133,7 +127,7 @@ void ResourceManager::initialize ()
 	}
 	
 #ifdef GreIsDebugMode
-	GreDebug("Created PluginManager.") << gendl;
+	GreDebug("[INFO] Created PluginManager.") << gendl;
 #endif
     
     iRendererManager = new RendererManager () ;
@@ -147,7 +141,7 @@ void ResourceManager::initialize ()
 	}
 	
 #ifdef GreIsDebugMode
-	GreDebug("Created RendererManager.") << gendl;
+	GreDebug("[INFO] Created RendererManager.") << gendl;
 #endif
 	
     iRenderSceneManager = new RenderSceneManager () ;
@@ -161,7 +155,7 @@ void ResourceManager::initialize ()
 	}
 	
 #ifdef GreIsDebugMode
-	GreDebug("Created RenderSceneManager.") << gendl;
+	GreDebug("[INFO] Created RenderSceneManager.") << gendl;
 #endif
 	
     iMaterialManager = new MaterialManager () ;
@@ -175,7 +169,7 @@ void ResourceManager::initialize ()
 	}
 	
 #ifdef GreIsDebugMode
-	GreDebug("Created MaterialManager.") << gendl;
+	GreDebug("[INFO] Created MaterialManager.") << gendl;
 #endif
     
     iAnimatorManager = new AnimatorManager () ;
@@ -189,7 +183,7 @@ void ResourceManager::initialize ()
 	}
 	
 #ifdef GreIsDebugMode
-	GreDebug("Created AnimatorManager.") << gendl;
+	GreDebug("[INFO] Created AnimatorManager.") << gendl;
 #endif
 	
     iCameraManager = new CameraManager () ;
@@ -203,7 +197,7 @@ void ResourceManager::initialize ()
 	}
 	
 #ifdef GreIsDebugMode
-	GreDebug("Created CameraManager.") << gendl;
+	GreDebug("[INFO] Created CameraManager.") << gendl;
 #endif
     
     iTextureManager = new TextureManager () ;
@@ -217,10 +211,28 @@ void ResourceManager::initialize ()
     }
     
 #ifdef GreIsDebugMode
-    GreDebug("Created TextureManager.") << gendl;
+    GreDebug("[INFO] Created TextureManager.") << gendl;
+#endif
+    
+    iTechniqueManager = new TechniqueManager () ;
+    
+    if ( iTechniqueManager.isInvalid() ) {
+#ifdef GreIsDebugMode
+        GreDebug("[ERRO] Can't create TechniqueManager.") << gendl;
+#endif
+        iInitialized = false ;
+        return ;
+    }
+    
+#ifdef GreIsDebugMode
+    GreDebug("[INFO] Created TechniqueManager.") << gendl;
 #endif
 
 	iInitialized = true ;
+    
+#ifdef GreIsDebugMode
+    GreDebug("[INFO] Initialized.") << gendl ;
+#endif
 }
 
 ResourceManager::~ResourceManager() noexcept(false)
@@ -240,6 +252,11 @@ void ResourceManager::unload ()
     
     if ( !iPluginManager.isInvalid() ) {
         iPluginManager -> callStops() ;
+    }
+    
+    if ( !iTechniqueManager.isInvalid() ) {
+        iTechniqueManager->unload() ;
+        iTechniqueManager.clear() ;
     }
     
     if ( !iWindowManager.isInvalid() ) {
@@ -416,6 +433,16 @@ void ResourceManager::setPluginManager(const PluginManagerHolder &manager)
 PluginManagerHolder ResourceManager::getPluginManager()
 {
     GreAutolock ; return iPluginManager ;
+}
+
+void ResourceManager::setTechniqueManager(const TechniqueManagerHolder &manager)
+{
+    GreAutolock ; iTechniqueManager = manager ;
+}
+
+TechniqueManagerHolder ResourceManager::getTechniqueManager()
+{
+    GreAutolock ; return iTechniqueManager ;
 }
 
 int ResourceManager::loadPluginsIn(const std::string &dirname)

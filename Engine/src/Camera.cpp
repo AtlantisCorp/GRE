@@ -31,13 +31,14 @@
  */
 
 #include "Camera.h"
+#include "FreeMovingCamera.h"
 
 GreBeginNamespace
 
 Camera::Camera(const std::string& name)
 : Gre::Resource(ResourceIdentifier::New() , name), iMaxVerticalAngle(89.0f)
 {
-    
+    iUpwardDirection = Vector3 ( 0.0f, 1.0f, 0.0f ) ;
 }
 
 Camera::Camera(const std::string& name, const Vector3& position, const Vector3& to, const Vector3& up)
@@ -49,7 +50,7 @@ Camera::Camera(const std::string& name, const Vector3& position, const Vector3& 
 
 Camera::~Camera()
 {
-    
+    clearController();
 }
 
 const Vector3& Camera::getPosition() const
@@ -57,9 +58,29 @@ const Vector3& Camera::getPosition() const
     GreAutolock ; return iPosition ;
 }
 
+void Camera::setPosition(const Vector3 &position)
+{
+    lookAt ( position , iTarget , iUpwardDirection ) ;
+}
+
 const Vector3& Camera::getTarget() const
 {
     GreAutolock ; return iTarget ;
+}
+
+void Camera::setTarget(const Vector3 &target)
+{
+    lookAt ( iPosition , target , iUpwardDirection ) ;
+}
+
+Vector3 Camera::getDirection() const
+{
+    GreAutolock ; return iTarget - iPosition ;
+}
+
+void Camera::setDirection(const Vector3 &direction)
+{
+    lookAt ( iPosition , iPosition + direction , iUpwardDirection ) ;
 }
 
 const Vector3& Camera::getUp() const
@@ -69,9 +90,23 @@ const Vector3& Camera::getUp() const
 
 void Camera::lookAt(const Vector3 &origin, const Vector3 &point, const Vector3& up)
 {
+    GreAutolock ;
+
     Matrix4 view = glm::lookAt(origin, point, up) ;
     iFrustrum.setView(view) ;
     iFrustrum.computePlanes() ;
+    
+    if ( origin != iPosition )
+    {
+        EventHolder e ( new PositionChangedEvent(this, origin) ) ;
+        sendEvent(e) ;
+    }
+    
+    if ( origin != iPosition || point != iTarget )
+    {
+        EventHolder e ( new DirectionChangedEvent(this, point - origin) ) ;
+        sendEvent(e) ;
+    }
     
     iPosition = origin ;
     iTarget = point ;
@@ -98,6 +133,31 @@ const Matrix4 & Camera::getViewMatrix() const
     return iFrustrum.getView() ;
 }
 
+void Camera::setController(const EventProceederUser &user)
+{
+    GreAutolock ;
+
+    if ( !iController.isInvalid() ) {
+        iController.lock() -> removeListener(EventProceederUser(this));
+    }
+
+    iController = user ;
+
+    if ( !iController.isInvalid() ) {
+        iController.lock() -> addListener( EventProceederUser(this) );
+    }
+}
+
+void Camera::clearController ()
+{
+    GreAutolock ;
+
+    if ( !iController.isInvalid() ) {
+        iController.lock() -> removeListener ( EventProceederUser(this) ) ;
+        iController.clear();
+    }
+}
+
 // ---------------------------------------------------------------------------------------------------
 
 CameraLoader::CameraLoader ()
@@ -119,9 +179,12 @@ CameraManager::CameraManager ( const std::string & name )
     
     CameraHolder camera = CameraHolder ( new Camera("Default") ) ;
     camera -> lookAt({2.0f, 2.0f, -2.0f}, {2.0f, 2.0f, 5.0f});
-    
-    addListener(EventProceederUser(camera));
     iHolders.push_back(camera);
+
+    // We should add here some built-in Camera Loaders. This may help the user to create other Camera's
+    // types and behaviours.
+
+    getFactory().registers("FreeMovingCameraLoader" , new FreeMovingCameraLoader());
 }
 
 CameraManager::~CameraManager () noexcept ( false )
@@ -131,17 +194,32 @@ CameraManager::~CameraManager () noexcept ( false )
 
 CameraUser CameraManager::load ( const std::string & name , const CameraOptions & options )
 {
-    auto loadername = options.find("loader") ;
+    auto loadername = options.find("Loader") ;
     if ( loadername != options.end() )
     {
         std::string lname = loadername->second.toString() ;
-        CameraLoader* loader = iFindBestLoader( lname ) ;
+        CameraLoader* loader = findLoader( lname ) ;
         
         if ( loader )
         {
             CameraHolder newcam = loader->load(name, options) ;
+
+            auto it = options.find ( "Position" ) ;
+            if ( it != options.end() ) {
+                newcam -> setPosition ( it->second.toVector3() ) ;
+            }
+
+            it = options.find ( "Direction" ) ;
+            if ( it != options.end() ) {
+                newcam -> setDirection ( it->second.toVector3() ) ;
+            }
+
+            it = options.find ( "Target" ) ;
+            if ( it != options.end() ) {
+                newcam -> setTarget ( it->second.toVector3() ) ;
+            }
+
             iHolders.push_back(newcam) ;
-            
             return CameraUser ( newcam ) ;
         }
         

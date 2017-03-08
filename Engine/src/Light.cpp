@@ -45,6 +45,7 @@ Light::Light ( const Vector3& position , const Color& ambient , const Color& dif
     iDirection = Vector3(0.0f, 0.0f, 0.0f) ;
     iAngle = glm::radians(12.5f) ;
     iExposition = 64.0f ;
+    iShininess = 32.0f ;
 }
 
 Light::Light ( const Light& rhs )
@@ -100,6 +101,11 @@ void Light::setEnabled(bool value)
     GreAutolock ; iEnabled = value ;
 }
 
+void Light::setPosition(const Vector3 &position)
+{
+    GreAutolock ; iPosition = position ;
+}
+
 const Vector3& Light::getPosition () const
 {
     GreAutolock ; return iPosition ;
@@ -110,14 +116,29 @@ const Color& Light::getAmbient() const
     GreAutolock ; return iAmbient ;
 }
 
+void Light::setAmbient(const Color &ambient)
+{
+    GreAutolock ; iAmbient = ambient ;
+}
+
 const Color& Light::getDiffuse() const
 {
     GreAutolock ; return iDiffuse ;
 }
 
+void Light::setDiffuse(const Color &diffuse)
+{
+    GreAutolock ; iDiffuse = diffuse ;
+}
+
 const Color& Light::getSpecular() const
 {
     GreAutolock ; return iSpecular ;
+}
+
+void Light::setSpecular(const Color &specular)
+{
+    GreAutolock ; iSpecular = specular ;
 }
 
 float Light::getShininess() const

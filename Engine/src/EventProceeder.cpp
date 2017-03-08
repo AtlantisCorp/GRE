@@ -53,6 +53,9 @@ void EventProceeder::sendEvent(EventHolder &holder)
     if ( holder.isInvalid() )
         return ;
     
+    // Processes non-filtered listeners. Those listeners will receive every events, as no filters
+    // applies.
+    
     for ( EventProceederUser & listener : iListeners)
     {
         if ( !listener.isInvalid() ) {
@@ -60,7 +63,27 @@ void EventProceeder::sendEvent(EventHolder &holder)
         }
         
         if ( holder->shouldStopPropagating() ) {
-            break ;
+            return ;
+        }
+    }
+    
+    // Processes filtered listeners. Those listeners will receive only events that matches with
+    // the given filter. Notes, we must make a EventProceederUser conversion as the key iterator
+    // is always constant. The 'onEvent()' function should not destroy the object, or moves it in
+    // another memory location.
+    
+    for ( auto it = iFilteredListeners.begin() ; it != iFilteredListeners.end() ; it++ )
+    {
+        if ( !it->first.isInvalid() )
+        {
+            if ( std::find(it->second.begin(), it->second.end(), holder->getType()) != it->second.end() )
+            {
+                EventProceederUser(it->first).lock()->onEvent(holder) ;
+            }
+            
+            if ( holder->shouldStopPropagating() ) {
+                return ;
+            }
         }
     }
 }
@@ -208,6 +231,14 @@ void EventProceeder::onEvent(EventHolder &holder)
                 onResourceUnloadedEvent(event->to<ResourceUnloadedEvent>());
                 break;
                 
+            case EventType::PositionChanged:
+                onPositionChangedEvent(event->to<PositionChangedEvent>());
+                break;
+                
+            case EventType::DirectionChanged:
+                onDirectionChangedEvent(event->to<DirectionChangedEvent>());
+                break;
+                
             case EventType::Custom:
                 onCustomEvent(event->to<CustomEvent>());
                 break;
@@ -309,9 +340,16 @@ void EventProceeder::clearNextEventCallback()
 void EventProceeder::clear()
 {
     GreAutolock ;
+    
     clearListeners();
     clearNextEventCallback();
     iTransmitBehaviour = EventProceederTransmitBehaviour::SendsAfter;
+    iFilteredListeners.clear() ;
+}
+
+void EventProceeder::addFilteredListener(const EventProceederUser &listener, const std::vector<EventType> &filters)
+{
+    GreAutolock ; iFilteredListeners [listener] = filters ;
 }
 
 void EventProceeder::onUpdateEvent(const Gre::UpdateEvent &e)
@@ -460,6 +498,16 @@ void EventProceeder::onRenderScenePostRenderEvent(const Gre::RenderScenePostRend
 }
 
 void EventProceeder::onResourceUnloadedEvent(const Gre::ResourceUnloadedEvent &e)
+{
+    
+}
+
+void EventProceeder::onPositionChangedEvent(const Gre::PositionChangedEvent &e)
+{
+    
+}
+
+void EventProceeder::onDirectionChangedEvent(const Gre::DirectionChangedEvent &e)
 {
     
 }

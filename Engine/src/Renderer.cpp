@@ -65,15 +65,31 @@ void Renderer::draw(const Gre::RenderingQuery &query) const
     if ( !iFeaturesInstalled )
         const_cast<Renderer*>(this)->installDefaultFeatures () ;
     
+    // If the query holds a valid framebuffer, we should always bind it before
+    // everything to be done.
+    
+    _setFramebuffer ( query.getFramebuffer() ) ;
+    
+    // Updates the viewport to fit the query.
+    
     _setViewport ( query.getViewport() ) ;
     
-    HardwareProgramHolder prog = query.getHardwareProgram().lock() ;
+    // Load the program we will use to render the nodes.
+    
+    HardwareProgramHolder prog = query.getHardwareProgram() ;
     if ( prog.isInvalid() && hasFeature(Gre::RendererFeature::LoadDefaultProgram) ) {
         prog = iDefaultProgram.lock() ;
     }
     
+    // Sets the camera's matrixes projection and view.
+    
     setCamera ( query.getCamera(), prog ) ;
+    
+    // Sets the scene lights.
+    
     prog -> setLights ( query.getLights() ) ;
+    
+    // Draw every queried nodes with this configuration.
     
     for ( const RenderNodeHolder& node : query.getRenderedNodes() )
     {
@@ -90,6 +106,10 @@ void Renderer::draw(const Gre::RenderingQuery &query) const
         
         postNode ( node , query.getCamera() , prog ) ;
     }
+    
+    // Unbind the framebuffer.
+    
+    _unsetFramebuffer ( query.getFramebuffer() ) ;
 }
 
 void Renderer::preRender ( const Color& clearcolor ) const
@@ -101,6 +121,18 @@ void Renderer::preRender ( const Color& clearcolor ) const
 void Renderer::postRender () const
 {
     _postRender () ;
+}
+
+void Renderer::_setFramebuffer ( const RenderFramebufferHolder & framebuffer ) const
+{
+    if ( !framebuffer.isInvalid() )
+        framebuffer -> bind() ;
+}
+
+void Renderer::_unsetFramebuffer ( const RenderFramebufferHolder & framebuffer ) const
+{
+    if ( !framebuffer.isInvalid() )
+        framebuffer->unbind() ;
 }
 
 void Renderer::setHardwareProgram ( const HardwareProgramHolder& program ) const

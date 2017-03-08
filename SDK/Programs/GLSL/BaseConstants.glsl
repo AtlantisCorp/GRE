@@ -35,14 +35,18 @@ struct Material
 struct Light
 {
     vec3 position;
+    
     vec4 ambient;
     vec4 diffuse;
     vec4 specular;
+    
     float shininess ; // Seulement pour la lumière spéculaire
+    
     // Spécifique aux spots et points
     float attenuationConstant ;
     float attenuationLinear ;
-    float attenuationQuadratique ;
+    float attenuationQuadratic ;
+    
     // Spécifique aux spots
     vec3 direction ;
     float angle ;
@@ -60,8 +64,10 @@ struct Camera
 // Scene datas.
 
 uniform Material    material ;
-uniform Light       lights [ GRE_MAX_LIGHT_NUM ] ;
 uniform Camera      camera ;
+
+uniform int lightscount ;
+uniform Light lights [ GRE_MAX_LIGHT_NUM ] ;
 
 // Matrixes
 

@@ -35,7 +35,7 @@
 GreBeginNamespace
 
 RenderingQuery::RenderingQuery ( )
-: iRenderScene(nullptr)
+: iRenderScene(nullptr), iProgram ( nullptr )
 {
     
 }
@@ -65,17 +65,12 @@ const RenderSceneUser & RenderingQuery::getRenderScene ( ) const
     GreAutolock ; return iRenderScene ;
 }
 
-void RenderingQuery::setRenderPass(const RenderPassUser &pass)
-{
-    GreAutolock ; iRenderPass = pass ;
-}
-
 void RenderingQuery::setCamera(const CameraUser &camera)
 {
     GreAutolock ; iCamera = camera ;
 }
 
-void RenderingQuery::setHardwareProgram(const HardwareProgramUser &program)
+void RenderingQuery::setHardwareProgram(const HardwareProgramHolder & program)
 {
     GreAutolock ; iProgram = program ;
 }
@@ -90,7 +85,7 @@ void RenderingQuery::setRenderedNodes ( const std::vector < RenderNodeHolder > &
     GreAutolock ; iRenderedNodes = nodes ;
 }
 
-const HardwareProgramUser& RenderingQuery::getHardwareProgram() const
+const HardwareProgramHolder & RenderingQuery::getHardwareProgram() const
 {
     GreAutolock ; return iProgram ;
 }
@@ -113,6 +108,16 @@ void RenderingQuery::setLights(const std::vector<Light> &lights)
 const std::vector < Light > & RenderingQuery::getLights () const
 {
     GreAutolock ; return iLights ;
+}
+
+const RenderFramebufferHolder & RenderingQuery::getFramebuffer () const
+{
+    GreAutolock ; return iFramebuffer ;
+}
+
+void RenderingQuery::setFramebuffer(const RenderFramebufferHolder &framebuffer)
+{
+    GreAutolock ; iFramebuffer = framebuffer ;
 }
 
 GreEndNamespace

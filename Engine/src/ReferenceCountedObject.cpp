@@ -496,6 +496,11 @@ ReferenceCountedObjectUser & ReferenceCountedObjectUser::operator=(const Gre::Re
     return *this ;
 }
 
+bool ReferenceCountedObjectUser::operator<(const Gre::ReferenceCountedObjectUser &rhs) const
+{
+    GreAutolock ; return (uintptr_t) iCounter < (uintptr_t) rhs.iCounter ;
+}
+
 void ReferenceCountedObjectUser::iCheckCounterValidity() const
 {
     GreAutolock ;

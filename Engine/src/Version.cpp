@@ -133,7 +133,7 @@ GreIndexException::~GreIndexException()
 
 const char* GreIndexException::what() const throw()
 {
-    return iEmitter.c_str();
+    return iWhat.c_str();
 }
 
 GreEndNamespace

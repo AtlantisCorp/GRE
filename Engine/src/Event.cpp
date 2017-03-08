@@ -463,6 +463,32 @@ Event* ResourceUnloadedEvent::clone() const
 
 // ---------------------------------------------------------------------------------------------------
 
+PositionChangedEvent::PositionChangedEvent ( const EventProceeder* emitter , const Vector3& pos )
+: Gre::Event(emitter, EventType::PositionChanged) , Position(pos)
+{
+    
+}
+
+Event* PositionChangedEvent::clone() const
+{
+    return new PositionChangedEvent ( iEmitter->lock().getObject() , Position ) ;
+}
+
+// ---------------------------------------------------------------------------------------------------
+
+DirectionChangedEvent::DirectionChangedEvent ( const EventProceeder* emitter , const Vector3& dir )
+: Gre::Event(emitter, EventType::DirectionChanged) , Direction(dir)
+{
+    
+}
+
+Event* DirectionChangedEvent::clone() const
+{
+    return new DirectionChangedEvent ( iEmitter->lock().getObject() , Direction ) ;
+}
+
+// ---------------------------------------------------------------------------------------------------
+
 CustomEvent::CustomEvent ( const EventProceeder * emitter , const std::map < std::string , Variant > & properties )
 : Gre::Event( emitter , EventType::Custom )
 , Properties(properties)

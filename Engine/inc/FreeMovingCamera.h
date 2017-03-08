@@ -1,11 +1,11 @@
 //////////////////////////////////////////////////////////////////////
 //
-//  Transformation.h
+//  FreeMovingCamera.h
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
-//  Copyright (c) 2015 - 2016 Luk2010
-//  Created on 15/06/2016.
+//  Copyright (c) 2015 - 2017 Luk2010
+//  Created on 05/03/2017.
 //
 //////////////////////////////////////////////////////////////////////
 /*
@@ -16,10 +16,10 @@
  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  copies of the Software, and to permit persons to whom the Software is
  furnished to do so, subject to the following conditions:
- 
+
  The above copyright notice and this permission notice shall be included in
  all copies or substantial portions of the Software.
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -30,129 +30,142 @@
  -----------------------------------------------------------------------------
  */
 
-#ifndef GRE_Transformation_h
-#define GRE_Transformation_h
+#ifndef FREEMOVINGCAMERA_H
+#define FREEMOVINGCAMERA_H
 
-#include "Pools.h"
+#include "Camera.h"
 
 GreBeginNamespace
 
 //////////////////////////////////////////////////////////////////////
-/// @class Transformation
-/// @brief Stores Transformation's components like 'translation',
-/// 'rotation' and 'scale'.
+/// @brief The FreeMovingCamera class.
+///
+/// A Classic Moving around Camera, using arrows keys and mouse to
+/// control the view. It has sensibility, and use the update events
+/// to update its position and target point.
+///
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC Transformation
+class DLL_PUBLIC FreeMovingCamera : public Camera
 {
 public:
     
+    POOLED ( Pools::Resource )
+
     //////////////////////////////////////////////////////////////////////
-    /// @brief Creates a non-transforming Transformation.
     //////////////////////////////////////////////////////////////////////
-    Transformation();
+    FreeMovingCamera ( const std::string& name = std::string() ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    virtual ~FreeMovingCamera () noexcept ( false ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Changes 'iSensibility'.
+    //////////////////////////////////////////////////////////////////////
+    virtual void setSensibility ( float sensibility ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns 'iSensibility'.
+    //////////////////////////////////////////////////////////////////////
+    virtual float getSensibility () const ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Creates a Transformation.
+    /// @brief Changes 'iSensitivity'.
     //////////////////////////////////////////////////////////////////////
-    Transformation(const Vector3& translation);
+    virtual void setSensitivity ( float sensitivity ) ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Creates a Transformation.
+    /// @brief Returns 'iSensitivity'.
     //////////////////////////////////////////////////////////////////////
-    Transformation(const Vector3& translation, const Matrix4& rotation);
+    virtual float getSensitivity () const ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Creates a Transformation.
+    /// @brief Looks to the given position, from given position, and with
+    /// given up vector.
+    /// @note Also calculates angles from directions.
     //////////////////////////////////////////////////////////////////////
-    Transformation(const Vector3& translation, const Matrix4& rotation, const Vector3& scale);
+    virtual void lookAt ( const Vector3& origin, const Vector3& point, const Vector3& up = Vector3(.0f,1.0f,.0f) ) ;
+
+protected:
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    virtual void onCursorMovedEvent( const CursorMovedEvent& e ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    virtual void onKeyDownEvent( const KeyDownEvent& e ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    virtual void onKeyUpEvent( const KeyUpEvent& e ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    virtual void onUpdateEvent(const UpdateEvent& e ) ;
+
+protected:
+
+    /// @brief Arrow 'up' key state.
+    KeyState iArrowUpState ;
+
+    /// @brief Arrow 'down' key state.
+    KeyState iArrowDownState ;
+
+    /// @brief Arrow 'left' key state.
+    KeyState iArrowLeftState ;
+
+    /// @brief Arrow 'right' key state.
+    KeyState iArrowRightState ;
+
+    /// @brief Sensibility (speed) of the Camera.
+    float iSensibility ;
+    
+    /// @brief Sensitivity (motion speed) of the Camera.
+    float iSensitivity ;
+    
+    /// @brief Polar Coordinate phi.
+    float iAnglePhi ;
+    
+    /// @brief Polar Coordinate theta.
+    float iAngleTheta ;
+};
+
+//////////////////////////////////////////////////////////////////////
+/// @brief CameraLoader for FreeMovingCamera.
+//////////////////////////////////////////////////////////////////////
+class DLL_PUBLIC FreeMovingCameraLoader : public CameraLoader
+{
+public:
+    
+    POOLED ( Pools::Loader )
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Copies a Transformation.
     //////////////////////////////////////////////////////////////////////
-    Transformation(const Transformation& other);
+    FreeMovingCameraLoader () ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Destructs the Transformation.
     //////////////////////////////////////////////////////////////////////
-    ~Transformation();
+    virtual ~FreeMovingCameraLoader () noexcept ( false ) ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Translate the component.
+    /// @brief Loads a Camera and gives it the given CameraOptions.
     //////////////////////////////////////////////////////////////////////
-    void translate(const Vector3& translation);
+    virtual CameraHolder load ( const std::string & name , const CameraOptions & options ) const ;
+    
+    ////////////////////////////////////////////////////////////////////////
+    /// @brief Returns a clone of this object.
+    /// Typically, this function is implemented as 'return new MyLoaderClass();',
+    /// but you are free to do whatever you want.
+    ////////////////////////////////////////////////////////////////////////
+    virtual ResourceLoader* clone() const ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Set the iTranslation property.
+    /// @brief Returns true if the file given is loadable by this loader.
     //////////////////////////////////////////////////////////////////////
-    void setTranslation(const Vector3& translation);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Translation component.
-    //////////////////////////////////////////////////////////////////////
-    const Vector3& getTranslation() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Rotates the component.
-    //////////////////////////////////////////////////////////////////////
-    void rotate(float angle, const Vector3& axis);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Changes the Quaternion based on direction vector.
-    //////////////////////////////////////////////////////////////////////
-    void setDirection ( const Vector3& direction ) ;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Set the iRotation property.
-    //////////////////////////////////////////////////////////////////////
-    void setRotation(const Quaternion& rotation);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Rotation component.
-    //////////////////////////////////////////////////////////////////////
-    const Quaternion& getRotation() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Scales the component.
-    //////////////////////////////////////////////////////////////////////
-    void scale(const Vector3& scalev);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Sets the iScale property.
-    //////////////////////////////////////////////////////////////////////
-    void setScale(const Vector3& scalev);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Scale.
-    //////////////////////////////////////////////////////////////////////
-    const Vector3& getScale() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns a Matrix4 identity, translated, rotated and scaled
-    /// by the components of this class.
-    //////////////////////////////////////////////////////////////////////
-    Matrix4 get() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Applies the Transformation on this one, using translate(),
-    /// rotate() and scale().
-    //////////////////////////////////////////////////////////////////////
-    void apply(const Transformation& transformation);
-    
-    /// @brief Default Transformation.
-    static Transformation Default;
-    
-private:
-    
-    /// @brief Translation component.
-    Vector3 iTranslation;
-    
-    /// @brief Rotation component.
-    Quaternion iRotation;
-    
-    /// @brief Scale component.
-    Vector3 iScale;
+    virtual bool isLoadable( const std::string& filepath ) const ;
 };
 
 GreEndNamespace
 
-#endif
+#endif // FREEMOVINGCAMERA_H

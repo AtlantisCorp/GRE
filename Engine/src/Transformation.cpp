@@ -84,6 +84,11 @@ const Vector3& Transformation::getTranslation() const
     return iTranslation;
 }
 
+void Transformation::setDirection(const Vector3 &direction)
+{
+    iRotation = glm::rotation(glm::normalize(Vector3(0.0f, 1.0f, 0.0f)), glm::normalize(direction));
+}
+
 void Transformation::rotate(float angle, const Vector3 &axis)
 {
     iRotation = glm::rotate(iRotation, angle, axis);

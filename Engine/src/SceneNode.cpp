@@ -392,6 +392,13 @@ void RenderNode::scale(float value)
     iTransformationChanged = true;
 }
 
+void RenderNode::scale(const Vector3 &values)
+{
+    GreAutolock ;
+    iTransformation.scale ( values ) ;
+    iTransformationChanged = true ;
+}
+
 void RenderNode::setParent(const RenderNodeHolder &parent)
 {
     GreAutolock ;
@@ -419,6 +426,32 @@ bool RenderNode::isVisible(const CameraUser &camera) const
         return false ;
     
     return camera.lock()->isVisible( iBoundingBox ) ;
+}
+
+void RenderNode::setPositionTracked(const EventProceederUser &tracked)
+{
+    GreAutolock ;
+    
+    if ( !iPositionTracked.isInvalid() ) {
+        iPositionTracked.lock() -> removeListener(EventProceederUser(this)) ;
+    }
+    
+    iPositionTracked = tracked ;
+    iTransformation = Transformation () ;
+    
+    if ( !iPositionTracked.isInvalid() ) {
+        
+        std::vector < EventType > filters ;
+        filters.push_back(EventType::PositionChanged) ;
+        filters.push_back(EventType::DirectionChanged) ;
+        
+        iPositionTracked.lock() -> addFilteredListener(EventProceederUser(this), filters) ;
+    }
+}
+
+const EventProceederUser & RenderNode::getPositionTracked() const
+{
+    GreAutolock ; return iPositionTracked ;
 }
 
 void RenderNode::onUpdateEvent(const Gre::UpdateEvent &e)
@@ -456,6 +489,18 @@ void RenderNode::onUpdateEvent(const Gre::UpdateEvent &e)
         
         iRenderableChanged = false;
     }
+}
+
+void RenderNode::onPositionChangedEvent(const Gre::PositionChangedEvent &e)
+{
+    GreAutolock ; iTransformation.setTranslation(e.Position) ;
+    iTransformationChanged = true ;
+}
+
+void RenderNode::onDirectionChangedEvent(const Gre::DirectionChangedEvent &e)
+{
+    GreAutolock ; iTransformation.setDirection ( e.Direction ) ;
+    iTransformationChanged = true ;
 }
 
 GreEndNamespace
