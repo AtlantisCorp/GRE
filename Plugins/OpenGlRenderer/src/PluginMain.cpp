@@ -33,9 +33,17 @@
 #include <ResourceManager.h>
 #include "OpenGlRenderer.h"
 
-extern "C" const void* GetPluginName (void)
+Gre::PluginInfo info ;
+
+extern "C" Gre::PluginInfo * GetPluginInfo ( void )
 {
-    return (void*) "OpenGlRenderer Plugin" ;
+    info.name = "OpenGlRenderer Plugin" ;
+    info.author = "Luk2010" ;
+    info.version = GRE_PLUGIN_VERSION ;
+    
+    uuid_parse("56704513-f05d-4a4a-af96-c16ccccfdfe2", info.uuid);
+    
+    return & info ;
 }
 
 extern "C" void StartPlugin ( void )
@@ -50,7 +58,7 @@ extern "C" void StartPlugin ( void )
         return ;
     }
     
-    auto & factory = Gre::ResourceManager::Get () .getRendererManager()->getFactory() ;
+    auto & factory = Gre::ResourceManager::Get () ->getRendererManager()->getFactory() ;
     factory.registers("OpenGlRendererLoader", loader);
     
     GreDebug("[INFO] OpenGlRenderer Plugin started.") << Gre::gendl ;
@@ -58,7 +66,7 @@ extern "C" void StartPlugin ( void )
 
 extern "C" void StopPlugin ( void )
 {
-    auto & factory = Gre::ResourceManager::Get() .getRendererManager()->getFactory() ;
+    auto & factory = Gre::ResourceManager::Get() ->getRendererManager()->getFactory() ;
     factory.unregister("OpenGlRendererLoader");
     
     GreDebug("[INFO] OpenGlRenderer Plugin stopped.") << Gre::gendl ;

@@ -4,7 +4,7 @@
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
-//  Copyright (c) 2015 - 2016 Luk2010
+//  Copyright (c) 2015 - 2017 Luk2010
 //  Created on 06/05/2016.
 //
 //////////////////////////////////////////////////////////////////////
@@ -16,10 +16,10 @@
  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  copies of the Software, and to permit persons to whom the Software is
  furnished to do so, subject to the following conditions:
- 
+
  The above copyright notice and this permission notice shall be included in
  all copies or substantial portions of the Software.
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -54,58 +54,58 @@ struct ResourceProperty
 class DLL_PUBLIC ResourceIdentifier
 {
 public:
-    
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Creates a new identifier.
     ////////////////////////////////////////////////////////////////////////
     static ResourceIdentifier New () ;
-    
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Gets last identifier.
     ////////////////////////////////////////////////////////////////////////
     static ResourceIdentifier Last () ;
-    
+
 protected:
-    
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Current ResourceIdentifier.
     ////////////////////////////////////////////////////////////////////////
     static ResourceIdentifier Current ;
-    
+
 public:
-    
+
     ////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////
     ResourceIdentifier ( unsigned long int value ) ;
-    
+
     ////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////
     ResourceIdentifier ( const ResourceIdentifier& identifier ) ;
-    
+
     ////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////
     operator unsigned long int ( ) ;
-    
+
     ////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////
     operator const unsigned long int ( ) const ;
-    
+
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     ResourceIdentifier & operator ++ ( ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     ResourceIdentifier operator ++ ( int ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     ResourceIdentifier & operator -- ( ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     ResourceIdentifier operator -- ( int ) ;
-    
+
     /// @brief The value.
     unsigned long int iValue ;
 };
@@ -142,77 +142,77 @@ public:
 class DLL_PUBLIC Resource : public EventProceeder
 {
 public:
-    
+
     POOLED( Pools::Referenced )
-    
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Default constructor.
     /// The Resource is initialized using name 'Default' and id generated
     /// using 'New()' .
     ////////////////////////////////////////////////////////////////////////
     Resource ( ) ;
-    
+
     ////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////
     Resource ( const std::string & name ) ;
-    
+
     ////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////
     Resource ( const ResourceIdentifier & identifier , const std::string & name = "Default" ) ;
-    
+
     ////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////
     virtual ~Resource () noexcept ( false ) ;
-    
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Return the Resource's identifier.
     ////////////////////////////////////////////////////////////////////////
     const ResourceIdentifier & getIdentifier () const ;
-    
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Returns the Resource's name.
     ////////////////////////////////////////////////////////////////////////
     const std::string& getName () const ;
-    
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Changes the Resource's name.
     ////////////////////////////////////////////////////////////////////////
     void setName ( const std::string& name ) ;
-    
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Returns the property for given name.
     ////////////////////////////////////////////////////////////////////////
     virtual const ResourceProperty & getProperty ( const std::string& name ) const ;
-    
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Returns the 'data' field for given property.
     ////////////////////////////////////////////////////////////////////////
     virtual const void * getPropertyData ( const std::string& name ) const ;
-    
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Returns the 'iLoadStatus' property.
     ////////////////////////////////////////////////////////////////////////
     bool isLoaded () const ;
-    
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Unloads the Resource.
     ////////////////////////////////////////////////////////////////////////
     virtual void unload () ;
-    
+
     /// @brief A Null ResourceProperty.
     static ResourceProperty BadProperty ;
-    
+
 protected:
-    
+
     /// @brief Identifier value.
     ResourceIdentifier iIdentifier ;
-    
+
     /// @brief Name value.
     std::string iName ;
-    
+
     /// @brief Propertie's list.
     std::vector < ResourceProperty > iProperties ;
-    
+
     /// @brief Loading status. True if the Resource is loaded , false otherwise.
     bool iLoadStatus ;
 };
@@ -230,26 +230,26 @@ template < typename Class >
 class SpecializedResourceHolderList : public std::list < SpecializedCountedObjectHolder < Class > > , public Lockable
 {
 public:
-    
+
     /// @brief Common typedef to avoid typename use.
     typedef SpecializedCountedObjectHolder< Class > ClassHolder ;
     typedef typename std::list< ClassHolder > list_t ;
-    
+
     ////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////
     SpecializedResourceHolderList ()
     {
-        
+
     }
-    
+
     ////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////
     SpecializedResourceHolderList ( const SpecializedResourceHolderList<Class> & rhs )
     : list_t (rhs) , Lockable ()
     {
-        
+
     }
-    
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Adds a new Holder .
     ////////////////////////////////////////////////////////////////////////
@@ -258,7 +258,7 @@ public:
         GreAutolock ;
         list_t::push_back ( holder ) ;
     }
-    
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Adds a new Object , creating a new Holder .
     ////////////////////////////////////////////////////////////////////////
@@ -267,20 +267,20 @@ public:
         GreAutolock ;
         list_t::push_back ( ClassHolder(object) ) ;
     }
-    
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Finds the first object with the given identifier.
     ////////////////////////////////////////////////////////////////////////
     typename list_t::iterator find ( const ResourceIdentifier & identifier )
     {
         GreAutolock ;
-        
+
         for ( auto it = list_t::begin() ; it != list_t::end() ; it++ )
         {
             if ( !it->isInvalid() )
             {
                 auto object = it->getObject () ;
-                
+
                 if ( object )
                 {
                     if ( object->getIdentifier() == identifier )
@@ -290,23 +290,23 @@ public:
                 }
             }
         }
-        
+
         return list_t::end() ;
     }
-    
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Finds the first object with the given identifier.
     ////////////////////////////////////////////////////////////////////////
     typename list_t::const_iterator find ( const ResourceIdentifier & identifier ) const
     {
         GreAutolock ;
-        
+
         for ( auto it = list_t::begin() ; it != list_t::end() ; it++ )
         {
             if ( !it->isInvalid() )
             {
                 auto object = it->getObject () ;
-                
+
                 if ( object )
                 {
                     if ( object->getIdentifier() == identifier )
@@ -317,20 +317,20 @@ public:
             }
         }
     }
-    
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Finds the first object with the given name.
     ////////////////////////////////////////////////////////////////////////
     typename list_t::iterator find ( const std::string & name )
     {
         GreAutolock ;
-        
+
         for ( auto it = list_t::begin() ; it != list_t::end() ; it++ )
         {
             if ( !it->isInvalid() )
             {
                 auto object = it->getObject () ;
-                
+
                 if ( object )
                 {
                     if ( object->getName() == name )
@@ -340,23 +340,23 @@ public:
                 }
             }
         }
-        
+
         return list_t::end () ;
     }
-    
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Finds the first object with the given name.
     ////////////////////////////////////////////////////////////////////////
     typename list_t::const_iterator find ( const std::string & name ) const
     {
         GreAutolock ;
-        
+
         for ( auto it = list_t::begin() ; it != list_t::end() ; it++ )
         {
             if ( !it->isInvalid() )
             {
                 auto object = it->getObject () ;
-                
+
                 if ( object )
                 {
                     if ( object->getName() == name )
@@ -366,10 +366,10 @@ public:
                 }
             }
         }
-        
+
         return list_t::end () ;
     }
-    
+
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     SpecializedResourceHolderList < Class > & operator = ( const SpecializedResourceHolderList<Class> & rhs )
@@ -378,7 +378,13 @@ public:
         list_t::operator=(rhs);
         return *this ;
     }
+
+    /// @brief An empty list made for boolean states only.
+    static const SpecializedResourceHolderList < Class > Empty ;
 };
+
+template < typename Class >
+const SpecializedResourceHolderList < Class > SpecializedResourceHolderList < Class > :: Empty ;
 
 ////////////////////////////////////////////////////////////////////////
 /// @brief An IndependentResource interface.
@@ -393,34 +399,34 @@ public:
 class DLL_PUBLIC IndependentResource : public Resource
 {
 public:
-    
+
     POOLED ( Pools::Referenced )
-    
+
     ////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////
     IndependentResource () ;
-    
+
     ////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////
     IndependentResource ( const std::string & name ) ;
-    
+
     ////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////
     IndependentResource ( const ResourceIdentifier & identifier , const std::string & name = "Default" ) ;
-    
+
     ////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////
     virtual ~IndependentResource () noexcept ( false ) ;
-    
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Loads the Resource with the given arguments passed as a string.
     ////////////////////////////////////////////////////////////////////////
-    virtual bool loadResource ( const std::string & arguments ) = 0 ;
-    
+    virtual bool loadResource ( const std::string & arguments = std::string () ) = 0 ;
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Reloads the Resource with the given arguments passed as a string.
     ////////////////////////////////////////////////////////////////////////
-    virtual bool reloadResource ( const std::string & arguments ) ;
+    virtual bool reloadResource ( const std::string & arguments = std::string () ) ;
 };
 
 GreEndNamespace

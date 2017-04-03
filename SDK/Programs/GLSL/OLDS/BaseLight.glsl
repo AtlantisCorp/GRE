@@ -16,10 +16,10 @@
  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  copies of the Software, and to permit persons to whom the Software is
  furnished to do so, subject to the following conditions:
- 
+
  The above copyright notice and this permission notice shall be included in
  all copies or substantial portions of the Software.
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -33,25 +33,25 @@
 //////////////////////////////////////////////////////////////////////
 /// @brief Calculates non - attenuated Color Ambient, Diffuse and Specular
 /// from given built-in light.
-vec4 CalculateColor ( VertexOutput Fragment , const Light light )
+vec4 CalculateColor ( VertexOutput Fragment , const LightStruct light )
 {
-    vec3 ViewLightPosition = vec4( vec4(light.position, 1.0) ).xyz ;
+    vec3 ViewLightPosition = light.position.xyz ;
     vec3 N = normalize(MaterialGetNormal ( Fragment )) ;
     vec3 L = normalize(ViewLightPosition - Fragment.position) ;
-    vec3 E = normalize(camera.position - Fragment.position ) ;
+    vec3 E = normalize(Camera.position - Fragment.position ) ;
     vec3 R = normalize( -reflect( L, N ) ) ;
-    
+
     // Calculate Ambient term.
     vec4 Ambient = MaterialGetAmbientColor(Fragment) * light.ambient ;
-    
+
     // Calculate Diffuse term.
     vec4 Diffuse = MaterialGetDiffuseColor(Fragment) * light.diffuse * max(dot(N,L), 0.0) ;
     Diffuse = clamp ( Diffuse , 0.0 , 1.0 ) ;
-    
+
     // Calculate Specular term.
-    vec4 Specular = MaterialGetSpecularColor(Fragment) * light.specular * pow(max(dot(R,E),0.0), material.shininess) ;
+    vec4 Specular = MaterialGetSpecularColor(Fragment) * light.specular * pow(max(dot(R,E),0.0), Material.shininess) ;
     Specular = clamp ( Specular , 0.0 , 1.0 ) ;
-    
+
     // Return total color.
     return Ambient + Diffuse + Specular ;
 }
@@ -59,13 +59,13 @@ vec4 CalculateColor ( VertexOutput Fragment , const Light light )
 //////////////////////////////////////////////////////////////////////
 /// @brief Calculate normal attenuation from linear, constant and
 /// quadratic values.
-float CalculateAttenuation ( VertexOutput Fragment , const Light light )
+float CalculateAttenuation ( VertexOutput Fragment , const LightStruct light )
 {
     vec3 ViewLightPosition = vec4( vec4(light.position, 1.0) ).xyz ;
     float D = length ( ViewLightPosition - Fragment.position ) ;
-    
-    float Attenuation = light.attenuationConstant + light.attenuationLinear * D + light.attenuationQuadratic * D * D ;
-    
+
+    float Attenuation = light.attCnst + light.attLine * D + light.attQuad * D * D ;
+
     if ( Attenuation == 0.0f ) {
         return 1.0f ;
     } else {
@@ -75,22 +75,22 @@ float CalculateAttenuation ( VertexOutput Fragment , const Light light )
 
 //////////////////////////////////////////////////////////////////////
 /// @brief Calculate attenuation depending on spotlight values.
-float CalculateAttenuationSpotlight ( VertexOutput Fragment , const Light light )
+float CalculateAttenuationSpotlight ( VertexOutput Fragment , const LightStruct light )
 {
     vec3 ViewLightPosition = vec4( vec4(light.position, 1.0) ).xyz ;
     vec3 LightFragmentDirection = normalize ( ViewLightPosition - Fragment.position ) ;
-    
+
     float AngleMax = light.angle ;
     float Angle = acos( dot ( LightFragmentDirection , -normalize(light.direction) ) ) ;
-    
+
     if ( Angle >= AngleMax ) {
         return 0.0f ;
     }
-    
+
     float Factor = AngleMax / Angle ;
     float Intensity = 1.0 - ( 1.0 / pow ( Factor , light.exposition ) ) ;
     float Attenuation = clamp ( Intensity , 0.0 , 1.0 ) ;
-    
+
     return CalculateAttenuation (Fragment, light) * Attenuation ;
 }
 
@@ -100,17 +100,16 @@ float CalculateAttenuationSpotlight ( VertexOutput Fragment , const Light light 
 vec4 CalculateLightsColors ( VertexOutput Fragment )
 {
     vec4 FinalColor = vec4 ( 0.0 , 0.0 , 0.0 , 1.0 ) ;
-    
-    for ( int i = 0 ; i < lightscount ; ++i )
+
+    for ( int i = 0 ; i < Light.length() ; ++i )
     {
-        vec4 Color = CalculateColor ( Fragment , lights[i] ) ;
-        
-        if ( lights[i].type == 1 ) Color = Color * CalculateAttenuation ( Fragment , lights[i] ) ;
-        if ( lights[i].type == 2 ) Color = Color * CalculateAttenuationSpotlight ( Fragment , lights[i] ) ;
-        
+        vec4 Color = CalculateColor ( Fragment , Light[i] ) ;
+
+        //if ( Light[i].type == 1 ) Color = Color * CalculateAttenuation ( Fragment , Light[i] ) ;
+        //if ( Light[i].type == 2 ) Color = Color * CalculateAttenuationSpotlight ( Fragment , Light[i] ) ;
+
         FinalColor = FinalColor + Color ;
     }
-    
+
     return vec4 ( FinalColor.rgb , 1.0 ) ;
 }
-

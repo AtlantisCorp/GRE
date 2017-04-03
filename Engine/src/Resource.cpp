@@ -207,19 +207,19 @@ ResourceProperty Resource::BadProperty = { "BadProperty" , "" , nullptr } ;
 IndependentResource::IndependentResource ()
 : Gre::Resource()
 {
-    
+    iLoadStatus = false ;
 }
 
 IndependentResource::IndependentResource ( const std::string & name )
 : Gre::Resource ( ResourceIdentifier::New() , name )
 {
-    
+    iLoadStatus = false ;
 }
 
 IndependentResource::IndependentResource ( const ResourceIdentifier & identifier , const std::string & name )
 : Gre::Resource(identifier , name)
 {
-    
+    iLoadStatus = false ;
 }
 
 IndependentResource::~IndependentResource() noexcept ( false )

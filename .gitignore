@@ -1,2 +1,10 @@
 ### We should ignore C::B temp save files.
 ._*
+
+### Ignores .DS_Store , .clang_complete and .pch files.
+.DS_Store
+.clang_complete
+*.pch
+
+### Ignores CMakeFiles files.
+CMakeFiles/*

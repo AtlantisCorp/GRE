@@ -61,7 +61,7 @@ public:
     /// As some files can store more than one mesh (OBJ file for example),
     /// a MeshLoader should be able to return more than one resource.
     //////////////////////////////////////////////////////////////////////
-    virtual MeshHolderList load ( const std::string& name , const std::string& filepath ) const ;
+    virtual MeshHolderList load ( const std::string& filepath , const ResourceLoaderOptions & ops ) const ;
     
     ////////////////////////////////////////////////////////////////////////
     /// @brief Returns a clone of this object.
@@ -74,6 +74,14 @@ public:
     /// @brief Returns true if the file given is loadable by this loader.
     //////////////////////////////////////////////////////////////////////
     virtual bool isLoadable( const std::string& filepath ) const ;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the subdirectory associated with this loader
+    /// loadable contents. For bundled files , every files loadable by this
+    /// loader should be under this subdirectory. For this loader , the
+    /// subdirectory is 'OBJ'.
+    //////////////////////////////////////////////////////////////////////
+    virtual const std::string getDirectory () const ;
 };
 
 GreEndNamespace

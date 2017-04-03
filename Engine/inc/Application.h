@@ -38,7 +38,7 @@
 #include "ResourceLoader.h"
 
 #include "Window.h"
-#include "Scene.h"
+#include "Renderer.h"
 
 GreBeginNamespace
 
@@ -109,30 +109,11 @@ public:
     //////////////////////////////////////////////////////////////////////
     bool shouldTerminate () const ;
     
-public:
-    
     //////////////////////////////////////////////////////////////////////
-    /// @brief Uses the ResourceManager to create an Application using the
-    /// first loader encountered.
-    /// @note If an Application already exists, this function returns an
-    /// invalid Holder.
+    /// @brief Initializes the Application using the given command line
+    /// arguments.
     //////////////////////////////////////////////////////////////////////
-    static ApplicationHolder Create ( const std::string& name , const std::string& author = std::string() , const std::string& description = std::string() ) ;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Global Application object.
-    /// @note If it doesn't exists yet, it returns an invalid object.
-    //////////////////////////////////////////////////////////////////////
-    static ApplicationHolder GetShared () ;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Destroys the Global Applicatio object and resets the
-    /// holder.
-    //////////////////////////////////////////////////////////////////////
-    static void Destroy () ;
-    
-    /// @brief The Shared Application objet.
-    static ApplicationHolder iSharedApplication ;
+    virtual void initialize ( int argc , char ** argv ) ;
     
 protected:
     
@@ -238,8 +219,8 @@ protected:
     /// @brief Once launched, this variable holds the current WindowManager.
     WindowManagerHolder iWindowManager ;
     
-    /// @brief Once launched, this variable holds the current RenderSceneManager.
-    RenderSceneManagerHolder iRenderSceneManager ;
+    /// @brief Once launched, this variable holds the current RendererManager.
+    RendererManagerHolder iRendererManager ;
 };
 
 /// @brief SpecializedCountedObjectHolder for Application.

@@ -114,7 +114,7 @@ public:
     /// @brief Send every operations remaining to Hardware, and generally
     /// swap buffers.
     //////////////////////////////////////////////////////////////////////
-    virtual void flush() = 0;
+    virtual void flush() const = 0;
     
 protected:
     

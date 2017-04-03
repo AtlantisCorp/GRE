@@ -4,7 +4,7 @@
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
-//  Copyright (c) 2015 - 2016 Luk2010
+//  Copyright (c) 2015 - 2017 Luk2010
 //  Created on 06/01/2016.
 //
 //////////////////////////////////////////////////////////////////////
@@ -16,10 +16,10 @@
  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  copies of the Software, and to permit persons to whom the Software is
  furnished to do so, subject to the following conditions:
- 
+
  The above copyright notice and this permission notice shall be included in
  all copies or substantial portions of the Software.
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -37,53 +37,64 @@ GreBeginNamespace
 
 HardwareProgram::HardwareProgram ( const std::string & name )
 : Gre::Resource ( name )
-, iVertexShader ( nullptr ) , iFragmentShader ( nullptr )
-, iCompiled ( false ) , iBinded ( false )
+, iLinked ( false ) , iBinded ( false )
 {
-    
-}
-
-HardwareProgram::HardwareProgram(const std::string& name,
-                                 const HardwareShaderUser& vertexShader,
-                                 const HardwareShaderUser& fragmentShader,
-                                 bool cacheShaders )
-: Resource(name)
-, iVertexShader ( nullptr ) , iFragmentShader ( nullptr )
-, iCompiled ( false ) , iBinded ( false )
-{
-    iComponentLocations [VertexComponentType::Position]  = 0 ;
-    iComponentLocations [VertexComponentType::Color]     = 1 ;
-    iComponentLocations [VertexComponentType::Normal]    = 2 ;
-    iComponentLocations [VertexComponentType::Texture]   = 3 ;
-    iComponentLocations [VertexComponentType::Tangents]  = 4 ;
-    iComponentLocations [VertexComponentType::Binormals] = 5 ;
-    
-    if ( cacheShaders )
-    {
-        iVertexShader = vertexShader ;
-        iFragmentShader = fragmentShader ;
-    }
+    iAttachedShaders[ShaderType::Vertex] = HardwareShaderHolder ( nullptr ) ;
+    iAttachedShaders[ShaderType::Fragment] = HardwareShaderHolder ( nullptr ) ;
 }
 
 HardwareProgram::~HardwareProgram() noexcept ( false )
 {
-    
+
+}
+
+void HardwareProgram::attachShaders ( const HardwareShaderHolderList & shaders )
+{
+    if ( iLinked )
+        return ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Attaches every shaders to the object. Notes that if a shader type is
+    // already attached to another shader, the behaviour is platform-dependent
+    // and not guaranteed, but usually it should overwrite the attached shader.
+
+    for ( auto shader : shaders )
+    {
+        if ( !shader.isInvalid() )
+        {
+            if ( _attachShader(shader) ) {
+                iAttachedShaders[shader->getType()] = shader ;
+            }
+        }
+    }
+}
+
+void HardwareProgram::finalize ()
+{
+    //////////////////////////////////////////////////////////////////////
+    // If the object is not already finalized, call the implementation
+    // function '_finalize'.
+
+    if ( !iLinked ) {
+        iLinked = _finalize () ;
+    }
 }
 
 void HardwareProgram::use() const
 {
     GreAutolock ;
-    
+
     _bind () ;
-    
+
     if ( iBinded )
     {
-        // Check if we have some variables to upload.
-        
+        // Check if we have some variables to upload. Those variables have been set before binding the program
+        // so they were saved in order to set them when using the program.
+
         for ( const HardwareProgramVariable & var : iCachedVariables ) {
-            _setVariable (var) ;
+            setUniform (var) ;
         }
-        
+
         iCachedVariables.clear();
     }
 }
@@ -93,154 +104,67 @@ void HardwareProgram::unuse() const
     GreAutolock ; _unbind() ;
 }
 
-void HardwareProgram::setAttribLocation(const std::string &name, const Gre::VertexComponentType &component)
+bool HardwareProgram::isFinalized () const
 {
-    GreAutolock ; _setAttribLocation ( name , getAttribLocation(component) ) ;
+    GreAutolock ; return iLinked ;
 }
 
-void HardwareProgram::setAttribLocation(const Gre::VertexComponentType &component, int location)
+bool HardwareProgram::isLinked() const
 {
-    GreAutolock ; iComponentLocations [component] = location ;
+    GreAutolock ; return iLinked ;
 }
 
-int HardwareProgram::getAttribLocation(const Gre::VertexComponentType &component) const
+bool HardwareProgram::isBound() const
 {
-    GreAutolock ;
-    
-    auto it = iComponentLocations.find ( component ) ;
-    if ( it == iComponentLocations.end() )
-        return -1 ;
-    else
-        return it->second ;
-}
-
-bool HardwareProgram::isCompiled() const
-{
-    GreAutolock ; return iCompiled ;
+    GreAutolock ; return iBinded ;
 }
 
 void HardwareProgram::reset()
 {
     GreAutolock ;
-    
-    iVertexShader.clear();
-    iFragmentShader.clear();
-    
+
+    iAttachedShaders.clear () ;
+
     _deleteProgram() ;
-    iCompiled = false ;
+    iLinked = false ;
     iBinded = false ;
-    
-    iComponentLocations.clear() ;
-    iComponentLocations [VertexComponentType::Position]  = 0 ;
-    iComponentLocations [VertexComponentType::Color]     = 1 ;
-    iComponentLocations [VertexComponentType::Normal]    = 2 ;
-    iComponentLocations [VertexComponentType::Texture]   = 3 ;
-    iComponentLocations [VertexComponentType::Tangents]  = 4 ;
-    iComponentLocations [VertexComponentType::Binormals] = 5 ;
+
+    iCachedVariables.clear() ;
+    iUniforms.clear() ;
+    iAttribsLocation.clear() ;
 }
 
-void HardwareProgram::setVariable(const Gre::HardwareProgramVariable &var) const
+bool HardwareProgram::setUniform ( const std::string & name , const HdwProgVarType & type , const RealProgramVariable & value ) const
 {
-    GreAutolock ;
-    
-    if ( iBinded ) {
-        // We are binded , so we can upload the variable to the program.
-        _setVariable ( var ) ;
-    }
-    
-    else {
-        // Cache this Variable for later uploading.
-        iCachedVariables.add(var);
-    }
+	GreAutolock ;
+
+	if ( isLinked() )
+	{
+		auto it = iUniforms.find ( name ) ;
+		if ( it != iUniforms.end() ) {
+			return _setUniform ( it->second.location , type , value ) ;
+		}
+	}
+
+	return false ;
 }
 
-void HardwareProgram::setLights(const std::vector<Light> &lights) const
+bool HardwareProgram::setUniform ( const HardwareProgramVariable & variable ) const
 {
-    HardwareProgramVariable lightcount ;
-    lightcount.name = "lightscount" ;
-    lightcount.type = HdwProgVarType::Int1 ;
-    lightcount.value.i1 = lights.size() ;
-    setVariable(lightcount) ;
-    
-    for ( int i = 0 ; i < lights.size() ; ++i )
-    {
-        std::string lightname = std::string("lights[") + std::to_string(i) + "]." ;
-        
-        if ( lights[i].isEnabled() )
-        {
-            HardwareProgramVariable lighttype ;
-            lighttype.name = lightname + "type" ;
-            lighttype.type = HdwProgVarType::Int1 ;
-            lighttype.value.i1 = (int) lights[i].getType() ;
-            setVariable(lighttype) ;
-            
-            lighttype.name = lightname + "enabled" ;
-            lighttype.type = HdwProgVarType::Int1 ;
-            lighttype.value.i1 = 1 ;
-            setVariable(lighttype) ;
-            
-            lighttype.name = lightname + "position" ;
-            lighttype.type = HdwProgVarType::Float3 ;
-            lighttype.value.f3 = lights[i].getPosition() ;
-            setVariable(lighttype) ;
-            
-            lighttype.name = lightname + "direction" ;
-            lighttype.type = HdwProgVarType::Float3 ;
-            lighttype.value.f3 = lights[i].getDirection() ;
-            setVariable(lighttype) ;
-            
-            lighttype.name = lightname + "ambient" ;
-            lighttype.type = HdwProgVarType::Float4 ;
-            lighttype.value.f4 = lights[i].getAmbient().toFloat4() ;
-            setVariable(lighttype) ;
-            
-            lighttype.name = lightname + "diffuse" ;
-            lighttype.type = HdwProgVarType::Float4 ;
-            lighttype.value.f4 = lights[i].getDiffuse().toFloat4() ;
-            setVariable(lighttype) ;
-            
-            lighttype.name = lightname + "specular" ;
-            lighttype.type = HdwProgVarType::Float4 ;
-            lighttype.value.f4 = lights[i].getSpecular().toFloat4() ;
-            setVariable(lighttype) ;
-            
-            lighttype.name = lightname + "shininess" ;
-            lighttype.type = HdwProgVarType::Float1 ;
-            lighttype.value.f1 = lights[i].getShininess() ;
-            setVariable(lighttype) ;
-            
-            if ( lights[i].getType() != LightType::Directionnal )
-            {
-                lighttype.name = lightname + "attenuationConstant" ;
-                lighttype.type = HdwProgVarType::Float1 ;
-                lighttype.value.f1 = lights[i].getAttenuationCst() ;
-                setVariable(lighttype) ;
-                
-                lighttype.name = lightname + "attenuationLinear" ;
-                lighttype.type = HdwProgVarType::Float1 ;
-                lighttype.value.f1 = lights[i].getAttenuationLinear() ;
-                setVariable(lighttype) ;
-                
-                lighttype.name = lightname + "attenuationQuadratic" ;
-                lighttype.type = HdwProgVarType::Float1 ;
-                lighttype.value.f1 = lights[i].getAttenuationQuad() ;
-                setVariable(lighttype) ;
-            }
-            
-            if ( lights[i].getType() == LightType::Spot )
-            {
-                lighttype.name = lightname + "angle" ;
-                lighttype.type = HdwProgVarType::Float1 ;
-                lighttype.value.f1 = lights[i].getAngle() ;
-                setVariable(lighttype) ;
-                
-                lighttype.name = lightname + "exposition" ;
-                lighttype.type = HdwProgVarType::Float1 ;
-                lighttype.value.f1 = lights[i].getExposition() ;
-                setVariable(lighttype) ;
-            }
-        }
-    }
+    return setUniform ( variable.name , variable.type , variable.value ) ;
+}
+
+bool HardwareProgram::isUniformValid(const std::string &name) const
+{
+    GreAutolock ; return iUniforms.find(name) != iUniforms.end() ;
+}
+
+int HardwareProgram::getUniformLocation(const std::string &name) const
+{
+    GreAutolock ; auto it = iUniforms.find(name) ;
+
+    if ( it == iUniforms.end() ) return -1 ;
+    return it -> second.location ;
 }
 
 GreEndNamespace

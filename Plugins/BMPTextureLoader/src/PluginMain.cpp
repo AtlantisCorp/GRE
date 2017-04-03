@@ -69,7 +69,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
     /// @brief Loads a file to the given SoftwarePixelBuffer.
     //////////////////////////////////////////////////////////////////////
-    virtual SoftwarePixelBufferHolder load ( const std::string & filepath ) const
+    virtual SoftwarePixelBufferHolder load ( const std::string & filepath , const ResourceLoaderOptions & ops ) const
     {
         bmpread_t bmp ;
         
@@ -92,14 +92,22 @@ public:
     }
 };
 
-extern "C" const void* GetPluginName ( void )
+PluginInfo info ;
+
+extern "C" PluginInfo * GetPluginInfo ( void )
 {
-    return (const void*) "BMP Texture Loader Plugin" ;
+    info.name = "BMPTextureLoader Plugin" ;
+    info.author = "Luk2010" ;
+    info.version = GRE_PLUGIN_VERSION ;
+    
+    uuid_parse("1e11fdac-dff2-4f7b-9332-82d11406b049", info.uuid);
+    
+    return & info ;
 }
 
 extern "C" void StartPlugin ( void )
 {
-    ResourceManager::Get().getTextureManager()->getFactory().registers("BMPTextureLoader",
+    ResourceManager::Get()->getTextureManager()->getFactory().registers("BMPTextureLoader",
                                                                        new BMPTextureLoader());
 }
 

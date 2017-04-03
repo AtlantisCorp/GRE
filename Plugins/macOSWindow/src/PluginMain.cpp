@@ -56,9 +56,17 @@ public:
 	}
 };
 
-extern "C" void* GetPluginName (void)
+PluginInfo info ;
+
+extern "C" PluginInfo * GetPluginInfo ( void )
 {
-    return (void*) "macOS Window Manager" ;
+    info.name = "DarwinApplication Plugin" ;
+    info.author = "Luk2010" ;
+    info.version = GRE_PLUGIN_VERSION ;
+    
+    uuid_parse("e6cbad59-8beb-4ebc-9f0b-7ec694dd7d0b", info.uuid);
+    
+    return & info ;
 }
 
 extern "C" void StartPlugin (void)
@@ -71,17 +79,17 @@ extern "C" void StartPlugin (void)
     wmanager->getFactory().registers("macOS Window Loader", new macOSWindowLoader());
     
     // Here , we only have to register the macOSWindowManager.
-    ResourceManager::Get().setWindowManager(WindowManagerHolder(wmanager));
+    ResourceManager::Get()->setWindowManager(WindowManagerHolder(wmanager));
 	
 	// Also, think about the ApplicationLoader. Finally, this is the WindowManager wich will 
 	// process OS X events. So, just load a default Application loader.
-	ResourceManager::Get().getApplicationFactory().registers("DefaultApplicationLoader", new DefaultApplicationLoader());
+	ResourceManager::Get()->getApplicationFactory().registers("DefaultApplicationLoader", new DefaultApplicationLoader());
 }
 
 extern "C" void StopPlugin (void)
 {
     // Retrieve the Window Manager and terminate appkit.
-    macOSWindowManager* manager = reinterpret_cast<macOSWindowManager*>(ResourceManager::Get().getWindowManager().getObject());
+    macOSWindowManager* manager = reinterpret_cast<macOSWindowManager*>(ResourceManager::Get()->getWindowManager().getObject());
     terminateAppkit(manager);
     
     // Unloads the Window Manager.

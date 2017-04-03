@@ -78,13 +78,6 @@ public:
     /// @brief Returns 'iSensitivity'.
     //////////////////////////////////////////////////////////////////////
     virtual float getSensitivity () const ;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Looks to the given position, from given position, and with
-    /// given up vector.
-    /// @note Also calculates angles from directions.
-    //////////////////////////////////////////////////////////////////////
-    virtual void lookAt ( const Vector3& origin, const Vector3& point, const Vector3& up = Vector3(.0f,1.0f,.0f) ) ;
 
 protected:
 

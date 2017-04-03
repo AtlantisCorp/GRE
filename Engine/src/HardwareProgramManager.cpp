@@ -4,7 +4,7 @@
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
-//  Copyright (c) 2015 - 2016 Luk2010
+//  Copyright (c) 2015 - 2017 Luk2010
 //  Created on 10/01/2016.
 //
 //////////////////////////////////////////////////////////////////////
@@ -16,10 +16,10 @@
  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  copies of the Software, and to permit persons to whom the Software is
  furnished to do so, subject to the following conditions:
- 
+
  The above copyright notice and this permission notice shall be included in
  all copies or substantial portions of the Software.
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -35,33 +35,41 @@
 
 GreBeginNamespace
 
+// -----------------------------------------------------------------------------
+
+HardwareProgramManagerInternalCreator::HardwareProgramManagerInternalCreator ()
+{
+
+}
+
+HardwareProgramManagerInternalCreator::~HardwareProgramManagerInternalCreator ()
+{
+
+}
+
+// -----------------------------------------------------------------------------
+
 HardwareProgramManager::HardwareProgramManager(const std::string& name)
 : Resource(ResourceIdentifier::New() , name)
 {
-    
+    iInternalCreator = nullptr ;
 }
 
 HardwareProgramManager::~HardwareProgramManager() noexcept ( false )
 {
-    
-}
 
-HardwareShaderUser HardwareProgramManager::loadShader(const ShaderType& stype, const std::string &name, const std::string &filepath)
-{
-    GreAutolock ;
-    return HardwareShaderUser ( loadShaderHolder(stype, name, filepath) );
 }
 
 HardwareShaderUser HardwareProgramManager::getShaderByName(const std::string &name)
 {
     GreAutolock ;
-    
+
     auto it = iShaders.find(name);
     if(it == iShaders.end())
     {
         return HardwareShaderUser (nullptr);
     }
-    
+
     else
     {
         return *it;
@@ -71,13 +79,13 @@ HardwareShaderUser HardwareProgramManager::getShaderByName(const std::string &na
 const HardwareShaderUser HardwareProgramManager::getShaderByName(const std::string &name) const
 {
     GreAutolock ;
-    
+
     auto it = iShaders.find(name);
     if(it == iShaders.end())
     {
         return HardwareShaderUser (nullptr);
     }
-    
+
     else
     {
         return *it;
@@ -87,11 +95,11 @@ const HardwareShaderUser HardwareProgramManager::getShaderByName(const std::stri
 void HardwareProgramManager::unloadShaderByName(const std::string &name)
 {
     GreAutolock ;
-    
+
     auto it = iShaders.find(name);
     if(it == iShaders.end())
         return;
-    
+
     iShaders.erase(it);
 }
 
@@ -101,293 +109,24 @@ void HardwareProgramManager::clearShaders()
     iShaders.clear();
 }
 
-HardwareProgramUser HardwareProgramManager::createHardwareProgram(const std::string &name)
+HardwareProgramHolder HardwareProgramManager::getProgram(const std::string &name)
 {
     GreAutolock ;
-    
-    if ( !name.empty() )
-    {
-        // Check if the HardwareProgram currently exists.
-        
-        auto it = iPrograms.find(name);
-        
-        if ( it != iPrograms.end() )
-        {
-#ifdef GreIsDebugMode
-            GreDebugPretty() << "HardwareProgram '" << name << "' already loaded." << Gre::gendl;
-#endif
-            return HardwareProgramUser ( nullptr );
-        }
-        
-        // Here we want to create a HardwareProgram but without HardwareShader. By this we mean that the
-        // HardwareProgram will not be linked untill HardwareProgramPrivate::link() has been called. Property
-        // iProgramIsLinked is so false.
-        // Notes that not every implementation should support this creation's way.
-        
-        HardwareProgramHolder program = iCreateHardwareProgram(name, HardwareShaderHolder(nullptr), HardwareShaderHolder(nullptr));
-        
-        if ( program.isInvalid() )
-        {
-#ifdef GreIsDebugMode
-            GreDebugPretty() << "Invalid HardwareProgram '" << name << "' creation." << Gre::gendl;
-#endif
-            return HardwareProgramUser ( nullptr );
-        }
-        
-        // Load the HardwareProgram to the database.
-        
-        iPrograms.add(program);
-        return HardwareProgramUser ( program );
-    }
-    
-    else
-    {
-#ifdef GreIsDebugMode
-        GreDebugPretty() << "'name' is invalid." << Gre::gendl;
-#endif
-        return HardwareProgramUser ( nullptr );
-    }
-}
 
-HardwareProgramUser HardwareProgramManager::createHardwareProgram(const std::string& name, const HardwareShaderUser &vertexShader, const HardwareShaderUser &fragmentShader)
-{
-    GreAutolock ;
-    
-    if ( !name.empty() )
-    {
-        // Check if the HardwareProgram currently exists.
-        
-        auto it = iPrograms.find(name);
-        
-        if ( it != iPrograms.end() )
-        {
-#ifdef GreIsDebugMode
-            GreDebugPretty() << "HardwareProgram '" << name << "' already loaded." << Gre::gendl;
-#endif
-            return HardwareProgramUser ( nullptr );
-        }
-        
-        // Check Vertex shader.
-        
-        if ( vertexShader.isInvalid() )
-        {
-#ifdef GreIsDebugMode
-            GreDebugPretty() << "Vertex shader is invalid." << Gre::gendl;
-#endif
-            return HardwareProgramUser ( nullptr );
-        }
-        
-        // Check Fragment shader.
-        
-        if ( fragmentShader.isInvalid() )
-        {
-#ifdef GreIsDebugMode
-            GreDebugPretty() << "Fragment shader is invalid." << Gre::gendl;
-#endif
-            return HardwareProgramUser ( nullptr );
-        }
-        
-        // Holds shaders and create HardwareProgram.
-        
-        HardwareShaderHolder vholder = vertexShader.lock();
-        HardwareShaderHolder fholder = fragmentShader.lock();
-        
-        HardwareProgramHolder program = iCreateHardwareProgram(name, vholder, fholder);
-        
-        if ( program.isInvalid() )
-        {
-#ifdef GreIsDebugMode
-            GreDebugPretty() << "Invalid HardwareProgram '" << name << "' creation." << Gre::gendl;
-#endif
-            return HardwareProgramUser ( nullptr );
-        }
-        
-        // Load the HardwareProgram to the database.
-        
-        iPrograms.add(program);
-        return HardwareProgramUser ( program );
-    }
-    
-    else
-    {
-#ifdef GreIsDebugMode
-        GreDebugPretty() << "'name' is invalid." << Gre::gendl;
-#endif
-        return HardwareProgramUser ( nullptr );
-    }
-}
-
-HardwareProgramUser HardwareProgramManager::createHardwareProgramFromFiles(const std::string &name, const std::string &vertexshaderpath, const std::string &fragmentshaderpath)
-{
-    GreAutolock ;
-    
-    if ( !name.empty() )
-    {
-        // Check if the HardwareProgram currently exists.
-        
-        auto it = iPrograms.find(name);
-        
-        if ( it != iPrograms.end() )
-        {
-#ifdef GreIsDebugMode
-            GreDebugPretty() << "HardwareProgram '" << name << "' already loaded." << Gre::gendl;
-#endif
-            return HardwareProgramUser ( nullptr );
-        }
-        
-        // Try to load the first Shader.
-        
-        HardwareShaderHolder vshader = loadShaderHolder(ShaderType::Vertex, name + "/vertexshader", vertexshaderpath);
-        
-        if ( vshader.isInvalid() )
-        {
-#ifdef GreIsDebugMode
-            GreDebugPretty() << "Invalid Vertex Shader path '" << vertexshaderpath << "'." << Gre::gendl;
-#endif
-            return HardwareProgramUser ( nullptr );
-        }
-        
-        // Try to load Fragment shader.
-        
-        HardwareShaderHolder fshader = loadShaderHolder(ShaderType::Fragment, name + "/fragmentshader", fragmentshaderpath);
-        
-        if ( fshader.isInvalid() )
-        {
-#ifdef GreIsDebugMode
-            GreDebugPretty() << "Invalid Fragment Shader path '" << fragmentshaderpath << "'." << Gre::gendl;
-#endif
-            return HardwareProgramUser ( nullptr );
-        }
-        
-        // Create the HardwareProgram.
-        
-        HardwareProgramHolder program = iCreateHardwareProgram(name, vshader, fshader);
-        
-        if ( program.isInvalid() )
-        {
-#ifdef GreIsDebugMode
-            GreDebugPretty() << "Invalid HardwareProgram '" << name << "' creation." << Gre::gendl;
-#endif
-            return HardwareProgramUser ( nullptr );
-        }
-        
-        // Load the HardwareProgram to the database.
-        
-        iPrograms.add(program);
-        return HardwareProgramUser ( program );
-    }
-    
-    else
-    {
-#ifdef GreIsDebugMode
-        GreDebugPretty() << "'name' is invalid." << Gre::gendl;
-#endif
-        return HardwareProgramUser ( nullptr );
-    }
-}
-
-HardwareShaderHolder HardwareProgramManager::loadShaderHolder(const Gre::ShaderType &stype, const std::string &name, const std::string &filepath)
-{
-    GreAutolock ;
-    
-    if ( !name.empty() )
-    {
-        auto it = iShaders.find(name);
-        
-        if ( it != iShaders.end() )
-        {
-            if ( !(*it).isInvalid() )
-            {
-                if ( (*it)->getFilepath() == filepath )
-                {
-                    return (*it);
-                }
-                
-                else
-                {
-#ifdef GreIsDebugMode
-                    GreDebugPretty() << "HardwareShader '" << (*it)->getName() << "' has different filepath." << Gre::gendl;
-#endif
-                    return HardwareShaderHolder ( nullptr );
-                }
-            }
-            else
-            {
-                iShaders.erase(it);
-                return loadShaderHolder(stype, name, filepath);
-            }
-        }
-        
-        // Loading the source from file.
-        // http://stackoverflow.com/questions/2602013/read-whole-ascii-file-into-c-stdstring
-        
-        std::ifstream srcstream ( filepath );
-        
-        if ( !srcstream )
-        {
-#ifdef GreIsDebugMode
-            GreDebugPretty() << "Can't open file '" << filepath << "'." << Gre::gendl;
-#endif
-            return HardwareShaderHolder ( nullptr );
-        }
-        
-        std::string src;
-        
-        srcstream.seekg(0, std::ios::end);
-        src.reserve(srcstream.tellg());
-        srcstream.seekg(0, std::ios::beg);
-        
-        src.assign( (std::istreambuf_iterator<char>(srcstream)), std::istreambuf_iterator<char>() );
-        
-        // Create the shader from source.
-        
-        HardwareShaderHolder shader = iCreateHardwareShader(stype , name , src);
-        
-        if ( shader.isInvalid() )
-        {
-#ifdef GreIsDebugMode
-            GreDebugPretty() << "HardwareShader '" << name << "' can't be created." << Gre::gendl;
-#endif
-            return HardwareShaderHolder ( nullptr );
-        }
-        
-        iShaders.add(shader);
-        return shader;
-    }
-    
-    else
-    {
-#ifdef GreIsDebugMode
-        GreDebugPretty() << "'name' is invalid." << Gre::gendl;
-#endif
-        return HardwareShaderHolder ( nullptr );
-    }
-}
-
-const HardwareProgramHolder HardwareProgramManager::getDefaultProgram() const
-{
-    GreAutolock ;
-    return getProgram("Default").lock();
-}
-
-HardwareProgramUser HardwareProgramManager::getProgram(const std::string &name)
-{
-    GreAutolock ;
-    
     auto it = iPrograms.find(name);
     if(it == iPrograms.end())
-        return HardwareProgramUser (nullptr);
+        return HardwareProgramHolder (nullptr);
     else
         return (*it);
 }
 
-const HardwareProgramUser HardwareProgramManager::getProgram(const std::string &name) const
+const HardwareProgramHolder HardwareProgramManager::getProgram(const std::string &name) const
 {
     GreAutolock ;
-    
+
     auto it = iPrograms.find(name);
     if(it == iPrograms.end())
-        return HardwareProgramUser (nullptr);
+        return HardwareProgramHolder (nullptr);
     else
         return (*it);
 }
@@ -395,12 +134,29 @@ const HardwareProgramUser HardwareProgramManager::getProgram(const std::string &
 void HardwareProgramManager::destroyProgram(const std::string &name)
 {
     GreAutolock ;
-    
+
     auto it = iPrograms.find(name);
     if(it == iPrograms.end())
         return;
-    
+
     iPrograms.erase(it);
+}
+
+void HardwareProgramManager::unloadProgram(const HardwareProgramHolder &program)
+{
+    GreAutolock ;
+
+    if ( !program.isInvalid() )
+    {
+        auto it = iPrograms.find(program->getIdentifier()) ;
+
+        if ( it != iPrograms.end() ) {
+
+            removeListener ( EventProceederUser(program) ) ;
+            iPrograms.erase(it) ;
+
+        }
+    }
 }
 
 void HardwareProgramManager::clearPrograms()
@@ -412,71 +168,175 @@ void HardwareProgramManager::clearPrograms()
 void HardwareProgramManager::clear()
 {
     GreAutolock ;
-    
+
     clearShaders();
     clearPrograms();
-    clearGlobals();
+    iInternalCreator = nullptr ;
 }
 
-HardwareProgramVariable& HardwareProgramManager::setGlobalVariableMat4(const std::string &name, const Matrix4 &mat4)
+void HardwareProgramManager::setInternalCreator(Gre::HardwareProgramManagerInternalCreator *creator)
 {
-    GreAutolock ;
-    
-    HardwareProgramVariable nVar;
-    nVar.name = name;
-    nVar.type = HdwProgVarType::Matrix4;
-    nVar.value.m4 = mat4;
-    iGlobals.add(nVar);
-    return iGlobals.get(name);
+    GreAutolock ; iInternalCreator = creator ;
 }
 
-HardwareProgramVariable& HardwareProgramManager::setGlobalVariable(const HardwareProgramVariable& var)
+const HardwareProgramManagerInternalCreator* HardwareProgramManager::getInternalCreator() const
 {
-    GreAutolock ;
-    iGlobals.add(var);
-    return iGlobals.get(var.name);
+    GreAutolock ; return iInternalCreator ;
 }
 
-void HardwareProgramManager::unsetGlobalVariable(const std::string &name)
+HardwareShaderHolderList HardwareProgramManager::loadShaderTables ( const ShaderPathTableList & tables )
 {
     GreAutolock ;
-    iGlobals.remove(name);
-}
 
-void HardwareProgramManager::clearGlobals()
-{
-    GreAutolock ;
-    iGlobals.clear();
-}
+    //////////////////////////////////////////////////////////////////////
+    // Iterates over the tables and load it one by one.
 
-void HardwareProgramManager::onUpdateEvent(const Gre::UpdateEvent &e)
-{
-    GreAutolock ;
-    
-    for(auto prog : iPrograms)
+    HardwareShaderHolderList shaders ;
+
+    for ( auto table : tables.tables )
     {
-        for(auto var : iGlobals)
-        {
-            prog->setVariable(var);
-        }
+        HardwareShaderHolder shader = loadShaderTable ( table ) ;
+        if ( !shader.isInvalid() ) shaders.add(shader) ;
     }
+
+    return shaders ;
 }
 
-// ---------------------------------------------------------------------------------------------------
-
-HardwareProgramManagerLoader::HardwareProgramManagerLoader()
+HardwareShaderHolder HardwareProgramManager::loadShaderTable ( const ShaderPathTable & table )
 {
-    
+    GreAutolock ;
+
+    if ( !iInternalCreator )
+    return HardwareShaderHolder ( nullptr ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Iterates over the pathes to get a valid path for our compiler.
+
+    for ( auto it : table.pathes )
+    {
+        if ( it.first == iInternalCreator -> getCompiler() )
+        return loadShaderFromFile ( table.type , it.second ) ;
+    }
+
+    //////////////////////////////////////////////////////////////////////
+    // If we gets here this means we had nothing.
+
+    return HardwareShaderHolder ( nullptr ) ;
 }
 
-HardwareProgramManagerLoader::~HardwareProgramManagerLoader()
+HardwareShaderHolder HardwareProgramManager::loadShaderFromFile ( const ShaderType & type , const std::string & path )
 {
-    
+    GreAutolock ;
+
+    if ( !iInternalCreator )
+    return HardwareShaderHolder ( nullptr ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Tries to get the file's source directly from working directory.
+
+    std::string src = Platform::GetFileSource ( path ) ;
+
+    if ( src.empty() )
+    return loadShaderFromBundled ( type , path ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    // If we get here this means we have the correct path.
+
+    return loadShaderFromSource ( type , src ) ;
 }
 
-HardwareProgramManagerHolder HardwareProgramManagerLoader::load( const std::string &name ) const
+HardwareShaderHolder HardwareProgramManager::loadShaderFromBundled ( const ShaderType & type , const std::string & path )
 {
-    return HardwareProgramManagerHolder(nullptr) ;
+    GreAutolock ;
+
+    if ( !iInternalCreator )
+    return HardwareShaderHolder ( nullptr ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Gets every bundles and tries to find the file in one of the bundles.
+    // Notes the path is always appended by the compiler name , as this is a
+    // bundle requirement.
+
+    std::string filepath = iInternalCreator -> getCompiler () + Platform::GetSeparator() + path ;
+    filepath = ResourceManager::Get() -> findBundledFile ( ResourceType::Program , filepath ) ;
+
+    if ( filepath.empty() )
+    return HardwareShaderHolder ( nullptr ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    // If we gets here , this means the file has been found and we have a
+    // correct path. Gets the source and load it.
+
+    std::string src = Platform::GetFileSource ( filepath ) ;
+
+    if ( src.empty() )
+    return HardwareShaderHolder ( nullptr ) ;
+
+    return loadShaderFromSource ( type , src ) ;
+}
+
+HardwareShaderHolder HardwareProgramManager::loadShaderFromSource ( const ShaderType & type , const std::string & source )
+{
+    GreAutolock ;
+
+    if ( !iInternalCreator )
+    return HardwareShaderHolder ( nullptr ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Uses the internal creator to create the shader.
+
+    HardwareShaderHolder shader = iInternalCreator -> loadShader ( type , "" , source ) ;
+
+    if ( shader.isInvalid () )
+    return HardwareShaderHolder ( nullptr ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Registers and returns it.
+
+    return loadShaderFromHolder ( shader ) ;
+}
+
+HardwareShaderHolder HardwareProgramManager::loadShaderFromHolder ( const HardwareShaderHolder & shader )
+{
+    GreAutolock ;
+
+    if ( shader.isInvalid () )
+    return HardwareShaderHolder ( nullptr ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Check this shader is not already loaded.
+
+    if ( iShaders.find(shader->getIdentifier()) == iShaders.end() )
+    iShaders.add ( shader ) ;
+
+    return shader ;
+}
+
+HardwareProgramHolder HardwareProgramManager::loadProgram ( const std::string & name )
+{
+    GreAutolock ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Check if program is not already loaded.
+
+    HardwareProgramHolder chk = getProgram ( name ) ;
+
+    if ( !chk.isInvalid() )
+    return chk ;
+
+    //////////////////////////////////////////////////////////////////////
+    // We gets here , load it using the creator and registers it.
+
+    if ( !iInternalCreator )
+    return HardwareProgramHolder ( nullptr ) ;
+
+    chk = iInternalCreator -> loadProgram ( name , { } ) ;
+
+    if ( chk.isInvalid() )
+    return HardwareProgramHolder ( nullptr ) ;
+
+    iPrograms.add ( chk ) ;
+    return chk ;
 }
 
 GreEndNamespace

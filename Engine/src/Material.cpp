@@ -4,7 +4,7 @@
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
-//  Copyright (c) 2015 - 2016 Luk2010
+//  Copyright (c) 2015 - 2017 Luk2010
 //  Created on 26/11/2015.
 //
 //////////////////////////////////////////////////////////////////////
@@ -16,10 +16,10 @@
  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  copies of the Software, and to permit persons to whom the Software is
  furnished to do so, subject to the following conditions:
- 
+
  The above copyright notice and this permission notice shall be included in
  all copies or substantial portions of the Software.
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -34,114 +34,47 @@
 
 GreBeginNamespace
 
-Material::Material(const std::string& name)
-: Gre::Resource(ResourceIdentifier::New() , name)
+Material::Material(const std::string& name) : Gre::Resource(name)
 , iEmission(Color(1.0f, 1.0f, 1.0f, 1.0f))
-, iAmbient(Color(1.0f, 1.0f, 1.0f, 1.0f))
-, iDiffuse(Color(1.0f, 1.0f, 1.0f, 1.0f))
-, iSpecular(Color(1.0f, 1.0f, 1.0f, 1.0f))
-, iShininess(32.0f)
-, iNormalMap(nullptr) , iNormalMapEnabled(false)
-, iSpecularTexture(nullptr) , iSpecularTextureEnabled(false)
 {
-    
+    //////////////////////////////////////////////////////////////////////
+    // Loads default color values.
+
+    iAmbient = { 1.0f , 1.0f , 1.0f } ;
+    iDiffuse = { 1.0f , 1.0f , 1.0f } ;
+    iSpecular = { 1.0f , 1.0f , 1.0f } ;
+    iShininess = 32.0f ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Initializes every textures to null , making the map complete.
+
+    for ( int i = (int) TechniqueParam::Texture0 ; i < (int) TechniqueParam::Texture9 ; ++i )
+        iTextures [(TechniqueParam)i] = nullptr ;
+
+    iTextures [TechniqueParam::MaterialTexAmbient] = nullptr ;
+    iTextures [TechniqueParam::MaterialTexDiffuse] = nullptr ;
+    iTextures [TechniqueParam::MaterialTexSpecular] = nullptr ;
+    iTextures [TechniqueParam::MaterialTexNormal] = nullptr ;
 }
 
 Material::~Material() noexcept ( false )
 {
-    
+
 }
 
-void Material::setTexture(const Gre::TextureUser &tex)
+void Material::setTexture ( const TechniqueParam & param , const TextureHolder & tex )
 {
-    if ( iTextures.size() )
+    GreAutolock ;
+
+    if ( !tex.isInvalid() )
     {
-        iTextures.at(0) = tex;
-    }
-    
-    else
-    {
-        iTextures.push_back(tex);
+        iTextures [param] = tex ;
     }
 }
 
-void Material::setTexture(const Gre::TextureUser &tex, size_t index)
+const TextureHolder & Material::getTexture(const Gre::TechniqueParam &param) const
 {
-    if ( iTextures.size() > index )
-    {
-        iTextures.at(index) = tex;
-    }
-    
-    else
-    {
-        for ( size_t i = iTextures.size(); i < index; ++i )
-        {
-            iTextures.push_back(TextureUser(nullptr));
-        }
-        
-        iTextures.push_back(tex);
-    }
-}
-
-const TextureUser Material::getTexture() const
-{
-    if ( iTextures.size() )
-    {
-        return iTextures.at(0);
-    }
-    
-    else
-    {
-        return TextureUser(nullptr);
-    }
-}
-
-const TextureUser Material::getTexture(size_t index) const
-{
-    if ( iTextures.size() > index )
-    {
-        return iTextures.at(index);
-    }
-    
-    else
-    {
-        return TextureUser(nullptr);
-    }
-}
-
-const std::vector< TextureUser > & Material::getTextures() const
-{
-    return iTextures;
-}
-
-void Material::clearTexture()
-{
-    clearTexture(0);
-}
-
-void Material::clearTexture(size_t index)
-{
-    if ( iTextures.size() > index )
-    {
-        TextureHolder holder = iTextures.at(index).lock() ;
-        if ( !holder.isInvalid() ) holder->clear() ;
-    }
-}
-
-void Material::clearTextures()
-{
-    for ( auto i = 0 ; i < iTextures.size() ; ++i ) clearTexture(i) ;
-    iTextures.clear() ;
-}
-
-bool Material::hasTexture() const
-{
-    return iTextures.size() > 0;
-}
-
-bool Material::hasMultitexture() const
-{
-    return iTextures.size() > 1;
+    GreAutolock ; return iTextures.at(param) ;
 }
 
 const Color& Material::getAmbient() const
@@ -194,420 +127,123 @@ void Material::setShininess(float f)
     iShininess = f;
 }
 
-void Material::configureProgram(const HardwareProgramHolder &program) const
+const TextureHolder & Material::getAmbientTexture() const
 {
-    if ( !program.isInvalid() )
+    GreAutolock ; return iTextures.at(TechniqueParam::MaterialTexAmbient) ;
+}
+
+void Material::setAmbientTexture(const TextureHolder &tex)
+{
+    GreAutolock ; iTextures[TechniqueParam::MaterialTexAmbient] = tex ;
+}
+
+const TextureHolder & Material::getDiffuseTexture() const
+{
+    GreAutolock ; return iTextures.at(TechniqueParam::MaterialTexDiffuse) ;
+}
+
+void Material::setDiffuseTexture(const TextureHolder &texture)
+{
+    GreAutolock ; iTextures[TechniqueParam::MaterialTexDiffuse] = texture ;
+}
+
+const TextureHolder & Material::getSpecularTexture() const
+{
+    GreAutolock ; return iTextures.at(TechniqueParam::MaterialDiffuse) ;
+}
+
+void Material::setSpecularTexture(const TextureHolder &texture)
+{
+    GreAutolock ; iTextures[TechniqueParam::MaterialTexSpecular] = texture ;
+}
+
+const TextureHolder & Material::getNormalTexture() const
+{
+    GreAutolock ; return iTextures.at(TechniqueParam::MaterialTexNormal) ;
+}
+
+void Material::setNormalTexture(const TextureHolder &texture)
+{
+    GreAutolock ; iTextures[TechniqueParam::MaterialTexNormal] = texture ;
+}
+
+void Material::use(const TechniqueHolder &technique) const
+{
+    if ( !technique.isInvalid() )
     {
-        HardwareProgramVariable iAmbientColor ;
-        iAmbientColor.name = "material.ambient" ;
-        iAmbientColor.type = HdwProgVarType::Float4 ;
-        iAmbientColor.value.f4 = iAmbient.toFloat4 () ;
-        program->setVariable(iAmbientColor) ;
+        technique -> setAliasedParameterValue(TechniqueParam::MaterialAmbient, HdwProgVarType::Float3, iAmbient.toFloat3());
+        technique -> setAliasedParameterValue(TechniqueParam::MaterialDiffuse, HdwProgVarType::Float3, iDiffuse.toFloat3());
+        technique -> setAliasedParameterValue(TechniqueParam::MaterialSpecular, HdwProgVarType::Float3, iSpecular.toFloat3());
+        technique -> setAliasedParameterValue(TechniqueParam::MaterialShininess, HdwProgVarType::Float1, iShininess);
         
-        HardwareProgramVariable iDiffuseColor ;
-        iDiffuseColor.name = "material.diffuse" ;
-        iDiffuseColor.type = HdwProgVarType::Float4 ;
-        iDiffuseColor.value.f4 = iDiffuse.toFloat4 () ;
-        program->setVariable(iDiffuseColor) ;
-        
-        HardwareProgramVariable iSpecularColor ;
-        iSpecularColor.name = "material.specular" ;
-        iSpecularColor.type = HdwProgVarType::Float4 ;
-        iSpecularColor.value.f4 = iSpecular.toFloat4 () ;
-        program->setVariable(iSpecularColor) ;
-        
-        HardwareProgramVariable iEmissionColor ;
-        iEmissionColor.name = "material.emission" ;
-        iEmissionColor.type = HdwProgVarType::Float4 ;
-        iEmissionColor.value.f4 = iEmission.toFloat4 () ;
-        program->setVariable(iEmissionColor) ;
-        
-        HardwareProgramVariable iShininessVar ;
-        iShininessVar.name = "material.shininess" ;
-        iShininessVar.type = HdwProgVarType::Float1 ;
-        iShininessVar.value.f1 = iShininess ;
-        program->setVariable(iShininessVar) ;
-        
-        // If we have multiple Color Textures , we should specify the number  of
-        // Color Textures to the shader.
-        
-        HardwareProgramVariable iMultitextureBool ;
-        iMultitextureBool.name = "iMultitexture" ;
-        iMultitextureBool.type = HdwProgVarType::Int1 ;
-        iMultitextureBool.value.i1 = iTextures.size() ;
-        program->setVariable(iMultitextureBool) ;
-        
-        int textureunit = 0 ;
-        
-        for ( const TextureUser & texture : iTextures )
-        {
-            if ( !texture.isInvalid() )
-            {
-                const TextureHolder holder = texture.lock() ;
-                
-                program -> bindTextureUnit ( textureunit ) ;
-                holder -> bind() ;
-                
-                HardwareProgramVariable iTexture ;
-                iTexture.name = std::string ("iTexture") + std::to_string(textureunit) ;
-                iTexture.type = HdwProgVarType::Int1 ;
-                iTexture.value.i1 = textureunit ;
-                program -> setVariable(iTexture) ;
-                
-                textureunit ++ ;
-            }
-        }
-        
-        // Specify the normal map if we have one.
-        
-        if ( iNormalMapEnabled )
-        {
-            HardwareProgramVariable NormalMapEnabled ;
-            NormalMapEnabled.name = "material.normalmap_enabled" ;
-            NormalMapEnabled.type = HdwProgVarType::Int1 ;
-            NormalMapEnabled.value.i1 = 1 ;
-            program -> setVariable(NormalMapEnabled) ;
-            
-            if ( !iNormalMap.isInvalid() )
-            {
-                const TextureHolder normalmap = iNormalMap.lock() ;
-                
-                program -> bindTextureUnit(textureunit) ;
-                normalmap -> bind() ;
-                
-                NormalMapEnabled.name = "material.normalmap" ;
-                NormalMapEnabled.type = HdwProgVarType::Int1 ;
-                NormalMapEnabled.value.i1 = textureunit ;
-                program -> setVariable(NormalMapEnabled) ;
-                
-                textureunit ++ ;
-            }
-        }
-        
-        else
-        {
-            HardwareProgramVariable NormalMapEnabled ;
-            NormalMapEnabled.name = "material.normalmap_enabled" ;
-            NormalMapEnabled.type = HdwProgVarType::Int1 ;
-            NormalMapEnabled.value.i1 = 0 ;
-            program -> setVariable(NormalMapEnabled) ;
-        }
-        
-        //////////////////////////////////////////////////////////////////////
-        // Specular Texture Enabling.
-        
-        if ( iSpecularTextureEnabled )
-        {
-            HardwareProgramVariable specular ;
-            specular.name = "material.hasSpecularMap" ;
-            specular.type = HdwProgVarType::Int1 ;
-            specular.value.i1 = 1 ;
-            program -> setVariable(specular) ;
-            
-            if ( !iSpecularTexture.isInvalid() )
-            {
-                specular.name = "material.specularMap" ;
-                specular.type = HdwProgVarType::Int1 ;
-                specular.value.i1 = textureunit ;
-                program -> setVariable(specular) ;
-                
-                textureunit ++ ;
-            }
-        }
-        
-        else
-        {
-            HardwareProgramVariable specular ;
-            specular.name = "material.hasSpecularMap" ;
-            specular.type = HdwProgVarType::Int1 ;
-            specular.value.i1 = 0 ;
-            program -> setVariable(specular) ;
-        }
+        for ( auto it : iTextures )
+        technique -> setAliasedTexture(it.first, it.second) ;
     }
-}
-
-const TextureUser & Material::getNormalMap() const
-{
-    GreAutolock ; return iNormalMap ;
-}
-
-void Material::setNormalMap(const TextureUser &texture)
-{
-    GreAutolock ; iNormalMap = texture ;
-}
-
-bool Material::isNormalMapEnabled() const
-{
-    GreAutolock ; return iNormalMapEnabled ;
-}
-
-void Material::setNormalMapEnabled(bool value)
-{
-    GreAutolock ; iNormalMapEnabled = value ;
-}
-
-const TextureUser & Material::getSpecularTexture() const
-{
-    GreAutolock ; return iSpecularTexture ;
-}
-
-void Material::setSpecularTexture(const TextureUser &texture)
-{
-    GreAutolock ; iSpecularTexture = texture ;
-}
-
-bool Material::isSpecularTextureEnabled() const
-{
-    GreAutolock ; return iSpecularTextureEnabled ;
-}
-
-void Material::setSpecularTextureEnabled(bool value)
-{
-    GreAutolock ; iSpecularTextureEnabled = value ;
 }
 
 // ---------------------------------------------------------------------------------------------------
 
 MaterialLoader::MaterialLoader()
 {
-    
+
 }
 
 MaterialLoader::~MaterialLoader()
 {
-    
+
 }
 
 // ---------------------------------------------------------------------------------------------------
 
 MaterialManager::MaterialManager(const std::string& name)
-: Gre::Resource(name)
-{
-    // Always add a 'Default' Material object. This object can be used to create SoftwareIndexBuffer without
-    // specific Materials.
-    
-    MaterialHolder holder ( new Material("Default") );
-    
-    if ( holder.isInvalid() )
-    {
-#ifdef GreIsDebugMode
-        GreDebugPretty() << "Can't load Material 'Default'." << Gre::gendl;
-#endif
-        throw GreConstructorException ( "MaterialManager" , "'Default' Material can't be loaded." );
-    }
-    
-    load(holder);
-}
-
-MaterialManager::~MaterialManager()
+: SpecializedResourceManager<Gre::Material, Gre::MaterialLoader>()
 {
     
 }
 
-MaterialHolder MaterialManager::create(const std::string &name)
+MaterialManager::~MaterialManager() noexcept ( false ) 
+{
+
+}
+
+MaterialHolder MaterialManager::loadBlank(const std::string &name)
 {
     GreAutolock ;
     
-    MaterialHolder value = MaterialHolder ( new Material(name) ) ;
-    load ( value ) ;
+    //////////////////////////////////////////////////////////////////////
+    // Checks input values.
     
-    return value ;
-}
-
-MaterialVector MaterialManager::load(const std::string &filepath)
-{
-    if ( !filepath.empty() )
-    {
-        // We must find a MaterialLoader able to load this file.
-        
-        for ( auto it = iFactory.getLoaders().begin(); it != iFactory.getLoaders().end(); it++ )
-        {
-            MaterialLoader* loader = it->second.get();
-            
-            if ( loader )
-            {
-                if ( loader->isLoadable(filepath) )
-                {
-                    // Found a loader. Load the Materials.
-                    
-                    MaterialHolderList materials = loader->load(filepath);
-                    
-                    if ( !materials.empty() )
-                    {
-                        // Registers every Loader to the Manager and to the return Vector.
-                        
-                        MaterialVector ret;
-                        
-                        for ( MaterialHolder& holder : materials )
-                        {
-                            iMaterials.add(holder);
-                            ret.push_back(MaterialUser(holder));
-                        }
-                        
-                        return ret;
-                    }
-                    
-                    else
-                    {
-#ifdef GreIsDebugMode
-                        GreDebugPretty() << "File '" << filepath << "' doesn't seem to contain any Material." << Gre::gendl;
-#endif
-                        return MaterialVector();
-                    }
-                }
-            }
-        }
-        
-#ifdef GreIsDebugMode
-        GreDebugPretty() << "File '" << filepath << "' is not loadable by any MaterialLoader." << Gre::gendl;
-#endif
-        return MaterialVector();
-    }
+    if ( name.empty() )
+    return MaterialHolder ( nullptr ) ;
     
-    else
-    {
-#ifdef GreIsDebugMode
-        GreDebugPretty() << "'filepath' is empty." << Gre::gendl;
-#endif
-        return MaterialVector();
-    }
-}
-
-MaterialUser MaterialManager::load(const MaterialHolder &material)
-{
-    if ( !material.isInvalid() )
-    {
-        MaterialUser mat = get(material->getName());
-        
-        if ( mat.isInvalid() )
-        {
-            iMaterials.add(material);
-            return MaterialUser(material);
-        }
-        
-        else
-        {
-#ifdef GreIsDebugMode
-            GreDebugPretty() << "Material '" << material->getName() << "' is already loaded in MaterialManager." << Gre::gendl;
-#endif
-            return MaterialUser(nullptr);
-        }
-    }
+    //////////////////////////////////////////////////////////////////////
+    // Checks if material doesn't exists.
     
-    else
-    {
-#ifdef GreIsDebugMode
-        GreDebugPretty() << "'material' is invalid." << Gre::gendl;
-#endif
-        return MaterialUser(nullptr);
-    }
-}
-
-MaterialUser MaterialManager::get(const std::string &name)
-{
-    if ( !name.empty() )
-    {
-        for ( MaterialHolder& holder : iMaterials )
-        {
-            if ( !holder.isInvalid() )
-            {
-                if ( holder->getName() == name )
-                {
-                    return MaterialUser(holder);
-                }
-            }
-        }
-
-        return MaterialUser(nullptr);
-    }
+    MaterialHolder material = get ( name ) ;
     
-    else
-    {
-#ifdef GreIsDebugMode
-        GreDebugPretty() << "'name' is empty." << Gre::gendl;
-#endif
-        return MaterialUser(nullptr);
-    }
-}
-
-const MaterialUser MaterialManager::get(const std::string &name) const
-{
-    if ( !name.empty() )
-    {
-        for ( const MaterialHolder& holder : iMaterials )
-        {
-            if ( !holder.isInvalid() )
-            {
-                if ( holder->getName() == name )
-                {
-                    return MaterialUser(holder);
-                }
-            }
-        }
-        
-#ifdef GreIsDebugMode
-        GreDebugPretty() << "Material '" << name << "' not found." << Gre::gendl;
-#endif
-        return MaterialUser(nullptr);
-    }
+    if ( material.isInvalid() )
+    return loadHolder ( MaterialHolder ( new Material (name) ) ) ;
     
-    else
-    {
-#ifdef GreIsDebugMode
-        GreDebugPretty() << "'name' is empty." << Gre::gendl;
-#endif
-        return MaterialUser(nullptr);
-    }
+    material -> clear () ;
+    return material ;
 }
 
-void MaterialManager::remove(const std::string &name)
+MaterialHolder MaterialManager::get(const std::string &name)
 {
-    if ( !name.empty() )
-    {
-        for ( auto it = iMaterials.begin(); it != iMaterials.end(); it++ )
-        {
-            if ( !(*it).isInvalid() )
-            {
-                if ( (*it)->getName() == name )
-                {
-                    iMaterials.erase(it);
-                    return;
-                }
-            }
-        }
-        
-#ifdef GreIsDebugMode
-        GreDebugPretty() << "Material '" << name << "' not found." << Gre::gendl;
-#endif
-    }
+    GreAutolock ; return findFirstHolder ( name ) ;
+}
+
+MaterialHolder MaterialManager::loadHolder ( const MaterialHolder & material )
+{
+    GreAutolock ;
     
-    else
-    {
-#ifdef GreIsDebugMode
-        GreDebugPretty() << "'name' is empty." << Gre::gendl;
-#endif
-    }
-}
-
-void MaterialManager::clearMaterials()
-{
-    iMaterials.clear();
-}
-
-MaterialLoaderFactory& MaterialManager::getMaterialLoaderFactory()
-{
-    return iFactory;
-}
-
-const MaterialLoaderFactory& MaterialManager::getMaterialLoaderFactory() const
-{
-    return iFactory;
-}
-
-void MaterialManager::clear()
-{
-    clearMaterials();
-    iFactory.clear();
+    if ( material.isInvalid() )
+    return MaterialHolder ( nullptr ) ;
+    
+    if ( findHolder(material->getIdentifier()).isInvalid() )
+    iHolders.add(material);
+    
+    return material ;
 }
 
 GreEndNamespace

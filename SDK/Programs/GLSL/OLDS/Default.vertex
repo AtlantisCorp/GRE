@@ -9,20 +9,26 @@ layout(location = 2) in vec3 iNormal ;
 layout(location = 3) in vec2 iTexture ;
 layout(location = 4) in vec3 iTangent ;
 layout(location = 5) in vec3 iBinormal ;
-
 out VertexOutput Fragment ;
+
+uniform MaterialStruct Material ;
+uniform sampler2D MaterialNormalTexture ;
+
+uniform CameraStruct Camera ;
+
+uniform mat4 ModelMatrix ;
 
 void main ()
 {
-    mat4 ModelViewMatrix = iView * iModel ;
-    mat4 ModelViewProjectionMatrix = iProjection * ModelViewMatrix ;
+    mat4 ModelViewMatrix = Camera.view * ModelMatrix ;
+    mat4 ModelViewProjectionMatrix = Camera.projection * ModelViewMatrix ;
     
     Fragment.color      = iColor ;
-    Fragment.position   = vec4( iModel * vec4(iPosition, 1.0f) ).xyz ;
-    Fragment.normal     = mat3( transpose(inverse(iModel)) ) * iNormal ;
+    Fragment.position   = vec4( ModelMatrix * vec4(iPosition, 1.0f) ).xyz ;
+    Fragment.normal     = mat3( transpose(inverse(ModelMatrix)) ) * iNormal ;
     Fragment.texcoord   = iTexture ;
     
-    if ( material.normalmap_enabled == 1 )
+    if ( textureSize(MaterialNormalTexture,0).x > 0 )
     {
         vec3 T = normalize(vec3(ModelViewMatrix * vec4(iTangent,  0.0)));
         vec3 B = normalize(vec3(ModelViewMatrix * vec4(iBinormal, 0.0)));

@@ -37,28 +37,57 @@ GreBeginNamespace
 Frustrum::Frustrum()
 : iPerspective(0), iView(0)
 {
-    // Loads default perspective matrix.
-    iPerspective = glm::perspective(45.0f, 4.0f/3.0f, 0.1f, 100.0f) ;
-    // Loads default view matrix.
+    iFovy   = 45.0f ;
+    iAspect = 4.0f/3.0f ;
+    iNear   = 0.1f ;
+    iFar    = 100.0f ;
+    
+    float max = std::numeric_limits<float>::max() ;
+    iOrthoSurface.bottom = - max ;
+    iOrthoSurface.top    =   max ;
+    iOrthoSurface.left   = - max ;
+    iOrthoSurface.right  =   max ;
+    
+    iProjectionType = ProjectionType::Perspective ;
     iView = glm::mat4 () ;
+    
+    computePlanes() ;
 }
 
-Frustrum::Frustrum(const Matrix4& perspective)
-: iPerspective(perspective), iView(1.0f)
+Frustrum::Frustrum ( const OrthogonalVolume& orthosurface , float near , float far )
 {
-    
+    iFovy = iAspect = 0.0f ;
+    iNear = near ;
+    iFar  = far ;
+    iOrthoSurface = orthosurface ;
+    iProjectionType = ProjectionType::Orthogonal ;
+    iView = glm::mat4 () ;
+    computePlanes() ;
 }
 
-Frustrum::Frustrum(const Matrix4& perspective, const Matrix4& view)
-: iPerspective(perspective), iView(view)
+Frustrum::Frustrum ( float fovy , float aspect , float near , float far )
 {
-    
+    iFovy = fovy ;
+    iAspect = aspect ;
+    iNear = near ;
+    iFar = far ;
+    iOrthoSurface = { 0.0f , 0.0f , 0.0f , 0.0f } ;
+    iProjectionType = ProjectionType::Perspective ;
+    iView = glm::mat4 () ;
+    computePlanes() ;
 }
 
 Frustrum::Frustrum(const Frustrum& rhs)
-: iPerspective(rhs.getPerspective()), iView(rhs.getView())
+: iPerspective(0) , iView(0)
 {
-    
+    iFovy = rhs.iFovy ;
+    iAspect = rhs.iAspect ;
+    iNear = rhs.iNear ;
+    iFar = rhs.iFar ;
+    iOrthoSurface = rhs.iOrthoSurface ;
+    iProjectionType = rhs.iProjectionType ;
+    iView = rhs.iView ;
+    computePlanes() ;
 }
 
 Frustrum::~Frustrum()
@@ -88,6 +117,16 @@ const Matrix4 & Frustrum::getView() const
 
 void Frustrum::computePlanes(bool normalize)
 {
+    // Compute also the projection matrix.
+    
+    if ( iProjectionType == ProjectionType::Orthogonal ) {
+        iPerspective = glm::ortho (iOrthoSurface.bottom , iOrthoSurface.top ,
+                                   iOrthoSurface.left , iOrthoSurface.right ,
+                                   iNear , iFar ) ;
+    } else if ( iProjectionType == ProjectionType::Perspective ) {
+        iPerspective = glm::perspective(iFovy, iAspect, iNear, iFar) ;
+    }
+    
     // See : http://pastebin.com/1Wsk8LgU
     
     iViewProjection = iView * iPerspective;
@@ -184,6 +223,50 @@ IntersectionResult Frustrum::intersect(const Gre::BoundingBox &bbox) const
     }
     
     return result;
+}
+
+const ProjectionType & Frustrum::getProjectionType() const
+{
+    return iProjectionType ;
+}
+
+void Frustrum::setProjectionType(const Gre::ProjectionType &type)
+{
+    if ( type != iProjectionType )
+    {
+        iProjectionType = type ;
+        computePlanes() ;
+    }
+}
+
+float Frustrum::getNear() const
+{
+    return iNear ;
+}
+
+void Frustrum::setNear(float near)
+{
+    iNear = near ; computePlanes() ;
+}
+
+float Frustrum::getFar() const
+{
+    return iFar ;
+}
+
+void Frustrum::setFar(float far)
+{
+    iFar = far ; computePlanes() ;
+}
+
+float Frustrum::getAspectRatio() const
+{
+    return iAspect ;
+}
+
+void Frustrum::setAspectRatio(float v)
+{
+    iAspect = v ;
 }
 
 GreEndNamespace

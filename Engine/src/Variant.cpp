@@ -92,6 +92,12 @@ Variant::Variant ( const Vector3& vec3 )
 
 }
 
+Variant::Variant ( const char* str )
+: _mPolicy(Variant::Policy::String) , _mObject(new std::string(str))
+{
+    
+}
+
 Variant::~Variant()
 {
     clear();

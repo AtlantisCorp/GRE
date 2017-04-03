@@ -9,7 +9,6 @@ set(GRE_PLUGIN_DIRECTORY "${GRE_ROOT_DIRECTORY}/SDK/Plugins")
 
 # Add here any external libraries we have to use.
 
-
 # Targets we have to make.
 add_subdirectory(Engine)
 add_subdirectory(Plugins)

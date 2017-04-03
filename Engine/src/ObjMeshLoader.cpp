@@ -55,6 +55,11 @@ bool ObjMeshLoader::isLoadable(const std::string &filepath) const
     return filepath.substr(filepath.find_last_of(".") + 1) == "obj" ;
 }
 
+const std::string ObjMeshLoader::getDirectory() const
+{
+    return "OBJ" ;
+}
+
 struct OBJ_V
 {
     float x, y, z ;
@@ -76,11 +81,11 @@ struct OBJ_VT
 struct OBJ_VERTEX
 {
     OBJ_V vertice ;
-    OBJ_V normal ;
     OBJ_VT texture ;
     
-    OBJ_V tangente ;
+    OBJ_V normal ;
     OBJ_V binormal ;
+    OBJ_V tangente ;
     
     bool operator == ( const OBJ_VERTEX& rhs ) const {
         return vertice == rhs.vertice && normal == rhs.normal && texture == rhs.texture ;
@@ -158,7 +163,7 @@ void _objecttomesh ( MeshHolderList& list , OBJ_O* obj )
             IndexDescriptor idesc ;
             idesc.setMode(IndexDrawmode::Triangles);
             idesc.setType(IndexType::UnsignedInteger);
-            HardwareIndexBufferHolder ibuf = ResourceManager::Get().getMeshManager()->
+            HardwareIndexBufferHolder ibuf = ResourceManager::Get()->getMeshManager()->
                 createIndexBuffer(&obj->indices[0], obj->indices.size()*sizeof(unsigned int), idesc) ;
             mesh -> setIndexBuffer(ibuf) ;
             ibuf -> setEnabled(true) ;
@@ -168,13 +173,14 @@ void _objecttomesh ( MeshHolderList& list , OBJ_O* obj )
         {
             VertexDescriptor vdesc ;
             
-            vdesc.addComponentUnique(VertexComponentType::Position) ;
-            vdesc.addComponentUnique(VertexComponentType::Normal) ;
-            vdesc.addComponentUnique(VertexComponentType::Texture) ;
-            vdesc.addComponentUnique(VertexComponentType::Tangents) ;
-            vdesc.addComponentUnique(VertexComponentType::Binormals) ;
+            vdesc.addComponent(VertexAttribAlias::Position, 3, VertexAttribType::Float, false, 3 * sizeof(float)) ;
+            vdesc.addComponent(VertexAttribAlias::Texture, 2, VertexAttribType::Float, false, 2 * sizeof(float)) ;
             
-            HardwareVertexBufferHolder buf = ResourceManager::Get().getMeshManager()->
+            vdesc.addComponent(VertexAttribAlias::Normal, 3, VertexAttribType::Float, true, 3 * sizeof(float)) ;
+            vdesc.addComponent(VertexAttribAlias::Binormals, 3, VertexAttribType::Float, true, 3 * sizeof(float)) ;
+            vdesc.addComponent(VertexAttribAlias::Tangents, 3, VertexAttribType::Float, true, 3 * sizeof(float)) ;
+            
+            HardwareVertexBufferHolder buf = ResourceManager::Get()->getMeshManager()->
                 createVertexBuffer(&obj->vertexs[0], obj->vertexs.size()*sizeof(OBJ_VERTEX), vdesc) ;
             HardwareVertexBufferHolderList buflist ; buflist.add(buf) ;
             
@@ -188,10 +194,13 @@ void _objecttomesh ( MeshHolderList& list , OBJ_O* obj )
             for ( OBJ_VERTEX& vertex : obj->vertexs ) tmp.push_back({vertex.vertice, vertex.normal}) ;
             
             VertexDescriptor vdesc ;
-            vdesc.addComponentUnique(VertexComponentType::Position) ;
-            vdesc.addComponentUnique(VertexComponentType::Normal) ;
-            HardwareVertexBufferHolder buf = ResourceManager::Get().getMeshManager()->
+            
+            vdesc.addComponent(VertexAttribAlias::Position, 3, VertexAttribType::Float, false, 3 * sizeof(float)) ;
+            vdesc.addComponent(VertexAttribAlias::Normal, 3, VertexAttribType::Float, true, 3 * sizeof(float)) ;
+            
+            HardwareVertexBufferHolder buf = ResourceManager::Get()->getMeshManager()->
             createVertexBuffer(&tmp[0], tmp.size()*sizeof(OBJ_VERTEXNOTEXTURE), vdesc) ;
+            
             HardwareVertexBufferHolderList buflist ; buflist.add(buf) ;
             mesh -> setVertexBuffers(buflist) ;
             buf -> setEnabled(true) ;
@@ -203,10 +212,13 @@ void _objecttomesh ( MeshHolderList& list , OBJ_O* obj )
             for ( OBJ_VERTEX& vertex : obj->vertexs ) tmp.push_back({vertex.vertice, vertex.texture}) ;
             
             VertexDescriptor vdesc ;
-            vdesc.addComponentUnique(VertexComponentType::Position) ;
-            vdesc.addComponentUnique(VertexComponentType::Texture) ;
-            HardwareVertexBufferHolder buf = ResourceManager::Get().getMeshManager()->
+            
+            vdesc.addComponent(VertexAttribAlias::Position, 3, VertexAttribType::Float, false, 3 * sizeof(float)) ;
+            vdesc.addComponent(VertexAttribAlias::Texture, 2, VertexAttribType::Float, false, 2 * sizeof(float)) ;
+            
+            HardwareVertexBufferHolder buf = ResourceManager::Get()->getMeshManager()->
             createVertexBuffer(&tmp[0], tmp.size()*sizeof(OBJ_VERTEXNONORMAL), vdesc) ;
+            
             HardwareVertexBufferHolderList buflist ; buflist.add(buf) ;
             mesh -> setVertexBuffers(buflist) ;
             buf -> setEnabled(true) ;
@@ -218,9 +230,11 @@ void _objecttomesh ( MeshHolderList& list , OBJ_O* obj )
             for ( OBJ_VERTEX& vertex : obj->vertexs ) tmp.push_back(vertex.vertice) ;
             
             VertexDescriptor vdesc ;
-            vdesc.addComponentUnique(VertexComponentType::Position) ;
-            HardwareVertexBufferHolder buf = ResourceManager::Get().getMeshManager()->
+            vdesc.addComponent(VertexAttribAlias::Position, 3, VertexAttribType::Float, false, 3 * sizeof(float)) ;
+            
+            HardwareVertexBufferHolder buf = ResourceManager::Get()->getMeshManager()->
             createVertexBuffer(&tmp[0], tmp.size()*sizeof(OBJ_V), vdesc) ;
+            
             HardwareVertexBufferHolderList buflist ; buflist.add(buf) ;
             mesh -> setVertexBuffers(buflist) ;
             buf -> setEnabled(true) ;
@@ -230,7 +244,7 @@ void _objecttomesh ( MeshHolderList& list , OBJ_O* obj )
     }
 }
 
-MeshHolderList ObjMeshLoader::load(const std::string &name, const std::string &filepath) const
+MeshHolderList ObjMeshLoader::load(const std::string &filepath, const ResourceLoaderOptions & ops) const
 {
     std::ifstream stream ( filepath , std::ios_base::in ) ;
     if ( !stream ) {
@@ -245,7 +259,6 @@ MeshHolderList ObjMeshLoader::load(const std::string &name, const std::string &f
     
     MeshHolderList ret ;
     OBJ_O * current = new OBJ_O ;
-    current -> name = name ;
     current -> verticecount = 0 ;
     current -> normalcount = 0 ;
     current -> texcount = 0 ;

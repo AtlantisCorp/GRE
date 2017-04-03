@@ -1,11 +1,11 @@
 //////////////////////////////////////////////////////////////////////
 //
-//  Pass.h
+//  Property.h
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
-//  Copyright (c) 2015 - 2016 Luk2010
-//  Created on 06/01/2016.
+//  Copyright (c) 2015 - 2017 Luk2010
+//  Created on 21/03/2017.
 //
 //////////////////////////////////////////////////////////////////////
 /*
@@ -30,99 +30,100 @@
  -----------------------------------------------------------------------------
  */
 
-#ifndef GRE_Pass_h
-#define GRE_Pass_h
+#ifndef Property_h
+#define Property_h
 
-#include "Pools.h"
 #include "Resource.h"
-#include "HardwareProgram.h"
 
 GreBeginNamespace
 
-/// @brief Defines a unique identifier. This identifier is use to know
-/// the order the RenderPass should have when rendering. This is very important , as
-/// for example transparent objects should be rendered after opaque objects.
-typedef uint32_t RenderPassIdentifier ;
-
 //////////////////////////////////////////////////////////////////////
-/// @brief Defines a RenderPass.
-///
-/// A RenderPass is a step in the rendering process to render a
-/// RenderScene. The RenderScene is rendered using multiple RenderPass, as
-/// layers. Those RenderPass can render every RenderNodes of the Scene , or
-/// just particular nodes as transparents , shadows , etc ...
-///
-/// By creating new RenderPass with different actions , a user can effectively
-/// change the rendering process and customize it.
-///
+/// @brief Defines an interface for a property. A property can be listened
+/// as whether it is dirty or not. Also its access is thread-safe.
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC RenderPass : public Resource
+template < typename Class >
+class Property : public Resource
 {
 public:
     
-    POOLED ( Pools::Referenced )
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    Property () : iValue() , iDirty(true) { }
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    RenderPass ( const RenderPassIdentifier & identifier = 0 ) ;
+    Property ( const Property & rhs ) : iValue ( rhs ) , iDirty(true) { }
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    RenderPass ( const std::string & name , const RenderPassIdentifier & identifier ) ;
+    Property ( const Class & rhs ) : iValue ( rhs ) , iDirty(true) { }
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    virtual ~RenderPass () noexcept ( false ) ;
+    ~Property () noexcept ( false ) { }
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns 'iIdentifier'.
+    /// @brief Changes the value and set the dirty flag to true.
     //////////////////////////////////////////////////////////////////////
-    const RenderPassIdentifier & getPassIdentifier () const ;
+    void set ( const Class & rhs )
+    {
+        GreAutolock ; iValue = rhs ;
+        iDirty = true ;
+    }
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Changes 'iActivated'.
+    /// @brief Returns the value.
     //////////////////////////////////////////////////////////////////////
-    void setActivated ( bool value ) ;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns 'iActivated'.
-    //////////////////////////////////////////////////////////////////////
-    bool isActivated ( ) const ;
+    const Class & get () const
+    {
+        GreAutolock ; return iValue ;
+    }
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns 'iProgram'.
+    /// @brief Clean the dirty flag (set to false).
     //////////////////////////////////////////////////////////////////////
-    const HardwareProgramUser& getHardwareProgram () const ;
+    void clean () const
+    {
+        GreAutolock ; iDirty = false ;
+    }
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Changes 'iProgram.'
+    /// @brief Returns the dirty flag.
     //////////////////////////////////////////////////////////////////////
-    void setHardwareProgram ( const HardwareProgramUser& program ) ;
+    bool isDirty () const
+    {
+        GreAutolock ; return iDirty ;
+    }
     
-protected:
+private:
     
-    /// @brief The RenderPass Identifier.
-    /// This number identifies the order this RenderPass should be processed by the
-    /// Renderer. The RenderPasses are processed from 0 to the last one.
-    RenderPassIdentifier iIdentifier ;
+    /// @brief Value this property holds.
+    Class iValue ;
     
-    /// @brief True if this RenderPass is activated for rendering.
-    bool iActivated ;
-    
-    /// @brief
-    HardwareProgramUser iProgram ;
-    
+    /// @brief True if the value has changed since the last 'clean' call.
+    mutable bool iDirty ;
 };
 
-/// @brief SpecializedCountedObjectHolder for RenderPass.
-typedef SpecializedCountedObjectHolder<RenderPass> RenderPassHolder ;
+/// @brief Should create a property of given type and name. Setter/Getter are created on the fly ,
+/// and Setter / Getter for property also. The mode is public , protected or private.
 
-/// @brief SpecializedResourceHolderList for RenderPass.
-typedef SpecializedResourceHolderList<RenderPass> RenderPassHolderList ;
+#define GRE_DECLARE_PROPERTY(name, class, mode) \
+    public : \
+        void set ## name ( const class & prop ) ; \
+        const class & get ## name () const ; \
+        const Property < class > & get ## name ## Property () const ; \
+    mode : \
+        Property < class > i ## name ;
 
-/// @brief SpecializedCountedObjectUser for RenderPass.
-typedef SpecializedCountedObjectUser<RenderPass> RenderPassUser ;
+#define GRE_IMPL_PROPERTY( name , class , superclass ) \
+    void superclass :: set ## name ( const class & prop ) { GreAutolock ; i ## name .set( prop ) ; } \
+    const class & superclass :: get ## name () const { GreAutolock ; return i ## name .get() ; } \
+    const Property < class > & superclass :: get ## name ## Property () const { GreAutolock ; return i ## name ; }
+
+#define GRE_IMPL_PROPERTY_NOSETTER( name , class , superclass ) \
+    const class & superclass :: get ## name () const { GreAutolock ; return i ## name .get() ; } \
+    const Property < class > & superclass :: get ## name ## Property () const { GreAutolock ; return i ## name ; }
 
 GreEndNamespace
 
-#endif
+#endif /* Property_h */

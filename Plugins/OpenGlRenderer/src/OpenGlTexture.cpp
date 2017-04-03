@@ -482,4 +482,9 @@ void OpenGlTexture::_setBuffer () const
     }
 }
 
+GLuint OpenGlTexture::getGlTexture() const
+{
+    GreAutolock ; return iGlTexture ;
+}
+
 

@@ -67,7 +67,7 @@ public:
     /// @brief Send every operations remaining to Hardware, and generally
     /// swap buffers.
     //////////////////////////////////////////////////////////////////////
-    virtual void flush();
+    virtual void flush() const;
     
     /// @brief
     id nsglContext ;

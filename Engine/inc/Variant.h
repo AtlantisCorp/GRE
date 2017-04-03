@@ -61,14 +61,14 @@ public:
     Variant(Policy policy = Policy::None, void* object = nullptr);
     Variant(const Variant& rhs);
     
-    explicit Variant ( int object ) ;
-    explicit Variant ( float object ) ;
-    
+    Variant ( int object ) ;
+    Variant ( float object ) ;
     Variant ( const Version & object ) ;
-    explicit Variant ( bool object ) ;
+    Variant ( bool object ) ;
     Variant ( const std::string & obj ) ;
     Variant ( const Color& color ) ;
     Variant ( const Vector3& vec3 ) ;
+    Variant ( const char* str ) ;
     
     ~Variant();
     

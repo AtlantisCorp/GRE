@@ -16,10 +16,10 @@
  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  copies of the Software, and to permit persons to whom the Software is
  furnished to do so, subject to the following conditions:
- 
+
  The above copyright notice and this permission notice shall be included in
  all copies or substantial portions of the Software.
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -34,6 +34,8 @@
 #define GResource_ResourceManager_h
 
 #include "Resource.h"
+#include "ResourceBundle.h"
+
 #include "Plugin.h"
 #include "Window.h"
 #include "Renderer.h"
@@ -110,88 +112,90 @@ GreBeginNamespace
 ///
 /// @see Resource, ResourceFactory
 ////////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC ResourceManager : public Lockable
+class DLL_PUBLIC ResourceManager : public Resource
 {
 public:
-    
+
     POOLED ( Pools::Manager )
-    
+
 protected:
-    
+
     /// @brief Renderer Manager.
     RendererManagerHolder iRendererManager;
-    
+
     /// @brief Window Manager.
     WindowManagerHolder iWindowManager;
-    
+
     /// @brief RenderScene's Manager.
     RenderSceneManagerHolder iRenderSceneManager;
-    
+
     /// @brief Material Manager.
     MaterialManagerHolder iMaterialManager;
-    
+
     /// @brief Plugin Manager.
     PluginManagerHolder iPluginManager;
-    
+
     /// @brief Mesh Manager.
     MeshManagerHolder iMeshManager;
-    
+
     /// @brief Animator Manager.
     AnimatorManagerHolder iAnimatorManager ;
-    
+
     /// @brief Camera Manager.
     CameraManagerHolder iCameraManager ;
-    
+
     /// @brief Texture Manager.
     TextureManagerHolder iTextureManager ;
-    
+
     /// @brief RenderContext Manager.
     RenderContextManagerHolder iRenderContextManager ;
-    
+
     /// @brief HardwareProgram Manager.
     HardwareProgramManagerHolder iProgramManager ;
-    
+
     /// @brief Technique Manager.
     TechniqueManagerHolder iTechniqueManager ;
-    
+
+    /// @brief RenderFramebuffer Manager.
+    RenderFramebufferManagerHolder iFramebufferManager ;
+
     /// @brief Application Loaders. As there can be only one Application by process, there is no need to have
     /// an ApplicationManager.
     ApplicationLoaderFactory iApplicationFactory ;
-	
+
 	/// @brief true when the ResourceManager is initialized.
 	bool iInitialized ;
-    
+
+    /// @brief Holds every bundled loaded in this Resource Manager. The bundles can
+    /// be accessed using appropriates getter/setter.
+    std::vector < ResourceBundleHolder > iBundles ;
+
 public:
-    
+
+    /// @brief SpecializedCountedObjectHolder for ResourceManager.
+    typedef SpecializedCountedObjectHolder<ResourceManager> ResourceManagerHolder ;
+
     ////////////////////////////////////////////////////////////////////////
-    /// @brief Creates the ResourceManager singleton object.
-    /// @note This function should be called only once per program. Behaviour
-    /// is undefined when called more times.
+    /// @brief Creates a ResourceManager object. If 'setdefault' is true ,
+    /// the class singleton will be the created object. Also returns a holder
+    /// to the allocated object. Notes this object should be initialized.
     ////////////////////////////////////////////////////////////////////////
-    static void Create();
-	
-	////////////////////////////////////////////////////////////////////////
-	/// @brief Creates the ResourceManager and initialize it. Returns true
-	/// on success.
-	////////////////////////////////////////////////////////////////////////
-	static bool CreateAndInitialize () ;
-    
+    static ResourceManagerHolder Create ( bool setdefault = true ) ;
+
     ////////////////////////////////////////////////////////////////////////
-    /// @brief Destroys the ResourceManager object.
-    /// @note This function should be called only once per program. Behaviour
-    /// is undefined when called more times.
+    /// @brief Returns the ResourceManager singleton object, or an invalid
+    /// holder if no object could be created.
     ////////////////////////////////////////////////////////////////////////
-    static void Destroy();
-    
-    ////////////////////////////////////////////////////////////////////////
-    /// @brief Returns the ResourceManager singleton object.
-    /// @note ResourceManager::Create() must have been called before using
-    /// this function.
-    ////////////////////////////////////////////////////////////////////////
-    static ResourceManager& Get();
-    
+    static ResourceManagerHolder Get();
+
 private:
-    
+
+    /// @brief Default Resource Manager. This object should have been set by the
+    /// user using the 'Create()' method.
+    static ResourceManagerHolder iManagerHolder ;
+
+private:
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Creates the ResourceManager.
     /// By default, the Constructor registers two FileLoader, the TextLoader
@@ -200,23 +204,23 @@ private:
     /// operate normally.
     ////////////////////////////////////////////////////////////////////////
     ResourceManager();
-    
+
     ////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////
     ResourceManager(const ResourceManager& rhs) = delete;
-    
+
 public:
-    
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Destroys the ResourceManager and, all the Resource objects.
     ////////////////////////////////////////////////////////////////////////
     ~ResourceManager() noexcept(false) ;
-    
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Initializes every managers.
     ////////////////////////////////////////////////////////////////////////
     void initialize () ;
-	
+
 	////////////////////////////////////////////////////////////////////////
 	/// @brief Returns 'iInitialized'.
 	////////////////////////////////////////////////////////////////////////
@@ -226,147 +230,176 @@ public:
     /// @brief Unloads the Resource.
     ////////////////////////////////////////////////////////////////////////
     void unload () ;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Loads every plugins in given directory name.
-    ///
-    /// Plugins loaded are every files finishing with '.so' for Linux,
-    /// '.dylib' for OsX, or '.dll' for Windows' users.
-    ///
-    /// @note The directory must be different from the Working Directory.
-    //////////////////////////////////////////////////////////////////////
-    int loadPluginsIn(const std::string& dirname);
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Changes 'iApplicationFactory'.
     //////////////////////////////////////////////////////////////////////
     void setApplicationFactory ( const ApplicationLoaderFactory & appfactory ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Return 'iApplicationFactory'.
     //////////////////////////////////////////////////////////////////////
     ApplicationLoaderFactory & getApplicationFactory () ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Changes 'iRendererManager'.
     //////////////////////////////////////////////////////////////////////
     void setRendererManager ( const RendererManagerHolder & rendmanager ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns 'iRendererManager'.
     //////////////////////////////////////////////////////////////////////
     RendererManagerHolder getRendererManager () ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Changes 'iWindowManager'.
     //////////////////////////////////////////////////////////////////////
     void setWindowManager ( const WindowManagerHolder & winmanager ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns 'iWindowManager'.
     //////////////////////////////////////////////////////////////////////
     WindowManagerHolder getWindowManager () ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Changes 'iRenderSceneManager'.
     //////////////////////////////////////////////////////////////////////
     void setRenderSceneManager ( const RenderSceneManagerHolder & rsceneholder ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns 'iRenderSceneManager'.
     //////////////////////////////////////////////////////////////////////
     RenderSceneManagerHolder getRenderSceneManager () ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Changes 'iMeshManager'.
     //////////////////////////////////////////////////////////////////////
     void setMeshManager ( const MeshManagerHolder & mmholder ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns 'iMeshManager'.
     //////////////////////////////////////////////////////////////////////
     MeshManagerHolder getMeshManager () ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Changes 'iAnimatorManager'.
     //////////////////////////////////////////////////////////////////////
     void setAnimatorManager ( const AnimatorManagerHolder & animholder ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns 'iAnimatorManager'.
     //////////////////////////////////////////////////////////////////////
     AnimatorManagerHolder getAnimatorManager () ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Changes 'iCameraManager'.
     //////////////////////////////////////////////////////////////////////
     void setCameraManager ( const CameraManagerHolder & camholder ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns 'iCameraManager'.
     //////////////////////////////////////////////////////////////////////
     CameraManagerHolder getCameraManager () ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Changes 'iTextureManager'.
     //////////////////////////////////////////////////////////////////////
     void setTextureManager ( const TextureManagerHolder & manager ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns 'iTextureManager'.
     //////////////////////////////////////////////////////////////////////
     TextureManagerHolder getTextureManager () ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Changes 'iRenderContextManager'.
     //////////////////////////////////////////////////////////////////////
     void setRenderContextManager ( const RenderContextManagerHolder & manager ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns 'iRenderContextManager'.
     //////////////////////////////////////////////////////////////////////
     RenderContextManagerHolder getRenderContextManager () ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Changes 'iProgramManager'.
     //////////////////////////////////////////////////////////////////////
     void setHardwareProgramManager ( const HardwareProgramManagerHolder & manager ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns 'iProgramManager'.
     //////////////////////////////////////////////////////////////////////
     HardwareProgramManagerHolder getHardwareProgramManager () ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Changes 'iMaterialManager'.
     //////////////////////////////////////////////////////////////////////
     void setMaterialManager ( const MaterialManagerHolder& manager ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns 'iMaterialManager'.
     //////////////////////////////////////////////////////////////////////
     MaterialManagerHolder getMaterialManager () ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Changes 'iPluginManager'.
     //////////////////////////////////////////////////////////////////////
     void setPluginManager ( const PluginManagerHolder& manager ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns 'iPluginManager'.
     //////////////////////////////////////////////////////////////////////
     PluginManagerHolder getPluginManager () ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Changes 'iTechniqueManager'.
     //////////////////////////////////////////////////////////////////////
     void setTechniqueManager ( const TechniqueManagerHolder& manager ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns 'iPluginManager'.
     //////////////////////////////////////////////////////////////////////
     TechniqueManagerHolder getTechniqueManager () ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Changes 'iFramebufferManager'.
+    //////////////////////////////////////////////////////////////////////
+    void setFramebufferManager ( const RenderFramebufferManagerHolder& manager ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns 'iFramebufferManager'.
+    //////////////////////////////////////////////////////////////////////
+    RenderFramebufferManagerHolder getFramebufferManager () ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Creates a new bundle with given name.
+    //////////////////////////////////////////////////////////////////////
+    ResourceBundleHolder addBundle ( const std::string & name ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Creates an Application object using the first loader registered
+    /// in the ApplicationFactory. Notes that there should be only one loader
+    /// registered in this factory.
+    //////////////////////////////////////////////////////////////////////
+    ApplicationHolder createApplication (const std::string & name ,
+                                         const std::string & author = std::string () ,
+                                         const std::string & description = std::string () );
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Tries to find a file among the loaded bundles. Returns the
+    /// filepath if found , or an empty string.
+    //////////////////////////////////////////////////////////////////////
+    std::string findBundledFile (const ResourceType & type ,
+                                 const std::string & filename) const ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns every bundles.
+    //////////////////////////////////////////////////////////////////////
+    const std::vector < ResourceBundleHolder > & getBundles () const ;
 };
+
+/// @brief SpecializedCountedObjectHolder for ResourceManager.
+typedef SpecializedCountedObjectHolder<ResourceManager> ResourceManagerHolder ;
 
 GreEndNamespace
 #endif

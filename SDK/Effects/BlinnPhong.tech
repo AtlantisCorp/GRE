@@ -1,0 +1,58 @@
+# ===================================================================
+#
+# BlinnPhong.tech
+# Example blinnphong lighting technique , that uses the shaders provided
+# by the website http://sunandblackcat.com/tipFullView.php?l=eng&topicid=30&topic=Phong-Lighting.
+#
+# ===================================================================
+
+% version 1
+
+[Program BlinnPhongProgram]
+{
+    [Vertex]
+    {
+        ["GLSL" "blinnphong.vert"]
+    }
+    
+    [Fragment]
+    {
+        ["GLSL" "blinnphong.frag"]
+    }
+}
+
+[Technique BlinnPhongTechnique]
+{
+    # Vertex Attributes 
+    
+    [Attribute Position "i_position"]
+    [Attribute Normal "i_normal"]
+    [Attribute Texture "i_texcoord0"]
+    
+    # Vertex Parameters 
+    
+    [Alias ModelMatrix "u_modelMat"]
+    [Alias ViewMatrix "u_viewMat"]
+    [Alias ProjectionMatrix "u_projMat"]
+    [Alias NormalMatrix3 "u_normalMat"]
+    
+    [Alias LightPosition "u_lightPosition"]
+    [Alias CameraPosition "u_cameraPosition"]
+    
+    # Fragment Parameters
+    
+    [Alias MaterialAmbient "u_matAmbientReflectance"]
+    [Alias MaterialDiffuse "u_matDiffuseReflectance"]
+    [Alias MaterialSpecular "u_matSpecularReflectance"]
+    [Alias MaterialTexDiffuse "u_diffuseTexture"]
+    [Alias MaterialShininess "u_matShininess"]
+    
+    [Alias LightAmbient "u_lightAmbientIntensity"]
+    [Alias LightDiffuse "u_lightDiffuseIntensity"]
+    [Alias LightSpecular "u_lightSpecularIntensity"]
+    
+    # Program definition
+    
+    [Program BlinnPhongProgram]
+    [LightingMode AllLights]
+}

@@ -45,15 +45,18 @@ template<typename Type, ColorFormat Format>
 class GenColor
 {
 public:
-    
+
     /// @brief Size of the Type, in bytes.
     static const size_t Size = ColorFormatHelper<Format>::Components * sizeof(Type);
-    
+
     GenColor()
     {
-        
+        _data[0] = _data[1] = _data[2] = 0.0f ;
+
+        if ( Format < ColorFormat::RGB )
+        _data[3] = 0.0f ;
     }
-    
+
     GenColor(Type* data)
     {
         _data[0] = data[0];
@@ -63,7 +66,7 @@ public:
             _data[3] = data[3];
         }
     }
-    
+
     GenColor(Type channel1, Type channel2, Type channel3, Type channel4)
     {
         _data[0] = channel1;
@@ -72,7 +75,7 @@ public:
         if(Format < ColorFormat::RGB)
             _data[3] = channel4;
     }
-    
+
     GenColor(Type channel1, Type channel2, Type channel3)
     {
         _data[0] = channel1;
@@ -81,7 +84,7 @@ public:
         if(Format < ColorFormat::RGB)
             _data[3] = 1;
     }
-    
+
     GenColor(const GenColor& rhs)
     {
         _data[0] = rhs._data[0];
@@ -91,23 +94,23 @@ public:
             _data[3] = rhs._data[3];
         }
     }
-    
+
     ~GenColor()
     {
-        
+
     }
-    
+
     /// @brief Returns the format used by this color.
     ColorFormat getFormat() const
     {
         return Format;
     }
-    
+
     /// @brief Returns the raw data holded by this color object.
     Type* getData() { return _data; }
     /// @brief Returns the raw data holded by this color object.
     const Type* getData() const { return _data; }
-    
+
     /// @brief Returns the Red channel, if it contains one.
     Type getRed() const
     {
@@ -122,7 +125,7 @@ public:
                 return 0;
         }
     }
-    
+
     /// @brief Returns the Green channel, if it contains one.
     Type getGreen() const
     {
@@ -137,7 +140,7 @@ public:
                 return 0;
         }
     }
-    
+
     /// @brief Returns the Blue channel, if it contains one.
     Type getBlue() const
     {
@@ -152,7 +155,7 @@ public:
                 return 0;
         }
     }
-    
+
     /// @brief Returns the Alpha channel, if it contains one.
     Type getAlpha() const
     {
@@ -166,7 +169,7 @@ public:
                 return 0;
         }
     }
-    
+
     /// @brief Sets the value of the Red channel, if it contains one.
     void setRed(Type channel)
     {
@@ -181,7 +184,7 @@ public:
                 break;
         }
     }
-    
+
     /// @brief Sets the value of the Red channel, if it contains one.
     void setGreen(Type channel)
     {
@@ -196,7 +199,7 @@ public:
                 break;
         }
     }
-    
+
     /// @brief Sets the value of the Blue channel, if it contains one.
     void setBlue(Type channel)
     {
@@ -211,7 +214,7 @@ public:
                 break;
         }
     }
-    
+
     /// @brief Sets the value of the Alpha channel, if it contains one.
     void setAlpha(Type channel)
     {
@@ -227,13 +230,21 @@ public:
                 break;
         }
     }
-    
+
     /// @brief Returns the Color as 4 floats.
     Vector4 toFloat4 () const
     {
         return Vector4 ( getRed() , getGreen() , getBlue() , getAlpha() ) ;
     }
-    
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the RGB Colors values.
+    //////////////////////////////////////////////////////////////////////
+    Vector3 toFloat3 () const
+    {
+        return Vector3 ( getRed() , getGreen() , getBlue() ) ;
+    }
+
     bool operator == (const GenColor& rhs) const
     {
         if(Format < ColorFormat::RGB)
@@ -241,18 +252,18 @@ public:
         else
             return _data[0] == rhs._data[0] && _data[1] == rhs._data[1] && _data[2] == rhs._data[2];
     }
-    
+
     bool operator != (const GenColor& rhs) const
     {
         return !(*this == rhs);
     }
-    
+
 private:
-    
+
     Type _data [ColorFormatHelper<Format>::Components];
-    
+
 public:
-    
+
     static GenColor<Type,Format> White;
     static GenColor<Type,Format> Black;
 };

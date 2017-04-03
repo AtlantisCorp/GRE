@@ -34,42 +34,55 @@
 
 GreBeginNamespace
 
-Viewport::Viewport( float top, float left, float width, float height )
-: _mBorderWidth(width), _mBorderHeight(height)
-, _mBorderTop(top), _mBorderLeft(left)
+Viewport::Viewport( float l , float t , float w , float h ) 
 {
-    _mSurface.height = 0;
-    _mSurface.left = 0;
-    _mSurface.top = 0;
-    _mSurface.width = 0;
-}
-
-Viewport::~Viewport() noexcept ( false )
-{
+    rl = l ; rt = t ;
+    rw = w ; rh = h ;
     
+    width = height = left = top = 0 ;
 }
 
-Viewport& Viewport::operator= (const Viewport& rhs)
+Viewport::Viewport ( const Viewport & rhs )
 {
-    _mBorderWidth = rhs._mBorderWidth;
-    _mBorderHeight = rhs._mBorderHeight;
-    _mBorderLeft = rhs._mBorderLeft;
-    _mBorderTop = rhs._mBorderTop;
-    _mSurface = rhs._mSurface;
-    return *this;
+    rl = rhs.rl ; rt = rhs.rt ;
+    rw = rhs.rw ; rh = rhs.rh ;
+    
+    width = rhs.width ; height = rhs.height ;
+    left = rhs.left ;   top = rhs.top ;
 }
 
-void Viewport::onBordersChanged(const Surface &parentSurface)
+Viewport::Viewport ( const Surface & rhs ) 
 {
-    _mSurface.height    = (int) (_mBorderHeight * parentSurface.height);
-    _mSurface.width     = (int) (_mBorderWidth  * parentSurface.width);
-    _mSurface.top       = (int) (_mBorderTop    * parentSurface.top);
-    _mSurface.left      = (int) (_mBorderLeft   * parentSurface.left);
+    rl = 0.0f ; rt = 0.0f ;
+    rw = 1.0f ; rh = 1.0f ;
+    
+    width = rhs.width ; height = rhs.height ;
+    left = rhs.left ;   top = rhs.top ;
 }
 
-const Surface& Viewport::getSurface() const
+void Viewport::adaptRealValues ( const Surface & rhs ) 
 {
-    return _mSurface;
+    left   = rhs.left   * rl ;
+    top    = rhs.top    * rt ;
+    width  = rhs.width  * rw ;
+    height = rhs.height * rh ;
+}
+
+void Viewport::adaptRealArea ( int _width , int _height )
+{
+    width  = _width  * rw ;
+    height = _height * rh ;
+}
+
+void Viewport::adaptRealCorner(int _left, int _top)
+{
+    left = _left * rl ;
+    top  = _top  * rt ;
+}
+
+size_t Viewport::getArea() const
+{
+    return width * height ;
 }
 
 GreEndNamespace

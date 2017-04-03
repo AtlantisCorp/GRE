@@ -34,6 +34,7 @@
 #define GRE_ResourceLoader_h
 
 #include "Resource.h"
+#include "Variant.h"
 
 GreBeginNamespace
 
@@ -78,6 +79,13 @@ public:
     /// @brief Returns true if the file given is loadable by this loader.
     //////////////////////////////////////////////////////////////////////
     virtual bool isLoadable( const std::string& filepath ) const = 0;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the subdirectory a bundle should look for the file
+    /// when getting a bundled file. By default , this subdirectory is
+    /// empty and does not refer to anything.
+    //////////////////////////////////////////////////////////////////////
+    virtual const std::string getDirectory () const ;
 };
 
 ////////////////////////////////////////////////////////////////////////
@@ -192,6 +200,10 @@ protected:
     /// @brief Loader's list, by name.
     std::map<std::string, std::shared_ptr<T> > _loaders;
 };
+
+//////////////////////////////////////////////////////////////////////
+/// @brief Represents a set of options the loader should understand.
+typedef std::map < std::string , Variant > ResourceLoaderOptions ;
 
 GreEndNamespace
 

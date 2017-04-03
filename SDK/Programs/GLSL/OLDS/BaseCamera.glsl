@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////
 //
-//  BaseMaterial.glsl
+//  BaseCamera.glsl
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
@@ -31,61 +31,15 @@
  */
 
 //////////////////////////////////////////////////////////////////////
-/// @brief Calculates the material normal.
-/// If the material contains a normal map, it will calculate the resulting
-/// normal using the normal map texture.
-vec3 MaterialGetNormal ( VertexOutput Fragment )
+/// @brief Returns the camera direction.
+vec3 CameraDirection ( const int i )
 {
-    if ( material.normalmap_enabled == 1 )
-    {
-        vec3 bumpmap = texture( material.normalmap , Fragment.texcoord ).rgb ;
-        bumpmap = normalize( bumpmap * 2.0 - 1.0 ) ;
-        bumpmap = normalize( Fragment.bumpmapTBN * bumpmap ) ;
-        
-        return bumpmap ;
-    }
-    
-    else
-    {
-        return normalize(Fragment.normal) ;
-    }
+    return normalize ( Light[i].position - Camera.position ) ;
 }
 
 //////////////////////////////////////////////////////////////////////
-/// @brief Calculates the diffuse color for the material.
-vec4 MaterialGetDiffuseColor ( VertexOutput Fragment )
+/// @brief Returns the distance between camera and fragment.
+vec3 CameraFragmentDistance ()
 {
-    if ( material.hasDiffuseMap == 1 ) {
-        return texture ( material.diffuseMap , Fragment.texcoord ) ;
-    }
-    
-    else {
-        return material.diffuse ;
-    }
-}
-
-//////////////////////////////////////////////////////////////////////
-/// @brief Calculates the correct ambient color from material.
-vec4 MaterialGetAmbientColor ( VertexOutput Fragment )
-{
-    if ( material.useDiffuseAsAmbient == 1 ) {
-        return MaterialGetDiffuseColor ( Fragment ) ;
-    }
-    
-    else {
-        return material.ambient ;
-    }
-}
-
-//////////////////////////////////////////////////////////////////////
-/// @brief Calculates correct specular color from material.
-vec4 MaterialGetSpecularColor ( VertexOutput Fragment )
-{
-    if ( material.hasSpecularMap == 1 ) {
-        return texture ( material.specularMap , Fragment.texcoord ) ;
-    }
-    
-    else {
-        return material.specular ;
-    }
+    return Fragment.position - Camera.position ;
 }

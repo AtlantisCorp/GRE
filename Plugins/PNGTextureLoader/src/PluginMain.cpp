@@ -62,7 +62,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
     /// @brief Loads a file to the given SoftwarePixelBuffer.
     //////////////////////////////////////////////////////////////////////
-    virtual Gre::SoftwarePixelBufferHolder load ( const std::string & filepath ) const ;
+    virtual Gre::SoftwarePixelBufferHolder load ( const std::string & filepath , const Gre::ResourceLoaderOptions & ops ) const ;
 };
 
 PNGTextureLoader::PNGTextureLoader ()
@@ -85,7 +85,7 @@ bool PNGTextureLoader::isLoadable(const std::string &filepath) const
     return filepath.substr(filepath.find_last_of(".") + 1) == "png" ;
 }
 
-Gre::SoftwarePixelBufferHolder PNGTextureLoader::load(const std::string &filepath) const
+Gre::SoftwarePixelBufferHolder PNGTextureLoader::load(const std::string &filepath , const Gre::ResourceLoaderOptions & ops) const
 {
     FILE* fp ;
     png_byte magic[8] ;
@@ -210,14 +210,22 @@ Gre::SoftwarePixelBufferHolder PNGTextureLoader::load(const std::string &filepat
     return buffer ;
 }
 
-extern "C" const void* GetPluginName ( void )
+Gre::PluginInfo info ;
+
+extern "C" Gre::PluginInfo * GetPluginInfo ( void )
 {
-    return "PNG Texture Loader Plugin" ;
+    info.name = "PNGTextureLoader Plugin" ;
+    info.author = "Luk2010" ;
+    info.version = GRE_PLUGIN_VERSION ;
+    
+    uuid_parse("50b322ec-d35f-4178-96e4-960afff2cf5c", info.uuid);
+    
+    return & info ;
 }
 
 extern "C" void StartPlugin ( void )
 {
-    Gre::ResourceManager::Get().getTextureManager()->getFactory()
+    Gre::ResourceManager::Get()->getTextureManager()->getFactory()
     .registers("PNGTextureFileLoader", new PNGTextureLoader()) ;
 }
 

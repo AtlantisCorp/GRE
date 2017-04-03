@@ -127,6 +127,8 @@
 #       define GrePlatformBits32
 #   endif
 #
+#   define GrePosix
+#
 #   include <unistd.h>
 #   include <dirent.h>
 #   include <sys/time.h>
@@ -139,6 +141,8 @@
 #   else
 #       define GrePlatformBits32
 #   endif
+#
+#   define GrePosix
 #
 #   include <unistd.h>
 #   include <dirent.h>
@@ -203,7 +207,7 @@ GreBeginNamespace
 
 #define GreVersionMajor 0             ///< @brief GRE Major version.
 #define GreVersionMinor 0             ///< @brief GRE Minor version.
-#define GreVersionBuild 24            ///< @brief GRE Build number.
+#define GreVersionBuild 25            ///< @brief GRE Build number.
 
 /// @brief Defines the Version structure.
 typedef struct Version
@@ -284,11 +288,21 @@ struct Surface
 {
     int top;
     int left;
-    int width;
-    int height;
+    int width ;
+    int height ;
     
     /// @brief A Zero'd surface.
     static Surface Null;
+};
+
+//////////////////////////////////////////////////////////////////////
+/// @brief Defines an Orthogonal Volume.
+struct OrthogonalVolume
+{
+    float bottom ;
+    float top ;
+    float left ;
+    float right ;
 };
 
 inline bool operator < ( const Surface& s1, const Surface& s2 ) {
@@ -441,6 +455,20 @@ typedef float Radian;
 
 /// @brief Simply, a plane is a Vector4 component.
 typedef Vector4 Plane;
+
+//////////////////////////////////////////////////////////////////////
+/// @brief Flags to clear buffers.
+enum class ClearBuffer : int
+{
+    Color   = 0 ,
+    Depth   = 1 ,
+    Stencil = 2 ,
+    
+    Size    = 3
+};
+    
+/// @brief bitset to manipulate clear buffers.
+typedef std::bitset < (size_t) ClearBuffer::Size > ClearBuffers ;
 
 GreEndNamespace
 #endif

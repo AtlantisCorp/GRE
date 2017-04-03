@@ -69,13 +69,13 @@ Gre::RendererHolder OpenGlRendererLoader::load ( const std::string& name , const
         GreDebug("[WARN] Can't create OpenGlRenderer '") << name << "'." << Gre::gendl ;
         return Gre::RendererHolder ( nullptr ) ;
     }
-    
+    /*
     if ( !renderer->installManagers() ) {
         GreDebug("[WARN] Can't install OpenGlRenderer '") << name << "'." << Gre::gendl ;
         delete renderer ;
         return Gre::RendererHolder ( nullptr ) ;
     }
-    
+    */
     GreDebug("[INFO] Created and installed OpenGlRenderer '") << name << "'." << Gre::gendl ;
     return Gre::RendererHolder ( renderer ) ;
 }

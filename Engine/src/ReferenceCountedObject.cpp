@@ -16,10 +16,10 @@
  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  copies of the Software, and to permit persons to whom the Software is
  furnished to do so, subject to the following conditions:
- 
+
  The above copyright notice and this permission notice shall be included in
  all copies or substantial portions of the Software.
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -37,7 +37,7 @@ GreBeginNamespace
 ReferenceCountedObject::ReferenceCountedObject ()
 : iCounter(nullptr)
 {
-    
+
 }
 
 ReferenceCountedObject::~ReferenceCountedObject() noexcept ( false )
@@ -62,27 +62,27 @@ ReferenceCounter* ReferenceCountedObject::getCounter() const
 ReferenceCountedObjectHolder::ReferenceCountedObjectHolder ()
 : iObject ( nullptr )
 {
-    
+
 }
 
 ReferenceCountedObjectHolder::ReferenceCountedObjectHolder ( const ReferenceCountedObject* object )
 : iObject ( nullptr )
 {
     GreAutolock ;
-    
+
     if ( object )
     {
         object->threadLock() ;
-        
+
         // See if ownship has been done.
-        
+
         if ( object->getCounter() )
         {
             // Yes , so holds the counter.
             object->iCounter->hold();
             iObject = const_cast<ReferenceCountedObject*>(object);
         }
-        
+
         else
         {
             // No , creates a new ReferenceCounter.
@@ -90,7 +90,7 @@ ReferenceCountedObjectHolder::ReferenceCountedObjectHolder ( const ReferenceCoun
             object->iCounter->hold () ;
             iObject = const_cast<ReferenceCountedObject*>(object);
         }
-        
+
         object->threadUnlock() ;
     }
 }
@@ -100,20 +100,20 @@ ReferenceCountedObjectHolder::ReferenceCountedObjectHolder ( const ReferenceCoun
 {
     GreAutolock ;
     ReferenceCountedObject* object = holder.iObject ;
-    
+
     if ( object )
     {
         object->threadLock() ;
-        
+
         // See if ownship has been done.
-        
+
         if ( object->getCounter() )
         {
             // Yes , so holds the counter.
             object->iCounter->hold();
             iObject = object;
         }
-        
+
         else
         {
             // No , creates a new ReferenceCounter.
@@ -121,7 +121,7 @@ ReferenceCountedObjectHolder::ReferenceCountedObjectHolder ( const ReferenceCoun
             object->iCounter->hold () ;
             iObject = object;
         }
-        
+
         object->threadUnlock() ;
     }
 }
@@ -130,22 +130,22 @@ ReferenceCountedObjectHolder & ReferenceCountedObjectHolder::operator=(const Gre
 {
     GreAutolock ;
     clear() ;
-    
+
     ReferenceCountedObject* object = holder.iObject ;
-    
+
     if ( object )
     {
         object->threadLock() ;
-        
+
         // See if ownship has been done.
-        
+
         if ( object->getCounter() )
         {
             // Yes , so holds the counter.
             object->iCounter->hold();
             iObject = object;
         }
-        
+
         else
         {
             // No , creates a new ReferenceCounter.
@@ -153,11 +153,16 @@ ReferenceCountedObjectHolder & ReferenceCountedObjectHolder::operator=(const Gre
             object->iCounter->hold () ;
             iObject = object;
         }
-        
+
         object->threadUnlock() ;
     }
-    
+
     return *this ;
+}
+
+bool ReferenceCountedObjectHolder::operator == ( const ReferenceCountedObjectHolder & rhs ) const
+{
+    GreAutolock ; return iObject == rhs.iObject ;
 }
 
 ReferenceCountedObjectHolder::~ReferenceCountedObjectHolder() noexcept ( false )
@@ -186,18 +191,18 @@ bool ReferenceCountedObjectHolder::isInvalid() const
 void ReferenceCountedObjectHolder::clear()
 {
     GreAutolock ;
-    
+
     if ( iObject )
     {
         iObject->threadLock() ;
-        
+
         // See if iCounter is valid.
-        
+
         if ( iObject->getCounter() )
         {
             // Yes. Unhold it and see.
             iObject->iCounter->unhold();
-            
+
             if ( iObject->iCounter->getHolderCount() == 0 )
             {
                 // If the iCounter has no user too , we have to destroy it. But this has to be done after
@@ -205,26 +210,26 @@ void ReferenceCountedObjectHolder::clear()
                 // this object holds a listener holder to itself, the holder will be destroyed, destroying
                 // the listening user... the parent object. The holder will so try to lock the counter
                 // mutex but unsucessfully, because the counter has already been destroyed.
-                
+
                 ReferenceCounter* tmp = nullptr ;
-                
+
                 if ( iObject->iCounter->getUserCount() == 0 )
                 {
                     tmp = iObject -> iCounter ;
                     iObject->iCounter = nullptr ;
                 }
-                
+
                 // If we do not have any holder left , just delete the object.
                 // As the users always have a copy , if we are the last holder we
                 // don't want to get a copy of the counter pointer.
-                
+
                 iObject->threadUnlock() ;
                 delete iObject ;
                 iObject = nullptr ;
-                
+
                 if ( tmp ) delete tmp ;
             }
-            
+
             else
             {
                 // Just do nothing here. Some holders are holding this object yet ,
@@ -233,7 +238,7 @@ void ReferenceCountedObjectHolder::clear()
                 iObject = nullptr ;
             }
         }
-        
+
         else
         {
             // iCounter is invalid. Destroy the object and pray anything bad occurs.
@@ -249,25 +254,25 @@ void ReferenceCountedObjectHolder::clear()
 ReferenceCountedObjectUser::ReferenceCountedObjectUser ()
 : iObject ( nullptr ) , iCounter ( nullptr )
 {
-    
+
 }
 
 ReferenceCountedObjectUser::ReferenceCountedObjectUser ( const ReferenceCountedObject* objectcst )
 : iObject ( nullptr ) , iCounter ( nullptr )
 {
-    
+
     ReferenceCountedObject* object = const_cast<ReferenceCountedObject*>( objectcst ) ;
-    
+
     if ( object )
     {
         object->threadLock() ;
-        
+
         // See if it has a Counter. If it does not have any counter , the object is not initialized using the
         // Holder/User system. Function 'iCheckCounterValidity()' will set 'iObject' to null. A non-initialized
         // object can't be used by this class.
-        
+
         ReferenceCounter* counter = object->getCounter() ;
-        
+
         if ( counter )
         {
             if ( counter -> getHolderCount() )
@@ -283,16 +288,16 @@ ReferenceCountedObjectUser::ReferenceCountedObjectUser ( const ReferenceCountedO
                 iCounter -> use() ;
             }
         }
-        
+
         else
         {
             iObject = object ;
             iCounter = nullptr ;
         }
-        
+
         object->threadUnlock() ;
     }
-    
+
     else
     {
         iObject = nullptr ;
@@ -304,17 +309,17 @@ ReferenceCountedObjectUser::ReferenceCountedObjectUser ( const ReferenceCountedO
 : iObject ( nullptr ) , iCounter ( nullptr )
 {
     ReferenceCountedObject* object = const_cast<ReferenceCountedObject*>( holder.getObject() ) ;
-    
+
     if ( object )
     {
         object->threadLock() ;
-        
+
         // See if it has a Counter. If it does not have any counter , the object is not initialized using the
         // Holder/User system. Function 'iCheckCounterValidity()' will set 'iObject' to null. A non-initialized
         // object can't be used by this class.
-        
+
         ReferenceCounter* counter = object->getCounter() ;
-        
+
         if ( counter )
         {
             if ( counter -> getHolderCount() )
@@ -330,16 +335,16 @@ ReferenceCountedObjectUser::ReferenceCountedObjectUser ( const ReferenceCountedO
                 iCounter -> use() ;
             }
         }
-        
+
         else
         {
             iObject = object ;
             iCounter = nullptr ;
         }
-        
+
         object->threadUnlock() ;
     }
-    
+
     else
     {
         iObject = nullptr ;
@@ -352,7 +357,7 @@ ReferenceCountedObjectUser::ReferenceCountedObjectUser ( const ReferenceCountedO
 {
     ReferenceCountedObject * object = user.iObject ;
     ReferenceCounter* counter = user.iCounter ;
-    
+
     if ( counter )
     {
         if ( counter->getHolderCount() > 0 )
@@ -362,7 +367,7 @@ ReferenceCountedObjectUser::ReferenceCountedObjectUser ( const ReferenceCountedO
             iCounter = counter ;
             iCounter->use();
         }
-        
+
         else
         {
             // object ptr is not valid , so use the counter but initialize the object to null.
@@ -371,13 +376,13 @@ ReferenceCountedObjectUser::ReferenceCountedObjectUser ( const ReferenceCountedO
             iCounter->use();
         }
     }
-    
+
     else
     {
         // If iCounter is null , we must rely on the validity of iObject. This is not safe at all.
         // Note that when locking the object , if the object here is valid , the holder will create
         // a new Counter. If the object is invalid , this will lead to unexpected behaviour.
-        
+
         iObject = object ;
         iCounter = nullptr ;
     }
@@ -386,13 +391,13 @@ ReferenceCountedObjectUser::ReferenceCountedObjectUser ( const ReferenceCountedO
 ReferenceCountedObjectUser::~ReferenceCountedObjectUser() noexcept ( false )
 {
     // GreAutolock ;
-    
+
     // Here , just unuse and see if we mus delete the counter.
-    
+
     if ( iCounter )
     {
         iCounter->unuse();
-        
+
         if ( iCounter->getUserCount() == 0 )
         {
             delete iCounter ;
@@ -404,23 +409,23 @@ ReferenceCountedObjectHolder ReferenceCountedObjectUser::lock()
 {
     GreAutolock ;
     iCheckCounterValidity();
-    
+
     // We create the holder depending on the object. The fallback here is , if the
     // iObject was initialized without initializing the counter , thus this object
     // is destroyed and we then try to lock the user , the holder will be initialized
     // with invalid memory pointer and will lead to unexpected behaviour.
-    
+
     ReferenceCountedObjectHolder holder ( iObject ) ;
-    
-    // The holder should have created a counter , if it was not already the case. Notes that 
+
+    // The holder should have created a counter , if it was not already the case. Notes that
 	// if we are locking a null holder, we should take in account that this user can also have
 	// been initialized with a null object.
-    
+
     if ( !iCounter && !holder.isInvalid() )
     {
         iCounter = holder.getObject()->getCounter();
     }
-    
+
     return holder ;
 }
 
@@ -428,23 +433,23 @@ const ReferenceCountedObjectHolder ReferenceCountedObjectUser::lock() const
 {
     GreAutolock ;
     iCheckCounterValidity();
-    
+
     // We create the holder depending on the object. The fallback here is , if the
     // iObject was initialized without initializing the counter , thus this object
     // is destroyed and we then try to lock the user , the holder will be initialized
     // with invalid memory pointer and will lead to unexpected behaviour.
-    
+
     ReferenceCountedObjectHolder holder ( iObject ) ;
-    
-    // The holder should have created a counter , if it was not already the case. Notes that 
+
+    // The holder should have created a counter , if it was not already the case. Notes that
 	// if we are locking a null holder, we should take in account that this user can also have
 	// been initialized with a null object.
-    
+
     if ( !iCounter && !holder.isInvalid() )
     {
         iCounter = holder.getObject()->getCounter();
     }
-    
+
     return holder ;
 }
 
@@ -457,22 +462,22 @@ bool ReferenceCountedObjectUser::isInvalid() const
 void ReferenceCountedObjectUser::clear()
 {
     GreAutolock ;
-    
+
     if ( iCounter )
     {
         iCounter->unuse() ;
-        
+
         // If the Counter has no other users or holders , we can delete it
         // safely.
-        
+
         if ( iCounter->getUserCount() == 0 )
         {
             delete iCounter ;
         }
     }
-    
+
     // Resets the properties.
-    
+
     iCounter = nullptr ;
     iObject = nullptr ;
 }
@@ -486,13 +491,13 @@ bool ReferenceCountedObjectUser::operator== ( const ReferenceCountedObjectUser &
 ReferenceCountedObjectUser & ReferenceCountedObjectUser::operator=(const Gre::ReferenceCountedObjectUser &rhs)
 {
     GreAutolock ; clear() ;
-    
+
     iCounter = rhs.iCounter ;
     iObject = rhs.iObject ;
-    
+
     if ( iCounter )
         iCounter->use() ;
-    
+
     return *this ;
 }
 

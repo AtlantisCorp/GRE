@@ -4,7 +4,7 @@
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
-//  Copyright (c) 2015 - 2016 Luk2010
+//  Copyright (c) 2015 - 2017 Luk2010
 //  Created on 20/02/2017.
 //
 //////////////////////////////////////////////////////////////////////
@@ -16,10 +16,10 @@
  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  copies of the Software, and to permit persons to whom the Software is
  furnished to do so, subject to the following conditions:
- 
+
  The above copyright notice and this permission notice shall be included in
  all copies or substantial portions of the Software.
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -31,54 +31,51 @@
  */
 
 #include "Light.h"
+#include "ResourceManager.h"
 
 GreBeginNamespace
 
-Light::Light ( const Vector3& position , const Color& ambient , const Color& diffuse , const Color& specular , float shininess )
-: Gre::Lockable()
-, iType(LightType::Directionnal) , iEnabled(true)
-, iPosition(position) , iAmbient(ambient) , iDiffuse(diffuse) , iSpecular(specular) , iShininess(shininess)
+Light::Light ( const std::string & name ) : Gre::Resource ( name )
 {
+    iType = LightType::Directionnal ;
+    iEnabled = true ;
     iAttenuationCst = 0.0f ;
     iAttenuationLinear = 0.0f ;
     iAttenuationQuad = 0.0f ;
-    iDirection = Vector3(0.0f, 0.0f, 0.0f) ;
-    iAngle = glm::radians(12.5f) ;
-    iExposition = 64.0f ;
-    iShininess = 32.0f ;
+    iAngle = 0.0f ;
+    iExposition = 0.0f ;
 }
 
-Light::Light ( const Light& rhs )
-: Gre::Lockable()
-, iType(rhs.iType) , iEnabled(rhs.iEnabled)
-, iPosition(rhs.iPosition) , iAmbient(rhs.iAmbient) , iDiffuse(rhs.iDiffuse) , iSpecular(rhs.iSpecular)
-, iShininess(rhs.iShininess) , iAttenuationCst(rhs.iAttenuationCst) , iAttenuationLinear(rhs.iAttenuationLinear)
-, iAttenuationQuad(rhs.iAttenuationQuad) , iDirection(rhs.iDirection) , iAngle(rhs.iAngle) , iExposition(rhs.iExposition)
-{
-    
-}
+Light::Light ( const std::string& name ,
+               const Vector3& position , const Vector3& direction ,
+               bool shadowProjector ,
+               const Color& ambient , const Color& diffuse , const Color& specular )
 
-Light& Light::operator=(const Gre::Light &rhs)
+: Gre::Resource(name)
+, iType(LightType::Directionnal)
+, iEnabled(true)
+
+, iPosition(position)
+, iDirection(direction)
+
+, iAmbient(ambient)
+, iDiffuse(diffuse)
+, iSpecular(specular)
+
+, iAttenuationCst(0.0f)
+, iAttenuationLinear(0.0f)
+, iAttenuationQuad(0.0f)
+
+, iAngle(glm::radians(12.5f))
+, iExposition(64.0f)
+
 {
-    iType = rhs.iType ;
-    iEnabled = rhs.iEnabled ;
-    iPosition = rhs.iPosition ;
-    iAmbient = rhs.iAmbient ;
-    iDiffuse = rhs.iDiffuse ;
-    iSpecular = rhs.iSpecular ;
-    iShininess = rhs.iShininess ;
-    iAttenuationCst = rhs.iAttenuationCst ;
-    iAttenuationLinear = rhs.iAttenuationLinear ;
-    iAttenuationQuad = rhs.iAttenuationQuad ;
-    iDirection = rhs.iDirection ;
-    iAngle = rhs.iAngle ;
-    iExposition = rhs.iExposition ;
-    return *this ;
+
 }
 
 Light::~Light() noexcept ( false )
 {
-    
+
 }
 
 const LightType& Light::getType() const

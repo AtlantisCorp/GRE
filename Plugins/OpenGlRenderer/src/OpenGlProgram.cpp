@@ -16,10 +16,10 @@
  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  copies of the Software, and to permit persons to whom the Software is
  furnished to do so, subject to the following conditions:
- 
+
  The above copyright notice and this permission notice shall be included in
  all copies or substantial portions of the Software.
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -32,20 +32,36 @@
 
 #include "OpenGlRenderer.h"
 
-OpenGlProgram::OpenGlProgram (const std::string& name ,
-                              const Gre::HardwareShaderUser& vertex ,
-                              const Gre::HardwareShaderUser& fragment ,
-                              bool cacheShaders)
-: Gre::HardwareProgram(name, vertex, fragment, cacheShaders)
-, iGlProgram(0)
+GLenum translateGlAttribType ( const Gre::VertexAttribType & type )
 {
-    _create() ;
-    if ( iGlProgram )
-    {
-        _attachShader(vertex) ;
-        _attachShader(fragment) ;
-        _finalize() ;
-    }
+    if ( type == Gre::VertexAttribType::Byte )
+        return GL_BYTE ;
+    else if ( type == Gre::VertexAttribType::UnsignedByte )
+        return GL_UNSIGNED_BYTE ;
+    else if ( type == Gre::VertexAttribType::Short )
+        return GL_SHORT ;
+    else if ( type == Gre::VertexAttribType::UnsignedShort )
+        return GL_UNSIGNED_SHORT ;
+    else if ( type == Gre::VertexAttribType::Int )
+        return GL_INT ;
+    else if ( type == Gre::VertexAttribType::UnsignedInt )
+        return GL_UNSIGNED_INT ;
+    else if ( type == Gre::VertexAttribType::Float )
+        return GL_FLOAT ;
+    else if ( type == Gre::VertexAttribType::Double )
+        return GL_DOUBLE ;
+
+    else
+        return GL_INVALID_ENUM ;
+}
+
+// ---------------------------------------------------------------------------
+
+OpenGlProgram::OpenGlProgram ( const std::string & name ) : Gre::HardwareProgram ( name )
+{
+    //////////////////////////////////////////////////////////////////////
+    // Tries to create a GL ID for the program object.
+    iGlProgram = glCreateProgram () ;
 }
 
 OpenGlProgram::~OpenGlProgram() noexcept ( false )
@@ -53,20 +69,12 @@ OpenGlProgram::~OpenGlProgram() noexcept ( false )
     _deleteProgram() ;
 }
 
-void OpenGlProgram::_create ()
-{
-    GreAutolock ;
-    
-    if ( !iGlProgram ) {
-        iGlProgram = glCreateProgram();
-    }
-}
-
 void OpenGlProgram::_bind() const
 {
     GreAutolock ;
-    
-    if ( iGlProgram && iCompiled ) {
+
+    if ( !iBinded )
+    {
         glUseProgram(iGlProgram) ;
         iBinded = true ;
     }
@@ -75,124 +83,182 @@ void OpenGlProgram::_bind() const
 void OpenGlProgram::_unbind() const
 {
     GreAutolock ;
-    
-    glUseProgram(0);
-    iBinded = false ;
-}
 
-void OpenGlProgram::_attachShader(const Gre::HardwareShaderUser &hwdShader, bool cacheShader)
-{
-    GreAutolock ;
-    
-    if ( hwdShader.isInvalid() || !iGlProgram || iCompiled )
-        return ;
-    
-    const Gre::HardwareShaderHolder & holder = hwdShader.lock() ;
-    
-    if ( holder->getType() == Gre::ShaderType::Vertex )
+    if ( iBinded )
     {
-        const OpenGlShader* glshader = reinterpret_cast<const OpenGlShader*>(holder.getObject()) ;
-        glAttachShader(iGlProgram, glshader->getGlShader());
-        
-        if ( cacheShader )
-            iVertexShader = hwdShader ;
-    }
-    
-    else if ( holder->getType() == Gre::ShaderType::Fragment )
-    {
-        const OpenGlShader* glshader = reinterpret_cast<const OpenGlShader*>(holder.getObject()) ;
-        glAttachShader(iGlProgram, glshader->getGlShader());
-        
-        if ( cacheShader )
-            iFragmentShader = hwdShader ;
+        glUseProgram(0);
+        iBinded = false ;
     }
 }
 
-void OpenGlProgram::_finalize()
+bool OpenGlProgram::_attachShader(const Gre::HardwareShaderHolder & hwdShader)
 {
     GreAutolock ;
-    
-    if ( !iGlProgram || iCompiled )
-        return ;
-    
+
+    //////////////////////////////////////////////////////////////////////
+    // Checks given shader , GL program and link status.
+
+    if ( iLinked )
+        return false ;
+
+    if ( !iGlProgram )
+    {
+        iGlProgram = glCreateProgram () ;
+        if ( !iGlProgram ) return false ;
+    }
+
+    if ( hwdShader.isInvalid() )
+        return false ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Gets the OpenGlShader , GL id , and calls 'glAttachShader()'.
+
+    const OpenGlShader * glshader = reinterpret_cast<const OpenGlShader*>(hwdShader.getObject()) ;
+    GLuint glid = glshader -> getGlShader () ;
+
+    glAttachShader ( iGlProgram , glid ) ;
+    GLenum err = glGetError () ;
+
+    if ( err != GL_NO_ERROR )
+    {
+#ifdef GreIsDebugMode
+        GreDebug ( "[WARN] glAttachShader() : '") << getName() << "' : " << translateGlError (err) << Gre::gendl ;
+#endif
+        return false ;
+    }
+
+    return true ;
+}
+
+bool OpenGlProgram::_finalize()
+{
+    GreAutolock ;
+
+    if ( !iGlProgram || iLinked )
+        return false ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Links the program.
+
     glLinkProgram(iGlProgram);
-    
+
+    //////////////////////////////////////////////////////////////////////
+    // Gets errors from the linking process.
+
     GLint status ; glGetProgramiv(iGlProgram, GL_LINK_STATUS, &status) ;
+
     if ( status == GL_FALSE ) {
+
+#ifdef GreIsDebugMode
         GLint infosz ; glGetProgramiv(iGlProgram, GL_INFO_LOG_LENGTH, &infosz) ;
         GLsizei lenght ;
         GLchar* buf = (GLchar*) malloc ( infosz + 1 ) ;
         glGetProgramInfoLog(iGlProgram, infosz, &lenght, buf) ;
         buf[lenght] = '\0' ;
-        
-        GreDebug("[WARN] Can't link program '") << getName() << "' : " << std::string(buf) << Gre::gendl ;
+
+        GreDebug("[WARN] glLinkProgram() : '") << getName() << "' : " << std::string(buf) << Gre::gendl ;
+#endif
+
+        return false ;
     }
-    
-    iCompiled = true ;
-    
-    // Try to iterate through the program uniforms.
-    
+
+    //////////////////////////////////////////////////////////////////////
+    // Successfully linked.
+
+    iLinked = true ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Tries to iterate through the program uniforms.
+
     GLint uniformcount = 0 ;
     GLint uniformmaxlenght = 0 ;
-    
+
     glGetProgramiv(iGlProgram, GL_ACTIVE_UNIFORMS, &uniformcount) ;
-    GreDebug("Found ") << uniformcount << " uniforms." << Gre::gendl ;
-    
+
+#ifdef GreIsDebugMode
+    GreDebug("[INFO] glGetProgramiv() : Found ") << uniformcount << " uniforms." << Gre::gendl ;
+#endif
+
     if ( uniformcount )
     {
         glGetProgramiv(iGlProgram, GL_ACTIVE_UNIFORM_MAX_LENGTH, &uniformmaxlenght) ;
-        GreDebug("Uniform Max Lenght = ") << uniformmaxlenght << Gre::gendl ;
-        
+
+#ifdef GreIsDebugMode
+        GreDebug("[INFO] glGetProgramiv() : Uniform Max Lenght = ") << uniformmaxlenght << Gre::gendl ;
+#endif
+
         if ( uniformmaxlenght )
         {
             for ( int i = 0 ; i < uniformcount ; ++i )
             {
                 char* buf = (char*) malloc ( uniformmaxlenght+1 ) ;
                 GLsizei lenght = 0 ;
-                
+
                 glGetActiveUniformName(iGlProgram, i, uniformmaxlenght, &lenght, buf);
-                buf [uniformmaxlenght] = '\0' ;
-                
-                GreDebug("Uniform name = '") << std::string(buf) << "'." << Gre::gendl ;
-                
+                buf [lenght] = '\0' ;
+
                 GLint location = glGetUniformLocation(iGlProgram, buf) ;
-                GreDebug("Uniform location = ") << location << "." << Gre::gendl ;
-                
+
+#ifdef GreIsDebugMode
+                GreDebug("[INFO] glGetActiveUniformName() : Uniform name = '") << std::string(buf) << "'." << Gre::gendl ;
+                GreDebug("[INFO] glGetUniformLocation() : Uniform location = ") << location << "." << Gre::gendl ;
+#endif
+
+                //////////////////////////////////////////////////////////////////////
                 // We can save the uniform for saving time on 'glGetUniformLocation'.
-                iUniformsByName [std::string(buf)] = location ;
+                // We don't need any other informations for now on the uniform.
+
+                Gre::HardwareProgramVariable var ;
+                var.name = std::string(buf) ;
+                var.location = location ;
+                iUniforms [std::string(buf)] = var ;
             }
         }
     }
-    
-    // Try to iterate through Attributes.
-    
+
+    //////////////////////////////////////////////////////////////////////
+    // Tries to iterate through Attributes.
+
     GLint attrcount = 0 ;
     GLint attrmaxlenght = 0 ;
-    
+
     glGetProgramiv(iGlProgram, GL_ACTIVE_ATTRIBUTES, &attrcount) ;
-    GreDebug("Found ") << attrcount << " attributes." << Gre::gendl ;
-    
+
+#ifdef GreIsDebugMode
+    GreDebug("[INFO] glGetProgramiv() : Found ") << attrcount << " attributes." << Gre::gendl ;
+#endif
+
     if ( attrcount )
     {
         glGetProgramiv(iGlProgram, GL_ACTIVE_ATTRIBUTE_MAX_LENGTH, &attrmaxlenght) ;
-        GreDebug("AttrMaxLenght = ") << attrmaxlenght << Gre::gendl ;
-        
+
+#ifdef GreIsDebugMode
+        GreDebug("[INFO] glGetProgramiv() : AttrMaxLenght = ") << attrmaxlenght << Gre::gendl ;
+#endif
+
         if ( attrmaxlenght )
         {
             for ( int i = 0 ; i < attrcount ; ++i )
             {
                 char* buf = (char*) malloc ( attrmaxlenght+1 ) ;
                 GLsizei lenght = 0 ;
-                
+
                 glGetActiveAttrib(iGlProgram, i, attrmaxlenght, &lenght, NULL, NULL, buf) ;
                 buf [lenght] = '\0' ;
-                GreDebug("ActivAttrib = '") << std::string(buf) << "'." << Gre::gendl ;
-                
+
                 GLint location = glGetAttribLocation(iGlProgram, buf) ;
+
+#ifdef GreIsDebugMode
+                GreDebug("ActivAttrib = '") << std::string(buf) << "'." << Gre::gendl ;
                 GreDebug("Location = ") << location << Gre::gendl ;
+#endif
+
+                iAttribsLocation [std::string(buf)] = location ;
             }
         }
     }
+
+    return iLinked ;
 }
 
 void OpenGlProgram::_deleteProgram()
@@ -200,112 +266,123 @@ void OpenGlProgram::_deleteProgram()
     GreAutolock ;
     if ( !iGlProgram )
         return ;
-    
+
     glDeleteProgram(iGlProgram) ;
     iGlProgram = 0 ;
-    iCompiled = false ;
+    iLinked = false ;
     iBinded = false ;
 }
 
-void OpenGlProgram::_setAttribLocation(const std::string &name, int loc) const
+void OpenGlProgram::setVertexAttrib(const std::string &attrib, size_t elements, Gre::VertexAttribType type, bool normalize, size_t stride, void *pointer) const
 {
-    GreAutolock ;
-    
-    if ( iGlProgram ) {
-        glBindAttribLocation(iGlProgram, loc, name.c_str());
-    }
-}
+    //////////////////////////////////////////////////////////////////////
+    // Try to find the attribute in lookup table.
 
-int OpenGlProgram::getAttribLocation(const std::string &name) const
-{
-    GreAutolock ;
-    
-    if ( iGlProgram ) {
-        return glGetAttribLocation(iGlProgram, name.c_str());
+    auto it = iAttribsLocation.find(attrib) ;
+
+    if ( it != iAttribsLocation.end() )
+    {
+        int loc = it->second ;
+
+        if ( loc >= 0 )
+        {
+            //////////////////////////////////////////////////////////////////////
+            // Enables Vertex Attribute and points the correct elements. Notes that
+            // a Vertex Array Object should be binded when using this function.
+
+            glEnableVertexAttribArray(loc) ;
+
+            if ( type == Gre::VertexAttribType::Int )
+            {
+                glVertexAttribIPointer(loc, elements,
+                                       translateGlAttribType(type),
+                                       stride, pointer);
+            }
+
+            else
+            {
+                glVertexAttribPointer(loc, elements,
+                                      translateGlAttribType(type),
+                                      normalize,
+                                      stride, pointer);
+            }
+        }
     }
-    
-    return -1 ;
 }
 
 void OpenGlProgram::bindTextureUnit(int unit) const
 {
     GreAutolock ;
-    
+
     if ( iGlProgram ) {
         glActiveTexture(GL_TEXTURE0+unit);
     }
 }
 
-int OpenGlProgram::getUniformLocation(const std::string &name) const
+bool OpenGlProgram::_setUniform(int location, const Gre::HdwProgVarType &type, const Gre::RealProgramVariable &value) const
 {
     GreAutolock ;
-    
-    auto it = iUniformsByName.find(name) ;
-    if ( it != iUniformsByName.end() )
-        return it->second ;
-    return -1 ;
-}
 
-void OpenGlProgram::_setVariable(const Gre::HardwareProgramVariable &var) const
-{
-    GreAutolock ;
-    
     if ( iGlProgram )
     {
-        int location = var.location ;
+
         if ( location < 0 ) {
-            location = getUniformLocation(var.name) ;
-            if ( location < 0 ) {
-                return ;
-            }
+            return false ;
         }
-        
-        if ( var.type == Gre::HdwProgVarType::Float1 ) {
-            glUniform1fv(location, 1, & var.value.f1);
+
+        if ( type == Gre::HdwProgVarType::Float1 ) {
+            glUniform1fv(location, 1, & value.f1);
         }
-        
-        else if ( var.type == Gre::HdwProgVarType::Float2 ) {
-            glUniform2fv(location, 1, & var.value.f2[0]);
+
+        else if ( type == Gre::HdwProgVarType::Float2 ) {
+            glUniform2fv(location, 1, & value.f2[0]);
         }
-        
-        else if ( var.type == Gre::HdwProgVarType::Float3 ) {
-            glUniform3fv(location, 1, & var.value.f3[0]);
+
+        else if ( type == Gre::HdwProgVarType::Float3 ) {
+            glUniform3fv(location, 1, & value.f3[0]);
         }
-        
-        else if ( var.type == Gre::HdwProgVarType::Float4 ) {
-            glUniform4fv(location, 1, & var.value.f4[0]);
+
+        else if ( type == Gre::HdwProgVarType::Float4 ) {
+            glUniform4fv(location, 1, & value.f4[0]);
         }
-        
-        else if ( var.type == Gre::HdwProgVarType::Int1 ) {
-            glUniform1iv(location, 1, & var.value.i1);
+
+        else if ( type == Gre::HdwProgVarType::Int1 ) {
+            glUniform1iv(location, 1, & value.i1);
         }
-        
-        else if ( var.type == Gre::HdwProgVarType::Int2 ) {
-            glUniform2iv(location, 1, & var.value.i2[0]);
+
+        else if ( type == Gre::HdwProgVarType::Int2 ) {
+            glUniform2iv(location, 1, & value.i2[0]);
         }
-        
-        else if ( var.type == Gre::HdwProgVarType::Int3 ) {
-            glUniform3iv(location, 1, & var.value.i3[0]);
+
+        else if ( type == Gre::HdwProgVarType::Int3 ) {
+            glUniform3iv(location, 1, & value.i3[0]);
         }
-        
-        else if ( var.type == Gre::HdwProgVarType::Int4 ) {
-            glUniform4iv(location, 1, & var.value.i4[0]);
+
+        else if ( type == Gre::HdwProgVarType::Int4 ) {
+            glUniform4iv(location, 1, & value.i4[0]);
         }
-        
-        else if ( var.type == Gre::HdwProgVarType::Matrix2 ) {
-            glUniformMatrix2fv(location, 1, false, & var.value.m2[0][0]);
+
+        else if ( type == Gre::HdwProgVarType::Matrix2 ) {
+            glUniformMatrix2fv(location, 1, false, & value.m2[0][0]);
         }
-        
-        else if ( var.type == Gre::HdwProgVarType::Matrix3 ) {
-            glUniformMatrix3fv(location, 1, false, & var.value.m3[0][0]);
+
+        else if ( type == Gre::HdwProgVarType::Matrix3 ) {
+            glUniformMatrix3fv(location, 1, false, & value.m3[0][0]);
         }
-        
-        else if ( var.type == Gre::HdwProgVarType::Matrix4 ) {
-            glUniformMatrix4fv(location, 1, false, & var.value.m4[0][0]);
+
+        else if ( type == Gre::HdwProgVarType::Matrix4 ) {
+            glUniformMatrix4fv(location, 1, false, & value.m4[0][0]);
         }
+
+        GLenum err = glGetError() ;
+        if ( err == GL_NONE ) return true ;
+
     }
+
+    return false ;
 }
 
-
-
-
+unsigned int OpenGlProgram::getMaximumLights() const
+{
+    return 10 ;
+}

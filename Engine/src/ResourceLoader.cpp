@@ -44,4 +44,9 @@ ResourceLoader::~ResourceLoader() noexcept (false)
     
 }
 
+const std::string ResourceLoader::getDirectory() const
+{
+    return std::string () ;
+}
+
 GreEndNamespace

@@ -155,18 +155,13 @@ void SoftwareVertexBuffer::makeBoundingBox()
         
         if ( desc.getSize() && iVertexData && iSize )
         {
-            int posloc = desc.getComponentLocation(VertexComponentType::Position);
+            const VertexAttribComponent position = desc.findComponent ( VertexAttribAlias::Position ) ;
             
-            if ( posloc >= 0 )
+            if ( position.size > 0 )
             {
-                // We have to iterates through each Vertex to get the position data.
-                // 1. Get position component pointer.
-                // 2. While another position is available, add the vertex stride to get
-                // next Position.
-                
-                const char* end = iVertexData + iSize;
-                const char* data = iVertexData + posloc;
-                size_t stride = desc.getStride(VertexComponentType::Position);
+                const char* end = iVertexData + iSize ;
+                const char* data = iVertexData + desc.getOffset(position) ;
+                size_t stride = desc.getStride(position) ;
                 
                 do
                 {

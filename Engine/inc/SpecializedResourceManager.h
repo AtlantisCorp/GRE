@@ -16,10 +16,10 @@
  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  copies of the Software, and to permit persons to whom the Software is
  furnished to do so, subject to the following conditions:
- 
+
  The above copyright notice and this permission notice shall be included in
  all copies or substantial portions of the Software.
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -46,48 +46,48 @@ template < typename Class >
 class ResourceManagerBase : public IndependentResource
 {
 public:
-    
+
     POOLED ( Pools::Referenced )
-    
+
     typedef SpecializedCountedObjectHolder<Class> ClassHolder ;
     typedef SpecializedCountedObjectUser<Class> ClassUser ;
     typedef SpecializedResourceHolderList<Class> ClassHolderList ;
-    
+
     ////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////
     ResourceManagerBase ( ) : IndependentResource ( )
     {
-        
+
     }
-    
+
     ////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////
     ResourceManagerBase ( const std::string & name ) : IndependentResource ( name )
     {
-        
+
     }
-    
+
     ////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////
     ResourceManagerBase ( const ResourceIdentifier & identifier , const std::string & name ) : IndependentResource (identifier, name)
     {
-        
+
     }
-    
+
     ////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////
     virtual ~ResourceManagerBase ( ) noexcept ( false )
     {
-        
+
     }
-    
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Returns a Resource from given identifier.
     ////////////////////////////////////////////////////////////////////////
     virtual ClassUser find ( const ResourceIdentifier & identifier )
     {
         GreAutolock ;
-        
+
         for ( ClassHolder& holder : iHolders )
         {
             if ( !holder.isInvalid() )
@@ -98,17 +98,17 @@ public:
                 }
             }
         }
-        
+
         return ClassUser ( nullptr ) ;
     }
-    
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Returns a Resource from given identifier.
     ////////////////////////////////////////////////////////////////////////
     virtual const ClassUser find ( const ResourceIdentifier & identifier ) const
     {
         GreAutolock ;
-        
+
         for ( const ClassHolder& holder : iHolders )
         {
             if ( !holder.isInvalid() )
@@ -119,17 +119,17 @@ public:
                 }
             }
         }
-        
+
         return ClassUser ( nullptr ) ;
     }
-    
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Finds a Resource and return its holder.
     ////////////////////////////////////////////////////////////////////////
     virtual const ClassHolder findHolder ( const ResourceIdentifier & identifier ) const
     {
         GreAutolock ;
-        
+
         for ( const ClassHolder & holder : iHolders )
         {
             if ( !holder.isInvalid() )
@@ -140,17 +140,17 @@ public:
                 }
             }
         }
-        
+
         return ClassHolder ( nullptr ) ;
     }
-    
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Returns the first Resource with given name.
     ////////////////////////////////////////////////////////////////////////
     virtual ClassUser findFirst ( const std::string & name )
     {
         GreAutolock ;
-        
+
         for ( ClassHolder& holder : iHolders )
         {
             if ( !holder.isInvalid() )
@@ -161,17 +161,17 @@ public:
                 }
             }
         }
-        
+
         return ClassUser ( nullptr ) ;
     }
-    
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Returns the first Resource with given name.
     ////////////////////////////////////////////////////////////////////////
     virtual const ClassUser findFirst ( const std::string & name ) const
     {
         GreAutolock ;
-        
+
         for ( const ClassHolder& holder : iHolders )
         {
             if ( !holder.isInvalid() )
@@ -182,17 +182,38 @@ public:
                 }
             }
         }
-        
+
         return ClassUser ( nullptr ) ;
     }
-    
+
+    ////////////////////////////////////////////////////////////////////////
+    /// @brief Returns the first Resource with given name and its holder.
+    ////////////////////////////////////////////////////////////////////////
+    virtual ClassHolder findFirstHolder ( const std::string & name )
+    {
+        GreAutolock ;
+
+        for ( ClassHolder& holder : iHolders )
+        {
+            if ( !holder.isInvalid() )
+            {
+                if ( holder->getName() == name )
+                {
+                    return holder ;
+                }
+            }
+        }
+
+        return ClassHolder ( nullptr ) ;
+    }
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Returns the first Resource with given name and its holder.
     ////////////////////////////////////////////////////////////////////////
     virtual const ClassHolder findFirstHolder ( const std::string & name ) const
     {
         GreAutolock ;
-        
+
         for ( const ClassHolder& holder : iHolders )
         {
             if ( !holder.isInvalid() )
@@ -203,30 +224,30 @@ public:
                 }
             }
         }
-        
+
         return ClassHolder ( nullptr ) ;
     }
-    
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Removes a Resource.
     ////////////////////////////////////////////////////////////////////////
     virtual void remove ( const ClassHolder & holder )
     {
         GreAutolock ;
-        
+
         if ( !holder.isInvalid() )
         {
             remove ( holder->getIdentifier() ) ;
         }
     }
-    
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Removes a Resource from its Identifier.
     ////////////////////////////////////////////////////////////////////////
     virtual void remove ( const ResourceIdentifier & identifier )
     {
         GreAutolock ;
-        
+
         for ( auto it = iHolders.begin() ; it != iHolders.end() ; it++ )
         {
             if ( !it->isInvalid() )
@@ -240,7 +261,7 @@ public:
             }
         }
     }
-    
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Returns the Resource list.
     ////////////////////////////////////////////////////////////////////////
@@ -249,7 +270,7 @@ public:
         GreAutolock ;
         return iHolders ;
     }
-    
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Sets a new Resource list.
     ////////////////////////////////////////////////////////////////////////
@@ -257,7 +278,7 @@ public:
     {
         GreAutolock ; iHolders = holders ;
     }
-    
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Loads the Resource with the given arguments passed as a string.
     ////////////////////////////////////////////////////////////////////////
@@ -266,7 +287,7 @@ public:
         GreAutolock ; iLoadStatus = true ;
         return true ;
     }
-    
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Unloads the Resource.
     ////////////////////////////////////////////////////////////////////////
@@ -274,9 +295,9 @@ public:
     {
         GreAutolock ; iHolders.clear(); iLoadStatus = false;
     }
-    
+
 protected:
-    
+
     /// @brief Holds the Resources managed objects.
     ClassHolderList iHolders ;
 };
@@ -299,33 +320,33 @@ template < typename Class , typename ClassLoader >
 class DLL_PUBLIC SpecializedResourceManager : public ResourceManagerBase < Class >
 {
 public:
-    
+
     POOLED ( Pools::Manager )
-    
+
     typedef ResourceLoaderFactory<ClassLoader> ClassLoaderFactory ;
-    
+
     ////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////
     SpecializedResourceManager ( ) : ResourceManagerBase<Class> ( )
     {
-        
+
     }
-    
+
     ////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////
     SpecializedResourceManager ( const std::string & name )
     : Gre::ResourceManagerBase<Class> ( ResourceIdentifier::New() , name )
     {
-        
+
     }
-    
+
     ////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////
     virtual ~SpecializedResourceManager () noexcept ( false )
     {
-        
+
     }
-    
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Returns 'iFactory'.
     ////////////////////////////////////////////////////////////////////////
@@ -333,7 +354,7 @@ public:
     {
         GreAutolock ; return iLoaders ;
     }
-    
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Returns the loader factory.
     ////////////////////////////////////////////////////////////////////////
@@ -341,7 +362,7 @@ public:
     {
         GreAutolock ; return iLoaders ;
     }
-    
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Unloads the Resource.
     ////////////////////////////////////////////////////////////////////////
@@ -350,7 +371,7 @@ public:
         GreAutolock ; iLoaders.clear () ;
         ResourceManagerBase < Class > :: unload () ;
     }
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the first loader with given name.
     /// If name is empty, returns the first loader.
@@ -358,11 +379,11 @@ public:
     virtual ClassLoader * findLoader ( const std::string & name = std::string() )
     {
         auto & loaderlist = iLoaders.getLoaders () ;
-		
+
 		if ( name.empty() && loaderlist.size() ) {
 			return loaderlist.begin()->second.get() ;
 		}
-        
+
         for ( auto it = loaderlist.begin() ; it != loaderlist.end() ; it++ )
         {
             if ( it->first == name )
@@ -370,12 +391,12 @@ public:
                 return it->second.get() ;
             }
         }
-        
+
         return nullptr ;
     }
-    
+
 protected:
-    
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Find the best loader depending on the 'isLoadable' arg.
     /// This loader should not be destroyed by the user.
@@ -383,7 +404,7 @@ protected:
     virtual ClassLoader * iFindBestLoader ( const std::string & filepath )
     {
         auto & loaderlist = iLoaders.getLoaders () ;
-        
+
         for ( auto it = loaderlist.begin() ; it != loaderlist.end() ; it++ )
         {
             if ( it->second->isLoadable(filepath) )
@@ -391,12 +412,12 @@ protected:
                 return it->second.get() ;
             }
         }
-        
+
         return nullptr ;
     }
-    
+
 protected:
-    
+
     /// @brief Holds the Loaders in a factory.
     ClassLoaderFactory iLoaders ;
 };

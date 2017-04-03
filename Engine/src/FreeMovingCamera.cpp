@@ -40,10 +40,15 @@ GreBeginNamespace
 FreeMovingCamera::FreeMovingCamera(const std::string &name)
     : Camera(name)
 {
+    iControllerFilters.push_back ( EventType::KeyUp ) ;
+    iControllerFilters.push_back ( EventType::KeyDown ) ;
+    iControllerFilters.push_back ( EventType::CursorMoved ) ;
+
     iArrowUpState = KeyState::Released ;
     iArrowDownState = KeyState::Released ;
     iArrowLeftState = KeyState::Released ;
     iArrowRightState = KeyState::Released ;
+    
     iSensibility = 1.0f ;
     iSensitivity = 0.2f ;
 }
@@ -73,31 +78,23 @@ float FreeMovingCamera::getSensitivity() const
     GreAutolock ; return iSensitivity ;
 }
 
-void FreeMovingCamera::lookAt(const Vector3 &origin, const Vector3 &point, const Vector3& up)
-{
-    GreAutolock ;
-    
-    Camera::lookAt(origin, point, up);
-}
-
 void FreeMovingCamera::onCursorMovedEvent(const Gre::CursorMovedEvent &e)
 {
     GreAutolock ;
-    
+
     iAngleTheta += e.DeltaX * iSensitivity ;
     iAnglePhi -= e.DeltaY * iSensitivity ;
-    
+
     if ( iAnglePhi > 89.0f )
         iAnglePhi = 89.0f ;
     if ( iAnglePhi < -89.0f )
         iAnglePhi = -89.0f ;
-    
+
     Vector3 forward ;
     forward.x = cosf(glm::radians(iAnglePhi)) * cosf(glm::radians(iAngleTheta)) ;
     forward.z = cosf(glm::radians(iAnglePhi)) * sinf(glm::radians(iAngleTheta)) ;
     forward.y = sinf(glm::radians(iAnglePhi)) ;
-    
-    lookAt(iPosition, iPosition + forward) ;
+    setTarget ( iPosition + forward ) ;
 }
 
 void FreeMovingCamera::onKeyDownEvent(const KeyDownEvent &e)
@@ -135,47 +132,39 @@ void FreeMovingCamera::onUpdateEvent(const UpdateEvent &e)
     if ( iArrowUpState == KeyState::Pressed )
     {
         Vector3 direction = iTarget - iPosition ;
-        Vector3 step = direction * iSensibility * e.elapsedTime.count() ;
+        Vector3 step = direction * iSensibility * e.elapsedTime.count() * 1000.0f ;
 
-        Vector3 position = iPosition + step ;
-        Vector3 target = iTarget + step ;
-        
-        lookAt(position, target) ;
+        setPosition ( iPosition + step ) ;
+        setTarget ( iTarget + step ) ;
     }
 
     if ( iArrowDownState == KeyState::Pressed )
     {
         Vector3 direction = iTarget - iPosition ;
-        Vector3 step = direction * iSensibility * e.elapsedTime.count() ;
+        Vector3 step = direction * iSensibility * e.elapsedTime.count() * 1000.0f ;
 
-        Vector3 position = iPosition - step ;
-        Vector3 target = iTarget - step ;
-        
-        lookAt(position, target) ;
+        setPosition ( iPosition - step ) ;
+        setTarget ( iTarget - step ) ;
     }
 
     if ( iArrowLeftState == KeyState::Pressed )
     {
         Vector3 direction = iTarget - iPosition ;
         Vector3 directionRight = glm::cross(direction, iUpwardDirection) ;
-        Vector3 stepRight = directionRight * iSensibility * e.elapsedTime.count() ;
+        Vector3 stepRight = directionRight * iSensibility * e.elapsedTime.count() * 1000.0f ;
 
-        Vector3 position = iPosition - stepRight ;
-        Vector3 target = iTarget - stepRight ;
-        
-        lookAt(position, target) ;
+        setPosition ( iPosition - stepRight ) ;
+        setTarget ( iTarget - stepRight ) ;
     }
 
     if ( iArrowRightState == KeyState::Pressed )
     {
         Vector3 direction = iTarget - iPosition ;
         Vector3 directionRight = glm::cross(direction, iUpwardDirection) ;
-        Vector3 stepRight = directionRight * iSensibility * e.elapsedTime.count() ;
+        Vector3 stepRight = directionRight * iSensibility * e.elapsedTime.count() * 1000.0f ;
 
-        Vector3 position = iPosition + stepRight ;
-        Vector3 target = iTarget + stepRight ;
-        
-        lookAt(position, target) ;
+        setPosition ( iPosition + stepRight ) ;
+        setTarget ( iTarget + stepRight ) ;
     }
 
     Camera::onUpdateEvent(e);
@@ -186,12 +175,12 @@ void FreeMovingCamera::onUpdateEvent(const UpdateEvent &e)
 
 FreeMovingCameraLoader::FreeMovingCameraLoader ()
 {
-    
+
 }
 
 FreeMovingCameraLoader::~FreeMovingCameraLoader() noexcept ( false )
 {
-    
+
 }
 
 ResourceLoader* FreeMovingCameraLoader::clone() const
@@ -208,15 +197,15 @@ CameraHolder FreeMovingCameraLoader::load(const std::string &name, const CameraO
 {
     FreeMovingCamera* ret = new FreeMovingCamera(name) ;
     if ( !ret ) return CameraHolder ( nullptr ) ;
-    
+
     auto it = options.find ( "Sensibility" ) ;
     if ( it != options.end() )
         ret -> setSensibility(it->second.toFloat()) ;
-    
+
     it = options.find ( "Sensitivity" ) ;
     if ( it != options.end() )
         ret -> setSensitivity(it->second.toFloat()) ;
-    
+
     return CameraHolder (ret) ;
 }
 

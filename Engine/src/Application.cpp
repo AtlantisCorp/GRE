@@ -83,7 +83,8 @@ void Application::WorkerThreadMain ( Application * app )
     
     while ( !app->shouldTerminate() )
     {
-        EventHolder uevent = EventHolder ( new UpdateEvent( (const EventProceeder*) app , Time::now() - t ) ) ;
+        Duration elapsed = (Time::now() - t) ;
+        EventHolder uevent = EventHolder ( new UpdateEvent( (const EventProceeder*) app , elapsed ) ) ;
         
         app -> threadLock() ;
         
@@ -102,7 +103,7 @@ void Application::WorkerThreadMain ( Application * app )
 Application::Application ( const std::string& name , const std::string& author , const std::string& description )
 : Gre::Resource(ResourceIdentifier::New(), name)
 , iAuthor(author), iDescription(description), iShouldTerminate(false)
-, iWindowManager(nullptr), iRenderSceneManager(nullptr)
+, iWindowManager(nullptr), iRendererManager(nullptr)
 {
     
 }
@@ -142,21 +143,21 @@ void Application::run()
         // The Renderer is responsible for updating the MeshManager , the RenderContextManager , the TextureManager
         // and the HardwareProgramManager .
         
-        if ( !ResourceManager::Get() .getWindowManager() .isInvalid() )
+        if ( !ResourceManager::Get() ->getWindowManager() .isInvalid() )
         {
             // If the CloseBehaviour 'AllWindowClosed' is set , we must see when the Window Manager is empty. For this
             // purpose , we listen to him .
             
             iAllWindowClosedListener = AllWindowClosedListenerHolder ( new AllWindowClosedListener ( this ) ) ;
-            ResourceManager::Get() .getWindowManager() -> addListener ( EventProceederUser ( iAllWindowClosedListener ) ) ;
+            ResourceManager::Get() ->getWindowManager() -> addListener ( EventProceederUser ( iAllWindowClosedListener ) ) ;
         }
         
-        if ( !ResourceManager::Get() .getWindowManager() .isInvalid() )
+        if ( !ResourceManager::Get() ->getWindowManager() .isInvalid() )
         {
             // If the CloseBehaviour 'EscapeKey' is set , we must rely on the Keyboard Manager to send us key events.
             
             iEscapeListener = EscapeKeyListenerHolder ( new EscapeKeyListener ( this ) ) ;
-            ResourceManager::Get() .getWindowManager() -> addGlobalKeyListener ( EventProceederUser( iEscapeListener ) ) ;
+            ResourceManager::Get() ->getWindowManager() -> addGlobalKeyListener ( EventProceederUser( iEscapeListener ) ) ;
         }
         
         // The Logicals Threads are threads spawned for every 'logical' managers ( or 'Workers Threads' ) . They
@@ -164,15 +165,15 @@ void Application::run()
         // MaterialManager , the PluginManager , the CameraManager . They are updated in parallel with the main
         // thread.
         
-        addWorkerThread ( EventProceederUser (ResourceManager::Get() .getRenderSceneManager()) ) ;
-        addWorkerThread ( EventProceederUser (ResourceManager::Get() .getAnimatorManager()) ) ;
-        addWorkerThread ( EventProceederUser (ResourceManager::Get() .getMaterialManager()) ) ;
-        addWorkerThread ( EventProceederUser (ResourceManager::Get() .getCameraManager()) ) ;
+        addWorkerThread ( EventProceederUser (ResourceManager::Get() ->getRenderSceneManager()) ) ;
+        addWorkerThread ( EventProceederUser (ResourceManager::Get() ->getAnimatorManager()) ) ;
+        addWorkerThread ( EventProceederUser (ResourceManager::Get() ->getMaterialManager()) ) ;
+        addWorkerThread ( EventProceederUser (ResourceManager::Get() ->getCameraManager()) ) ;
         
         // Those managers have a Worker Thread but at least , normally they don't need one .
         
-        addWorkerThread ( EventProceederUser (ResourceManager::Get() .getRenderContextManager()) ) ;
-        addWorkerThread ( EventProceederUser (ResourceManager::Get() .getPluginManager()) ) ;
+        addWorkerThread ( EventProceederUser (ResourceManager::Get() ->getRenderContextManager()) ) ;
+        addWorkerThread ( EventProceederUser (ResourceManager::Get() ->getPluginManager()) ) ;
         
         // [03.01.2017] NOTES : WindowManager can't have its own separated Worker Thread. Why ? Because
         // when a Window object needs to notifiate events like size or close, it will send events to the
@@ -181,12 +182,12 @@ void Application::run()
         // and we enter to an infinite waiting lock loop.
         
         // addWorkerThread ( EventProceederUser (ResourceManager::Get() .getWindowManager()) ) ;
-        addWorkerThread ( EventProceederUser (ResourceManager::Get() .getRendererManager()) ) ;
+        addWorkerThread ( EventProceederUser (ResourceManager::Get() ->getRendererManager()) ) ;
         
         // Adds the WindowManager and the RenderSceneManager to the Application.
         
-        iWindowManager = ResourceManager::Get().getWindowManager() ;
-        iRenderSceneManager = ResourceManager::Get().getRenderSceneManager() ;
+        iWindowManager = ResourceManager::Get()->getWindowManager() ;
+        iRendererManager = ResourceManager::Get()->getRendererManager() ;
     }
     
     iMainStart = Time::now() ;
@@ -218,6 +219,11 @@ bool Application::shouldTerminate () const
     GreAutolock ; return iShouldTerminate ;
 }
 
+void Application::initialize ( int argc , char ** argv )
+{
+    
+}
+
 void Application::iMainThreadLoop()
 {
     iWorkerThread = std::thread ( Application::WorkerThreadMain , this ) ;
@@ -229,9 +235,13 @@ void Application::iMainThreadLoop()
         iMainStart = Time::now() ;
         
         // We must achieve a normal update loop. This consiste in drawing everything we need
-        // and then, polling for events using the window system.
+        // and then, polling for events using the window system. So , we must render the Scene using
+        // the RendererManager :: render () function ( this will call the Renderer::render() one and call
+        // the RenderPass'es registered by the user ) , and then , poll Window's events which corresponds
+        // to any hardware event like keyboard , mouse , ... and also OS - specific events ( Window moves ,
+        // sizes , ... ) .
         
-        iRenderSceneManager -> drawScenes (elapsed) ;
+        iRendererManager -> render () ;
         iWindowManager -> pollEvents (delta) ;
         iWindowManager -> onEvent(elapsed) ;
     }
@@ -246,40 +256,6 @@ void Application::iTerminatePrivate(Gre::ApplicationCloseBehaviour why)
         iShouldTerminate = true ;
     }
 }
-
-ApplicationHolder Application::Create(const std::string &name , const std::string& author , const std::string& description )
-{
-    ApplicationLoaderFactory & f = ResourceManager::Get().getApplicationFactory() ;
-    ApplicationLoader* l = f.getFirst() ;
-    
-    if ( l ) {
-        ApplicationHolder app = l->load(name, author, description) ;
-        if ( !app.isInvalid() ) iSharedApplication = app ;
-        return app ;
-    }
-	
-#ifdef GreIsDebugMode
-	else {
-		GreDebug("No loader found for Application '") << name << "'." << gendl ;
-	}
-#endif
-    
-    return ApplicationHolder ( nullptr ) ;
-}
-
-ApplicationHolder Application::GetShared ()
-{
-    return iSharedApplication ;
-}
-
-void Application::Destroy()
-{
-    if ( !iSharedApplication.isInvalid() ) {
-        iSharedApplication.clear() ;
-    }
-}
-
-ApplicationHolder Application::iSharedApplication = ApplicationHolder ( nullptr ) ;
 
 // ---------------------------------------------------------------------------------------------------
 

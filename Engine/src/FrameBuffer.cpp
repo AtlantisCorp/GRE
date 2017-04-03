@@ -71,16 +71,6 @@ RenderFramebuffer::~RenderFramebuffer()
     
 }
 
-void RenderFramebuffer::bind() const
-{
-    
-}
-
-void RenderFramebuffer::unbind() const
-{
-    
-}
-
 TextureUser RenderFramebuffer::getTextureAttachement(const RenderFramebufferAttachement& attachement)
 {
     auto it = iAttachements.find(attachement);
@@ -143,10 +133,6 @@ void RenderFramebuffer::setAttachement(const RenderFramebufferAttachement& attac
     {
         // We should reset the Attachement before to set it.
         attach.reset();
-      
-#ifdef GreIsDebugMode
-        GreDebugPretty() << "Reseting Attachement '" << (int) attachement << "'." << Gre::gendl;
-#endif
     }
   
     attach.attachement = attachement;
@@ -174,14 +160,71 @@ int RenderFramebuffer::getMaximumColorAttachementCount() const
 
 // ---------------------------------------------------------------------------------------------------
 
-RenderFramebufferLoader::RenderFramebufferLoader()
+RenderFramebufferInternalCreator::RenderFramebufferInternalCreator ()
 {
     
 }
 
-RenderFramebufferLoader::~RenderFramebufferLoader()
+RenderFramebufferInternalCreator::~RenderFramebufferInternalCreator()
 {
     
+}
+
+// ---------------------------------------------------------------------------------------------------
+
+RenderFramebufferManager::RenderFramebufferManager ( const std::string & name )
+: ResourceManagerBase<Gre::RenderFramebuffer>(name)
+, iCreator ( nullptr )
+{
+    
+}
+
+RenderFramebufferManager::~RenderFramebufferManager() noexcept ( false )
+{
+    if ( iCreator ) {
+        delete iCreator ;
+    }
+}
+
+RenderFramebufferHolder RenderFramebufferManager::load(const std::string &name, const ResourceLoaderOptions &options)
+{
+    GreAutolock ;
+    
+    if ( iCreator )
+    {
+        RenderFramebufferHolder framebuffer ( iCreator->load(name, options) ) ;
+        if ( framebuffer.isInvalid() ) {
+#ifdef GreIsDebugMode
+            GreDebug("[WARN] RenderFramebufferInternalCreator failed creating RenderFramebuffer '") << name << "'." << gendl ;
+#endif
+            return RenderFramebufferHolder ( nullptr ) ;
+        }
+        
+#ifdef GreIsDebugMode
+        GreDebug("[INFO] Loaded new RenderFramebuffer '") << name << "'." << gendl ;
+#endif
+        
+        iHolders.add(framebuffer) ;
+        return framebuffer ;
+    }
+    
+    else
+    {
+#ifdef GreIsDebugMode
+        GreDebug("[WARN] No RenderFramebufferInternalCreator registered.") << Gre::gendl ;
+#endif
+        return RenderFramebufferHolder ( nullptr ) ;
+    }
+}
+
+void RenderFramebufferManager::setInternalCreator(Gre::RenderFramebufferInternalCreator *creator)
+{
+    GreAutolock ; iCreator = creator ;
+}
+
+const RenderFramebufferInternalCreator* RenderFramebufferManager::getInternalCreator() const
+{
+    GreAutolock ; return iCreator ;
 }
 
 GreEndNamespace

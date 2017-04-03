@@ -4,7 +4,7 @@
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
-//  Copyright (c) 2015 - 2016 Luk2010
+//  Copyright (c) 2015 - 2017 Luk2010
 //  Created on 01/11/2015.
 //
 //////////////////////////////////////////////////////////////////////
@@ -33,8 +33,10 @@
 #ifndef GResource_Plugin_h
 #define GResource_Plugin_h
 
+#include "Platform.h"
 #include "Resource.h"
 #include "ResourceLoader.h"
+#include "ResourceBundle.h"
 
 #if defined(__WINDOWS__)
 #   define DYNLIB_HANDLE hInstance
@@ -86,9 +88,35 @@ static const char *dlerror(void)
 
 GreBeginNamespace
 
+#define GRE_PLUGIN_VERSION 1
+
+//////////////////////////////////////////////////////////////////////
+/// @brief Holds information about the loaded plugin.
+struct PluginInfo
+{
+    /// @brief Plugin's complete name.
+    std::string name ;
+    
+    /// @brief Author(s) of this plugin.
+    std::string author ;
+    
+    /// @brief Plugin's complete version ( Should be set to GRE_PLUGIN_VERSION ) .
+    uint32_t version ;
+    
+    /// @brief Plugin's UUID ( example : '33927450-5fff-4cb3-a05e-7f858efad028' ) .
+    uuid_t uuid ;
+    
+    /// @brief List of plugins' UUID corresponding to the dependencies for this plugin.
+    std::vector < Uuid > dependencies ;
+};
+
 typedef void  (*PluginStartFunction)   (void);
 typedef void  (*PluginStopFunction)    (void);
 typedef void* (*PluginGetNameFunction) (void);
+
+/// @brief Should return the PluginInfo hosted by the plugin. Notes this function
+/// should not use any engine function.
+typedef PluginInfo * (*PluginGetInfoCbk) (void) ;
 
 //////////////////////////////////////////////////////////////////////
 /// @brief Handle to a Plugin Object.
@@ -100,11 +128,15 @@ public:
     POOLED(Pools::Resource)
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Creates the Resource, but do not load it.
-    /// It loads the file, but do not launch the plugin using the StartPlugin()
-    /// function.
+    /// @brief Initializes the Plugin object with value computed by the
+    /// PluginManager ( 'loadFromBundledFile' function ) . Notes the plugin
+    /// should have been already started by the PluginManager.
     //////////////////////////////////////////////////////////////////////
-    Plugin(const std::string& name, const std::string& file);
+    Plugin (const PluginInfo * info ,
+            const std::string & path ,
+            DYNLIB_HANDLE hdl ,
+            const PluginStartFunction & startfunc ,
+            const PluginStopFunction & stopfunc );
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Destroys the Resource. If the plugin was loaded, it will unload
@@ -125,44 +157,36 @@ public:
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the name of this plugin.
     //////////////////////////////////////////////////////////////////////
-    const std::string& getName() const;
+    const std::string & getName() const;
     
     ////////////////////////////////////////////////////////////////////////
     /// @brief Unloads the Resource.
     ////////////////////////////////////////////////////////////////////////
     virtual void unload () ;
     
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns 'iPath'.
+    //////////////////////////////////////////////////////////////////////
+    virtual const std::string & getPath () const ;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns 'iInfo.uuid'.
+    //////////////////////////////////////////////////////////////////////
+    virtual const uuid_t & getUUID () const ;
+    
 private:
     
-    std::string         _file;
-    std::string         _mName;
     PluginStartFunction _mStart;
     PluginStopFunction  _mStop;
     DYNLIB_HANDLE       _mHandle;
     bool                _mIsStarted;
     
-public:
+    /// @brief Should corresponds to the value computed by the plugin manager
+    /// when creating the plugin.
+    PluginInfo iInfo ;
     
-    class BadPluginConception : public std::exception {
-    public:
-        BadPluginConception(const std::string& file) : _file(file) { }
-        const char* what() const throw() { return _file.c_str(); }
-        std::string _file;
-    };
-    
-    class BadPluginExtension : public std::exception {
-    public:
-        BadPluginExtension(const std::string& file) : _file(file) { }
-        const char* what() const throw() { return _file.c_str(); }
-        std::string _file;
-    };
-    
-    class BadPluginFile : public std::exception {
-    public:
-        BadPluginFile(const std::string& file) : _file(file) { }
-        const char* what() const throw() { return _file.c_str(); }
-        std::string _file;
-    };
+    /// @brief Path this plugin refers to (the physical file this plugin is) .
+    std::string iPath ;
 };
 
 /// @brief SpecializedCountedObjectHolder for PluginPrivate.
@@ -173,45 +197,6 @@ typedef SpecializedResourceHolderList<Plugin> PluginHolderList;
 
 /// @brief SpecializedCountedObjectUser.
 typedef SpecializedCountedObjectUser<Plugin> PluginUser;
-
-//////////////////////////////////////////////////////////////////////
-/// @brief Loads PluginPrivate Objects.
-//////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC PluginLoader : public ResourceLoader
-{
-public:
-    
-    POOLED(Pools::Loader)
-    
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    PluginLoader ();
-    
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    virtual ~PluginLoader() noexcept(false);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Loads the desired plugin file.
-    //////////////////////////////////////////////////////////////////////
-    virtual PluginHolder load(const std::string& name, const std::string& file) const;
-    
-    ////////////////////////////////////////////////////////////////////////
-    /// @brief Returns a clone of this object.
-    /// Typically, this function is implemented as 'return new MyLoaderClass();',
-    /// but you are free to do whatever you want.
-    ////////////////////////////////////////////////////////////////////////
-    virtual ResourceLoader* clone() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns true if the file given is loadable by this loader.
-    /// Basically opens the file and if success, returns true.
-    //////////////////////////////////////////////////////////////////////
-    virtual bool isLoadable( const std::string& filepath ) const;
-};
-
-/// @brief ResourceLoaderFactory for PluginLoader.
-typedef ResourceLoaderFactory<PluginLoader> PluginLoaderFactory;
 
 //////////////////////////////////////////////////////////////////////
 /// @brief Plugin Manager.
@@ -229,16 +214,43 @@ public:
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     virtual ~PluginManager() noexcept ( false ) ;
+
+public:
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Loads a Plugin into this Manager.
+    /// @brief Loads plugins found in each directory of the type 'Plugin'
+    /// in the given bundle. Returns the number of plugin loaded.
     //////////////////////////////////////////////////////////////////////
-    virtual PluginUser load ( const PluginHolder& holder );
+    virtual uint32_t loadFromBundle ( const ResourceBundleHolder & bundle ) ;
     
     //////////////////////////////////////////////////////////////////////
-    /// @brief Loads a Plugin from a given file.
+    /// @brief Loads a given plugin with given list of plugins paths all in
+    /// the currently loaded bundle ( using 'loadFromBundle' function ) .
     //////////////////////////////////////////////////////////////////////
-    virtual PluginUser load ( const std::string& name , const std::string& filepath );
+    virtual PluginHolder loadFromBundledFile (const std::string & path ,
+                                              const std::vector<std::string> & bundlepaths ) ;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Loads a Plugin from its UUID. Loads every plugins untill the
+    /// correct UUID is found. If the UUID is found upon already loaded plugins ,
+    /// simply returns it.
+    //////////////////////////////////////////////////////////////////////
+    virtual PluginHolder loadFromBundledUUID (const uuid_t & uuid ,
+                                              const std::vector<std::string> & bundlepaths ) ;
+    
+public:
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Finds a loaded Plugin with given path.
+    //////////////////////////////////////////////////////////////////////
+    virtual PluginHolder findFromPath (const std::string & path) ;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Finds a loaded Plugin from its UUID.
+    //////////////////////////////////////////////////////////////////////
+    virtual PluginHolder findFromUUID (const uuid_t & uuid) ;
+    
+public:
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns Plugin with given 'name'.
@@ -250,6 +262,8 @@ public:
     //////////////////////////////////////////////////////////////////////
     virtual const PluginUser get ( const std::string& name ) const;
     
+public:
+    
     //////////////////////////////////////////////////////////////////////
     /// @brief Removes a Plugin.
     //////////////////////////////////////////////////////////////////////
@@ -259,16 +273,6 @@ public:
     /// @brief Removes every Plugin.
     //////////////////////////////////////////////////////////////////////
     virtual void clearPlugins();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the PluginLoaderFactory.
-    //////////////////////////////////////////////////////////////////////
-    virtual PluginLoaderFactory& getPluginLoaderFactory();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the PluginLoaderFactory.
-    //////////////////////////////////////////////////////////////////////
-    virtual const PluginLoaderFactory& getPluginLoaderFactory() const;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Clears every Plugins and the Factory.
@@ -290,9 +294,6 @@ protected:
     
     /// @brief Installed Plugins.
     PluginHolderList iPlugins;
-    
-    /// @brief Installed Loaders.
-    PluginLoaderFactory iFactory;
 };
 
 /// @brief SpecializedCountedObjectHolder for PluginManager.

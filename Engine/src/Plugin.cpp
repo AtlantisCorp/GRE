@@ -4,7 +4,7 @@
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
-//  Copyright (c) 2015 - 2016 Luk2010
+//  Copyright (c) 2015 - 2017 Luk2010
 //  Created on 01/11/2015.
 //
 //////////////////////////////////////////////////////////////////////
@@ -31,56 +31,26 @@
  */
 
 #include "Plugin.h"
+#include "Platform.h"
 
 GreBeginNamespace
 
-Plugin::Plugin (const std::string& name, const std::string& file)
-: Resource(ResourceIdentifier::New() , name)
-, _file (file)
+Plugin::Plugin (const PluginInfo * info , const std::string & path ,
+                DYNLIB_HANDLE hdl , const PluginStartFunction & startfunc , const PluginStopFunction & stopfunc )
+: Gre::Resource()
 {
-    GreAutolock ;
+    setName(info->name) ;
+    _mStart = startfunc ;
+    _mStop = stopfunc ;
+    _mIsStarted = true ;
+    _mHandle = hdl ;
     
-    // We check the extension of the file.
-    std::size_t found = _file.find(std::string(".") + DYNLIB_EXTENSION);
-    if(found != std::string::npos) {
-    }
-    else {
-        GreDebugPretty() << name << " : Bad extension." << Gre::gendl;
-        throw BadPluginExtension(_file + " [Contructor]");
-    }
+    iInfo.name = info->name ;
+    iInfo.author = info->author ;
+    iInfo.version = info->version ;
+    uuid_copy(iInfo.uuid, info->uuid) ;
     
-    DYNLIB_HANDLE hdl = DYNLIB_LOAD(_file.c_str());
-    if(!hdl) {
-        GreDebugPretty() << "{" << name << "} Could not load file." << Gre::gendl;
-        throw BadPluginFile(_file + " [Constructor]");
-    }
-    
-    PluginGetNameFunction mFunc   = nullptr;
-    PluginStartFunction   mFunc2  = nullptr;
-    PluginStopFunction    mFunc3  = nullptr;
-    
-    * (void**) &mFunc = DYNLIB_GETSYM(hdl, "GetPluginName");
-    if(!mFunc) {
-        GreDebugPretty() << name << " : " << dlerror() << Gre::gendl;
-        DYNLIB_UNLOAD(hdl);
-        throw BadPluginConception(_file + " [GetPluginName]");
-    }
-    
-    _mName = (const char*) mFunc ();
-    
-    * (void**) &mFunc2 = DYNLIB_GETSYM(hdl, "StartPlugin");
-    * (void**) &mFunc3 = DYNLIB_GETSYM(hdl, "StopPlugin");
-    
-    if(!mFunc2 || !mFunc3) {
-        GreDebugPretty() << name << " : " << dlerror() << Gre::gendl;
-        DYNLIB_UNLOAD(hdl);
-        throw BadPluginConception(_file + " [StartOrStopPlugin]");
-    }
-    
-    _mStart  = mFunc2;
-    _mStop   = mFunc3;
-    _mHandle = hdl;
-    _mIsStarted = false;
+    iPath = path ;
 }
 
 Plugin::~Plugin()
@@ -119,8 +89,7 @@ void Plugin::stop ()
 
 const std::string& Plugin::getName() const
 {
-    GreAutolock ;
-    return _mName;
+    GreAutolock ; return iInfo.name ;
 }
 
 void Plugin::unload()
@@ -131,104 +100,21 @@ void Plugin::unload()
     {
         stop();
         DYNLIB_UNLOAD(_mHandle);
-        _mName.clear();
+        
         _mStart  = nullptr;
         _mStop   = nullptr;
         _mHandle = 0;
     }
 }
 
-// ---------------------------------------------------------------------------------------------------
-
-PluginLoader::PluginLoader ()
+const std::string & Plugin::getPath() const
 {
-    
+    GreAutolock ; return iPath ;
 }
 
-PluginLoader::~PluginLoader() noexcept(false)
+const uuid_t & Plugin::getUUID() const
 {
-    
-}
-
-bool PluginLoader::isLoadable(const std::string &filepath) const
-{
-    // Check extension validity.
-    
-    size_t ext = filepath.find_last_of( std::string(".") );
-    std::string extension = filepath.substr( ext + 1 , filepath.size() );
-    
-    if ( extension != DYNLIB_EXTENSION )
-    {
-#ifdef GreIsDebugMode
-        GreDebugPretty() << "'" << extension << "' is not a viable extension for Dynamic Library file. ('" << DYNLIB_EXTENSION << "' is correct.)" << Gre::gendl;
-#endif
-        return false;
-    }
-    
-    else
-    {
-        // Try to open the file in binary mode.
-        
-        std::ifstream tmpstream ( filepath , std::ios::binary );
-        
-        if ( tmpstream )
-        {
-            return true;
-        }
-        
-        else
-        {
-#ifdef GreIsDebugMode
-            GreDebugPretty() << "File '" << filepath << "' cannot be opened." << Gre::gendl;
-#endif
-            return false;
-        }
-    }
-}
-
-PluginHolder PluginLoader::load(const std::string &name, const std::string &file) const
-{
-    if ( !isLoadable(file) )
-    {
-#ifdef GreIsDebugMode
-        GreDebugPretty() << "File '" << file << "' is not loadable by this Loader." << Gre::gendl;
-#endif
-        return PluginHolder ( nullptr );
-    }
-    
-    else
-    {
-        try
-        {
-            Plugin* newPlugin = new Plugin ( name , file );
-            
-            if ( !newPlugin )
-            {
-#ifdef GreIsDebugMode 
-                GreDebugPretty() << "Plugin '" << name << "' could not be created." << Gre::gendl;
-#endif
-                return PluginHolder ( nullptr );
-            }
-            
-            else
-            {
-                return PluginHolder ( newPlugin );
-            }
-        }
-        catch ( const std::exception& e )
-        {
-#ifdef GreIsDebugMode 
-            GreDebugPretty() << "Plugin '" << name << "' could not be created." << Gre::gendl;
-            GreDebugPretty() << "Exception : " << e.what() << "." << Gre::gendl;
-#endif
-            return PluginHolder ( nullptr );
-        }
-    }
-}
-
-ResourceLoader* PluginLoader::clone() const
-{
-    return new PluginLoader();
+    GreAutolock ; return iInfo.uuid ;
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -236,8 +122,7 @@ ResourceLoader* PluginLoader::clone() const
 PluginManager::PluginManager(const std::string & name)
 : Resource ( ResourceIdentifier::New() , name )
 {
-    // Register basic PluginLoader.
-    iFactory.registers("DefaultPluginLoader", new PluginLoader());
+    
 }
 
 PluginManager::~PluginManager() noexcept ( false )
@@ -245,106 +130,267 @@ PluginManager::~PluginManager() noexcept ( false )
     
 }
 
-PluginUser PluginManager::load(const PluginHolder &holder)
+uint32_t PluginManager::loadFromBundle(const ResourceBundleHolder &bundle)
 {
     GreAutolock ;
     
-    if ( !holder.isInvalid() )
-    {
-        PluginUser tmp = get(holder->getName());
-        
-        if ( tmp.isInvalid() )
-        {
-#ifdef GreIsDebugMode 
-            GreDebugPretty() << "Plugin Resource '" << holder->getName() << "' already installed." << Gre::gendl;
-#endif
-            return PluginUser ( nullptr );
-        }
-        
-        iPlugins.add(holder);
-        return PluginUser ( holder );
+    if ( bundle.isInvalid() ) {
+        GreDebug ( "[WARN] Bundle given is invalid.") << gendl ;
+        return 0 ;
     }
     
-    else
-    {
-#ifdef GreIsDebugMode
-        GreDebugPretty() << "'holder' is invalid." << Gre::gendl;
-#endif
-        return PluginUser ( nullptr );
+    // We must get every directories in the bundle. Then , try to get a list of plugins
+    // in all the directories. Then , we try to load them all. This last pass should also
+    // resolve dependencies between plugins.
+    
+    // Dependency is resolved with the following algorithm : See a plugin dependencies. If it has,
+    // look for the dependency uuid in each plugins. If not loaded , try to load other plugins using
+    // the bundle directories only if they match the given UUID.
+    
+    const std::vector<std::string> & directories = bundle -> getDirectories ( ResourceType::Plugin ) ;
+    if ( directories.empty() ) {
+        GreDebug ( "[WARN] No directory for 'Plugin' in bundle '") << bundle->getName() << "'." << gendl ;
+        return 0 ;
     }
+    
+    std::vector < std::string > pluginpaths ;
+    
+    for ( const auto & dir : directories )
+    {
+        std::vector < std::string > paths = Platform::FindFilesWithExtension ( dir , DYNLIB_EXTENSION ) ;
+        
+        if ( paths.empty() ) {
+            GreDebug ( "[INFO] Directory '" ) << dir << "' doesn't exist or doesn't contain any plugin." << gendl ;
+            continue ;
+        }
+        
+        else {
+            GreDebug ( "[INFO] Found " ) << paths.size() << " plugins in directory '" << dir << "'." << gendl ;
+            pluginpaths.insert(pluginpaths.begin(), paths.begin(), paths.end());
+        }
+    }
+    
+    if ( pluginpaths.empty() ) {
+        GreDebug ( "[WARN] Bundle '") << bundle->getName() << "' empty." << gendl ;
+        return 0 ;
+    }
+    
+    uint32_t ret = 0 ;
+    
+    for ( const auto & path : pluginpaths )
+    {
+        PluginHolder plugin = loadFromBundledFile ( path , pluginpaths ) ;
+        if ( !plugin.isInvalid() ) {
+            GreDebug("[INFO] Loaded Plugin's path '") << path << "'." << gendl ;
+            ret ++ ;
+        }
+        
+        else {
+            GreDebug("[INFO] Can't load Plugin's path '") << path << "'." << gendl ;
+        }
+    }
+    
+    return ret ;
 }
 
-PluginUser PluginManager::load(const std::string &name, const std::string &filepath)
+PluginHolder PluginManager::loadFromBundledFile ( const std::string & path , const std::vector<std::string> & bundlepaths )
 {
     GreAutolock ;
     
-    if ( !name.empty() )
+    // First , try to see if the given plugin has already been loaded. To do this , we look for a plugin with the same
+    // path as given one. If so , we just return it and do nothing more.
+    
     {
-        PluginUser tmp = get(name);
-        
-        if ( !tmp.isInvalid() )
-        {
-#ifdef GreIsDebugMode
-            GreDebugPretty() << "Plugin Resource '" << name << "' already installed." << Gre::gendl;
-#endif
-            return PluginUser ( nullptr );
-        }
-        
-        if ( !filepath.empty() )
-        {
-            for ( auto it = iFactory.getLoaders().begin(); it != iFactory.getLoaders().end(); it++ )
-            {
-                auto loader = it->second;
-                
-                if ( loader )
-                {
-                    if ( loader->isLoadable(filepath) )
-                    {
-                        PluginHolder plugin = loader->load(name, filepath);
-                        
-                        if ( !plugin.isInvalid() )
-                        {
-                            iPlugins.add(plugin);
-                            return PluginUser ( plugin );
-                        }
-                        
-                        else
-                        {
-#ifdef GreIsDebugMode
-                            GreDebugPretty() << "Plugin Resource '" << name << "' can't be loaded by loader '" << it->first << "'." << Gre::gendl;
-#endif
-                            return PluginUser ( nullptr );
-                        }
-                    }
-                    
-                    else
-                    {
-#ifdef GreIsDebugMode 
-                        GreDebugPretty() << "Plugin Loader '" << it->first << "' can't load Plugin Resource '" << name << "'." << Gre::gendl;
-#endif
-                    }
-                }
-            }
-            
-#ifdef GreIsDebugMode
-            GreDebugPretty() << "Plugin Resource '" << name << "' don't have any loadable Plugin Loader." << Gre::gendl;
-#endif
-            return PluginUser ( nullptr );
-        }
-        
-#ifdef GreIsDebugMode
-        GreDebugPretty() << "'filepath' is empty." << Gre::gendl;
-#endif
-        return PluginUser ( nullptr );
+        PluginHolder tmp = findFromPath ( path ) ;
+        if ( !tmp.isInvalid() ) return tmp ;
     }
     
-    else
-    {
-#ifdef GreIsDebugMode
-        GreDebugPretty() << "'name' is empty." << Gre::gendl;
-#endif
-        return PluginUser ( nullptr );
+    // First load the plugin dynamic library . Then , we should take the PluginInfo structure to check version , uuid and
+    // then , dependencies . If there are , look for them . Finally , load the plugin .
+    
+    DYNLIB_HANDLE hdl = DYNLIB_LOAD(path.c_str()) ;
+    
+    if ( !hdl ) {
+        GreDebug("[WARN] Can't load '") << path << "'." << gendl ;
+        return PluginHolder ( nullptr ) ;
     }
+    
+    PluginGetInfoCbk plgGetInfo = nullptr ;
+    * (void**) & plgGetInfo = DYNLIB_GETSYM(hdl, "GetPluginInfo") ;
+    
+    if ( !plgGetInfo ) {
+        GreDebug("[WARN] Can't find 'GetPluginInfo' function in plugin '") << path << "'." << gendl ;
+        DYNLIB_UNLOAD(hdl) ;
+        return PluginHolder ( nullptr ) ;
+    }
+    
+    PluginInfo * info = plgGetInfo () ;
+    if ( !info ) {
+        GreDebug ( "[WARN] Can't get PluginInfo structure from '") << path << "'." << gendl ;
+        DYNLIB_UNLOAD(hdl) ;
+        return PluginHolder ( nullptr ) ;
+    }
+    
+    if ( info->version != GRE_PLUGIN_VERSION ) {
+        GreDebug( "[WARN] Invalid Version in plugin '") << path << "'." << gendl ;
+        DYNLIB_UNLOAD(hdl) ;
+        return PluginHolder ( nullptr ) ;
+    }
+    
+    if ( uuid_is_null(info->uuid) ) {
+        GreDebug( "[WARN] Invalid UUID in plugin '") << path << "'." << gendl ;
+        DYNLIB_UNLOAD(hdl) ;
+        return PluginHolder ( nullptr ) ;
+    }
+    
+    if ( !info->dependencies.empty() )
+    {
+        for ( const Uuid & dep : info->dependencies )
+        {
+            PluginHolder tmp = loadFromBundledUUID(dep.uuid, bundlepaths) ;
+            
+            if ( tmp.isInvalid() )
+            {
+                GreDebug("[WARN] Dependency for Plugin '") << path << "' could not be achieved." << gendl ;
+                DYNLIB_UNLOAD(hdl) ;
+                return PluginHolder ( nullptr ) ;
+            }
+        }
+    }
+    
+    // Start the plugin , registers every functions and returns the object.
+    
+    PluginStartFunction startfunc = (PluginStartFunction) DYNLIB_GETSYM(hdl, "StartPlugin") ;
+    PluginStopFunction stopfunc = (PluginStopFunction) DYNLIB_GETSYM(hdl, "StopPlugin") ;
+    
+    if ( !startfunc || !stopfunc )
+    {
+        GreDebug("[WARN] 'StartPlugin' or 'StopPlugin' not found in plugin '") << path << "'." << gendl ;
+        DYNLIB_UNLOAD(hdl) ;
+        return PluginHolder ( nullptr ) ;
+    }
+    
+    startfunc () ;
+    
+    PluginHolder ret ( new Plugin ( info , path , hdl , startfunc , stopfunc ) ) ;
+    
+    if ( ret.isInvalid() )
+    {
+        GreDebug("[WARN] Can't create holder for plugin '") << path << "'." << gendl ;
+        DYNLIB_UNLOAD(hdl) ;
+        return PluginHolder ( nullptr ) ;
+    }
+    
+    GreDebug("[INFO] Loaded Plugin '") << ret -> getName() << "'." << gendl ;
+    
+    iPlugins.add(ret);
+    return ret ;
+}
+
+PluginHolder PluginManager::loadFromBundledUUID(const uuid_t &uuid, const std::vector<std::string> &bundlepaths)
+{
+    GreAutolock ;
+    
+    // First , try to see if the given plugin has already been loaded. To do this , we look for a plugin with the same
+    // uuid as given one. If so , we just return it and do nothing more.
+    
+    {
+        PluginHolder tmp = findFromUUID ( uuid ) ;
+        if ( !tmp.isInvalid() ) return tmp ;
+    }
+    
+    // Loads every plugins in the 'bundlepaths' and see for their uuid in plugin's info. Notes that if we
+    // try to get a handle for an already loaded library , 'dlclose' and 'FreeLibrary' both use a reference
+    // counter to close the handle only once it has been called as many times as 'dlopen' or 'LoadLibrary'.
+    
+    for ( const std::string & path : bundlepaths )
+    {
+        DYNLIB_HANDLE hdl = DYNLIB_LOAD(path.c_str()) ;
+        
+        if ( !hdl ) {
+            GreDebug("[WARN] Can't load '") << path << "'." << gendl ;
+            continue ;
+        }
+        
+        PluginGetInfoCbk plgGetInfo = nullptr ;
+        * (void**) & plgGetInfo = DYNLIB_GETSYM(hdl, "GetPluginInfo") ;
+        
+        if ( !plgGetInfo ) {
+            GreDebug("[WARN] Can't find 'GetPluginInfo' function in plugin '") << path << "'." << gendl ;
+            DYNLIB_UNLOAD(hdl) ;
+            continue ;
+        }
+        
+        PluginInfo * info = plgGetInfo () ;
+        if ( !info ) {
+            GreDebug ( "[WARN] Can't get PluginInfo structure from '") << path << "'." << gendl ;
+            DYNLIB_UNLOAD(hdl) ;
+            continue ;
+        }
+        
+        if ( info->version != GRE_PLUGIN_VERSION ) {
+            GreDebug( "[WARN] Invalid Version in plugin '") << path << "'." << gendl ;
+            DYNLIB_UNLOAD(hdl) ;
+            continue ;
+        }
+        
+        if ( uuid_is_null(info->uuid) ) {
+            GreDebug( "[WARN] Invalid UUID in plugin '") << path << "'." << gendl ;
+            DYNLIB_UNLOAD(hdl) ;
+            continue ;
+        }
+        
+        if ( uuid_compare(info->uuid, uuid) != 0 )
+        {
+            DYNLIB_UNLOAD(hdl) ;
+            continue ;
+        }
+        
+        // If we are here , this significates the library used here is the correct dependency. We should
+        // load it as a normal library.
+        
+        DYNLIB_UNLOAD(hdl) ;
+        
+        PluginHolder ret = loadFromBundledFile(path, bundlepaths) ;
+        
+        if ( ret.isInvalid() )
+        {
+            GreDebug("[WARN] Can't load '") << path << "'." << gendl ;
+            return PluginHolder ( nullptr ) ;
+        }
+        
+        return ret ;
+    }
+    
+    return PluginHolder ( nullptr ) ;
+}
+
+PluginHolder PluginManager::findFromPath(const std::string &path)
+{
+    GreAutolock ;
+    
+    for ( auto plug : iPlugins )
+    {
+        if ( !plug.isInvalid() )
+            if ( plug->getPath() == path )
+                return plug ;
+    }
+    
+    return PluginHolder ( nullptr ) ;
+}
+
+PluginHolder PluginManager::findFromUUID(const uuid_t &uuid)
+{
+    GreAutolock ;
+    
+    for ( auto plug : iPlugins )
+    {
+        if ( !plug.isInvalid() )
+            if ( uuid_compare(uuid, plug->getUUID()) == 0 )
+                return plug ;
+    }
+    
+    return PluginHolder ( nullptr ) ;
 }
 
 PluginUser PluginManager::get(const std::string &name)
@@ -443,23 +489,10 @@ void PluginManager::clearPlugins()
     iPlugins.clear();
 }
 
-PluginLoaderFactory& PluginManager::getPluginLoaderFactory()
-{
-    GreAutolock ;
-    return iFactory;
-}
-
-const PluginLoaderFactory& PluginManager::getPluginLoaderFactory() const
-{
-    GreAutolock ;
-    return iFactory;
-}
-
 void PluginManager::clear()
 {
     GreAutolock ;
     clearPlugins();
-    iFactory.clear();
 }
 
 void PluginManager::unload()

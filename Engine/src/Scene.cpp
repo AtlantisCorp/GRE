@@ -16,10 +16,10 @@
  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  copies of the Software, and to permit persons to whom the Software is
  furnished to do so, subject to the following conditions:
- 
+
  The above copyright notice and this permission notice shall be included in
  all copies or substantial portions of the Software.
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -40,58 +40,171 @@ GreBeginNamespace
 LightRenderNode::LightRenderNode ( const std::string& name )
 : RenderNode ( name )
 {
-    
+    iNodeType = RenderNodeType::Light ;
+    iLight = new Light ( name + ".light" ) ;
+    addFilteredListener ( EventProceederUser(iLight) , { EventType::Update } ) ;
 }
 
-LightRenderNode::LightRenderNode ( const Light& light , const std::string& name )
+LightRenderNode::LightRenderNode ( const LightHolder& light , const std::string& name )
 : RenderNode ( name ) , iLight(light)
 {
-    
+
 }
 
 LightRenderNode::~LightRenderNode() noexcept ( false )
 {
-    
+
 }
 
-const Light& LightRenderNode::getLight() const
+const LightHolder& LightRenderNode::getLight() const
 {
     GreAutolock ; return iLight ;
 }
 
-Light& LightRenderNode::getLight()
+LightHolder& LightRenderNode::getLight()
 {
     GreAutolock ; return iLight ;
 }
 
-void LightRenderNode::setLight(const Gre::Light &rhs)
+void LightRenderNode::setLight(const Gre::LightHolder &rhs)
 {
     GreAutolock ; iLight = rhs ;
 }
 
+const CameraHolder & LightRenderNode::getLightCamera () const
+{
+    GreAutolock ; return iLightCamera ;
+}
+
+CameraHolder & LightRenderNode::getLightCamera ()
+{
+    GreAutolock ; return iLightCamera ;
+}
+
+void LightRenderNode::use ( const TechniqueHolder & technique ) const
+{
+    GreAutolock ;
+
+    if ( technique.isInvalid() || iLight.isInvalid() )
+    return ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Computes the light's name.
+
+    TechniqueParam lightalias = technique -> getNextLightAlias () ;
+    std::string lightname = technique -> getAlias ( lightalias ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Sends values depending on what we find.
+
+    technique -> setAliasedParameterStructValue ( lightalias , TechniqueParam::LightAmbient ,
+        HdwProgVarType::Float3 , iLight -> getAmbient().toFloat3() );
+    technique -> setAliasedParameterStructValue ( lightalias , TechniqueParam::LightDiffuse ,
+        HdwProgVarType::Float3 , iLight -> getDiffuse().toFloat3() );
+    technique -> setAliasedParameterStructValue ( lightalias , TechniqueParam::LightSpecular ,
+        HdwProgVarType::Float3 , iLight -> getSpecular().toFloat3() );
+
+    technique -> setAliasedParameterStructValue ( lightalias , TechniqueParam::LightPosition ,
+        HdwProgVarType::Float3 , iLight -> getPosition() ) ;
+    technique -> setAliasedParameterStructValue ( lightalias , TechniqueParam::LightDirection ,
+        HdwProgVarType::Float3 , iLight -> getDirection() ) ;
+
+    technique -> setAliasedParameterStructValue ( lightalias , TechniqueParam::LightAttCst ,
+        HdwProgVarType::Float1 , iLight -> getAttenuationCst() ) ;
+    technique -> setAliasedParameterStructValue ( lightalias , TechniqueParam::LightAttLine ,
+        HdwProgVarType::Float1 , iLight -> getAttenuationLinear() ) ;
+    technique -> setAliasedParameterStructValue ( lightalias , TechniqueParam::LightAttQuad ,
+        HdwProgVarType::Float1 , iLight -> getAttenuationQuad() ) ;
+
+    technique -> setAliasedParameterStructValue ( lightalias , TechniqueParam::LightSpotAngle ,
+        HdwProgVarType::Float1 , iLight -> getAngle () ) ;
+    technique -> setAliasedParameterStructValue ( lightalias , TechniqueParam::LightSpotExposition ,
+        HdwProgVarType::Float1 , iLight -> getExposition() ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Sends the texture if this light node holds one. Also , use the camera
+    // projection view matrix if possible.
+
+    if ( !iShadowTexture.isInvalid() )
+    technique -> setAliasedTextureStruct ( lightalias , TechniqueParam::LightTexShadow , iShadowTexture ) ;
+
+    if ( !iLightCamera.isInvalid() )
+    technique -> setAliasedParameterStructValue ( lightalias , TechniqueParam::LightShadowMatrix ,
+        HdwProgVarType::Matrix4 , iLightCamera -> getProjectionViewMatrix() ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Don't forget to call the parent's use.
+
+    RenderNode::use ( technique ) ;
+}
+
+void LightRenderNode::loadLightCamera ()
+{
+    GreAutolock ;
+
+    if ( iLight.isInvalid() )
+    return ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Tries to create a camera for this light.
+
+    iLightCamera = ResourceManager::Get() -> getCameraManager() -> loadCamera ( getName() + ".lightcamera" ) ;
+
+    if ( !iLightCamera.isInvalid() )
+    {
+        //////////////////////////////////////////////////////////////////////
+        // Initialize Camera values.
+
+        iLightCamera -> setPosition ( iLight -> getPosition() ) ;
+        iLightCamera -> setDirection ( iLight -> getDirection() ) ;
+
+        //////////////////////////////////////////////////////////////////////
+        // Registers Camera as a light listener.
+
+        std::vector < EventType > filters ;
+        filters.push_back ( EventType::PositionChanged ) ;
+        filters.push_back ( EventType::DirectionChanged ) ;
+        iLight -> addFilteredListener ( EventProceederUser(iLightCamera) , filters ) ;
+    }
+}
+
+void LightRenderNode::loadShadowTexture ( uint32_t width , uint32_t height )
+{
+    GreAutolock ;
+
+    if ( iLight.isInvalid() )
+    return ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Tries to create a shadow texture for the light.
+
+    iShadowTexture = ResourceManager::Get() -> getTextureManager() -> loadFromArea ( getName() + ".shadowtex" ,
+        TextureType::Texture2D , width , height ) ;
+}
+
 void LightRenderNode::onPositionChangedEvent(const Gre::PositionChangedEvent &e)
 {
-    GreAutolock ; iLight.setPosition ( e.Position ) ;
+    GreAutolock ; iLight->setPosition ( e.Position ) ;
     RenderNode::onPositionChangedEvent(e) ;
 }
 
 void LightRenderNode::onDirectionChangedEvent(const Gre::DirectionChangedEvent &e)
 {
-    GreAutolock ; iLight.setDirection( e.Direction ) ;
+    GreAutolock ; iLight->setDirection( e.Direction ) ;
     RenderNode::onDirectionChangedEvent(e) ;
 }
 
 // ---------------------------------------------------------------------------------------------------
 
 RenderScene::RenderScene(const std::string& name, const RenderSceneOptions& options)
-: Gre::Resource(name) , iRootNode(nullptr) , iGlobalLight(Vector3(-1000.0f, 1000.0f, -1000.0f))
+: Gre::Resource(name) , iRootNode(nullptr)
 {
-    
+
 }
 
 RenderScene::~RenderScene()
 {
-    
+
 }
 
 const RenderNodeUser RenderScene::getRootNode() const
@@ -102,19 +215,24 @@ const RenderNodeUser RenderScene::getRootNode() const
 const RenderNodeHolder& RenderScene::setRootNode(const RenderNodeHolder &rendernode)
 {
     GreAutolock ;
-    
+
     if ( !iRootNode.isInvalid() )
     {
         Resource::removeListener( EventProceederUser(iRootNode) );
     }
-    
+
     iRootNode = rendernode;
-    
+
     if ( !iRootNode.isInvalid() )
     {
-        Resource::addListener( EventProceederUser(iRootNode) );
+        std::vector < EventType > filters ;
+        filters.push_back(EventType::Update) ;
+        filters.push_back(EventType::RenderScenePreRender) ;
+        filters.push_back(EventType::RenderScenePostRender) ;
+
+        Resource::addFilteredListener( EventProceederUser(iRootNode) , filters );
     }
-    
+
     return iRootNode;
 }
 
@@ -128,7 +246,7 @@ LightRenderNodeHolder RenderScene::createLightNode( const std::string & name ) c
     return LightRenderNodeHolder ( new LightRenderNode(name) ) ;
 }
 
-LightRenderNodeHolder RenderScene::createLightNode(const Gre::Light &light, const std::string& name) const
+LightRenderNodeHolder RenderScene::createLightNode(const Gre::LightHolder &light, const std::string& name) const
 {
     return LightRenderNodeHolder ( new LightRenderNode(light, name) ) ;
 }
@@ -145,12 +263,12 @@ void RenderScene::addLightNode(const LightRenderNodeHolder &lightnode)
 void RenderScene::addNode(const RenderNodeHolder &rendernode)
 {
     GreAutolock ;
-    
+
     if ( !iRootNode.isInvalid() )
     {
         iRootNode->addNode(rendernode);
     }
-    
+
     else
     {
         setRootNode ( rendernode ) ;
@@ -162,20 +280,20 @@ void RenderScene::removeNode( const RenderNodeHolder & holder )
     if ( !holder.isInvalid() )
     {
         GreAutolock ;
-        
+
         // See if this node has a parent.
-        
+
         RenderNodeHolder parent = holder->getParent () ;
-        
+
         if ( !parent.isInvalid() )
         {
             parent -> remove ( holder-> getIdentifier() ) ;
         }
-        
+
         // Now this child will be destroyed when the last holder holding it
         // will be destroyed. Normally, this holder is used by the USER , and at
         // the end of its function, should be destroyed.
-        
+
         // Note : This function version also destroys every children of the
         // RenderNode to destroy. See 'RenderScene::removeNodeNoChildren()' to remove
         // a RenderNode without removing its children.
@@ -187,20 +305,20 @@ void RenderScene::removeNodeNoChildren ( const RenderNodeHolder & holder )
     if ( !holder.isInvalid() )
     {
         GreAutolock ;
-        
+
         // See if this node has a parent.
-        
+
         RenderNodeHolder parent = holder->getParent () ;
-        
+
         if ( !parent.isInvalid() )
         {
             parent -> removeNotRecursive ( holder-> getIdentifier() ) ;
         }
-        
+
         // Now this child will be destroyed when the last holder holding it
         // will be destroyed. Normally, this holder is used by the USER , and at
         // the end of its function, should be destroyed.
-        
+
         // Note : This function destroys only the given RenderNode. Its children
         // are distribuited in the parent's children using 'RenderNode::addNode()'.
     }
@@ -209,356 +327,183 @@ void RenderScene::removeNodeNoChildren ( const RenderNodeHolder & holder )
 void RenderScene::removeNodeFromIdentifier(const Gre::ResourceIdentifier &identifier)
 {
     GreAutolock ;
-    
+
     // Try to find a Node with given identifier. This function is therefore much more
     // time-cost than 'RenderScene::removeNode()'.
-    
+
     RenderNodeHolder node = findHolder ( identifier ) ;
-    
+
     if ( !node.isInvalid() )
     {
         removeNode(node);
     }
-    
+
 #ifdef GreIsDebugMode
     else
     {
         GreDebugPretty() << "Invalid ResourceIdentifier given : '" << (uint32_t) identifier << "'." << Gre::gendl;
     }
 #endif
-    
+
 }
 
 RenderNodeHolder RenderScene::findHolder ( const Gre::ResourceIdentifier & identifier )
 {
     GreAutolock ;
-    
+
     if ( !iRootNode.isInvalid() )
     {
         if ( iRootNode->getIdentifier() == identifier )
             return iRootNode ;
-        
+
         return iRootNode -> find(identifier) ;
     }
-    
+
     return RenderNodeHolder ( nullptr ) ;
 }
 
 RenderNodeUser RenderScene::findNode ( const Gre::ResourceIdentifier & identifier)
 {
     GreAutolock ;
-    
+
     if ( !iRootNode.isInvalid() )
     {
         if ( iRootNode->getIdentifier() == identifier )
             return iRootNode ;
-        
+
         return iRootNode -> find(identifier) ;
     }
-    
+
     return RenderNodeHolder ( nullptr ) ;
 }
 
 const RenderNodeUser RenderScene::findNode ( const Gre::ResourceIdentifier & identifier) const
 {
     GreAutolock ;
-    
+
     if ( !iRootNode.isInvalid() )
     {
         if ( iRootNode->getIdentifier() == identifier )
             return iRootNode ;
-        
+
         return iRootNode -> find(identifier) ;
     }
-    
+
     return RenderNodeHolder ( nullptr ) ;
 }
 
-void RenderScene::draw(const EventHolder &elapsed) const
+const RenderNodeHolderList & RenderScene::getNodesForCamera ( const CameraHolder & camera ) const
 {
     GreAutolock ;
-    
-    if ( iRenderTarget.isInvalid() )
-        return ;
-    
-    if ( elapsed.isInvalid() || elapsed->getType() != EventType::Update )
-        return ;
-    
-    if ( !iTechnique.isInvalid() )
+
+    auto it = iNodesByCamera.find(camera) ;
+    if ( it == iNodesByCamera.end() ) return RenderNodeHolderList::Empty ;
+
+    return it -> second ;
+}
+
+const std::list<LightRenderNodeHolder> & RenderScene::getActivatedLightsForCamera ( const CameraHolder & camera ) const
+{
+    GreAutolock ; return iLightNodesByCamera.at(camera) ;
+}
+
+void RenderScene::addCamera(const CameraHolder &camera)
+{
+    GreAutolock ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Adds a Camera to the Scene. This object will updates the nodes list
+    // available to it. (i.e. visible) Notes the 'clear()' function called
+    // here is just to ensure the '[]' operator is called and the entry for
+    // the camera is created.
+
+    if ( !camera.isInvalid() )
     {
-        iRenderTarget -> bind () ;
-        
-        {
-            EventHolder e = EventHolder ( new RenderScenePreRenderEvent(this) ) ;
-            sendEvent ( e ) ;
-            
-            const RendererHolder rholder = iRenderer.lock() ;
-            if ( !rholder.isInvalid() ) {
-                rholder->preRender (iClearColor) ;
-            }
-            
-            _preRender () ;
-        }
-        
-        {
-            drawTechnique(iTechnique, elapsed) ;
-        }
-        
-        {
-            EventHolder e = EventHolder ( new RenderScenePostRenderEvent(this) ) ;
-            sendEvent ( e ) ;
-            
-            const RendererHolder rholder = iRenderer.lock() ;
-            if ( !rholder.isInvalid() ) {
-                rholder->postRender () ;
-            }
-            
-            _postRender () ;
-        }
-    
-        iRenderTarget -> swapBuffers () ;
-        iRenderTarget -> unbind () ;
+        iLightNodesByCamera [camera] . clear() ;
+        iNodesByCamera [camera] .clear() ;
     }
 }
 
-void RenderScene::setTechnique(const TechniqueUser &technique)
-{
-    GreAutolock ;
-    
-    if ( !iTechnique.isInvalid() )
-        removeListener(EventProceederUser(iTechnique)) ;
-    
-    iTechnique = technique.lock() ;
-    
-    if ( !iTechnique.isInvalid() )
-        addListener(EventProceederUser(iTechnique)) ;
-    
-#ifdef GreIsDebugMode
-    if ( technique.isInvalid() ) {
-        GreDebug("[WARN] Setting invalid Technique to RenderScene '") << getName() << "'." << Gre::gendl ;
-    }
-#endif
-}
-
-TechniqueHolder& RenderScene::getTechnique ()
-{
-    GreAutolock ; return iTechnique ;
-}
-
-const TechniqueHolder& RenderScene::getTechnique () const
-{
-    GreAutolock ; return iTechnique ;
-}
-
-void RenderScene::setRenderer ( const RendererUser& renderer )
-{
-    GreAutolock ; iRenderer = renderer ;
-    
-#ifdef GreIsDebugMode
-    if ( renderer.isInvalid() ) {
-        GreDebug("[WARN] Setting invalid Renderer to RenderScene '") << getName() << "'." << Gre::gendl ;
-    }
-#endif
-}
-
-void RenderScene::setRenderTarget(const RenderTargetUser &target)
-{
-    GreAutolock ;
-    
-    if ( !iRenderTarget.isInvalid() )
-        iRenderTarget -> removeListener(EventProceederUser(this)) ;
-    
-    iRenderTarget = target.lock() ;
-    
-    if ( !iRenderTarget.isInvalid() )
-        iRenderTarget -> addListener(EventProceederUser(this)) ;
-    
-#ifdef GreIsDebugMode
-    if ( target.isInvalid() ) {
-        GreDebug("[WARN] Setting invalid RenderTarget to RenderScene '") << getName() << "'." << Gre::gendl ;
-    }
-#endif
-}
-
-void RenderScene::setClearColor ( const Color& color )
-{
-    GreAutolock ; iClearColor = color ;
-}
-
-const Light& RenderScene::getGlobalLight () const
-{
-    GreAutolock ; return iGlobalLight ;
-}
-
-Light& RenderScene::getGlobalLight ()
-{
-    GreAutolock ; return iGlobalLight ;
-}
-
-void RenderScene::setGlobalLight ( const Light& light )
-{
-    GreAutolock ; iGlobalLight = light ;
-}
-
-void RenderScene::setMainCamera(const CameraUser &camera)
+const CameraHolder RenderScene::getCamera(const std::string &name) const
 {
     GreAutolock ;
 
-    if ( !iTechnique.isInvalid() ) {
-        iTechnique->setCamera(camera);
-    }
-
-}
-
-void RenderScene::drawTechnique( const TechniqueHolder& technique , const EventHolder &elapsed) const
-{
-#ifdef GreIsDebugMode
-    if ( technique.isInvalid() ) {
-        GreDebug("[WARN] Invalid Technique to draw RenderScene '") << getName() << "'." << Gre::gendl ;
-        return ;
-    } else if ( elapsed.isInvalid() ) {
-        GreDebug("[WARN] Invalid EventHolder to draw RenderScene '") << getName() << "'." << Gre::gendl ;
-        return ;
-    }
-#endif
-    
-    if ( technique->isActivated() )
+    for ( auto it : iNodesByCamera )
     {
-        if ( technique->hasPreTechniques() )
+        if ( !it.first.isInvalid() )
         {
-            for ( auto & tech : technique->getPreTechniques() )
+            if ( it.first->getName() == name )
             {
-                if ( !tech.isInvalid() && tech->isActivated() )
+                return it.first ;
+            }
+        }
+    }
+
+    return CameraHolder ( nullptr ) ;
+}
+
+void RenderScene::onUpdateEvent(const Gre::UpdateEvent &e)
+{
+    GreAutolock ;
+
+    // Here we want to update the Nodes by Camera 's lists. So , we look for every nodes and when we encounter
+    // a light visible , we add it to the iActivatedLights list.
+
+    updateNode ( iRootNode ) ;
+}
+
+void RenderScene::updateNode ( const RenderNodeHolder & node )
+{
+    if ( !node.isInvalid() )
+    {
+
+        if ( node -> getNodeType() == RenderNodeType::Light )
+        {
+            for ( auto it = iLightNodesByCamera.begin() ; it != iLightNodesByCamera.end() ; it++ )
+            {
+                if ( !it->first.isInvalid() )
                 {
-                    drawTechnique(tech, elapsed) ;
-                }
-            }
-        }
-        
-        RenderingQuery query ;
-        query.setRenderScene ( RenderSceneUser(this) ) ;
-//      query.setRenderPass ( pass ) ;
-        query.setCamera ( technique->getCamera() ) ;
-        query.setHardwareProgram ( technique->getHardwareProgram() ) ;
-        query.setViewport ( technique->getViewport() ) ;
-        
-        const UpdateEvent& u = elapsed->to<UpdateEvent>() ;
-        query.setElapsedTime ( u.elapsedTime ) ;
-        
-        if ( technique->isExclusive() ) {
-            query.setRenderedNodes ( technique->getNodes() ) ;
-        } else {
-            query.setRenderedNodes ( { getRootNode().lock() } ) ;
-        }
-        
-        RendererHolder rholder = iRenderer.lock() ;
-        if ( rholder.isInvalid() )
-            return ;
-        
-        // For shadow mapping, in order to let the technique set some variables, we must associate
-        // a shadow map for each lights. The trick here is to call a special technique function, to
-        // modify the framebuffer in order to bind the light shadowmap texture to the framebuffer.
-        
-        // If the technique is allowed to use every lights in the scene (default behaviour), we compute
-        // every activated lights and give them to the query to be rendered (Blinn-Phong model).
-        
-        if ( technique->getLightingMode () == TechniqueLightingMode::AllLights )
-        {
-            std::vector < Light > lights ;
-            lights.push_back(iGlobalLight) ;
-            
-            for ( LightRenderNodeUser lightnode : iLightNodes ) {
-                if ( !lightnode.isInvalid() ) {
-                    LightRenderNodeHolder light = lightnode.lock() ;
-                    if ( light -> getLight().isEnabled() ) {
-                        lights.push_back(light -> getLight()) ;
+                    if ( node->isVisible(it->first) )
+                    {
+                        auto it2 = std::find(it->second.begin(), it->second.end(), LightRenderNodeHolder(node)) ;
+                        if ( it2 == it->second.end() ) it->second.emplace_back ( node ) ;
                     }
                 }
             }
-            
-            query.setLights(lights) ;
-            query.setFramebuffer ( technique->getFramebuffer() ) ;
-            rholder -> draw ( query ) ;
         }
-        
-        // If the technique wants to be rendered differently for every lights, the 'perlight' flag is on
-        // and we call the technique for each activated light. This let the technique do 'per-light' rendering
-        // like setting light shadowmaps.
-        
-        else if ( technique->getLightingMode () == TechniqueLightingMode::PerLight )
+
+        for ( auto it = iNodesByCamera.begin() ; it != iNodesByCamera.end() ; it++ )
         {
-            std::vector < Light > lights ;
-            lights.push_back(iGlobalLight) ;
-            
-            for ( LightRenderNodeUser lightnode : iLightNodes ) {
-                if ( !lightnode.isInvalid() ) {
-                    LightRenderNodeHolder light = lightnode.lock() ;
-                    if ( light -> getLight().isEnabled() ) {
-                        lights.push_back(light -> getLight()) ;
+            if ( !it->first.isInvalid() )
+            {
+                if ( true )//node->isVisible(it->first) )
+                {
+                    if ( node -> isRenderable () )
+                    {
+                        auto it2 = std::find(it->second.begin(), it->second.end(), node) ;
+                        if ( it2 == it->second.end() ) it->second.emplace_back ( node ) ;
+                    }
+
+                    for ( auto child : node -> getChildren() )
+                    {
+                        updateNode ( child ) ;
                     }
                 }
-            }
-            
-            for ( Light& light : lights )
-            {
-                std::vector < Light > tmp ;
-                tmp.push_back(light) ;
-                
-                // This is a special function called for each light. This will let the technique change
-                // the framebuffer depth texture to the one created in light.
-                // [07.03.2017] NOTES : As 'onPerLightRendering' might modify some of the techniques properties,
-                // we use this holder's trick to use non-const method on technique. This acts like a threadsafe
-                // const_cast .
-                
-                TechniqueHolder(technique) -> onPerLightRendering ( light ) ;
-                
-                // Next, we bind the light and the technique framebuffer.
-                
-                query.setLights(tmp) ;
-                query.setFramebuffer ( technique->getFramebuffer() ) ;
-                rholder -> draw ( query ) ;
-            }
-        }
-        
-        // If the technique has disabled every lighting, we render it using only the technique's framebuffer
-        // (if has one) and draw the query. The result is generally expected to be black.
-        
-        else
-        {
-            query.setFramebuffer ( technique->getFramebuffer() ) ;
-            rholder -> draw(query) ;
-        }
-        
-        if ( technique->hasPostTechniques() )
-        {
-            for ( const TechniqueHolder & tech : technique->getPostTechniques() )
-            {
-                drawTechnique(tech, elapsed) ;
             }
         }
     }
-}
-
-void RenderScene::_preRender () const
-{
-    
-}
-
-void RenderScene::_postRender () const
-{
-    
 }
 
 // ---------------------------------------------------------------------------------------------------
 
 RenderSceneLoader::RenderSceneLoader()
 {
-    
+
 }
 
 RenderSceneLoader::~RenderSceneLoader()
 {
-    
+
 }
 
 ResourceLoader* RenderSceneLoader::clone() const
@@ -587,46 +532,20 @@ RenderSceneManager::RenderSceneManager ( const std::string& name )
 
 RenderSceneManager::~RenderSceneManager() noexcept ( false )
 {
-    
+
 }
 
 void RenderSceneManager::initialize()
 {
 	GreAutolock ;
-	
+
 	if ( iInitialized )
 		return ;
-	
-	// We create here the 'Default' technique. This technique does not do anything special. It loads a
-    // default program. Every nodes are included. And it has, by default, no subtechniques. 
-	// NOTES : This default behaviour can only be loaded when a HardwareProgramManager and a CameraManager
-	// are available. Thus, this can be done ONLY when the Renderer is installed. The Renderer should
-	// use the 'initialize' method from the RenderSceneManager in order to install this.
-	
-	if ( ResourceManager::Get().getCameraManager().isInvalid() ||
-		 ResourceManager::Get().getHardwareProgramManager().isInvalid() ) {
-#ifdef GreIsDebugMode
-		GreDebug("[WARN] Can't initialize RenderSceneManager because CameraManager OR HardwareProgramManager") 
-		<< " are invalid. Please load both of them before initializing the scene manager." << gendl ;
-#endif
-		return ;
-	}
 
-    RenderPassHolder pass = RenderPassHolder ( new RenderPass () ) ;
-    pass->setHardwareProgram ( ResourceManager::Get().getHardwareProgramManager()->getProgram("Default") ) ;
-    
-    TechniqueHolder tech = TechniqueHolder ( new Technique() ) ;
-	tech -> setName ("Default") ;
-    tech -> setExclusive (false) ;
-    tech -> setViewport ( Viewport(1.0f, 1.0f, 1.0f, 1.0f) ) ;
-    tech -> setCamera ( ResourceManager::Get().getCameraManager()->findFirst("Default") ) ;
-    iTechniques.push_back(tech) ;
-    addListener(EventProceederUser(tech));
-	
 	iInitialized = true ;
 }
 
-bool RenderSceneManager::isInitialized() const 
+bool RenderSceneManager::isInitialized() const
 {
 	GreAutolock ; return iInitialized ;
 }
@@ -634,14 +553,14 @@ bool RenderSceneManager::isInitialized() const
 RenderSceneUser RenderSceneManager::load(const RenderSceneHolder &holder)
 {
 	GreAutolock ;
-	
+
     if ( !holder.isInvalid() )
     {
         GreAutolock ;
-        
+
         {
             RenderSceneHolder tmp = findHolder ( holder->getIdentifier() ) ;
-            
+
             if ( !tmp.isInvalid() )
             {
 #ifdef GreIsDebugMode
@@ -651,23 +570,23 @@ RenderSceneUser RenderSceneManager::load(const RenderSceneHolder &holder)
                 return RenderSceneUser ( nullptr );
             }
         }
-        
+
 #ifdef GreIsDebugMode
         GreDebugPretty() << "RenderScene '" << holder->getName() << "' registered." << Gre::gendl;
 #endif
-        
+
         iHolders.add(holder);
         addListener(EventProceederUser(holder));
         return holder;
     }
-    
+
     return RenderSceneUser ( nullptr );
 }
 
 RenderSceneUser RenderSceneManager::load ( const std::string & name , const RenderSceneOptions & options )
 {
 	GreAutolock ;
-	
+
 #ifdef GreIsDebugMode
     if ( name.empty() ) {
         GreDebug("[WARN] Initialized RenderScene with no name.") << Gre::gendl;
@@ -680,16 +599,16 @@ RenderSceneUser RenderSceneManager::load ( const std::string & name , const Rend
 #endif
 		return RenderSceneUser ( nullptr ) ;
 	}
-    
+
     RenderSceneLoader* loader = nullptr ;
     auto it = options.find("Loader" );
-    
+
     if ( it != options.end() ) {
         loader = findLoader (it->second.toString()) ;
     } else {
         loader = findLoader ("Default") ;
     }
-    
+
     if ( !loader )
     {
 #ifdef GreIsDebugMode
@@ -697,60 +616,30 @@ RenderSceneUser RenderSceneManager::load ( const std::string & name , const Rend
 #endif
         return RenderSceneUser ( nullptr ) ;
     }
-    
+
     RenderSceneHolder scene = loader -> load(name, options) ;
     if ( scene.isInvalid() ) {
 #ifdef GreIsDebugMode
         GreDebug("[WARN] Can't load RenderScene '") << name << "'." << Gre::gendl ;
-#endif 
+#endif
         return RenderSceneUser ( nullptr ) ;
     }
-    
-    std::string technique = options.find("Technique") == options.end() ? "Default" : options.at("Technique").toString() ;
-    if ( technique.empty() ) technique = "Default" ;
-	
-	TechniqueUser tech = findTechnique(technique);
-    scene -> setTechnique ( tech ) ;
-    
+
+    bool sendupdate = true ;
+    it = options.find ( "SendUpdate" ) ;
+    if ( it != options.end() ) sendupdate = it -> second .toBool() ;
+
+    if ( sendupdate ) {
+        addFilteredListener(EventProceederUser(scene.getObject()), { EventType::Update });
+    }
+
     iHolders.push_back(scene);
-    addListener(EventProceederUser(scene));
-    
+
 #ifdef GreIsDebugMode
     GreDebug("[INFO] RenderScene '") << name << "' registered." << Gre::gendl ;
 #endif
-    
+
     return scene ;
-}
-
-void RenderSceneManager::drawScenes( const EventHolder& e ) const
-{
-    GreAutolock ;
-    
-    for ( auto it : iHolders )
-    {
-        if ( !it.isInvalid() )
-        {
-            it->draw ( e ) ;
-        }
-    }
-}
-
-TechniqueUser RenderSceneManager::findTechnique ( const std::string & name )
-{
-	GreAutolock ;
-	
-    for ( auto tech : iTechniques ) {
-        if ( !tech.isInvalid() ) {
-            if ( tech->getName() == name ) return TechniqueUser (tech) ;
-        }
-    }
-    
-    return TechniqueUser ( nullptr ) ;
-}
-
-void RenderSceneManager::onUpdateEvent ( const UpdateEvent& e )
-{
-    
 }
 
 GreEndNamespace

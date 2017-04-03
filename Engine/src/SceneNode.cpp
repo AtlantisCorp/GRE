@@ -1,10 +1,10 @@
 //////////////////////////////////////////////////////////////////////
 //
 //  SceneNode.cpp
-//  This source file is part of Gre 
+//  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
-//  Copyright (c) 2015 - 2016 Luk2010
+//  Copyright (c) 2015 - 2017 Luk2010
 //  Created on 11/06/2016.
 //
 //////////////////////////////////////////////////////////////////////
@@ -46,6 +46,7 @@ RenderNode::RenderNode()
 {
     setName ( std::string("RenderNode#") + std::to_string(getIdentifier()) ) ;
     iModelMatrix = glm::mat4 (1.0f) ;
+    iNodeType = RenderNodeType::Default ;
 }
 
 RenderNode::RenderNode(const std::string& name)
@@ -59,12 +60,12 @@ RenderNode::RenderNode(const std::string& name)
 , iTransformationChanged(false)
 , iRenderableChanged(false)
 {
-    
+    iNodeType = RenderNodeType::Default ;
 }
 
 RenderNode::~RenderNode() noexcept ( false )
 {
-    
+
 }
 
 bool RenderNode::isRenderable() const
@@ -73,31 +74,31 @@ bool RenderNode::isRenderable() const
     return !iRenderable.isInvalid();
 }
 
-const MeshUser& RenderNode::getMesh() const
+const MeshHolder& RenderNode::getMesh() const
 {
     return iRenderable;
 }
 
-MeshUser& RenderNode::getMesh()
+MeshHolder& RenderNode::getMesh()
 {
     return iRenderable;
 }
 
-void RenderNode::setMesh(const Gre::MeshUser &mesh)
+void RenderNode::setMesh(const Gre::MeshHolder &mesh)
 {
     GreAutolock ;
-    
+
     if ( !iRenderable.isInvalid() )
     {
-        Resource::removeListener( iRenderable );
+        Resource::removeListener( EventProceederUser(iRenderable) );
     }
-    
+
     iRenderable = mesh;
     iRenderableChanged = true;
-    
+
     if ( !iRenderable.isInvalid() )
     {
-        Resource::addListener( iRenderable );
+        Resource::addListener( EventProceederUser(iRenderable) );
     }
 }
 
@@ -123,32 +124,32 @@ void RenderNode::addNode(const RenderNodeHolder &node)
     if ( !node.isInvalid() )
     {
         GreAutolock ;
-        
+
         // First, check if this Node is not already one of our children. If this is the case,
         // this is probably a check from 'RenderNode::onUpdateEvent' when 'iTransformationChanged' is
         // true.
-        
+
         auto it = iChilds.find( node->getIdentifier() );
-        
+
         if ( it != iChilds.end() )
         {
             // We have to remove the Child from the list, and add it again. Removing the Node from the list
             // lets us adding it as if it was a new Node. Also, we remove the node from the listeners.
-            
+
             iChilds.erase(it);
             Resource::removeListener( RenderNodeUser(node) );
-            
+
             addNode(node);
             return;
         }
-        
+
         if ( iBoundingBox.contains(node->getBoundingBox()) )
         {
             // We will add this Node as a Child. But, we must ensure any Child should have this Node as
             // a Valid Parent. This way we can sort BoundingBox here.
-            
+
             RenderNodeHolderList tmplist;
-            
+
             for ( auto it = iChilds.begin(); it != iChilds.end(); it++ )
             {
                 if ( !(*it).isInvalid() )
@@ -157,40 +158,40 @@ void RenderNode::addNode(const RenderNodeHolder &node)
                     {
                         // Here, the futur Node also contains this Node Child. Add this child to the Node, and remove
                         // this child from the listeners.
-                        
+
                         Resource::removeListener( RenderNodeUser(*it) );
                         RenderNodeHolder(node)->addNode((*it));
                     }
-                    
+
                     else
                     {
                         // We add this Child to the 'tmplist', in order to replace this Node's Child. Children in this
                         // list already are listening to this Node.
-                        
+
                         tmplist.add((*it));
                     }
                 }
             }
-            
+
             // Replace the list with the correct one. This will destroy every RenderNodeHolder in the list, but
             // we have other ones in this one. Also, add the RenderNode to this one and add it to the Listeners list.
-            
+
             iChilds = tmplist;
             iChilds.add(node);
             Resource::addListener( RenderNodeUser (node) );
             RenderNodeHolder(node)->setParent(RenderNodeHolder(this));
         }
-        
+
         else
         {
             // If this RenderNode do not contains this Node, just add it to the Parent. Keep in mind that,
             // when adding to a Parent, if 'node' contains this Node, it will replace this Node Parent.
-            
+
             if ( !iParent.isInvalid() )
             {
                 iParent->addNode(node);
             }
-            
+
             // If we don't have any Parent, this means we are Root, but Root::getBoundingBox() should return
             // an infinite BoundingBox or, at least, the world limits bounding box.
         }
@@ -220,7 +221,7 @@ const RenderNodeHolder& RenderNode::getParent() const
 RenderNodeHolder RenderNode::find(ResourceIdentifier identifier)
 {
     GreAutolock;
-    
+
     for ( RenderNodeHolder& child : iChilds )
     {
         if ( !child.isInvalid() )
@@ -231,20 +232,20 @@ RenderNodeHolder RenderNode::find(ResourceIdentifier identifier)
             }
         }
     }
-    
+
     for ( RenderNodeHolder& child : iChilds )
     {
         if ( !child.isInvalid() )
         {
             RenderNodeHolder ret = child->find(identifier);
-            
+
             if ( !ret.isInvalid() )
             {
                 return ret;
             }
         }
     }
-    
+
 #ifdef GreIsDebugMode
     GreDebugPretty() << "'identifier' was not found in Children's list ('" << (int) identifier << "')." << Gre::gendl;
 #endif
@@ -254,7 +255,7 @@ RenderNodeHolder RenderNode::find(ResourceIdentifier identifier)
 const RenderNodeHolder RenderNode::find(ResourceIdentifier identifier) const
 {
     GreAutolock ;
-    
+
     for ( const RenderNodeHolder& child : iChilds )
     {
         if ( !child.isInvalid() )
@@ -265,20 +266,20 @@ const RenderNodeHolder RenderNode::find(ResourceIdentifier identifier) const
             }
         }
     }
-    
+
     for ( const RenderNodeHolder& child : iChilds )
     {
         if ( !child.isInvalid() )
         {
             RenderNodeHolder ret = child->find(identifier);
-            
+
             if ( !ret.isInvalid() )
             {
                 return ret;
             }
         }
     }
-    
+
 #ifdef GreIsDebugMode
     GreDebugPretty() << "'identifier' was not found in Children's list ('" << (int) identifier << "')." << Gre::gendl;
 #endif
@@ -288,7 +289,7 @@ const RenderNodeHolder RenderNode::find(ResourceIdentifier identifier) const
 void RenderNode::remove(const ResourceIdentifier& identifier)
 {
     GreAutolock ;
-    
+
     for ( auto it = iChilds.begin(); it != iChilds.end(); it++ )
     {
         if ( !(*it).isInvalid() )
@@ -301,7 +302,7 @@ void RenderNode::remove(const ResourceIdentifier& identifier)
             }
         }
     }
-    
+
 #ifdef GreIsDebugMode
     GreDebugPretty() << "RenderNode Resource 'RenderNode#" << std::to_string(identifier) << "' not found." << Gre::gendl;
 #endif
@@ -310,7 +311,7 @@ void RenderNode::remove(const ResourceIdentifier& identifier)
 void RenderNode::removeNotRecursive(const ResourceIdentifier& identifier)
 {
     GreAutolock ;
-    
+
     for ( auto it = iChilds.begin(); it != iChilds.end(); it++ )
     {
         if ( !(*it).isInvalid() )
@@ -318,16 +319,16 @@ void RenderNode::removeNotRecursive(const ResourceIdentifier& identifier)
             if ( (*it)->getIdentifier() == identifier )
             {
                 // Save Children.
-                
+
                 RenderNodeHolderList children = (*it)->getChildren();
-                
+
                 // Erase Child.
-                
+
                 Resource::removeListener( RenderNodeUser(*it) );
                 iChilds.erase(it);
-                
+
                 // Adds every Children to this Node.
-                
+
                 for ( RenderNodeHolder& holder : children )
                 {
                     if ( !holder.isInvalid() )
@@ -335,12 +336,12 @@ void RenderNode::removeNotRecursive(const ResourceIdentifier& identifier)
                         addNode(holder);
                     }
                 }
-                
+
                 return;
             }
         }
     }
-    
+
 #ifdef GreIsDebugMode
     GreDebugPretty() << "RenderNode Resource 'RenderNode#" << std::to_string(identifier) << "' not found." << Gre::gendl;
 #endif
@@ -349,7 +350,7 @@ void RenderNode::removeNotRecursive(const ResourceIdentifier& identifier)
 void RenderNode::clear()
 {
     GreAutolock ;
-    
+
     iChilds.clear();
     iRenderable.clear();
     iTransformation = Transformation();
@@ -408,10 +409,10 @@ void RenderNode::setParent(const RenderNodeHolder &parent)
 const MaterialHolder& RenderNode::getMaterial() const
 {
     GreAutolock ;
-    
+
     if ( iMaterial.isInvalid() && !iRenderable.isInvalid() )
-        return iRenderable.lock() -> getPreferredMaterial() ;
-        
+        return iRenderable -> getDefaultMaterial () ;
+
     return iMaterial ;
 }
 
@@ -424,27 +425,28 @@ bool RenderNode::isVisible(const CameraUser &camera) const
 {
     if ( camera.isInvalid() )
         return false ;
-    
-    return camera.lock()->isVisible( iBoundingBox ) ;
+
+    //return camera.lock()->isVisible( iBoundingBox ) ;
+    return true ;
 }
 
 void RenderNode::setPositionTracked(const EventProceederUser &tracked)
 {
     GreAutolock ;
-    
+
     if ( !iPositionTracked.isInvalid() ) {
         iPositionTracked.lock() -> removeListener(EventProceederUser(this)) ;
     }
-    
+
     iPositionTracked = tracked ;
     iTransformation = Transformation () ;
-    
+
     if ( !iPositionTracked.isInvalid() ) {
-        
+
         std::vector < EventType > filters ;
         filters.push_back(EventType::PositionChanged) ;
         filters.push_back(EventType::DirectionChanged) ;
-        
+
         iPositionTracked.lock() -> addFilteredListener(EventProceederUser(this), filters) ;
     }
 }
@@ -454,39 +456,63 @@ const EventProceederUser & RenderNode::getPositionTracked() const
     GreAutolock ; return iPositionTracked ;
 }
 
+void RenderNode::use ( const TechniqueHolder & technique ) const
+{
+    GreAutolock ;
+    if ( technique.isInvalid() ) return ;
+
+    technique -> setAliasedParameterValue ( TechniqueParam::ModelMatrix , HdwProgVarType::Matrix4 , iModelMatrix ) ;
+    if ( !iRenderable.isInvalid() ) iRenderable -> use ( technique ) ;
+    if ( !iMaterial.isInvalid() ) iMaterial -> use ( technique ) ;
+
+    TechniqueParamBinder::use ( technique ) ;
+}
+
+void RenderNode::setPosition(const Vector3 &position)
+{
+    GreAutolock ; iTransformation.setTranslation(position) ;
+    iTransformationChanged = true ;
+}
+
+void RenderNode::setScale(float value)
+{
+    GreAutolock ; iTransformation.setScale({ value , value , value }) ;
+    iTransformationChanged = true ;
+}
+
 void RenderNode::onUpdateEvent(const Gre::UpdateEvent &e)
 {
     Resource::onUpdateEvent(e);
-    
+
     GreAutolock ;
-    
+
     if ( iTransformationChanged )
     {
         iModelMatrix = iTransformation.get();
         iTransformationChanged = false;
-        
+
         if ( !iRenderableChanged )
         {
             iBoundingBox.apply(iTransformation);
         }
-        
+
         // If the Transformation has changed, we must check if this Node should behave at the same place
         // or not. So, we must add it again to its parent.
-        
+
         if ( !iParent.isInvalid() )
         {
             iParent->addNode(RenderNodeHolder(this));
         }
     }
-    
+
     if ( iRenderableChanged )
     {
         if ( !iRenderable.isInvalid() )
         {
-            iBoundingBox = iRenderable.lock()->getBoundingBox();
+            iBoundingBox = iRenderable -> getBoundingBox();
             iBoundingBox.apply(iTransformation);
         }
-        
+
         iRenderableChanged = false;
     }
 }
@@ -501,6 +527,11 @@ void RenderNode::onDirectionChangedEvent(const Gre::DirectionChangedEvent &e)
 {
     GreAutolock ; iTransformation.setDirection ( e.Direction ) ;
     iTransformationChanged = true ;
+}
+
+const RenderNodeType & RenderNode::getNodeType () const
+{
+    GreAutolock ; return iNodeType ;
 }
 
 GreEndNamespace

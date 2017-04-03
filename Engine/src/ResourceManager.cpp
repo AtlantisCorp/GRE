@@ -4,7 +4,7 @@
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
-//  Copyright (c) 2015 - 2016 Luk2010
+//  Copyright (c) 2015 - 2017 Luk2010
 //  Created on 01/11/2015.
 //
 //////////////////////////////////////////////////////////////////////
@@ -16,10 +16,10 @@
  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  copies of the Software, and to permit persons to whom the Software is
  furnished to do so, subject to the following conditions:
- 
+
  The above copyright notice and this permission notice shall be included in
  all copies or substantial portions of the Software.
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -34,90 +34,46 @@
 
 GreBeginNamespace
 
-ResourceManager* iManager = nullptr;
+ResourceManagerHolder ResourceManager::iManagerHolder = ResourceManagerHolder () ;
 
 // ---------------------------------------------------------------------------------------------------
 
-void ResourceManager::Create()
+ResourceManagerHolder ResourceManager::Create ( bool setdefault )
 {
-    if ( !iManager )
-        iManager = new ResourceManager;
+    ResourceManagerHolder ret ( new ResourceManager() ) ;
 
-#ifdef GreIsDebugMode
-    if ( !iManager ) {
-        GreDebug("[ERRO] Can't allocate ResourceManager.") << gendl;
-    } else {
-		GreDebug("[INFO] Created ResourceManager.") << gendl;
-	}
-#endif
-}
-
-bool ResourceManager::CreateAndInitialize()
-{
-	ResourceManager::Create() ;
-	
-	if ( !iManager ) {
-#ifdef GreIsDebugMode
-		GreDebug("[ERRO] Can't create ResourceManager.") << gendl;
-#endif
-		return false ;
-	}
-    
-	ResourceManager::Get().initialize() ;
-	
-	if ( iManager->isInitialized() ) {
-		return true ;
-	}
-	
-	else {
-#ifdef GreIsDebugMode
-		GreDebug("[ERRO] ResourceManager can't be initialized.") << gendl;
-#endif
-		return false ;
-	}
-}
-
-void ResourceManager::Destroy()
-{
-	if ( iManager )
-	{
-		Application::Destroy() ;
-		
-		delete iManager ;
-		iManager = nullptr ;
-		
-#ifdef GreIsDebugMode
-		GreDebug("[INFO] ResourceManager destroyed.") << gendl;
-#endif
+    if ( !ret.isInvalid() && setdefault ) {
+        iManagerHolder = ret ;
     }
+
+    return ret ;
 }
 
-ResourceManager& ResourceManager::Get()
+ResourceManagerHolder ResourceManager::Get()
 {
-    return *iManager;
+    return iManagerHolder;
 }
 
 // ---------------------------------------------------------------------------------------------------
 
-ResourceManager::ResourceManager()
-: Lockable ( )
+ResourceManager::ResourceManager() : Resource ( )
 , iRendererManager( nullptr ) , iWindowManager( nullptr ) , iRenderSceneManager( nullptr )
 , iMaterialManager ( nullptr ) , iPluginManager ( nullptr ) , iMeshManager ( nullptr )
 , iAnimatorManager ( nullptr ) , iCameraManager ( nullptr ) , iTextureManager( nullptr )
 , iRenderContextManager( nullptr ) , iProgramManager( nullptr )
 , iApplicationFactory ()
-{   
+{
     iInitialized = false ;
 }
 
-void ResourceManager::initialize () 
+void ResourceManager::initialize ()
 {
     // Initialization of internal managers here. Notes that some managers has to be initialized by a plugin.
     // For example, MeshManager, TextureManager and RenderContextManager should be created by the active
     // Renderer. WindowManager should be specific from the Window Plugin.
-	
+
 	iPluginManager = new PluginManager () ;
-	
+
 	if ( iPluginManager.isInvalid() ) {
 #ifdef GreIsDebugMode
 		GreDebug("[ERRO] Can't create PluginManager.") << gendl;
@@ -125,13 +81,13 @@ void ResourceManager::initialize ()
 		iInitialized = false ;
 		return ;
 	}
-	
+
 #ifdef GreIsDebugMode
 	GreDebug("[INFO] Created PluginManager.") << gendl;
 #endif
-    
+
     iRendererManager = new RendererManager () ;
-	
+
 	if ( iRendererManager.isInvalid() ) {
 #ifdef GreIsDebugMode
 		GreDebug("[ERRO] Can't create RendererManager.") << gendl;
@@ -139,13 +95,13 @@ void ResourceManager::initialize ()
 		iInitialized = false ;
 		return ;
 	}
-	
+
 #ifdef GreIsDebugMode
 	GreDebug("[INFO] Created RendererManager.") << gendl;
 #endif
-	
+
     iRenderSceneManager = new RenderSceneManager () ;
-	
+
 	if ( iRenderSceneManager.isInvalid() ) {
 #ifdef GreIsDebugMode
 		GreDebug("[ERRO] Can't create RenderSceneManager.") << gendl;
@@ -153,13 +109,13 @@ void ResourceManager::initialize ()
 		iInitialized = false ;
 		return ;
 	}
-	
+
 #ifdef GreIsDebugMode
 	GreDebug("[INFO] Created RenderSceneManager.") << gendl;
 #endif
-	
+
     iMaterialManager = new MaterialManager () ;
-	
+
 	if ( iMaterialManager.isInvalid() ) {
 #ifdef GreIsDebugMode
 		GreDebug("[ERRO] Can't create MaterialManager.") << gendl;
@@ -167,13 +123,13 @@ void ResourceManager::initialize ()
 		iInitialized = false ;
 		return ;
 	}
-	
+
 #ifdef GreIsDebugMode
 	GreDebug("[INFO] Created MaterialManager.") << gendl;
 #endif
-    
+
     iAnimatorManager = new AnimatorManager () ;
-	
+
 	if ( iAnimatorManager.isInvalid() ) {
 #ifdef GreIsDebugMode
 		GreDebug("[ERRO] Can't create AnimatorManager.") << gendl;
@@ -181,13 +137,13 @@ void ResourceManager::initialize ()
 		iInitialized = false ;
 		return ;
 	}
-	
+
 #ifdef GreIsDebugMode
 	GreDebug("[INFO] Created AnimatorManager.") << gendl;
 #endif
-	
+
     iCameraManager = new CameraManager () ;
-    
+
 	if ( iCameraManager.isInvalid() ) {
 #ifdef GreIsDebugMode
 		GreDebug("[ERRO] Can't create CameraManager.") << gendl;
@@ -195,13 +151,13 @@ void ResourceManager::initialize ()
 		iInitialized = false ;
 		return ;
 	}
-	
+
 #ifdef GreIsDebugMode
 	GreDebug("[INFO] Created CameraManager.") << gendl;
 #endif
-    
+
     iTextureManager = new TextureManager () ;
-    
+
     if ( iTextureManager.isInvalid() ) {
 #ifdef GreIsDebugMode
         GreDebug("[ERRO] Can't create TextureManager.") << gendl;
@@ -209,13 +165,13 @@ void ResourceManager::initialize ()
         iInitialized = false ;
         return ;
     }
-    
+
 #ifdef GreIsDebugMode
     GreDebug("[INFO] Created TextureManager.") << gendl;
 #endif
-    
+
     iTechniqueManager = new TechniqueManager () ;
-    
+
     if ( iTechniqueManager.isInvalid() ) {
 #ifdef GreIsDebugMode
         GreDebug("[ERRO] Can't create TechniqueManager.") << gendl;
@@ -223,13 +179,41 @@ void ResourceManager::initialize ()
         iInitialized = false ;
         return ;
     }
-    
+
 #ifdef GreIsDebugMode
     GreDebug("[INFO] Created TechniqueManager.") << gendl;
 #endif
 
+    iFramebufferManager = new RenderFramebufferManager () ;
+
+    if ( iFramebufferManager.isInvalid() ) {
+#ifdef GreIsDebugMode
+        GreDebug("[ERRO] Can't create RenderFramebufferManager.") << gendl ;
+#endif
+        iInitialized = false ;
+        return ;
+    }
+
+#ifdef GreIsDebugMode
+    GreDebug("[INFO] Created RenderFramebufferManager.") << gendl ;
+#endif
+
+    iProgramManager = new HardwareProgramManager () ;
+
+    if ( iProgramManager.isInvalid() ) {
+#ifdef GreIsDebugMode
+        GreDebug("[ERRO] Can't create HardwareProgramManager.") << gendl ;
+#endif
+        iInitialized = false ;
+        return ;
+    }
+
+#ifdef GreIsDebugMode
+    GreDebug("[INFO] Created HardwareProgramManager.") << gendl ;
+#endif
+
 	iInitialized = true ;
-    
+
 #ifdef GreIsDebugMode
     GreDebug("[INFO] Initialized.") << gendl ;
 #endif
@@ -243,27 +227,32 @@ ResourceManager::~ResourceManager() noexcept(false)
 void ResourceManager::unload ()
 {
     GreAutolock ;
-    
+
     // We have the necessity to destroy every managers before clearing every plugins
     // loaded, because some resource allocated in the plugins libraries will not be freed
     // correctly here (they will be freed when deattaching the library but the application malloc
     // system is not notified so we have a bad delete here). But, notes that the plugins are stopped
     // before clearing any manager, in order to let them free their resources correctly.
-    
+
     if ( !iPluginManager.isInvalid() ) {
         iPluginManager -> callStops() ;
     }
-    
+
+    if ( !iFramebufferManager.isInvalid() ) {
+        iFramebufferManager -> unload () ;
+        iFramebufferManager.clear () ;
+    }
+
     if ( !iTechniqueManager.isInvalid() ) {
         iTechniqueManager->unload() ;
         iTechniqueManager.clear() ;
     }
-    
+
     if ( !iWindowManager.isInvalid() ) {
         iWindowManager->unload();
         iWindowManager.clear() ;
     }
-    
+
     if ( !iCameraManager.isInvalid() ) {
 		iCameraManager->unload();
         iCameraManager.clear() ;
@@ -272,7 +261,7 @@ void ResourceManager::unload ()
 		iAnimatorManager->unload() ;
         iAnimatorManager.clear() ;
     }
-    
+
     if ( !iMaterialManager.isInvalid() ) {
 		iMaterialManager->unload();
         iMaterialManager.clear() ;
@@ -281,7 +270,7 @@ void ResourceManager::unload ()
 		iMeshManager->unload();
         iMeshManager.clear() ;
     }
-    
+
     if ( !iRenderSceneManager.isInvalid() ) {
 		iRenderSceneManager->unload();
         iRenderSceneManager.clear() ;
@@ -290,7 +279,7 @@ void ResourceManager::unload ()
 		iRendererManager->unload();
         iRendererManager.clear() ;
     }
-    
+
     if ( !iProgramManager.isInvalid() ) {
         iProgramManager->unload();
         iProgramManager.clear() ;
@@ -303,7 +292,7 @@ void ResourceManager::unload ()
         iRenderContextManager->unload() ;
         iRenderContextManager.clear() ;
     }
-    
+
     if ( !iPluginManager.isInvalid() ) {
 		iPluginManager->unload() ;
         iPluginManager.clear() ;
@@ -445,57 +434,79 @@ TechniqueManagerHolder ResourceManager::getTechniqueManager()
     GreAutolock ; return iTechniqueManager ;
 }
 
-int ResourceManager::loadPluginsIn(const std::string &dirname)
+void ResourceManager::setFramebufferManager(const RenderFramebufferManagerHolder &manager)
+{
+    GreAutolock ; iFramebufferManager = manager ;
+}
+
+RenderFramebufferManagerHolder ResourceManager::getFramebufferManager()
+{
+    GreAutolock ; return iFramebufferManager ;
+}
+
+ResourceBundleHolder ResourceManager::addBundle ( const std::string & name )
 {
     GreAutolock ;
-    
-    int res = 0;
-    DIR *dir;
-    struct dirent *ent;
-    
-    if ( (dir = opendir (dirname.c_str())) != NULL )
+
+    ResourceBundleHolder ret ( new ResourceBundle(name) ) ;
+    iBundles.push_back ( ret ) ;
+    return ret ;
+}
+
+ApplicationHolder ResourceManager::createApplication(const std::string &name,
+                                                     const std::string &author,
+                                                     const std::string &description)
+{
+    GreAutolock ;
+
+    ApplicationLoader * loader = iApplicationFactory.getFirst() ;
+
+    if ( loader ) {
+        return loader->load(name, author, description) ;
+    }
+    return ApplicationHolder ( nullptr ) ;
+}
+
+std::string ResourceManager::findBundledFile(const ResourceType & type ,
+                                             const std::string & filename) const
+{
+    GreAutolock ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Tries every bundles loaded in the ResourceManager.
+
+    for ( const ResourceBundleHolder & bundle : iBundles )
     {
-        /* print all the files and directories within directory */
-        while ( (ent = readdir (dir)) != NULL )
+        if ( !bundle.isInvalid() )
         {
-            std::string d_name(ent->d_name);
-            if (d_name == "." || d_name == "..")
-                continue;
-            
-            std::string plugname = d_name + "-plugin" ;
-            std::string plugpath = dirname + "/" + d_name ;
-            
-            PluginUser plugin = iPluginManager->load(plugname, plugpath);
-            
+            auto dirs = bundle -> getDirectories(type) ;
+
+            if ( !dirs.empty() )
             {
-                auto pluginholder = plugin.lock();
-                if ( pluginholder.isInvalid() ) {
-#ifdef GreIsDebugMode
-                    GreDebug("[WARN] Plugin '") << d_name << "' not loaded correctly." << Gre::gendl;
-#endif
-                } else {
-                    pluginholder -> start() ;
-#ifdef GreIsDebugMode
-                    GreDebug("[INFO] Plugin '") << pluginholder -> getName() << "' started." << Gre::gendl ;
-#endif
-                    res ++ ;
+                //////////////////////////////////////////////////////////////////////
+                // Try to find the filename in one of the directories.
+
+                for ( auto dir : dirs )
+                {
+                    if ( Platform::FindFileInDirectory(dir, filename) )
+                    {
+                        return dir + Platform::GetSeparator() + filename ;
+                    }
                 }
             }
         }
-        
-        closedir (dir);
     }
-    
-    else
-    {
-#ifdef GreIsDebugMode
-        GreDebug("[WARN] Directory '") << dirname << "' not found." << Gre::gendl ;
-#endif
-        return 0;
-    }
-    
-    return res;
+
+    //////////////////////////////////////////////////////////////////////
+    // In case of failure , we return just an empty string to indicate no
+    // file were found.
+
+    return std::string () ;
+}
+
+const std::vector < ResourceBundleHolder > & ResourceManager::getBundles () const
+{
+    GreAutolock ; return iBundles ;
 }
 
 GreEndNamespace
-

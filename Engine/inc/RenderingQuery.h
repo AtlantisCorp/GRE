@@ -35,6 +35,7 @@
 
 #include "Pools.h"
 #include "Scene.h"
+#include "Viewport.h"
 
 GreBeginNamespace
 
@@ -101,11 +102,11 @@ public:
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    void setLights ( const std::vector<Light>& lights ) ;
+    void setLights ( const std::vector<LightHolder>& lights ) ;
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    const std::vector < Light > & getLights () const ;
+    const std::vector < LightHolder > & getLights () const ;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns 'iProgram'.
@@ -148,7 +149,7 @@ protected:
     std::vector < RenderNodeHolder > iRenderedNodes ;
     
     /// @brief
-    std::vector < Light > iLights ;
+    std::vector < LightHolder > iLights ;
     
     /// @brief RenderFramebuffer used by the renderer to draw the query.
     RenderFramebufferHolder iFramebuffer ;

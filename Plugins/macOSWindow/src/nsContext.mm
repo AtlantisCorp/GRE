@@ -62,7 +62,7 @@ void nsContext::unbind() const
     iIsBinded = false ;
 }
 
-void nsContext::flush()
+void nsContext::flush() const
 {
     [nsglContext flushBuffer];
 }

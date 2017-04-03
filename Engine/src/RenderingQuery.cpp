@@ -100,12 +100,12 @@ const std::vector < RenderNodeHolder > & RenderingQuery::getRenderedNodes() cons
     GreAutolock ; return iRenderedNodes ;
 }
 
-void RenderingQuery::setLights(const std::vector<Light> &lights)
+void RenderingQuery::setLights(const std::vector<LightHolder> &lights)
 {
     GreAutolock ; iLights = lights ;
 }
 
-const std::vector < Light > & RenderingQuery::getLights () const
+const std::vector < LightHolder > & RenderingQuery::getLights () const
 {
     GreAutolock ; return iLights ;
 }

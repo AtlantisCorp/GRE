@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////
 //
-//  BaseCamera.glsl
+//  BaseMaterial.glsl
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
@@ -31,15 +31,55 @@
  */
 
 //////////////////////////////////////////////////////////////////////
-/// @brief Returns the camera direction.
-vec3 CameraDirection ( const int i )
+/// @brief Calculates the material normal.
+/// If the material contains a normal map, it will calculate the resulting
+/// normal using the normal map texture.
+vec3 MaterialGetNormal ( VertexOutput Fragment )
 {
-    return normalize ( lights[i].position - camera.position ) ;
+    if ( textureSize(MaterialNormalTexture,0).x > 0 )
+    {
+        vec3 bumpmap = texture( MaterialNormalTexture , Fragment.texcoord ).rgb ;
+        bumpmap = normalize( bumpmap * 2.0 - 1.0 ) ;
+        bumpmap = normalize( Fragment.bumpmapTBN * bumpmap ) ;
+        
+        return bumpmap ;
+    }
+    
+    else
+    {
+        return normalize(Fragment.normal) ;
+    }
 }
 
 //////////////////////////////////////////////////////////////////////
-/// @brief Returns the distance between camera and fragment.
-vec3 CameraFragmentDistance ()
+/// @brief Calculates the diffuse color for the material.
+vec4 MaterialGetDiffuseColor ( VertexOutput Fragment )
 {
-    return vertex_output.position - camera.position ;
+    if ( textureSize(MaterialDiffuseTexture,0).x > 0 ) {
+        return texture ( MaterialDiffuseTexture , Fragment.texcoord ) ;
+    }
+    
+    else {
+        return Material.diffuse ;
+    }
+}
+
+//////////////////////////////////////////////////////////////////////
+/// @brief Calculates the correct ambient color from material.
+vec4 MaterialGetAmbientColor ( VertexOutput Fragment )
+{
+    return Material.ambient ;
+}
+
+//////////////////////////////////////////////////////////////////////
+/// @brief Calculates correct specular color from material.
+vec4 MaterialGetSpecularColor ( VertexOutput Fragment )
+{
+    if ( textureSize(MaterialSpecularTexture,0).x > 0 ) {
+        return texture ( MaterialSpecularTexture , Fragment.texcoord ) ;
+    }
+    
+    else {
+        return Material.specular ;
+    }
 }

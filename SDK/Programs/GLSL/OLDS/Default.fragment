@@ -1,0 +1,31 @@
+// A basic Fragment shader.
+#version 330
+
+#include Programs/GLSL/BaseConstants.glsl
+
+uniform CameraStruct   Camera ;
+uniform MaterialStruct Material ;
+
+uniform sampler2D MaterialDiffuseTexture ;
+uniform sampler2D MaterialSpecularTexture ;
+uniform sampler2D MaterialNormalTexture ;
+
+in VertexOutput  Fragment ;
+out vec4         FragmentColor ;
+
+uniform sampler2D iTexture0 ;
+
+uniform LightStruct Light[8] ;
+
+#include Programs/GLSL/BaseCamera.glsl
+#include Programs/GLSL/BaseMaterial.glsl
+#include Programs/GLSL/BaseLight.glsl
+
+void main ()
+{
+    FragmentColor = CalculateLightsColors( Fragment ) * texture( iTexture0 , Fragment.texcoord ) ;
+}
+
+
+
+

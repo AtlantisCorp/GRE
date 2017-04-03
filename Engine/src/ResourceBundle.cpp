@@ -1,11 +1,11 @@
 //////////////////////////////////////////////////////////////////////
 //
-//  Pass.cpp
+//  ResourceBundle.cpp
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
-//  Copyright (c) 2015 - 2016 Luk2010
-//  Created on 06/01/2016.
+//  Copyright (c) 2015 - 2017 Luk2010
+//  Created on 21/03/2017.
 //
 //////////////////////////////////////////////////////////////////////
 /*
@@ -16,10 +16,10 @@
  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  copies of the Software, and to permit persons to whom the Software is
  furnished to do so, subject to the following conditions:
- 
+
  The above copyright notice and this permission notice shall be included in
  all copies or substantial portions of the Software.
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -30,53 +30,53 @@
  -----------------------------------------------------------------------------
  */
 
-#include "Pass.h"
-#include "Renderer.h"
+#include "ResourceBundle.h"
+#include "Platform.h"
 
 GreBeginNamespace
 
-RenderPass::RenderPass ( const RenderPassIdentifier& identifier )
-: Gre::Resource(), iIdentifier(identifier)
-, iActivated(true)
+ResourceBundle::ResourceBundle ( const std::string & name ) : Gre::Resource ( name )
 {
-    
+    iDirectories[ResourceType::Plugin] = { } ;
+    iDirectories[ResourceType::Program] = { } ;
+    iDirectories[ResourceType::Effect] = { } ;
+    iDirectories[ResourceType::Mesh] = { } ;
+    iDirectories[ResourceType::Texture] = { } ;
 }
 
-RenderPass::RenderPass ( const std::string & name , const RenderPassIdentifier& identifier )
-: Gre::Resource(name), iIdentifier(identifier)
-, iActivated(true)
+ResourceBundle::~ResourceBundle() noexcept ( false )
 {
-    
+
 }
 
-RenderPass::~RenderPass() noexcept ( false )
+void ResourceBundle::addDirectory(const Gre::ResourceType &type, const std::string &path)
 {
-    
+    GreAutolock ; iDirectories[type].push_back(path) ;
 }
 
-const RenderPassIdentifier & RenderPass::getPassIdentifier() const
+const std::vector < std::string > & ResourceBundle::getDirectories(const Gre::ResourceType &type) const
 {
-    GreAutolock ; return iIdentifier ;
+    GreAutolock ; return iDirectories.at(type) ;
 }
 
-void RenderPass::setActivated(bool value)
+std::vector < std::string > ResourceBundle::getFilesList ( const ResourceType & type ) const
 {
-    GreAutolock ; iActivated = value ;
-}
+    GreAutolock ;
 
-bool RenderPass::isActivated() const
-{
-    GreAutolock ; return iActivated ;
-}
+    auto dirs = iDirectories.at(type) ;
 
-const HardwareProgramUser& RenderPass::getHardwareProgram() const
-{
-    GreAutolock ; return iProgram ;
-}
+    if ( dirs.empty() )
+        return std::vector < std::string > () ;
 
-void RenderPass::setHardwareProgram ( const HardwareProgramUser& program )
-{
-    GreAutolock ; iProgram = program ;
+    std::vector < std::string > files ;
+
+    for ( auto dir : dirs ) {
+        
+        auto tmp = Platform::GetFilesListWithDirectory (dir) ;
+        files.insert ( files.end() , tmp.begin() , tmp.end() ) ;
+    }
+
+    return files ;
 }
 
 GreEndNamespace

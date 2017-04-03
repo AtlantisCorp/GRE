@@ -16,10 +16,10 @@
  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  copies of the Software, and to permit persons to whom the Software is
  furnished to do so, subject to the following conditions:
- 
+
  The above copyright notice and this permission notice shall be included in
  all copies or substantial portions of the Software.
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -35,59 +35,65 @@
 
 #include "Pools.h"
 
-GreBeginNamespace
+GreBeginNamespace ;
 
 //////////////////////////////////////////////////////////////////////
-/// @brief A simple Viewport object.
-///
-/// The Viewport is defined using ratio. This means that for example,
-/// if you set a width ratio of 0.5f, when RenderContext calls
-/// onBordersChanged() with the RenderContext new width of 400 px, the
-/// width given by getSurface().width will be 400*0.5f = 200.
+/// @brief A relative Viewport object. Its real size is updated using
+/// 'adaptRealValues' and are accessed using the normal surface
+/// properties.
 ///
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC Viewport
+class DLL_PUBLIC Viewport : public Surface
 {
 public:
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    Viewport ( float l = 0.0f , float t = 0.0f , float w = 1.0f , float h = 1.0f ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    Viewport ( const Viewport & v ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    Viewport ( const Surface & s ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Updates the Surface's real values from the given values and
+    /// the relative values.
+    //////////////////////////////////////////////////////////////////////
+    void adaptRealValues ( const Surface & values ) ;
     
     //////////////////////////////////////////////////////////////////////
+    /// @brief Updates the Surface's values width and height with given
+    /// values.
     //////////////////////////////////////////////////////////////////////
-    Viewport ( float top = 0.0f, float left = 0.0f, float width = 1.0f, float height = 1.0f ) ;
+    void adaptRealArea ( int width , int height ) ;
     
     //////////////////////////////////////////////////////////////////////
+    /// @brief Updates the Surface's values left and top with given values.
     //////////////////////////////////////////////////////////////////////
-    virtual ~Viewport() noexcept ( false ) ;
+    void adaptRealCorner ( int left , int top ) ;
     
     //////////////////////////////////////////////////////////////////////
+    /// @brief Calculates the Area taken by this viewport.
     //////////////////////////////////////////////////////////////////////
-    Viewport& operator = (const Viewport& rhs);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Updates the Viewport.
-    //////////////////////////////////////////////////////////////////////
-    virtual void onBordersChanged(const Surface& parentSurface);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Surface covered by this Viewport.
-    //////////////////////////////////////////////////////////////////////
-    const Surface& getSurface() const;
-    
+    size_t getArea () const ;
+
 protected:
-    
-    /// @brief Width border ratio.
-    float _mBorderWidth;
-    
-    /// @brief Height border ratio.
-    float _mBorderHeight;
-    
-    /// @brief Top margin ratio.
-    float _mBorderTop;
-    
-    /// @brief Left margin ratio.
-    float _mBorderLeft;
-    
-    /// @brief Surface object updated with Viewport::onBordersChanged().
-    Surface _mSurface;
+
+    /// @brief Relative left value.
+    float rl ;
+
+    /// @brief Relative top value.
+    float rt ;
+
+    /// @brief Relative width value.
+    float rw ;
+
+    /// @brief Relative height value.
+    float rh ;
 };
 
 GreEndNamespace

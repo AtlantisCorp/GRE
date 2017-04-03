@@ -41,7 +41,7 @@ GreBeginNamespace
 /// @brief Attachement possible to this FrameBuffer.
 /// You can attach Texture objects to this FrameBuffer, then attach
 /// the Texture object to a Material to use this Texture in the Engine.
-enum class RenderFramebufferAttachement
+enum class RenderFramebufferAttachement : int
 {
     Color0 = 0,   Color1 = 1,   Color2 = 2,   Color3 = 3,   Color4 = 4,   Color5 = 5,
     Color6 = 6,   Color7 = 7,   Color8 = 8,   Color9 = 9,   Color10 = 10, Color11 = 11,
@@ -97,12 +97,12 @@ public:
     //////////////////////////////////////////////////////////////////////
     /// @brief Make the FrameBuffer usable.
     //////////////////////////////////////////////////////////////////////
-    virtual void bind() const;
+    virtual void bind() const = 0 ;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Make the FrameBuffer unusable.
     //////////////////////////////////////////////////////////////////////
-    virtual void unbind() const;
+    virtual void unbind() const = 0 ;
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the Texture attached to the given attachement.
@@ -191,31 +191,71 @@ typedef SpecializedResourceHolderList<RenderFramebuffer> RenderFramebufferHolder
 typedef SpecializedCountedObjectUser<RenderFramebuffer> RenderFramebufferUser;
 
 //////////////////////////////////////////////////////////////////////
-/// @brief ResourceLoader for RenderFramebuffer.
+/// @brief Creates a RenderFramebuffer Object.
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC RenderFramebufferLoader : public ResourceLoader
+class DLL_PUBLIC RenderFramebufferInternalCreator
 {
 public:
     
-    POOLED(Pools::Loader)
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    RenderFramebufferInternalCreator () ;
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    RenderFramebufferLoader();
+    virtual ~RenderFramebufferInternalCreator () ;
     
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    virtual ~RenderFramebufferLoader();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Loads a FrameBuffer.
-    /// Default implementation returns a null pointer.
-    //////////////////////////////////////////////////////////////////////
-    virtual RenderFramebufferHolder load ( const std::string& name ) const = 0 ;
+    virtual RenderFramebuffer* load ( const std::string & name , const ResourceLoaderOptions& options ) const = 0 ;
 };
 
-/// @brief ResourceLoaderFactory for RenderFramebufferLoader.
-typedef ResourceLoaderFactory<RenderFramebufferLoader> RenderFramebufferLoaderFactory;
+//////////////////////////////////////////////////////////////////////
+/// @brief Manages the RenderFramebuffer loaded.
+///
+/// Note a RenderFramebufferConstructor object is needed to be installed
+/// by the Renderer in order to make the possibility to create framebuffers.
+/// Also, in certain implementations (OpenGl), a RenderContext must be
+/// binded when creating framebuffers.
+///
+//////////////////////////////////////////////////////////////////////
+class DLL_PUBLIC RenderFramebufferManager : public ResourceManagerBase < RenderFramebuffer >
+{
+public:
+    
+    POOLED ( Pools::Manager )
+    
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    RenderFramebufferManager ( const std::string & name = "DefaultRenderFramebufferManager" ) ;
+    
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    virtual ~RenderFramebufferManager () noexcept ( false ) ;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Loads a new framebuffer given options.
+    //////////////////////////////////////////////////////////////////////
+    virtual RenderFramebufferHolder load ( const std::string & name , const ResourceLoaderOptions & options ) ;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Changes 'iCreator'.
+    //////////////////////////////////////////////////////////////////////
+    virtual void setInternalCreator ( RenderFramebufferInternalCreator* creator ) ;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns 'iCreator'.
+    //////////////////////////////////////////////////////////////////////
+    virtual const RenderFramebufferInternalCreator* getInternalCreator () const ;
+    
+protected:
+    
+    /// @brief Internal creator for RenderFramebuffer.
+    RenderFramebufferInternalCreator* iCreator ;
+};
+
+/// @brief
+typedef SpecializedCountedObjectHolder<RenderFramebufferManager> RenderFramebufferManagerHolder ;
 
 GreEndNamespace
 

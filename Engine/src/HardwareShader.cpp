@@ -4,7 +4,7 @@
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
-//  Copyright (c) 2015 - 2016 Luk2010
+//  Copyright (c) 2015 - 2017 Luk2010
 //  Created on 09/01/2016.
 //
 //////////////////////////////////////////////////////////////////////
@@ -16,10 +16,10 @@
  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  copies of the Software, and to permit persons to whom the Software is
  furnished to do so, subject to the following conditions:
- 
+
  The above copyright notice and this permission notice shall be included in
  all copies or substantial portions of the Software.
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -34,6 +34,18 @@
 
 GreBeginNamespace
 
+// -----------------------------------------------------------------------------
+
+void ShaderPathTableList::add ( const ShaderType & type , const std::map < std::string , std::string > & pathes )
+{
+    ShaderPathTable table ;
+    table.type = type ;
+    table.pathes = pathes ;
+    tables.push_back ( table ) ;
+}
+
+// -----------------------------------------------------------------------------
+
 HardwareShader::HardwareShader(const std::string& name, const ShaderType& type, const std::string& text)
 : Resource(ResourceIdentifier::New() , name), iType(type), iSource(text), iCompiled(false)
 {
@@ -42,7 +54,7 @@ HardwareShader::HardwareShader(const std::string& name, const ShaderType& type, 
 
 HardwareShader::~HardwareShader() noexcept ( false )
 {
-    
+
 }
 
 ShaderType HardwareShader::getType() const

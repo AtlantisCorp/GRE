@@ -52,7 +52,8 @@ enum class Pools
     HdwBuffer  = 0x7,    ///< @brief Reserved to HardwareBuffer objects.
     Scene      = 0x8,    ///< @brief Reserved to Scene's related objects.
     Render     = 0x9,    ///< @brief Reserved to Render's related objects.
-    Referenced = 0xA     ///< @brief Every ReferencedCountedObject can have this Pool.
+    Referenced = 0xA,    ///< @brief Every ReferencedCountedObject can have this Pool.
+    Bundle     = 0xB     ///< @brief Reserved for ResourceBundle's objects.
 };
 
 #ifdef GreIsDebugMode

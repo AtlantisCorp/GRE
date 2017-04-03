@@ -4,7 +4,7 @@
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
-//  Copyright (c) 2015 - 2016 Luk2010
+//  Copyright (c) 2015 - 2017 Luk2010
 //  Created on 06/07/2016.
 //
 //////////////////////////////////////////////////////////////////////
@@ -16,10 +16,10 @@
  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  copies of the Software, and to permit persons to whom the Software is
  furnished to do so, subject to the following conditions:
- 
+
  The above copyright notice and this permission notice shall be included in
  all copies or substantial portions of the Software.
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -34,239 +34,94 @@
 
 GreBeginNamespace
 
-size_t VertexComponentTypeGetSize(const VertexComponentType& vtype)
-{
-    size_t totsz = 0;
+// -----------------------------------------------------------------------------
 
-    if ( vtype == VertexComponentType::Null )
-    {
-        
-    }
-    
-    else if ( vtype == VertexComponentType::Null1 )
-    {
-        totsz += 1 * sizeof(uint32_t);
-    }
-    
-    else if ( vtype == VertexComponentType::Null2 )
-    {
-        totsz += 2 * sizeof(uint32_t);
-    }
-    
-    else if ( vtype == VertexComponentType::Null3 )
-    {
-        totsz += 3 * sizeof(uint32_t);
-    }
-    
-    else if ( vtype == VertexComponentType::Null4 )
-    {
-        totsz += 4 * sizeof(uint32_t);
-    }
-    
-    else if ( vtype == VertexComponentType::Position )
-    {
-        totsz += 3 * sizeof(float);
-    }
-    
-    else if ( vtype == VertexComponentType::Color )
-    {
-        totsz += 4 * sizeof(float);
-    }
-    
-    else if ( vtype == VertexComponentType::Normal )
-    {
-        totsz += 3 * sizeof(float);
-    }
-    
-    else if ( vtype == VertexComponentType::Texture )
-    {
-        totsz += 2 * sizeof(float);
-    }
-    
-    else if ( vtype == VertexComponentType::Tangents )
-        return VertexComponentTypeGetSize(VertexComponentType::Normal) ;
-    else if ( vtype == VertexComponentType::Binormals )
-        return VertexComponentTypeGetSize(VertexComponentType::Normal) ;
-    
-#ifdef GreIsDebugMode
-    else
-    {
-        GreDebugPretty() << "Bad VertexComponentType given : " << (uint32_t) vtype << "." << Gre::gendl;
-    }
-#endif
-    
-    return totsz;
+VertexAttribAlias VertexAttribFromString ( const std::string & attrib )
+{
+    if ( attrib == "Position" ) return VertexAttribAlias::Position ;
+    if ( attrib == "Normal" ) return VertexAttribAlias::Normal ;
+    if ( attrib == "Texture" ) return VertexAttribAlias::Texture ;
+    if ( attrib == "Tangents" ) return VertexAttribAlias::Tangents ;
+    if ( attrib == "Binormals" ) return VertexAttribAlias::Binormals ;
+    return VertexAttribAlias::Position ;
 }
 
-std::string VertexComponentTypeToString(const VertexComponentType& component)
+// -----------------------------------------------------------------------------
+
+VertexDescriptor::VertexDescriptor ()
 {
-    if ( component == VertexComponentType::Null )
-    {
-        return "Null";
-    }
-    
-    else if ( component == VertexComponentType::Null1 )
-    {
-        return "Null1";
-    }
-    
-    else if ( component == VertexComponentType::Null2 )
-    {
-        return "Null2";
-    }
-    
-    else if ( component == VertexComponentType::Null3 )
-    {
-        return "Null3";
-    }
-    
-    else if ( component == VertexComponentType::Null4 )
-    {
-        return "Null4";
-    }
-    
-    else if ( component == VertexComponentType::Position )
-    {
-        return "Position";
-    }
-    
-    else if ( component == VertexComponentType::Normal )
-    {
-        return "Normal";
-    }
-    
-    else if ( component == VertexComponentType::Texture )
-    {
-        return "Texture";
-    }
-    
-    else if ( component == VertexComponentType::Color )
-    {
-        return "Color";
-    }
-    
-    else if ( component == VertexComponentType::Tangents )
-        return "Tangents" ;
-    else if ( component == VertexComponentType::Binormals )
-        return "Binormals" ;
-    
-#ifdef GreIsDebugMode
-    else
-    {
-        GreDebugPretty() << "Component given not found ('" << (int) component << "')." << Gre::gendl;
-    }
-#endif
-    
-    return std::string();
+    iSize = 0 ;
 }
 
-// ---------------------------------------------------------------------------------------------------
-
-VertexDescriptor::VertexDescriptor()
+VertexDescriptor::~VertexDescriptor ()
 {
-    iSize = 0;
+
 }
 
-VertexDescriptor::~VertexDescriptor()
+const std::vector < VertexAttribComponent > & VertexDescriptor::getComponents () const
 {
-    
+    return iComponents ;
 }
 
-void VertexDescriptor::addComponent(const Gre::VertexComponentType &vtype)
+void VertexDescriptor::addComponent(const Gre::VertexAttribComponent &component)
 {
-    iComponents.push_back(vtype);
-    iSize += VertexComponentTypeGetSize(vtype);
+    iComponents.push_back ( component ) ;
+    iSize += component.size ;
 }
 
-void VertexDescriptor::addComponentUnique(const Gre::VertexComponentType &vtype)
+void VertexDescriptor::addComponent(const Gre::VertexAttribAlias &alias, size_t elements, const Gre::VertexAttribType &type, bool normalize, size_t size)
 {
-    removeComponent(vtype);
-    iComponents.push_back(vtype);
-    iSize += VertexComponentTypeGetSize(vtype);
+    VertexAttribComponent comp ;
+    comp.alias = alias ;
+    comp.elements = elements ;
+    comp.type = type ;
+    comp.normalize = normalize ;
+    comp.size = size ;
+    addComponent(comp) ;
 }
 
-void VertexDescriptor::removeComponent(const Gre::VertexComponentType &vtype)
+size_t VertexDescriptor::getStride(const Gre::VertexAttribComponent &component) const
 {
-    for (auto it = iComponents.begin(); it != iComponents.end(); it++)
+    return iSize ;
+}
+
+size_t VertexDescriptor::getOffset(const Gre::VertexAttribComponent &component) const
+{
+    size_t ret = 0 ;
+
+    for ( auto comp : iComponents )
     {
-        if( (*it) == vtype )
-        {
-            iComponents.erase(it);
-            iSize -= VertexComponentTypeGetSize(vtype);
-            break;
+        if ( comp.alias == component.alias ) {
+            return ret ;
+        }
+        else {
+            ret += comp.size ;
         }
     }
+
+    return 0 ;
 }
 
-const VertexComponents& VertexDescriptor::getComponents() const
+void VertexDescriptor::clear()
 {
-    return iComponents;
+    iComponents.clear() ;
+    iSize = 0 ;
 }
 
 size_t VertexDescriptor::getSize() const
 {
-    return iSize;
-}
-
-int VertexDescriptor::getComponentLocation(const Gre::VertexComponentType &component) const
-{
-    size_t loc = 0;
-    
-    for ( auto comp : iComponents )
-    {
-        if ( comp == component )
-        {
-            return (int) loc;
-        }
-        
-        else
-        {
-            loc += VertexComponentTypeGetSize(comp);
-        }
-    }
-    
-#ifdef GreIsDebugMode
-    GreDebugPretty() << "Component '" << VertexComponentTypeToString(component) << "' not found in Vertex." << Gre::gendl;
-#endif
-    
-    return -1;
-}
-
-size_t VertexDescriptor::getStride(const Gre::VertexComponentType &vtype) const
-{
-    if ( iComponents.size() == 1 )
-        return 0 ;
-    
     return iSize ;
 }
 
-size_t VertexDescriptor::getOffset(const Gre::VertexComponentType &component) const
+const VertexAttribComponent VertexDescriptor::findComponent(const Gre::VertexAttribAlias &alias) const
 {
-    if (iComponents.size() == 1)
-        return 0 ;
-    
-    size_t value = 0 ;
-    
-    for ( VertexComponentType comp : iComponents )
+    for ( auto c : iComponents )
     {
-        if ( comp != component ) {
-            value += VertexComponentTypeGetSize(comp);
-        } else {
-            break ;
-        }
+        if ( c.alias == alias )
+            return c ;
     }
-    
-    return value ;
-}
 
-VertexDescriptor VertexDescriptor::Default = VertexDescriptor();
-
-// ---------------------------------------------------------------------------------------------------
-
-VertexDescriptor& operator << (VertexDescriptor& desc, const VertexComponentType& vtype)
-{
-    desc.addComponent(vtype);
-    return desc;
+    return VertexAttribComponent () ;
 }
 
 GreEndNamespace

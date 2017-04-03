@@ -16,10 +16,10 @@
  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  copies of the Software, and to permit persons to whom the Software is
  furnished to do so, subject to the following conditions:
- 
+
  The above copyright notice and this permission notice shall be included in
  all copies or substantial portions of the Software.
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -32,63 +32,66 @@
 
 #include "OpenGlRenderer.h"
 
-OpenGlProgramManager::OpenGlProgramManager ( const OpenGlRenderer* renderer , const std::string & name )
-: Gre::HardwareProgramManager(name) , iRenderer(renderer)
+OpenGlProgramManagerCreator::OpenGlProgramManagerCreator ( const OpenGlRenderer* renderer )
+: Gre::HardwareProgramManagerInternalCreator()
+, iRenderer(renderer)
 {
-    
+
 }
 
-OpenGlProgramManager::~OpenGlProgramManager() noexcept ( false )
+OpenGlProgramManagerCreator::~OpenGlProgramManagerCreator()
 {
-    
+
 }
 
-void OpenGlProgramManager::_loadDefaultProgram ()
+Gre::HardwareShaderHolder OpenGlProgramManagerCreator::loadShader (const Gre::ShaderType & type ,
+                                                                   const std::string & name ,
+                                                                   const std::string & source) const
 {
-    // Default program is a default Vertex/Fragment shader.
-    
-    std::string vertexpath = "Programs/GLSL/Default.vertex" ;
-    std::string fragmentpath = "Programs/GLSL/Default.fragment" ;
-    
-    Gre::HardwareShaderHolder vertexshader = loadShaderHolder(Gre::ShaderType::Vertex, "DefaultVertex", vertexpath) ;
-    Gre::HardwareShaderHolder fragmentshader = loadShaderHolder(Gre::ShaderType::Fragment, "DefaultFragment", fragmentpath) ;
-    
-    if ( vertexshader.isInvalid() || fragmentshader.isInvalid() ) {
-        GreDebug("[WARN] Can't load default shaders.") << Gre::gendl ;
-        return ;
-    }
-    
-    Gre::HardwareProgramUser defaultprog = createHardwareProgram("Default",
-                                                                 vertexshader,
-                                                                 fragmentshader);
-    
-    if ( defaultprog.isInvalid() ) {
-        GreDebug("[WARN] Can't load default program.") << Gre::gendl ;
-    }
-}
-
-Gre::HardwareShaderHolder OpenGlProgramManager::iCreateHardwareShader(const Gre::ShaderType &stype, const std::string &name, const std::string &source) const
-{
-    GreAutolock ;
-    
     if ( iRenderer && !iRenderer->getRenderContext().isInvalid() )
     {
-        iRenderer->getRenderContext()->bind();
-        return Gre::HardwareShaderHolder( new OpenGlShader(name, stype, source) ) ;
+        iRenderer -> getRenderContext () -> bind () ;
+        return Gre::HardwareShaderHolder ( new OpenGlShader(name, type, source) ) ;
     }
-    
+
     return Gre::HardwareShaderHolder ( nullptr ) ;
 }
 
-Gre::HardwareProgramHolder OpenGlProgramManager::iCreateHardwareProgram(const std::string &name, const Gre::HardwareShaderHolder &vshader, const Gre::HardwareShaderHolder &fshader) const
+Gre::HardwareProgramHolder OpenGlProgramManagerCreator::loadProgram (const std::string & name ,
+                                                                     const Gre::HardwareShaderHolderList & shaders) const
 {
-    GreAutolock ;
-    
     if ( iRenderer && !iRenderer->getRenderContext().isInvalid() )
     {
-        iRenderer->getRenderContext()->bind();
-        return Gre::HardwareProgramHolder ( new OpenGlProgram(name, vshader, fshader) ) ;
+        iRenderer -> getRenderContext() -> bind () ;
+
+        Gre::HardwareProgramHolder program ( new OpenGlProgram(name) ) ;
+
+        if ( program.isInvalid() )
+        return Gre::HardwareProgramHolder ( nullptr ) ;
+
+        //////////////////////////////////////////////////////////////////////
+        // The user may or may not want to load shaders directly here , so let's
+        // do it only if the shaders' list is not empty.
+
+        if ( shaders.empty() )
+        return program ;
+
+        program -> attachShaders ( shaders ) ;
+        program -> finalize () ;
+
+        if ( program -> isFinalized() ) {
+            return program ;
+        }
+
+#ifdef GreIsDebugMode
+        GreDebug ( "[WARN] OpenGlProgram '" ) << name << "' not loaded." << Gre::gendl ;
+#endif
     }
-    
+
     return Gre::HardwareProgramHolder ( nullptr ) ;
+}
+
+const std::string OpenGlProgramManagerCreator::getCompiler () const
+{
+    return "GLSL" ;
 }

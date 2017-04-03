@@ -32,6 +32,64 @@
 
 #include "OpenGlRenderer.h"
 
+// -----------------------------------------------------------------------------
+
+class OpenGlMeshBinder : public Gre::MeshBinder
+{
+public:
+    
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    OpenGlMeshBinder ( const OpenGlRenderer* renderer )
+    : iGlRenderer ( renderer )
+    {
+        if ( iGlRenderer )
+        iGlRenderer -> getRenderContext () -> bind () ;
+        
+        glGenVertexArrays(1, &iGlVao);
+    }
+    
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    ~OpenGlMeshBinder ()
+    {
+        if ( iGlRenderer )
+        iGlRenderer -> getRenderContext () -> bind () ;
+        
+        glDeleteVertexArrays(1, &iGlVao);
+    }
+    
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    void bind ( const Gre::Mesh * mesh , const Gre::TechniqueHolder & technique ) const
+    {
+        if ( !mesh || technique.isInvalid() || !iGlVao )
+        return ;
+        
+        glBindVertexArray(iGlVao);
+    }
+    
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    void unbind ( const Gre::Mesh * mesh , const Gre::TechniqueHolder & technique ) const
+    {
+        if ( !mesh || technique.isInvalid() || !iGlVao )
+        return ;
+        
+        glBindVertexArray(0);
+    }
+    
+protected:
+    
+    /// @brief Vertex Array Object id.
+    GLuint iGlVao ;
+    
+    /// @brief Pointer to associated gl renderer.
+    const OpenGlRenderer * iGlRenderer ;
+};
+
+// -----------------------------------------------------------------------------
+
 OpenGlMeshManager::OpenGlMeshManager ( const OpenGlRenderer* renderer )
 : Gre::MeshManager() , iRenderer(renderer)
 {
@@ -67,4 +125,9 @@ Gre::HardwareIndexBufferHolder OpenGlMeshManager::createIndexBuffer(const void *
     }
     
     return Gre::HardwareIndexBufferHolder ( nullptr ) ;
+}
+
+Gre::MeshBinder* OpenGlMeshManager::loadBinder() const
+{
+    return new OpenGlMeshBinder ( iRenderer ) ;
 }

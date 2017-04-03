@@ -45,15 +45,17 @@ OpenGlTextureCreator::~OpenGlTextureCreator()
     
 }
 
-Gre::Texture* OpenGlTextureCreator::create(const std::string &name, const Gre::TextureType & type ,
-                                            const Gre::SoftwarePixelBufferHolderList &list) const
+Gre::Texture* OpenGlTextureCreator::load(const std::string & name ,
+                                           const Gre::SoftwarePixelBufferHolderList & buffers ,
+                                           const Gre::TextureType & type ,
+                                           const Gre::ResourceLoaderOptions & ops ) const
 {
     if ( iRenderer )
     {
         // Check if the RenderContext is actually binded.
         iRenderer->getRenderContext()->bind() ;
         
-        OpenGlTexture* tex = new OpenGlTexture ( name , type , list ) ;
+        OpenGlTexture* tex = new OpenGlTexture ( name , type , buffers ) ;
         if ( !tex -> isGlTextureValid() ) {
             GreDebug("[WARN] Can't create OpenGlTexture '") << name << "'." << Gre::gendl ;
             delete tex ; return nullptr ;

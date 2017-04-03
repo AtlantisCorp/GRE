@@ -4,7 +4,7 @@
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
-//  Copyright (c) 2015 - 2016 Luk2010
+//  Copyright (c) 2015 - 2017 Luk2010
 //  Created on 06/07/2016.
 //
 //////////////////////////////////////////////////////////////////////
@@ -16,10 +16,10 @@
  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  copies of the Software, and to permit persons to whom the Software is
  furnished to do so, subject to the following conditions:
- 
+
  The above copyright notice and this permission notice shall be included in
  all copies or substantial portions of the Software.
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -38,135 +38,125 @@
 GreBeginNamespace
 
 //////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////
-enum class VertexComponentType
+/// @brief Enumerates Alias to bind Vertex Attribute.
+enum class VertexAttribAlias : int
 {
-    Null = 0,
-    
-    /// @brief Disabled field size 1. ( Size = sizeof(uint32_t) )
-    Null1 = 1,
-    
-    /// @brief Disabled field size 2. ( Size = sizeof(uint32_t) * 2 )
-    Null2 = 2,
-    
-    /// @brief Disabled field size 3. ( Size = sizeof(uint32_t) * 3 )
-    Null3 = 3,
-    
-    /// @brief Disabled field size 4. ( Size = sizeof(uint32_t) * 4 )
-    Null4 = 4,
-    
-    /// @brief A XYZ Position Component. (Size = sizeof(float) * 3)
-    Position = 10,
-    
-    /// @brief A RGBA Color component. (Size = sizeof(uint32_t) * 4)
-    Color = 11,
-    
-    /// @brief A XYZ Normal Component. (Size = sizeof(float) * 3)
-    Normal = 12,
-    
-    /// @brief A UV Texture Component. (Size = sizeof(float) * 2)
-    Texture = 13,
-    
-    /// @brief Tangents components. ( Size = normal )
-    Tangents = 14,
-    
-    /// @brief Binormals component ( Size = normal )
-    Binormals = 15
+    Position ,
+    Color ,
+    Normal ,
+    Texture ,
+    Tangents ,
+    Binormals
 };
 
-/// @brief A VertexPosition.
-typedef TVector3<float> VertexPosition;
-
-/// @brief A VertexColor.
-typedef TVector4<uint32_t> VertexColor;
-
-/// @brief A VertexNormal.
-typedef TVector3<float> VertexNormal;
-
-/// @brief A VertexTexture.
-typedef TVector2<float> VertexTexture;
-
-/// @brief A List of Component.
-typedef std::vector<VertexComponentType> VertexComponents;
-
-/// @brief Returns the size of given Component, in bytes.
-size_t VertexComponentTypeGetSize(const VertexComponentType& vtype);
-
-/// @brief Returns a Readable name for given Component.
-std::string VertexComponentTypeToString ( const VertexComponentType& component );
+//////////////////////////////////////////////////////////////////////
+/// @brief Returns the VertexAttribAlias from its string.
+VertexAttribAlias VertexAttribFromString ( const std::string & attrib ) ;
 
 //////////////////////////////////////////////////////////////////////
+/// @brief Enumerates possible types for a Vertex Attribute.
+enum class VertexAttribType : int
+{
+    Byte , UnsignedByte ,
+    Short , UnsignedShort ,
+    Int , UnsignedInt ,
+    Float , Double
+};
+
+//////////////////////////////////////////////////////////////////////
+/// @brief Describes a Vertex Attribute .
+struct VertexAttribComponent
+{
+    /// @brief Alias used to bind this component. The real component
+    /// name will be found by the technique , and the real name location
+    /// will be found by the HardwareProgram.
+    VertexAttribAlias alias ;
+
+    /// @brief Number of elements for this attribute. Must be 1, 2, 3 or 4.
+    /// Default is 4.
+    size_t elements ;
+
+    /// @brief Basic type this attribute is. Can be Byte , UnsignedByte ,
+    /// Short , UnsignedShort , Int , UnsignedInt , Float and Double.
+    VertexAttribType type ;
+
+    /// @brief True if the attribute should be normalized.
+    bool normalize ;
+
+    /// @brief Total size of this attribute. This is needed when calculating
+    /// offsets positions , and stride between attributes in interleaved arrays.
+    size_t size ;
+};
+
+//////////////////////////////////////////////////////////////////////
+/// @brief Describes a set of attributes , generally stored by one
+/// vertex buffer and describing its structure.
 //////////////////////////////////////////////////////////////////////
 class DLL_PUBLIC VertexDescriptor
 {
 public:
-    
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    VertexDescriptor();
-    
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    virtual ~VertexDescriptor();
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Push a Component at the end of the list.
-    //////////////////////////////////////////////////////////////////////
-    virtual void addComponent(const VertexComponentType& vtype);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Pushes a Component at the end of the list. If a component
-    /// of the same type is already in the list, removes it before.
-    //////////////////////////////////////////////////////////////////////
-    virtual void addComponentUnique(const VertexComponentType& vtype);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Remove given Component from the list.
-    //////////////////////////////////////////////////////////////////////
-    virtual void removeComponent(const VertexComponentType& vtype);
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Components from this Descriptor.
-    //////////////////////////////////////////////////////////////////////
-    virtual const VertexComponents& getComponents() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the total size for this Descriptor. (Size of every
-    /// Components)
-    //////////////////////////////////////////////////////////////////////
-    virtual size_t getSize() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Component location in the Vertex structure.
-    //////////////////////////////////////////////////////////////////////
-    virtual int getComponentLocation ( const VertexComponentType& component ) const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the stride between two same Components. ( getSize()
-    /// - VertexComponentTypeGetSize(vtype) )
-    //////////////////////////////////////////////////////////////////////
-    virtual size_t getStride(const VertexComponentType& vtype) const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the offset between the start of the buffer and the
-    /// given component.
-    //////////////////////////////////////////////////////////////////////
-    virtual size_t getOffset ( const VertexComponentType& component ) const ;
-    
-    /// @brief Default Vertex Descriptor (Position + Color + Normal + Texture, in this order).
-    static VertexDescriptor Default;
-    
-protected:
-    
-    /// @brief List of Components in this Vertex, by order.
-    VertexComponents iComponents;
-    
-    /// @brief Updated size of this Descriptor.
-    size_t iSize;
-};
 
-/// @brief Common operator to write VertexDescriptor.
-VertexDescriptor& operator << (VertexDescriptor& desc, const VertexComponentType& vtype);
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    VertexDescriptor () ;
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    ~VertexDescriptor () ;
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    const std::vector < VertexAttribComponent > & getComponents () const ;
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    void addComponent ( const VertexAttribComponent & component ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Constructs an Attribute Component and adds it to the
+    /// descriptor.
+    //////////////////////////////////////////////////////////////////////
+    void addComponent (const VertexAttribAlias & alias ,
+                       size_t elements ,
+                       const VertexAttribType & type ,
+                       bool normalize ,
+                       size_t size);
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the stride between two same components in this
+    /// attribute structure.
+    //////////////////////////////////////////////////////////////////////
+    size_t getStride ( const VertexAttribComponent & component ) const ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the first offset of the given component. Notes you
+    /// must add this offset to the Vertex's Buffer 'getData()' return value
+    /// to get a valid pointer to the component.
+    //////////////////////////////////////////////////////////////////////
+    size_t getOffset ( const VertexAttribComponent & component ) const ;
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    void clear () ;
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    size_t getSize () const ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the component with given Attribute Alias.
+    //////////////////////////////////////////////////////////////////////
+    const VertexAttribComponent findComponent ( const VertexAttribAlias & alias ) const ;
+
+private:
+
+    /// @brief Arrays of Components that defines the attributes structure.
+    std::vector < VertexAttribComponent > iComponents ;
+
+    /// @brief Cached total size for this Vertex Descriptor. This lets us calculate
+    /// more effectively strides.
+    size_t iSize ;
+};
 
 GreEndNamespace
 

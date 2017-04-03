@@ -16,10 +16,10 @@
  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  copies of the Software, and to permit persons to whom the Software is
  furnished to do so, subject to the following conditions:
- 
+
  The above copyright notice and this permission notice shall be included in
  all copies or substantial portions of the Software.
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -32,214 +32,128 @@
 
 #include "Renderer.h"
 #include "ResourceManager.h"
-#include "Pass.h"
 #include "RenderContext.h"
-
-#include "Window.h"
-#include "RenderingQuery.h"
 
 GreBeginNamespace
 
 typedef std::chrono::high_resolution_clock Clock;
 
 Renderer::Renderer (const std::string& name, const RendererOptions& options)
-: Gre::Resource( name )
-, iDefaultProgram(nullptr) , iDefaultTexturedProgram(nullptr)
-, iDefaultMaterial(nullptr)
-, iDefaultOrthoProjectionMatrix(0) , iDefaultViewMatrix(0) , iDefaultModelMatrix(0)
-, iFeatures( ) , iInstalled(false)
-, iContext ( nullptr )
+: Gre::Resource( name ) , iInstalled(false)
 {
-    iFeaturesInstalled = false ;
+    iEnabled = true ;
 }
 
 Renderer::~Renderer() noexcept ( false )
 {
-    
+
 }
 
-void Renderer::draw(const Gre::RenderingQuery &query) const
+void Renderer::render() const
 {
     GreAutolock ;
-    
-    if ( !iFeaturesInstalled )
-        const_cast<Renderer*>(this)->installDefaultFeatures () ;
-    
-    // If the query holds a valid framebuffer, we should always bind it before
-    // everything to be done.
-    
-    _setFramebuffer ( query.getFramebuffer() ) ;
-    
-    // Updates the viewport to fit the query.
-    
-    _setViewport ( query.getViewport() ) ;
-    
-    // Load the program we will use to render the nodes.
-    
-    HardwareProgramHolder prog = query.getHardwareProgram() ;
-    if ( prog.isInvalid() && hasFeature(Gre::RendererFeature::LoadDefaultProgram) ) {
-        prog = iDefaultProgram.lock() ;
-    }
-    
-    // Sets the camera's matrixes projection and view.
-    
-    setCamera ( query.getCamera(), prog ) ;
-    
-    // Sets the scene lights.
-    
-    prog -> setLights ( query.getLights() ) ;
-    
-    // Draw every queried nodes with this configuration.
-    
-    for ( const RenderNodeHolder& node : query.getRenderedNodes() )
+
+    if ( iInstalled )
     {
-        if ( node.isInvalid() )
-            continue ;
+        //////////////////////////////////////////////////////////////////////
+        // The renderer is attached to one render context. It is responsible
+        // for rendering it , and also for swapping buffers (flush) operations.
+        // Passes that are drawed using the same render context should not swap
+        // buffers between them. But , drawing to different framebuffers is done
+        // in the technique object. 
         
+        if ( iContext.isInvalid() )
+        return ;
         
-        if ( node->isRenderable()/* && node->isVisible(query.getCamera())*/ )
+        iContext -> bind() ;
+        
+        for ( const RenderPassHolder & pass : iPasses )
+        if ( !pass.isInvalid() ) pass -> render ( this ) ;
+        
+        iContext -> unbind() ;
+        iContext -> flush() ;
+    }
+}
+
+RenderPassHolder Renderer::addPass(const std::string &name)
+{
+    GreAutolock ;
+
+    if ( iInstalled )
+    {
+        RenderPassHolder pass ( new RenderPass(name) ) ;
+
+        if ( pass.isInvalid() )
         {
-            setNode ( node , prog ) ;
-            setHardwareProgram(prog) ;
-            _drawNodeMesh ( node->getMesh() , prog ) ;
+            GreDebug("[WARN] RenderPass '") << name << "' couldn't be allocated.'" << gendl ;
+            return RenderPassHolder ( nullptr ) ;
         }
-        
-        postNode ( node , query.getCamera() , prog ) ;
+
+        GreDebug("[INFO] RenderPass '") << name << "' allocated.'" << gendl ;
+
+        iPasses.push_back(pass) ;
+        return pass ;
     }
-    
-    // Unbind the framebuffer.
-    
-    _unsetFramebuffer ( query.getFramebuffer() ) ;
+
+    return RenderPassHolder ( nullptr ) ;
 }
 
-void Renderer::preRender ( const Color& clearcolor ) const
+RenderPassHolder Renderer::copyPass(const RenderPassHolder &pass)
 {
-    _setClearColor(clearcolor) ;
-    _preRender () ;
-}
+    GreAutolock ;
 
-void Renderer::postRender () const
-{
-    _postRender () ;
-}
-
-void Renderer::_setFramebuffer ( const RenderFramebufferHolder & framebuffer ) const
-{
-    if ( !framebuffer.isInvalid() )
-        framebuffer -> bind() ;
-}
-
-void Renderer::_unsetFramebuffer ( const RenderFramebufferHolder & framebuffer ) const
-{
-    if ( !framebuffer.isInvalid() )
-        framebuffer->unbind() ;
-}
-
-void Renderer::setHardwareProgram ( const HardwareProgramHolder& program ) const
-{
-    if ( !program.isInvalid() ) {
-        program->use();
-    }
-}
-
-void Renderer::setCamera(const CameraUser &camera, const HardwareProgramHolder &program) const
-{
-    CameraHolder camerah = camera.lock() ;
-    
-    Matrix4 ProjectionMatrix ;
-    Matrix4 ViewMatrix ;
-    
-    if ( !camerah.isInvalid() )
+    if ( iInstalled && !pass.isInvalid() )
     {
-        ProjectionMatrix = camerah->getProjectionMatrix() ;
-        ViewMatrix = camerah->getViewMatrix() ;
-    }
-    
-    HardwareProgramVariable iProjectionMatrix ;
-    iProjectionMatrix.name = "iProjection" ;
-    iProjectionMatrix.type = HdwProgVarType::Matrix4 ;
-    iProjectionMatrix.value.m4 = ProjectionMatrix ;
-    program->setVariable ( iProjectionMatrix ) ;
-    
-    HardwareProgramVariable iViewMatrix ;
-    iViewMatrix.name = "iView" ;
-    iViewMatrix.type = HdwProgVarType::Matrix4 ;
-    iViewMatrix.value.m4 = ViewMatrix ;
-    program->setVariable ( iViewMatrix ) ;
-    
-    HardwareProgramVariable iCameraPosition ;
-    iCameraPosition.name = "camera.position" ;
-    iCameraPosition.type = HdwProgVarType::Float3 ;
-    iCameraPosition.value.f3 = camerah -> getPosition() ;
-    program -> setVariable(iCameraPosition) ;
-    
-    _setCamera ( ProjectionMatrix , ViewMatrix ) ;
-}
+        RenderPassHolder cpy ( new RenderPass(pass->getName()) ) ;
 
-void Renderer::setNode ( const RenderNodeHolder& node , const HardwareProgramHolder& program ) const
-{
-    // Sets the 'iModelMatrix' .
-    
-    const Matrix4 & ModelMatrix = node->getModelMatrix () ;
-    
-    HardwareProgramVariable iModelMatrix ;
-    iModelMatrix.name = "iModel" ;
-    iModelMatrix.type = HdwProgVarType::Matrix4 ;
-    iModelMatrix.value.m4 = ModelMatrix ;
-    program->setVariable ( iModelMatrix ) ;
-    
-    // Configure the node's material .
-    
-    MaterialHolder material = node->getMaterial() ;
-    
-    if ( !material.isInvalid() ) {
-        material->configureProgram(program);
-    }
-    
-    else if ( hasFeature(RendererFeature::LoadDefaultMaterial) && !iDefaultMaterial.isInvalid() ) {
-        iDefaultMaterial.lock() ->configureProgram(program);
-    }
-    
-    _setNode(node);
-}
-
-void Renderer::postNode ( const RenderNodeHolder & node , const CameraUser& camera , const HardwareProgramHolder& program ) const
-{
-    if ( node.isInvalid() ) return ;
-    if ( node->hasChildren() )
-    {
-        
-        if ( camera.isInvalid() || program.isInvalid() )
-            return ;
-        
-        for ( const RenderNodeHolder& child : node->getChildren() )
+        if ( cpy.isInvalid() )
         {
-            if ( child.isInvalid() )
-                continue ;
-            
-            
-            if ( child->isRenderable() /*&& child->isVisible(camera)*/ )
-            {
-                setNode ( child , program ) ;
-                setHardwareProgram(program) ;
-                _drawNodeMesh ( child->getMesh() , program ) ;
-            }
-            
-            postNode ( child , camera , program ) ;
+            GreDebug("[WARN] RenderPass '") << pass->getName() << "' couldn't be copied.'" << gendl ;
+            return RenderPassHolder ( nullptr ) ;
         }
+
+        cpy -> setRenderTarget( pass->getRenderTarget() ) ;
+        cpy -> setViewport ( pass->getViewport() ) ;
+        cpy -> setClearColor ( pass->getClearColor() ) ;
+        cpy -> setClearDepth ( pass->getClearDepth() ) ;
+        cpy -> setClearBuffers ( pass->getClearBuffers() ) ;
+        cpy -> setScene ( pass->getScene() ) ;
+        cpy -> setTechnique ( pass->getTechnique() ) ;
+        cpy -> setCamera ( pass->getCamera() ) ;
+        cpy -> setClearViewport ( pass->isClearViewport() ) ;
+
+        GreDebug("[INFO] RenderPass '") << cpy->getName() << "' copied.'" << gendl ;
+
+        iPasses.push_back(cpy) ;
+        return cpy ;
     }
-    
-    _postNode(node, camera, program);
+
+    return RenderPassHolder ( nullptr ) ;
+}
+
+void Renderer::clearPasses ()
+{
+    GreAutolock ; iPasses.clear() ;
+}
+
+void Renderer::draw(const RenderNodeHolder &node) const
+{
+    GreAutolock ;
+
+    if ( !node.isInvalid() )
+    {
+        drawMesh ( node->getMesh() ) ;
+    }
 }
 
 bool Renderer::installManagers ()
 {
     GreAutolock ;
-    
+
     iInstalled = true ;
-    
+
     MeshManagerHolder meshmanager = iCreateMeshManager () ;
-    
+
     if ( meshmanager.isInvalid() )
     {
         iInstalled = false ;
@@ -249,9 +163,9 @@ bool Renderer::installManagers ()
     }
     else
     {
-        if ( ResourceManager::Get().getMeshManager().isInvalid() )
+        if ( ResourceManager::Get()->getMeshManager().isInvalid() )
         {
-            ResourceManager::Get().setMeshManager ( meshmanager ) ;
+            ResourceManager::Get()->setMeshManager ( meshmanager ) ;
 #ifdef GreIsDebugMode
             GreDebugPretty () << "Mesh Manager installed." << Gre::gendl ;
 #endif
@@ -264,9 +178,9 @@ bool Renderer::installManagers ()
 #endif
         }
     }
-    
+
     TextureInternalCreator* texturemanager = iCreateTextureCreator () ;
-    
+
     if ( !texturemanager )
     {
         iInstalled = false ;
@@ -276,9 +190,9 @@ bool Renderer::installManagers ()
     }
     else
     {
-        if ( !ResourceManager::Get().getTextureManager().isInvalid() )
+        if ( !ResourceManager::Get()->getTextureManager().isInvalid() )
         {
-            ResourceManager::Get().getTextureManager()->setInternalCreator(texturemanager) ;
+            ResourceManager::Get()->getTextureManager()->setInternalCreator(texturemanager) ;
 #ifdef GreIsDebugMode
             GreDebugPretty () << "Texture Creator installed." << Gre::gendl ;
 #endif
@@ -291,59 +205,84 @@ bool Renderer::installManagers ()
 #endif
         }
     }
-    
-    HardwareProgramManagerHolder pmanager = iCreateProgramManager () ;
-    
-    if ( pmanager.isInvalid() )
+
+    RenderFramebufferInternalCreator* framebuffercreator = iCreateFramebufferCreator() ;
+
+    if ( !framebuffercreator )
     {
         iInstalled = false ;
 #ifdef GreIsDebugMode
-        GreDebugPretty () << "No Program Manager can be installed." << Gre::gendl ;
+        GreDebug("[WARN] Framebuffer Creator failed to be created.") << gendl ;
 #endif
     }
     else
     {
-        if ( ResourceManager::Get().getHardwareProgramManager().isInvalid() )
+        if ( !ResourceManager::Get()->getFramebufferManager().isInvalid() )
         {
-            ResourceManager::Get().setHardwareProgramManager ( pmanager ) ;
+            ResourceManager::Get()->getFramebufferManager()->setInternalCreator ( framebuffercreator ) ;
 #ifdef GreIsDebugMode
-            GreDebugPretty () << "Program Manager installed." << Gre::gendl ;
+            GreDebug("[INFO] Framebuffer Creator installed.") << gendl ;
 #endif
         }
         else
         {
             iInstalled = false ;
 #ifdef GreIsDebugMode
-            GreDebugPretty () << "Program Manager already present and cannot be installed." << Gre::gendl ;
+            GreDebug("[WARN] RenderFramebufferManager invalid.") << gendl ;
+#endif
+            delete framebuffercreator ;
+        }
+    }
+
+    HardwareProgramManagerInternalCreator* pmanager = iCreateProgramManagerCreator () ;
+
+    if ( !pmanager )
+    {
+        iInstalled = false ;
+#ifdef GreIsDebugMode
+        GreDebugPretty () << "[WARN] No HardwareProgramManager Creator can be installed." << Gre::gendl ;
+#endif
+    }
+    else
+    {
+        if ( !ResourceManager::Get()->getHardwareProgramManager().isInvalid() )
+        {
+            ResourceManager::Get()->getHardwareProgramManager () -> setInternalCreator(pmanager) ;
+
+#ifdef GreIsDebugMode
+            GreDebugPretty () << "[INFO] HardwareProgramManager Creator installed." << Gre::gendl ;
+#endif
+        }
+        else
+        {
+            iInstalled = false ;
+#ifdef GreIsDebugMode
+            GreDebugPretty () << "[WARN] HardwareProgramManager invalid." << Gre::gendl ;
 #endif
         }
     }
-	
-	if ( iInstalled && !ResourceManager::Get().getRenderSceneManager().isInvalid() )
+
+	if ( iInstalled && !ResourceManager::Get()->getRenderSceneManager().isInvalid() )
 	{
 		// Remember we must also initialize the RenderSceneManager.
-		ResourceManager::Get().getRenderSceneManager()->initialize() ;
+		ResourceManager::Get()->getRenderSceneManager()->initialize() ;
 	}
-    
+
     return iInstalled ;
 }
 
 void Renderer::unload ( )
 {
     GreAutolock ;
-    
-    iDefaultProgram.clear() ;
-    iDefaultTexturedProgram.clear() ;
-    iDefaultOrthoProjectionMatrix = Matrix4 (0) ;
-    iDefaultViewMatrix = Matrix4 (0) ;
-    iDefaultModelMatrix = Matrix4 (0) ;
-    iFeatures.clear() ;
-    
+
+    iDefaultMaterial.clear() ;
+    iContext.clear() ;
+
     if ( iInstalled )
     {
-        ResourceManager::Get() .setMeshManager ( MeshManagerHolder(nullptr) ) ;
-        ResourceManager::Get() .setTextureManager ( TextureManagerHolder(nullptr) ) ;
-        ResourceManager::Get() .setHardwareProgramManager ( HardwareProgramManagerHolder(nullptr) ) ;
+        ResourceManager::Get() ->setMeshManager ( MeshManagerHolder(nullptr) ) ;
+        ResourceManager::Get() ->setTextureManager ( TextureManagerHolder(nullptr) ) ;
+        ResourceManager::Get() ->setHardwareProgramManager ( HardwareProgramManagerHolder(nullptr) ) ;
         iInstalled = false ;
     }
 }
@@ -353,45 +292,14 @@ bool Renderer::isInstalled () const
     GreAutolock ; return iInstalled ;
 }
 
-bool Renderer::hasFeature(const RendererFeature& feature) const
+bool Renderer::isEnabled () const
 {
-    GreAutolock ;
-    
-    for ( auto& f : iFeatures )
-    {
-        if ( f == feature )
-            return true;
-    }
-    
-    return false;
+    GreAutolock ; return iEnabled ;
 }
 
-void Renderer::setFeature ( const RendererFeature& feature )
+void Renderer::setEnabled ( bool b )
 {
-    if ( !hasFeature(feature) )
-    {
-        GreAutolock ;
-        iFeatures.push_back(feature);
-    }
-}
-
-void Renderer::removeFeature ( const RendererFeature& feature )
-{
-    GreAutolock ;
-    
-    for ( auto it = iFeatures.begin() ; it != iFeatures.end() ; it++ )
-    {
-        if ( (*it) == feature )
-        {
-            iFeatures.erase(it);
-            break;
-        }
-    }
-}
-
-const std::vector < RendererFeature > & Renderer::getFeatures () const
-{
-    GreAutolock ; return iFeatures;
+    GreAutolock ; iEnabled = b ;
 }
 
 void Renderer::setRenderContext(const RenderContextUser &context)
@@ -408,12 +316,12 @@ const RenderContextHolder& Renderer::getRenderContext() const
 
 RendererLoader::RendererLoader()
 {
-    
+
 }
 
 RendererLoader::~RendererLoader()
 {
-    
+
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -421,22 +329,22 @@ RendererLoader::~RendererLoader()
 RendererManager::RendererManager( const std::string& name )
 : SpecializedResourceManager<Gre::Renderer, Gre::RendererLoader>(name)
 {
-    
+
 }
 
 RendererManager::~RendererManager() noexcept ( false )
 {
-    
+
 }
 
 RendererUser RendererManager::load(const std::string &name, const Gre::RendererOptions &options)
 {
     GreAutolock ;
-    
+
     if ( !name.empty() )
     {
         RendererUser tmp = findFirst(name);
-        
+
         if ( !tmp.isInvalid() )
         {
 #ifdef GreIsDebugMode
@@ -444,46 +352,77 @@ RendererUser RendererManager::load(const std::string &name, const Gre::RendererO
 #endif
             return RendererUser ( nullptr );
         }
-        
+
         for ( auto it = iLoaders.getLoaders().begin(); it != iLoaders.getLoaders().end(); it++ )
         {
             auto loader = it->second;
-            
+
             if ( loader )
             {
                 if ( loader->isCompatible(options) )
                 {
                     RendererHolder rholder = loader->load(name, options);
-                    
+
                     if ( rholder.isInvalid() )
                     {
 #ifdef GreIsDebugMode
                         GreDebugPretty() << "Renderer Resource '" << name << "' could not be loaded by loader '" << it->first << "'." << Gre::gendl;
 #endif
                     }
-                    
+
                     else
                     {
-                        addListener( EventProceederUser(rholder) ) ;
+                        //////////////////////////////////////////////////////////////////////
+                        // Parse Common options.
+                        
+                        auto op = options.find ( "Enabled" ) ;
+                        if ( op != options.end() ) rholder->setEnabled ( op->second.toBool() ) ;
+                        
+                        //////////////////////////////////////////////////////////////////////
+                        // Adds the renderer only for update events , and registers it to the
+                        // manager.
+                        
+                        addFilteredListener( EventProceederUser(rholder) , { EventType::Update } ) ;
                         iHolders.push_back(rholder);
+                        
                         return RendererUser ( rholder );
                     }
                 }
             }
         }
-        
+
 #ifdef GreIsDebugMode
         GreDebugPretty() << "Renderer Resource '" << name << "' could not be loaded by any installed Loader." << Gre::gendl;
 #endif
         return RendererUser ( nullptr );
     }
-    
+
     else
     {
 #ifdef GreIsDebugMode
         GreDebugPretty() << "'name' is empty." << Gre::gendl;
 #endif
         return RendererUser ( nullptr );
+    }
+}
+
+void RendererManager::render() const
+{
+    GreAutolock ;
+    
+    for ( auto renderer : iHolders )
+    {
+        //////////////////////////////////////////////////////////////////////
+        // Calls the renderer's RenderPass'es only if this one is valid AND
+        // enabled.
+        
+        if ( !renderer.isInvalid() )
+        {
+            if ( renderer->isEnabled() )
+            {
+                renderer -> render() ;
+            }
+        }
     }
 }
 
