@@ -30,7 +30,7 @@
  -----------------------------------------------------------------------------
  */
 
-#include "freemovingcamera.h"
+#include "FreeMovingCamera.h"
 
 GreBeginNamespace
 

@@ -57,8 +57,12 @@ GLenum translateGlDepthStencilMode ( TextureDepthStencilMode mode )
 {
     if ( mode == TextureDepthStencilMode::Depth )
         return GL_DEPTH_COMPONENT ;
+        
+# 	ifdef GL_STENCIL_COMPONENT
     else if ( mode == TextureDepthStencilMode::Stencil )
         return GL_STENCIL_COMPONENT ;
+#	endif // GL_STENCIL_COMPONENT
+        
     return GL_INVALID_ENUM ;
 }
 
@@ -284,7 +288,7 @@ void OpenGlTexture::_setParameters ( GLenum target ) const
     
 #ifdef GL_DEPTH_STENCIL_TEXTURE_MODE
     glTexParameteri(target, GL_DEPTH_STENCIL_TEXTURE_MODE,
-                    translateGlDepthStencilMode(getParameterValue(TextureParameter::DepthStencilMode).toInteger()));
+                    translateGlDepthStencilMode((Gre::TextureDepthStencilMode) getParameterValue(TextureParameter::DepthStencilMode).toInteger()));
 #endif
     
 #ifdef GL_TEXTURE_BASE_LEVEL

@@ -35,11 +35,21 @@
 
 #include <Renderer.h>
 
-#ifdef __APPLE__
+//////////////////////////////////////////////////////////////////////
+// On Darwin OS , we only need to include the GL framework. Extension 
+// management is done within the framework.
+
+#ifdef GrePlatformDarwin
 #   include <OpenGL/OpenGL.h>
 #   include <OpenGL/gl3.h>
-#else
-#   include <GL/gl3.h>
+#endif // GrePlatformDarwin
+
+//////////////////////////////////////////////////////////////////////
+// On Linux , we use GLEW library to manage OpenGl extensions. Notes
+// libglew should be linked.
+
+#ifdef GrePlatformUnix
+#   include <GL/glew.h>
 #endif
 
 GLenum translateGlTexture ( const Gre::TextureType & type ) ;

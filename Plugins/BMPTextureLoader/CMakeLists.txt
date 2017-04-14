@@ -5,8 +5,8 @@ project(BMPTextureLoaderPlugin LANGUAGES CXX)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 # Sources files
-file(GLOB sources "${GRE_ROOT_DIRECTORY}/plugins/BMPTextureLoader/inc/*.h")
-file(GLOB headers "${GRE_ROOT_DIRECTORY}/plugins/BMPTextureLoader/src/*.cpp")
+file(GLOB headers "${GRE_ROOT_DIRECTORY}/Plugins/BMPTextureLoader/inc/*.h")
+file(GLOB sources "${GRE_ROOT_DIRECTORY}/Plugins/BMPTextureLoader/src/*.cpp")
 
 # Adds includes
 include_directories( PUBLIC

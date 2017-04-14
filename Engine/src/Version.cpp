@@ -4,7 +4,7 @@
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
-//  Copyright (c) 2015 - 2016 Luk2010
+//  Copyright (c) 2015 - 2017 Luk2010
 //  Created on 23/03/2016.
 //
 //////////////////////////////////////////////////////////////////////

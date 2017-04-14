@@ -4,7 +4,7 @@
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
-//  Copyright (c) 2015 - 2016 Luk2010
+//  Copyright (c) 2015 - 2017 Luk2010
 //  Created on 15/06/2016.
 //
 //////////////////////////////////////////////////////////////////////
@@ -86,7 +86,42 @@ const Vector3& Transformation::getTranslation() const
 
 void Transformation::setDirection(const Vector3 &direction)
 {
-    iRotation = glm::rotation(glm::normalize(Vector3(0.0f, 1.0f, 0.0f)), glm::normalize(direction));
+	//////////////////////////////////////////////////////////////////////
+	// [04.14.2017] On ubuntu 14.04 , glm has a 'bug' where the rotation 
+	// function is broken : 'glm::lenght2' is used with a vec3 but needs a
+	// quat so it does not compile. So , we use here a manual computing
+	// method from internet.
+	
+#ifndef GrePlatformUnix
+
+	Vector3 orig = glm::normalize(Vector3(0.0f, 1.0f, 0.0f)) ;
+	Vector3 dest = glm::normalize(direction) ;
+	
+    iRotation = glm::rotation( orig , dest ) ;
+    
+#else 
+
+	Vector3 up = Vector3 ( 0.0f , 1.0f , 0.0f ) ;
+	Vector3 xaxis = glm::normalize ( glm::cross( up , direction ) ) ;
+	Vector3 yaxis = glm::normalize( glm::cross( direction , xaxis ) ) ;
+	
+	Matrix3 result = glm::mat3(0.0f) ;
+	
+	result[0][0] = xaxis.x ;
+	result[0][1] = yaxis.x ;
+	result[0][2] = direction.x ;
+
+	result[1][0] = xaxis.y ;
+	result[1][1] = yaxis.y ;
+	result[1][2] = direction.y ;
+	
+	result[2][0] = xaxis.z ;
+	result[2][1] = yaxis.z ;
+	result[2][2] = direction.z ;
+	
+	iRotation = glm::toQuat(result) ;
+	
+#endif
 }
 
 void Transformation::rotate(float angle, const Vector3 &axis)
