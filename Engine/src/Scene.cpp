@@ -81,7 +81,7 @@ CameraHolder & LightRenderNode::getLightCamera ()
     GreAutolock ; return iLightCamera ;
 }
 
-void LightRenderNode::use ( const TechniqueHolder & technique ) const
+void LightRenderNode::use ( const TechniqueHolder & technique , bool prepareforrender ) const
 {
     GreAutolock ;
 
@@ -130,11 +130,12 @@ void LightRenderNode::use ( const TechniqueHolder & technique ) const
 
     if ( !iLightCamera.isInvalid() )
     technique -> setAliasedParameterStructValue ( lightalias , TechniqueParam::LightShadowMatrix ,
-        HdwProgVarType::Matrix4 , iLightCamera -> getProjectionViewMatrix() ) ;
+            HdwProgVarType::Matrix4 , iLightCamera -> getProjectionViewMatrix() ) ;
 
     //////////////////////////////////////////////////////////////////////
     // Don't forget to call the parent's use.
 
+    if ( prepareforrender )
     RenderNode::use ( technique ) ;
 }
 
@@ -157,6 +158,18 @@ void LightRenderNode::loadLightCamera ()
 
         iLightCamera -> setPosition ( iLight -> getPosition() ) ;
         iLightCamera -> setDirection ( iLight -> getDirection() ) ;
+        
+        if ( iLight -> getType() == LightType::Directionnal )
+        {
+            Frustrum ortho ({-10.0f , 10.0f , -10.0f , 10.0f} , 0.1f , 100.0f);
+            iLightCamera -> setFrustrum(ortho) ;
+        }
+        
+        else
+        {
+            Frustrum proj ( 60.0f , 16/9 , 0.1f , 100.0f ) ;
+            iLightCamera -> setFrustrum(proj) ;
+        }
 
         //////////////////////////////////////////////////////////////////////
         // Registers Camera as a light listener.
@@ -182,6 +195,24 @@ void LightRenderNode::loadShadowTexture ( uint32_t width , uint32_t height )
         TextureType::Texture2D , width , height ) ;
 }
 
+bool LightRenderNode::isLightVisibleFrom ( const CameraHolder & camera ) const
+{
+    GreAutolock ;
+    
+    if ( camera.isInvalid() )
+    return false ;
+    
+    //////////////////////////////////////////////////////////////////////
+    // Computes intersection between light and camera frustrum.
+    
+    bool value = isVisible() ;
+    
+    if ( value && !iLight.isInvalid() )
+        value = iLight -> intersectFrustrum ( camera -> getFrustrum() ) != IntersectionResult::Outside ;
+    
+    return value ;
+}
+
 void LightRenderNode::onPositionChangedEvent(const Gre::PositionChangedEvent &e)
 {
     GreAutolock ; iLight->setPosition ( e.Position ) ;
@@ -199,7 +230,7 @@ void LightRenderNode::onDirectionChangedEvent(const Gre::DirectionChangedEvent &
 RenderScene::RenderScene(const std::string& name, const RenderSceneOptions& options)
 : Gre::Resource(name) , iRootNode(nullptr)
 {
-
+    setTransmitBehaviour(EventProceederTransmitBehaviour::SendsBefore);
 }
 
 RenderScene::~RenderScene()
@@ -419,8 +450,8 @@ void RenderScene::addCamera(const CameraHolder &camera)
 
     if ( !camera.isInvalid() )
     {
-        iLightNodesByCamera [camera] . clear() ;
-        iNodesByCamera [camera] .clear() ;
+        iLightNodesByCamera[camera] = std::list < LightRenderNodeHolder > () ;
+        iNodesByCamera[camera] = RenderNodeHolderList () ;
     }
 }
 
@@ -445,13 +476,60 @@ const CameraHolder RenderScene::getCamera(const std::string &name) const
 void RenderScene::onUpdateEvent(const Gre::UpdateEvent &e)
 {
     GreAutolock ;
+    
+    //////////////////////////////////////////////////////////////////////
+    // Converts the elapsed time in milliseconds.
+    
+    float milliseconds = e.elapsedTime.count() * 1000.0f ;
 
-    // Here we want to update the Nodes by Camera 's lists. So , we look for every nodes and when we encounter
-    // a light visible , we add it to the iActivatedLights list.
-
-    updateNode ( iRootNode ) ;
+    //////////////////////////////////////////////////////////////////////
+    // This function needs to updates the visible lights , and computes the
+    // nodes visible by the camera.
+    
+    for ( auto it = iLightNodesByCamera.begin() ; it != iLightNodesByCamera.end() ; it++ )
+    (*it).second = iComputeLightNodes ( it->first , milliseconds ) ;
+    
+    //////////////////////////////////////////////////////////////////////
+    // Calls the 'iComputeNodes' for each camera. This function should returns
+    // a valid list of nodes visible by the camera.
+    
+    for ( auto it = iNodesByCamera.begin() ; it != iNodesByCamera.end() ; it++ )
+    it->second = iComputeNodes ( it->first , milliseconds ) ;
 }
 
+std::list < LightRenderNodeHolder > RenderScene::iComputeLightNodes(const CameraHolder &camera, float elapsed) const
+{
+    GreAutolock ;
+    
+    //////////////////////////////////////////////////////////////////////
+    // Traverse every light nodes registered and make a list of those visible
+    // by the camera given.
+    
+    std::list < LightRenderNodeHolder > nodes ;
+    
+    for ( auto node : iLightNodes )
+    if ( node -> isLightVisibleFrom(camera) ) nodes.push_back(node) ;
+    
+    return nodes ;
+}
+
+RenderNodeHolderList RenderScene::iComputeNodes(const CameraHolder &camera, float elapsed) const
+{
+    GreAutolock ;
+    
+    //////////////////////////////////////////////////////////////////////
+    // Constructs a list of nodes visible by the camera. Notes those nodes
+    // must not be treated as subtree's root nodes when displaying them.
+    
+    RenderNodeHolderList nodes ;
+    
+    if ( !iRootNode.isInvalid() )
+    iRootNode -> iComputeChildren ( nodes , camera , elapsed ) ;
+    
+    return nodes ; 
+}
+
+/*
 void RenderScene::updateNode ( const RenderNodeHolder & node )
 {
     if ( !node.isInvalid() )
@@ -476,7 +554,7 @@ void RenderScene::updateNode ( const RenderNodeHolder & node )
         {
             if ( !it->first.isInvalid() )
             {
-                if ( true )//node->isVisible(it->first) )
+                if ( node->isVisible(it->first) )
                 {
                     if ( node -> isRenderable () )
                     {
@@ -489,10 +567,16 @@ void RenderScene::updateNode ( const RenderNodeHolder & node )
                         updateNode ( child ) ;
                     }
                 }
+                
+                else
+                {
+                    
+                }
             }
         }
     }
 }
+ */
 
 // ---------------------------------------------------------------------------------------------------
 
@@ -604,7 +688,7 @@ RenderSceneUser RenderSceneManager::load ( const std::string & name , const Rend
     auto it = options.find("Loader" );
 
     if ( it != options.end() ) {
-        loader = findLoader (it->second.toString()) ;
+        loader = findLoader (it->second.to<std::string>()) ;
     } else {
         loader = findLoader ("Default") ;
     }
@@ -627,7 +711,7 @@ RenderSceneUser RenderSceneManager::load ( const std::string & name , const Rend
 
     bool sendupdate = true ;
     it = options.find ( "SendUpdate" ) ;
-    if ( it != options.end() ) sendupdate = it -> second .toBool() ;
+    if ( it != options.end() ) sendupdate = it -> second .to<bool>() ;
 
     if ( sendupdate ) {
         addFilteredListener(EventProceederUser(scene.getObject()), { EventType::Update });

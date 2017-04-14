@@ -31,6 +31,7 @@ THE SOFTWARE.
 */
 
 #include "SceneNode.h"
+#include "ResourceManager.h"
 
 GreBeginNamespace
 
@@ -47,6 +48,8 @@ RenderNode::RenderNode()
     setName ( std::string("RenderNode#") + std::to_string(getIdentifier()) ) ;
     iModelMatrix = glm::mat4 (1.0f) ;
     iNodeType = RenderNodeType::Default ;
+    iMaterial = ResourceManager::Get() -> getMaterialManager() -> loadBlank( getName() + ".material" ) ;
+    iVisible = true ;
 }
 
 RenderNode::RenderNode(const std::string& name)
@@ -61,6 +64,8 @@ RenderNode::RenderNode(const std::string& name)
 , iRenderableChanged(false)
 {
     iNodeType = RenderNodeType::Default ;
+    iMaterial = ResourceManager::Get() -> getMaterialManager() -> loadBlank( getName() + ".material" ) ;
+    iVisible = true ;
 }
 
 RenderNode::~RenderNode() noexcept ( false )
@@ -70,18 +75,17 @@ RenderNode::~RenderNode() noexcept ( false )
 
 bool RenderNode::isRenderable() const
 {
-    GreAutolock ;
-    return !iRenderable.isInvalid();
+    GreAutolock ; return !iRenderable.isInvalid();
 }
 
 const MeshHolder& RenderNode::getMesh() const
 {
-    return iRenderable;
+    GreAutolock ; return iRenderable;
 }
 
 MeshHolder& RenderNode::getMesh()
 {
-    return iRenderable;
+    GreAutolock ; return iRenderable;
 }
 
 void RenderNode::setMesh(const Gre::MeshHolder &mesh)
@@ -111,16 +115,18 @@ void RenderNode::setTransformation(const Gre::Transformation &transformation)
 
 const Transformation& RenderNode::getTransformation() const
 {
-    return iTransformation;
+    GreAutolock ; return iTransformation;
 }
 
 Matrix4 RenderNode::getModelMatrix() const
 {
-    return iModelMatrix;
+    GreAutolock ; return iModelMatrix;
 }
 
 void RenderNode::addNode(const RenderNodeHolder &node)
 {
+    GreAutolock ;
+    
     if ( !node.isInvalid() )
     {
         GreAutolock ;
@@ -200,22 +206,22 @@ void RenderNode::addNode(const RenderNodeHolder &node)
 
 RenderNodeHolderList& RenderNode::getChildren()
 {
-    return iChilds;
+    GreAutolock ; return iChilds;
 }
 
 const RenderNodeHolderList& RenderNode::getChildren() const
 {
-    return iChilds;
+    GreAutolock ; return iChilds;
 }
 
 bool RenderNode::hasChildren() const
 {
-    return iChilds.size() > 0 ;
+    GreAutolock ; return iChilds.size() > 0 ;
 }
 
 const RenderNodeHolder& RenderNode::getParent() const
 {
-    return iParent ;
+    GreAutolock ; return iParent ;
 }
 
 RenderNodeHolder RenderNode::find(ResourceIdentifier identifier)
@@ -364,7 +370,7 @@ void RenderNode::clear()
 
 const BoundingBox& RenderNode::getBoundingBox() const
 {
-    return iBoundingBox;
+    GreAutolock ; return iBoundingBox;
 }
 
 void RenderNode::setBoundingBox(const Gre::BoundingBox &bbox)
@@ -416,18 +422,32 @@ const MaterialHolder& RenderNode::getMaterial() const
     return iMaterial ;
 }
 
+MaterialHolder& RenderNode::getMaterial()
+{
+    GreAutolock ;
+    
+    if ( iMaterial.isInvalid() && !iRenderable.isInvalid() )
+        return iRenderable -> getDefaultMaterial () ;
+    
+    return iMaterial ;
+}
+
 void RenderNode::setMaterial(const MaterialHolder &material)
 {
     GreAutolock ; iMaterial = material ;
 }
 
-bool RenderNode::isVisible(const CameraUser &camera) const
+bool RenderNode::isVisible(const CameraHolder &camera) const
 {
-    if ( camera.isInvalid() )
-        return false ;
-
-    //return camera.lock()->isVisible( iBoundingBox ) ;
-    return true ;
+    GreAutolock ;
+    
+    if ( !isVisible() )
+    return false ;
+    
+    if ( !camera.isInvalid() && !iBoundingBox.isInvalid() )
+    return camera -> isVisible(iBoundingBox) ;
+    
+    return false ;
 }
 
 void RenderNode::setPositionTracked(const EventProceederUser &tracked)
@@ -459,7 +479,7 @@ const EventProceederUser & RenderNode::getPositionTracked() const
 void RenderNode::use ( const TechniqueHolder & technique ) const
 {
     GreAutolock ;
-    if ( technique.isInvalid() ) return ;
+    if ( technique.isInvalid() || !isRenderable() ) return ;
 
     technique -> setAliasedParameterValue ( TechniqueParam::ModelMatrix , HdwProgVarType::Matrix4 , iModelMatrix ) ;
     if ( !iRenderable.isInvalid() ) iRenderable -> use ( technique ) ;
@@ -480,41 +500,45 @@ void RenderNode::setScale(float value)
     iTransformationChanged = true ;
 }
 
+void RenderNode::setVisible(bool b)
+{
+    GreAutolock ; iVisible = b ;
+}
+
+bool RenderNode::isVisible() const
+{
+    GreAutolock ; return iVisible ;
+}
+
 void RenderNode::onUpdateEvent(const Gre::UpdateEvent &e)
 {
-    Resource::onUpdateEvent(e);
-
     GreAutolock ;
-
-    if ( iTransformationChanged )
-    {
-        iModelMatrix = iTransformation.get();
-        iTransformationChanged = false;
-
-        if ( !iRenderableChanged )
-        {
-            iBoundingBox.apply(iTransformation);
-        }
-
-        // If the Transformation has changed, we must check if this Node should behave at the same place
-        // or not. So, we must add it again to its parent.
-
-        if ( !iParent.isInvalid() )
-        {
-            iParent->addNode(RenderNodeHolder(this));
-        }
-    }
-
+    
     if ( iRenderableChanged )
     {
         if ( !iRenderable.isInvalid() )
         {
             iBoundingBox = iRenderable -> getBoundingBox();
-            iBoundingBox.apply(iTransformation);
+            
+            if ( !iRenderable -> getDefaultMaterial() .isInvalid() )
+            iMaterial = iRenderable -> getDefaultMaterial() ;
         }
-
-        iRenderableChanged = false;
     }
+    
+    if ( iTransformationChanged )
+    {
+        iModelMatrix = iTransformation.get();
+        iBoundingBox.apply(iTransformation) ;
+
+        // If the Transformation has changed, we must check if this Node should behave at the same place
+        // or not. So, we must add it again to its parent.
+
+        if ( !iParent.isInvalid() )
+        iParent->addNode(RenderNodeHolder(this));
+    }
+    
+    iRenderableChanged = false ;
+    iTransformationChanged = false ;
 }
 
 void RenderNode::onPositionChangedEvent(const Gre::PositionChangedEvent &e)
@@ -532,6 +556,23 @@ void RenderNode::onDirectionChangedEvent(const Gre::DirectionChangedEvent &e)
 const RenderNodeType & RenderNode::getNodeType () const
 {
     GreAutolock ; return iNodeType ;
+}
+
+void RenderNode::iComputeChildren(RenderNodeHolderList &result, const CameraHolder &camera, float elapsed) const
+{
+    GreAutolock ;
+    
+    //////////////////////////////////////////////////////////////////////
+    // Adds this node to the visible nodes. We must add the children first,
+    // in order to have a precomputed node's list with smaller nodes before.
+    
+    if ( !isVisible(camera) )
+    return ;
+    
+    for ( auto child : iChilds )
+    if ( !child.isInvalid() ) child -> iComputeChildren(result, camera, elapsed);
+    
+    result.add(this);
 }
 
 GreEndNamespace

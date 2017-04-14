@@ -35,8 +35,21 @@
 
 #include "Resource.h"
 #include "Texture.h"
+#include "Viewport.h"
 
 GreBeginNamespace
+
+//////////////////////////////////////////////////////////////////////
+/// @brief Buffers where the framebuffer can draw the fragments.
+enum class RenderColorBuffer : int
+{
+    None , FrontLeft , FrontRight , BackLeft , BackRight , Front , Back ,
+    Left , Right , FrontAndBack , Color0 , Color1 , Color2 , Color3 , Color4 ,
+    Color5 , Color6 , Color7 , Color8
+};
+
+/// @brief Converts color buffer from string.
+RenderColorBuffer RenderColorBufferFromString ( const std::string & str ) ;
 
 /// @brief Attachement possible to this FrameBuffer.
 /// You can attach Texture objects to this FrameBuffer, then attach
@@ -44,14 +57,10 @@ GreBeginNamespace
 enum class RenderFramebufferAttachement : int
 {
     Color0 = 0,   Color1 = 1,   Color2 = 2,   Color3 = 3,   Color4 = 4,   Color5 = 5,
-    Color6 = 6,   Color7 = 7,   Color8 = 8,   Color9 = 9,   Color10 = 10, Color11 = 11,
-    Color12 = 12, Color13 = 13, Color14 = 14, Color15 = 15, Color16 = 16, Color17 = 17,
-    Color18 = 18, Color19 = 19, Color20 = 20, Color21 = 21, Color22 = 22, Color23 = 23,
-    Color24 = 24, Color25 = 25, Color26 = 26, Color27 = 27, Color28 = 28, Color29 = 29,
-    Color30 = 30, Color31 = 31,
+    Color6 = 6,   Color7 = 7,   Color8 = 8,
     
     // [...] Normally this value is up to Renderer::getCapacity(Capacity::MaxFrameBufferColorAttachement) .
-    // We support up to 32 Color Attachement. Default value for OpenGl is 4.
+    // We support up to 9 Color Attachement. Default value for OpenGl is 4.
     // Notes 'Renderer::getCapacity()' function is not yet implemented. You can use
     // 'RenderFramebuffer::getMaximumColorAttachement()' to get the same result.
   
@@ -61,6 +70,9 @@ enum class RenderFramebufferAttachement : int
     // Invalid value.
     Null
 };
+    
+/// @brief Converts RenderFramebufferAttachement from a string.
+RenderFramebufferAttachement RenderFramebufferAttachementFromString ( const std::string & str ) ;
 
 /// @brief Type of surface used for the Framebuffer in a particular
 /// attachement.
@@ -127,6 +139,12 @@ public:
     virtual void setAttachement(const RenderFramebufferAttachement& attachement, TextureHolder& holder);
     
     //////////////////////////////////////////////////////////////////////
+    /// @brief Attaches the given texture but don't cache it.
+    //////////////////////////////////////////////////////////////////////
+    virtual void setAttachementNoCache (const RenderFramebufferAttachement & attachement ,
+                                        const TextureHolder & holder ) const = 0 ;
+    
+    //////////////////////////////////////////////////////////////////////
     /// @brief Returns the Maximum Width a Framebuffer Attachement can
     /// have.
     //////////////////////////////////////////////////////////////////////
@@ -143,6 +161,22 @@ public:
     /// can have.
     //////////////////////////////////////////////////////////////////////
     virtual int getMaximumColorAttachementCount() const;
+    
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    virtual void setWriteBuffer ( const RenderColorBuffer & buffer ) ;
+    
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    virtual void setReadBuffer ( const RenderColorBuffer & buffer ) ;
+    
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    virtual void setViewport ( const Viewport & viewport ) ;
+    
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    virtual const Viewport & getViewport () const ;
     
 protected:
     
@@ -179,6 +213,16 @@ protected:
     
     /// @brief Holds the Attachement objects.
     AttachementMap iAttachements;
+    
+    /// @brief Write buffer used.
+    RenderColorBuffer iWriteBuffer ;
+    
+    /// @brief Read buffer used.
+    RenderColorBuffer iReadBuffer ;
+    
+    /// @brief Viewport used by this framebuffer. When sets , the framebuffer will
+    /// automatically push the current viewport and set this one when binding itself.
+    Viewport iViewport ;
 };
 
 /// @brief SpecializedCountedObjectHolder for RenderFramebuffer.
@@ -234,6 +278,11 @@ public:
     virtual ~RenderFramebufferManager () noexcept ( false ) ;
     
     //////////////////////////////////////////////////////////////////////
+    /// @brief Creates a blank framebuffer.
+    //////////////////////////////////////////////////////////////////////
+    virtual RenderFramebufferHolder loadBlank ( const std::string & name ) ;
+    
+    //////////////////////////////////////////////////////////////////////
     /// @brief Loads a new framebuffer given options.
     //////////////////////////////////////////////////////////////////////
     virtual RenderFramebufferHolder load ( const std::string & name , const ResourceLoaderOptions & options ) ;
@@ -247,6 +296,16 @@ public:
     /// @brief Returns 'iCreator'.
     //////////////////////////////////////////////////////////////////////
     virtual const RenderFramebufferInternalCreator* getInternalCreator () const ;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns first framebuffer encountered with given name.
+    //////////////////////////////////////////////////////////////////////
+    virtual RenderFramebufferHolder get ( const std::string & name ) ;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns first framebuffer encountered with given name.
+    //////////////////////////////////////////////////////////////////////
+    virtual const RenderFramebufferHolder get ( const std::string & name ) const ;
     
 protected:
     

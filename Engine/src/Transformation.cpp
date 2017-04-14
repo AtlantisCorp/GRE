@@ -126,7 +126,7 @@ Matrix4 Transformation::get() const
     
     Matrix4 result = glm::mat4 ( 1.0f ) ;
     
-    result = glm::scale(result, iScale) ;
+    //result = glm::scale(result, iScale) ;
     result = glm::translate(result, iTranslation) ;
     result = result * glm::toMat4(iRotation) ;
     

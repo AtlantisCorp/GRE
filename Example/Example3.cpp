@@ -13,6 +13,14 @@
 
 using namespace Gre ;
 
+void DisplayMatrix(const Matrix4 &mat4)
+{
+    GreDebug("[") << mat4[0][0] << ", " << mat4[0][1] << ", " << mat4[0][2] << ", " << mat4[0][3] << gendl ;
+    GreDebug(" ") << mat4[1][0] << ", " << mat4[1][1] << ", " << mat4[1][2] << ", " << mat4[1][3] << gendl ;
+    GreDebug(" ") << mat4[2][0] << ", " << mat4[2][1] << ", " << mat4[2][2] << ", " << mat4[2][3] << gendl ;
+    GreDebug(" ") << mat4[3][0] << ", " << mat4[3][1] << ", " << mat4[3][2] << ", " << mat4[3][3] << "]" << gendl ;
+}
+
 // This is an example of a basic Key listener. Every times a key is pressed in any Window, this listener
 // will notifiate it. In order to make him listen to every active windows, we listen to the global window
 // manager listener.
@@ -20,9 +28,9 @@ class BasicKeyListener : public EventProceeder
 {
 public:
 
-    BasicKeyListener ( const RenderSceneHolder& sceneholder , const WindowHolder& win )
-    : EventProceeder () , linearattenuation(0.0f)
-    , scene(sceneholder) , angle ( glm::radians(12.5f) ) , exp(64.0f) , window(win)
+    BasicKeyListener (const WindowHolder& win , const LightRenderNodeHolder & l ,
+                      const RenderNodeHolder & upcube )
+    : EventProceeder () , window(win) , lightnode(l) , uppercubenode(upcube)
     { }
 
     ~BasicKeyListener () noexcept ( false ) { }
@@ -51,13 +59,40 @@ protected:
         if ( event.iKey == Key::U ) {
             window -> toggleCursor(false) ;
         }
+
+        if ( event.iKey == Key::A )
+            lightnode -> getLight() -> setPosition({
+                lightnode->getLight()->getPosition().x - 0.1f ,
+                lightnode->getLight()->getPosition().y ,
+                lightnode->getLight()->getPosition().z}) ;
+
+        if ( event.iKey == Key::D )
+            lightnode -> getLight() -> setPosition({
+                lightnode->getLight()->getPosition().x + 0.1f ,
+                lightnode->getLight()->getPosition().y ,
+                lightnode->getLight()->getPosition().z}) ;
+
+        if ( event.iKey == Key::W )
+            lightnode -> getLight() -> setPosition({
+                lightnode->getLight()->getPosition().x ,
+                lightnode->getLight()->getPosition().y + 0.1f ,
+                lightnode->getLight()->getPosition().z}) ;
+
+        if ( event.iKey == Key::S )
+            lightnode -> getLight() -> setPosition({
+                lightnode->getLight()->getPosition().x ,
+                lightnode->getLight()->getPosition().y - 0.1f ,
+                lightnode->getLight()->getPosition().z}) ;
+
+        if ( event.iKey == Key::T )
+        uppercubenode -> setVisible ( !uppercubenode->isVisible() ) ;
+
+        DisplayMatrix(lightnode -> getLightCamera() -> getProjectionViewMatrix() ) ;
     }
 
-    float linearattenuation ;
-    RenderSceneUser scene ;
-    float angle ;
-    float exp ;
     WindowHolder window ;
+    LightRenderNodeHolder lightnode ;
+    RenderNodeHolder uppercubenode ;
 };
 
 class MyApplicationExample
@@ -73,10 +108,12 @@ public:
 
     ~MyApplicationExample ()
     {
+        iApplication.clear();
+        iListener.clear();
+        rmanager.clear();
 
+        Gre::ResourceManager::Destroy();
     }
-
-    static void DisplayMatrix ( const Matrix4& mat4 ) ;
 
     void init ( int argc , char ** argv ) ;
 
@@ -91,14 +128,6 @@ protected:
 
     Gre::ResourceManagerHolder rmanager ;
 };
-
-void MyApplicationExample::DisplayMatrix(const Matrix4 &mat4)
-{
-    GreDebug("[") << mat4[0][0] << ", " << mat4[0][1] << ", " << mat4[0][2] << ", " << mat4[0][3] << gendl ;
-    GreDebug(" ") << mat4[1][0] << ", " << mat4[1][1] << ", " << mat4[1][2] << ", " << mat4[1][3] << gendl ;
-    GreDebug(" ") << mat4[2][0] << ", " << mat4[2][1] << ", " << mat4[2][2] << ", " << mat4[2][3] << gendl ;
-    GreDebug(" ") << mat4[3][0] << ", " << mat4[3][1] << ", " << mat4[3][2] << ", " << mat4[3][3] << "]" << gendl ;
-}
 
 void MyApplicationExample::init ( int argc , char** argv )
 {
@@ -171,8 +200,27 @@ void MyApplicationExample::createScene()
     auto cmanager = ResourceManager::Get()->getCameraManager() ;
 
     ResourceLoaderOptions WinOptions ;
-    WinOptions ["Title"] = std::string ( "Default Window" ) ;
-    WinOptions ["Size"]  = std::string ( "1024x768" ) ;
+    WinOptions ["Window.Title"] = std::string ( "Default Window" ) ;
+    WinOptions ["Window.Size"]  = std::string ( "1024x768" ) ;
+
+    WindowStyles styles = {
+        WindowStyle::Fullscreen , WindowStyle::Resizable ,
+        WindowStyle::Closable , WindowStyle::Titled
+    };
+
+    WinOptions ["Window.Styles"] = styles ;
+
+    WindowContextAttributes attr ({
+        WCADoubleBuffer ,
+        WCADepthSize , (WindowContextAttribute) 32 ,
+        //WCAMultiSample ,
+        //WCASampleBuffers , (WindowContextAttribute) 1 ,
+        //WCASamples , (WindowContextAttribute) 4 ,
+        WCAMajorVersion , (WindowContextAttribute) 3 ,
+        WCAMinorVersion , (WindowContextAttribute) 2
+    }) ;
+
+    WinOptions ["Window.ContextAttributes"] = attr ;
 
     auto window = wmanager -> load ( "Default Window" , WinOptions ) ;
     if ( window.isInvalid() ) exit( -3 ) ;
@@ -211,18 +259,24 @@ void MyApplicationExample::createScene()
 
         auto renderpass = renderer -> addPass ( "RenderPass1" ) ;
         renderpass -> setRenderTarget ( window.lock() ) ;
-        renderpass -> setViewport ({ 0.0f , 0.0f , 0.5f , 1.0f });
+        renderpass -> setViewport ({ 0.0f , 0.0f , 1.0f , 1.0f });
         renderpass -> setClearColor ( Color(0.4f, 0.8f, 0.4f) ) ;
         renderpass -> setScene ( scene ) ;
         renderpass -> setClearViewport ( true ) ;
 
         //////////////////////////////////////////////////////////////////////
-        // Tries to get the 'BlinnPhongTechnique' technique.
+        // Tries to get the 'learnopengl.shadowmapping.technique' technique.
 
-        auto blinnphongtech = tmanager -> get ( "BlinnPhongTechnique" ) ;
-        if ( blinnphongtech.isInvalid() ) exit( -6 ) ;
+        auto tech1 = tmanager -> get ( "learnopengl.shadowmapping.phase1.technique" ) ;
+        if ( tech1.isInvalid() ) exit( -6 ) ;
 
-        renderpass -> setTechnique ( blinnphongtech ) ;
+        auto tech2 = tmanager -> get ( "learnopengl.shadowmapping.phase2.technique" ) ;
+        if ( tech2.isInvalid() ) exit ( -6 ) ;
+
+        tech2 -> addPreTechnique(tech1) ;
+        renderpass -> setTechnique ( tech2 ) ;
+
+        renderpass -> addNamedParameter("shadows", HdwProgVarType::Int1, (int) 0) ;
 
         //////////////////////////////////////////////////////////////////////
         // Tries to create an FPS-like Camera.
@@ -241,15 +295,15 @@ void MyApplicationExample::createScene()
         // Adds a second pass where we draw from another camera , but with a different viewport. We simply copy the
         // created pass and change the viewport to begin at 50% left.
 
-        auto renderpass2 = renderer -> copyPass ( renderpass ) ;
-        renderpass2 -> setViewport ({ 0.5f , 0.0f , 1.0f , 1.0f });
-        renderpass2 -> setClearColor ({ 0.4f , 0.4f , 0.8f }) ;
+        //auto renderpass2 = renderer -> copyPass ( renderpass ) ;
+        //renderpass2 -> setViewport ({ 0.5f , 0.0f , 0.5f , 1.0f });
+        //renderpass2 -> setClearColor ({ 0.4f , 0.4f , 0.8f }) ;
     }
 
     {
         auto mmanager = ResourceManager::Get()->getMeshManager() ;
         auto textures = ResourceManager::Get() -> getTextureManager() ;
-        
+
         // Create our Root node for the scene.
         RenderNodeHolder root = scene -> setRootNode(scene->createNode()) ;
         root -> setBoundingBox ( BoundingBox({-1000.0f, -1000.0f, -1000.0f} , {1000.0f, 1000.0f, 1000.0f}) ) ;
@@ -264,11 +318,12 @@ void MyApplicationExample::createScene()
         lightnode -> loadShadowTexture ( 1024 , 1024 ) ;
 
         LightHolder & light = lightnode -> getLight () ;
-        light -> setAmbient ({ 0.6f , 0.3f , 0.0f }) ;
-        light -> setDiffuse ({ 1.0f , 0.5f , 0.0f }) ;
-        light -> setSpecular ({ 0.0f , 1.0f , 0.0f }) ;
-        light -> setPosition ({ -10.0f , 10.0f , 10.0f }) ;
-        light -> setDirection ({ 1.0f , -1.0f , -1.0f }) ;
+        light -> setAmbient ({ 0.5f , 0.5f , 0.5f }) ;
+        light -> setDiffuse ({ 0.8f , 0.8f , 0.8f }) ;
+        light -> setSpecular ({ 1.0f , 1.0f , 1.0f }) ;
+        light -> setPosition ({ 0.0f , 0.0f , 3.0f }) ;
+        light -> setDirection ({ -0.5f , -0.5f , 0.0f }) ;
+
         scene -> addLightNode ( lightnode ) ;
 
         //////////////////////////////////////////////////////////////////////
@@ -277,7 +332,7 @@ void MyApplicationExample::createScene()
         ResourceLoaderOptions ops ;
         int meshes = mmanager -> loadBundledFile ( "Cube.obj" , ops ) ;
         if ( !meshes ) exit ( -8 ) ;
-        
+
         MeshHolder cubemesh = mmanager -> get ( "Cube" ) ;
         if ( cubemesh.isInvalid() ) exit ( -9 ) ;
 
@@ -298,14 +353,48 @@ void MyApplicationExample::createScene()
                                                                   TextureType::Texture2D , ops ) ;
         if ( cubespectex.isInvalid() ) exit ( -12 ) ;
 
-        cubemesh -> getDefaultMaterial () -> setDiffuseTexture ( cubetex ) ;
-        cubemesh -> getDefaultMaterial () -> setSpecularTexture ( cubespectex ) ;
+        cubenode -> getMaterial () -> setDiffuseTexture ( cubetex ) ;
+        cubenode -> getMaterial () -> setSpecularTexture ( cubespectex ) ;
 
         //////////////////////////////////////////////////////////////////////
         // Configure the node's position and scale.
 
-        cubenode -> setPosition ({ 0.0f , 2.0f , -4.0f }) ;
+        cubenode -> setPosition ({ 0.0f , 2.0f , -1.0f }) ;
         cubenode -> setScale ( 4.0f ) ;
+
+        //////////////////////////////////////////////////////////////////////
+        // Make a plane.
+
+        RenderNodeHolder planenode = scene -> createNode( "node.plane" ) ;
+        if ( planenode.isInvalid() ) exit ( -13 ) ;
+
+        planenode -> setMesh ( cubemesh ) ;
+        planenode -> setPosition ({ -1.0f , 0.0f , -1.5f }) ;
+
+        planenode -> getMaterial () -> setDiffuseTexture ( cubetex ) ;
+        planenode -> getMaterial () -> setSpecularTexture ( cubespectex ) ;
+
+        scene -> addNode(planenode) ;
+
+        //////////////////////////////////////////////////////////////////////
+        // Adds our 'Elexis.obj' file.
+
+        meshes = mmanager -> loadBundledFile("Elexis.obj", ops) ;
+        if ( !meshes ) exit ( -14 ) ;
+
+        MeshHolder elexismesh = mmanager -> get ( "Elexis" ) ;
+        if ( elexismesh.isInvalid() ) exit ( -15 ) ;
+
+        RenderNodeHolder elexisnode = scene -> createNode() ;
+        elexisnode -> setMesh(elexismesh) ;
+        elexisnode -> setPosition({ 0.0f , 0.0f , -5.0f }) ;
+        scene -> addNode(elexisnode) ;
+
+        //////////////////////////////////////////////////////////////////////
+        // Adds the key listener for our example.
+
+        iListener = new BasicKeyListener ( window.lock() , lightnode , cubenode ) ;
+        window.lock() -> addFilteredListener(iListener, {EventType::KeyDown}) ;
     }
 }
 

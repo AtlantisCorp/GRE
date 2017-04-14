@@ -216,9 +216,6 @@ void Technique::setAliasedParameterStructValue (const TechniqueParam & alias1 ,
 
     std::string name1 = getAlias ( alias1 ) ;
     std::string name2 = getAlias ( alias2 ) ;
-
-    if ( name1.empty() && name2.empty() )
-    return ;
     
     if ( name1.empty() )
     {
@@ -324,13 +321,15 @@ void Technique::setAliasedTextureStruct (const TechniqueParam & alias1 ,
     return ;
 
     //////////////////////////////////////////////////////////////////////
-    // Checks both aliases. If one is empty , just don't send.
+    // Checks both aliases. If one is empty , just send to name2.
 
     std::string name1 = getAlias ( alias1 ) ;
     std::string name2 = getAlias ( alias2 ) ;
-
-    if ( name1.empty() || name2.empty() )
-    return ;
+    
+    if ( name1.empty() ) {
+        setAliasedTexture(alias2, tex);
+        return ;
+    }
 
     //////////////////////////////////////////////////////////////////////
     // If program is bound , sends the value to the shader object.
@@ -351,8 +350,20 @@ void Technique::setAliasedTexture(const Gre::TechniqueParam &param, const Textur
     
     if ( iProgram.isInvalid() || tex.isInvalid() )
     return ;
+    
+    //////////////////////////////////////////////////////////////////////
+    // If this parameter is set in the framebuffer attachements aliases , we
+    // prefer to set the framebuffer attachement instead.
+    
+    auto it = iAliasAttachements.find(param) ;
+    
+    if ( it != iAliasAttachements.end() && !iFramebuffer.isInvalid() )
+    iFramebuffer -> setAttachementNoCache(it->second, tex) ;
+    
+    //////////////////////////////////////////////////////////////////////
+    // If not , bind the alias to the program.
 
-    if ( iProgram->isBound() )
+    else if ( iProgram->isBound() )
     {
         auto alias = getAlias ( param ) ;
         if ( alias.empty() ) return ;
@@ -381,6 +392,11 @@ const std::string Technique::getAttribName ( const VertexAttribAlias & alias ) c
 void Technique::resetTextures() const
 {
     GreAutolock ; iCurrentTextureUnit = 0 ;
+}
+
+void Technique::setFramebufferAttachements ( const std::map < TechniqueParam , RenderFramebufferAttachement > & attachements )
+{
+    GreAutolock ; iAliasAttachements = attachements ;
 }
 
 void Technique::onUpdateEvent(const Gre::UpdateEvent &e)

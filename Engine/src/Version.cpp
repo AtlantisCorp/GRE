@@ -4,7 +4,7 @@
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
-//  Copyright (c) 2015 - 2016 Luk2010
+//  Copyright (c) 2015 - 2017 Luk2010
 //  Created on 23/03/2016.
 //
 //////////////////////////////////////////////////////////////////////
@@ -16,10 +16,10 @@
  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  copies of the Software, and to permit persons to whom the Software is
  furnished to do so, subject to the following conditions:
- 
+
  The above copyright notice and this permission notice shall be included in
  all copies or substantial portions of the Software.
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -52,6 +52,17 @@ extern "C" std::vector<std::string> split(const std::string &s, char delim) {
 
 GreBeginNamespace
 
+// ---------------------------------------------------------------------------------------------------
+// Debug object definition. 
+
+#ifndef GreIsDebugMode
+
+DebugNoOutput __dbgobject ;
+
+#endif
+
+// ---------------------------------------------------------------------------------------------------
+
 std::string DebugListNumeroted(const StringList& list)
 {
     std::string ret;
@@ -63,10 +74,10 @@ std::string DebugListNumeroted(const StringList& list)
         ret += item;
         if(itnum != list.size())
             ret += "\n";
-        
+
         itnum++;
     }
-    
+
     return ret;
 }
 
@@ -74,7 +85,7 @@ int DebugGetNumber()
 {
     std::string num;
     int ret;
-    
+
     std::cin >> num;
     ret = atoi(num.c_str());
     return ret;
@@ -100,14 +111,14 @@ bool operator != (const Surface& lhs, const Surface& rhs)
 GreConstructorException::GreConstructorException(const char* constructor)
 : iConstructor(constructor)
 {
-    
+
 }
 
 GreConstructorException::GreConstructorException(const char* constructor, const char* error)
 : iConstructor(constructor)
 , iError(error)
 {
-    
+
 }
 
 const char* GreConstructorException::what() const throw()
@@ -123,17 +134,42 @@ GreIndexException::GreIndexException(const char* emitter, size_t idx, size_t max
 , iMaxIndex(max)
 , iWhat(iEmitter + ":IndexException:" + std::to_string(idx) + "/" + std::to_string(max))
 {
-    
+
 }
 
 GreIndexException::~GreIndexException()
 {
-    
+
 }
 
 const char* GreIndexException::what() const throw()
 {
     return iWhat.c_str();
+}
+
+// ---------------------------------------------------------------------------------------------------
+
+AllocationBadMemory::AllocationBadMemory ( const std::string & classname , size_t sz )
+: iWhat ( std::string("Bad Allocation result from class '") + classname + "' of size " + std::to_string(sz) )
+, iClassname ( classname )
+, iClasssize ( sz )
+{
+
+}
+
+const char* AllocationBadMemory::what () const throw ()
+{
+    return iWhat.c_str() ;
+}
+
+size_t AllocationBadMemory::size () const
+{
+    return iClasssize ;
+}
+
+const std::string & AllocationBadMemory::name () const
+{
+    return iClassname ;
 }
 
 GreEndNamespace

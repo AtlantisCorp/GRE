@@ -79,11 +79,20 @@ public:
     /// @brief Attachs the given texture object to the given Attachement.
     //////////////////////////////////////////////////////////////////////
     virtual void setAttachement(const Gre::RenderFramebufferAttachement& attachement, Gre::TextureHolder& holder) ;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Attaches the given texture but don't cache it.
+    //////////////////////////////////////////////////////////////////////
+    virtual void setAttachementNoCache (const Gre::RenderFramebufferAttachement & attachement ,
+                                        const Gre::TextureHolder & holder ) const ;
 
 protected:
 
     /// @brief OpenGl 's framebuffer id.
     GLuint iGlFramebuffer ;
+    
+    /// @brief Pushed surface when changing the viewport.
+    mutable GLint iGlViewport[4] ;
 };
 
 //////////////////////////////////////////////////////////////////////

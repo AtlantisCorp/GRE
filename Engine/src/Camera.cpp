@@ -138,6 +138,8 @@ void Camera::lookAt(const Vector3 &origin, const Vector3 &point, const Vector3& 
 
     EventHolder e2 ( new DirectionChangedEvent(this, point - origin) ) ;
     sendEvent(e2) ;
+    
+    iMustCalcView = false ;
 }
 
 bool Camera::contains(const Vector3 &object) const
@@ -242,6 +244,16 @@ void Camera::onUpdateEvent(const Gre::UpdateEvent &e)
     }
 }
 
+void Camera::onPositionChangedEvent(const Gre::PositionChangedEvent &e)
+{
+    setPosition(e.Position) ;
+}
+
+void Camera::onDirectionChangedEvent(const Gre::DirectionChangedEvent &e)
+{
+    setDirection(e.Direction) ;
+}
+
 // ---------------------------------------------------------------------------------------------------
 
 CameraLoader::CameraLoader ()
@@ -273,22 +285,22 @@ CameraHolder DefaultCameraLoader::load(const std::string &name, const CameraOpti
 
     if ( it != options.end() )
     {
-        if ( it->second.toString() == "Orthogonal" )
+        if ( it->second.to<std::string>() == "Orthogonal" )
             result -> getFrustrum () .setProjectionType ( ProjectionType::Orthogonal ) ;
-        else if ( it->second.toString() == "Perspective" )
+        else if ( it->second.to<std::string>() == "Perspective" )
             result -> getFrustrum () .setProjectionType ( ProjectionType::Perspective ) ;
     }
 
     it = options.find("NearPlane");
 
     if ( it != options.end() ) {
-        result -> getFrustrum () .setNear ( it->second.toFloat() ) ;
+        result -> getFrustrum () .setNear ( it->second.to<float>() ) ;
     }
 
     it = options.find("FarPlane");
 
     if ( it != options.end() ) {
-        result -> getFrustrum () .setFar ( it->second.toFloat() ) ;
+        result -> getFrustrum () .setFar ( it->second.to<float>() ) ;
     }
 
     return result ;
@@ -354,7 +366,7 @@ CameraUser CameraManager::load ( const std::string & name , const CameraOptions 
     auto loadername = options.find("Loader") ;
     if ( loadername != options.end() )
     {
-        std::string lname = loadername->second.toString() ;
+        std::string lname = loadername->second.to<std::string>() ;
         CameraLoader* loader = findLoader( lname ) ;
 
         if ( loader )
@@ -363,23 +375,23 @@ CameraUser CameraManager::load ( const std::string & name , const CameraOptions 
 
             auto it = options.find ( "Position" ) ;
             if ( it != options.end() ) {
-                newcam -> setPosition ( it->second.toVector3() ) ;
+                newcam -> setPosition ( it->second.to<Vector3>() ) ;
             }
 
             it = options.find ( "Direction" ) ;
             if ( it != options.end() ) {
-                newcam -> setDirection ( it->second.toVector3() ) ;
+                newcam -> setDirection ( it->second.to<Vector3>() ) ;
             }
 
             it = options.find ( "Target" ) ;
             if ( it != options.end() ) {
-                newcam -> setTarget ( it->second.toVector3() ) ;
+                newcam -> setTarget ( it->second.to<Vector3>() ) ;
             }
 
             bool sendupdate = true ;
             it = options.find ( "SendUpdate" ) ;
             if ( it != options.end() ) {
-                sendupdate = it->second.toBool() ;
+                sendupdate = it->second.to<bool>() ;
             }
 
             if ( sendupdate ) {

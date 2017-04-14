@@ -92,8 +92,7 @@ extern "C" void StopPlugin (void)
     macOSWindowManager* manager = reinterpret_cast<macOSWindowManager*>(ResourceManager::Get()->getWindowManager().getObject());
     terminateAppkit(manager);
     
-    // Unloads the Window Manager.
-    // ResourceManager::Get().setWindowManager(WindowManagerHolder(nullptr));
+    GreDebug ( "[INFO] Mac OS X Window Plugin stopped." ) << Gre::gendl ;
 }
 
 

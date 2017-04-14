@@ -146,48 +146,23 @@ void BoundingBox::apply(const Gre::Transformation &transf)
 {
     if ( iIsSet )
     {
-        Vector3 translation = transf.getTranslation();
+        //////////////////////////////////////////////////////////////////////
+        // Apply scale.
         
-        iMin = iMin + translation;
-        iMax = iMax + translation;
+        iMin = iMin * transf.getScale() ;
+        iMax = iMax * transf.getScale() ;
         
-        Vector3 scale = transf.getScale();
+        //////////////////////////////////////////////////////////////////////
+        // Apply rotation.
         
-        if ( scale.x != 1.0f )
-        {
-            float diff = iMax.x - iMin.x;
-            float newdiff = scale.x * diff;
-            
-            diff = newdiff - diff;
-            diff = diff / 2;
-            
-            iMin.x = iMin.x - diff;
-            iMax.x = iMax.x + diff;
-        }
+        iMin = glm::rotate(transf.getRotation(), iMin) ;
+        iMax = glm::rotate(transf.getRotation(), iMax) ;
         
-        if ( scale.y != 1.0f )
-        {
-            float diff = iMax.y - iMin.y;
-            float newdiff = scale.y * diff;
-            
-            diff = newdiff - diff;
-            diff = diff / 2;
-            
-            iMin.y = iMin.y - diff;
-            iMax.y = iMax.y + diff;
-        }
+        //////////////////////////////////////////////////////////////////////
+        // Apply translation.
         
-        if ( scale.z != 1.0f )
-        {
-            float diff = iMax.z - iMin.z;
-            float newdiff = scale.z * diff;
-            
-            diff = newdiff - diff;
-            diff = diff / 2;
-            
-            iMin.z = iMin.z - diff;
-            iMax.z = iMax.z + diff;
-        }
+        iMin = iMin + transf.getTranslation() ;
+        iMax = iMax + transf.getTranslation() ; 
     }
 }
 
@@ -202,6 +177,23 @@ BoundingBox& BoundingBox::operator=(const Gre::BoundingBox &rhs)
     iMax = rhs.iMax;
     iIsSet = rhs.iIsSet;
     return *this;
+}
+
+IntersectionResult BoundingBox::intersect(const Gre::BoundingBox &rhs) const
+{
+    //////////////////////////////////////////////////////////////////////
+    // Computes, for each axis , the result.
+    
+    if (iMin.x > rhs.iMin.x && iMin.y > rhs.iMin.y && iMin.z > rhs.iMin.z &&
+        iMax.x < rhs.iMax.x && iMax.y < rhs.iMax.y && iMax.z < rhs.iMin.z)
+    return IntersectionResult::Inside ;
+    
+    if (iMin.x < rhs.iMax.x && iMax.x > rhs.iMin.x &&
+        iMin.y < rhs.iMax.y && iMax.y > rhs.iMin.y &&
+        iMin.z < rhs.iMax.z && iMax.z > rhs.iMin.z)
+    return IntersectionResult::Between ;
+    
+    return IntersectionResult::Outside ;
 }
 
 GreEndNamespace

@@ -55,6 +55,10 @@ enum class RenderNodeType : int
     Light
 };
 
+/// @brief Uses this definition here because RenderScene should be able
+/// to access nodes protected methods.
+class RenderScene ;
+
 //////////////////////////////////////////////////////////////////////
 /// @brief Specialized Node to contains particular Objects as Mesh.
 ///
@@ -73,6 +77,9 @@ enum class RenderNodeType : int
 class DLL_PUBLIC RenderNode : public Resource , public TechniqueParamBinder
 {
 public:
+    
+    /// @brief RenderNode can be accessed by the render scene.
+    friend class RenderScene ;
 
     POOLED ( Pools::Scene )
 
@@ -217,7 +224,12 @@ public:
     /// @brief Returns 'iMaterial'.
     //////////////////////////////////////////////////////////////////////
     virtual const MaterialHolder& getMaterial () const ;
-
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns 'iMaterial'.
+    //////////////////////////////////////////////////////////////////////
+    virtual MaterialHolder& getMaterial () ;
+    
     //////////////////////////////////////////////////////////////////////
     /// @brief Changes 'iMaterial'.
     //////////////////////////////////////////////////////////////////////
@@ -227,7 +239,7 @@ public:
     /// @brief Returns true if bounding box intersects one frustrum plane,
     /// or if more than one plane intersects 'inside'.
     //////////////////////////////////////////////////////////////////////
-    virtual bool isVisible ( const CameraUser& camera ) const ;
+    virtual bool isVisible ( const CameraHolder& camera ) const ;
 
     //////////////////////////////////////////////////////////////////////
     /// @brief Listens to 'PositionChangedEvent' and 'DirectionChangedEvent'
@@ -259,6 +271,14 @@ public:
     /// @brief Changes transformation's scale.
     //////////////////////////////////////////////////////////////////////
     virtual void setScale ( float value ) ;
+    
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    virtual void setVisible ( bool b ) ;
+    
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    virtual bool isVisible () const ;
 
 protected:
 
@@ -282,6 +302,17 @@ protected:
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     virtual void onDirectionChangedEvent ( const DirectionChangedEvent& e ) ;
+    
+protected:
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Function used by the RenderScene to compute the children
+    /// visible by the given camera in this node. The node should also add
+    /// itself if visible.
+    //////////////////////////////////////////////////////////////////////
+    virtual void iComputeChildren (RenderNodeHolderList & result ,
+                                   const CameraHolder & camera ,
+                                   float elapsed) const ;
 
 protected:
 
@@ -311,6 +342,10 @@ protected:
 
     /// @brief Holds a user to the tracked object.
     EventProceederUser iPositionTracked ;
+    
+    /// @brief Visible flag. If true , the node can compute its visibility from
+    /// a given camera ('isVisible()' with a camera function).
+    bool iVisible ;
 
     /// @brief Flags set to true when the iTransformation property has changed.
     mutable bool iTransformationChanged;

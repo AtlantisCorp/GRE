@@ -91,7 +91,7 @@ void Application::WorkerThreadMain ( Application * app )
         for ( EventProceederHolder & listener : app->iWorkers )
         {
             if ( !listener.isInvalid() )
-                listener -> onEvent ( uevent ) ;
+            listener -> onEvent ( uevent ) ;
         }
         
         app -> threadUnlock() ;

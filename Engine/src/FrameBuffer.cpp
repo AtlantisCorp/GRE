@@ -4,7 +4,7 @@
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
-//  Copyright (c) 2015 - 2016 Luk2010
+//  Copyright (c) 2015 - 2017 Luk2010
 //  Created on 25/01/2016.
 //
 //////////////////////////////////////////////////////////////////////
@@ -33,6 +33,49 @@
 #include "FrameBuffer.h"
 
 GreBeginNamespace
+
+// ---------------------------------------------------------------------------------------------------
+
+RenderColorBuffer RenderColorBufferFromString ( const std::string & str )
+{
+    if ( str == "FrontLeft" ) return RenderColorBuffer::FrontLeft ;
+    if ( str == "FrontRight" ) return RenderColorBuffer::FrontRight ;
+    if ( str == "BackLeft" ) return RenderColorBuffer::BackLeft ;
+    if ( str == "BackRight" ) return RenderColorBuffer::BackRight ;
+    if ( str == "Front" ) return RenderColorBuffer::Front ;
+    if ( str == "Back" ) return RenderColorBuffer::Back ;
+    if ( str == "Left" ) return RenderColorBuffer::Left ;
+    if ( str == "Right" ) return RenderColorBuffer::Right ;
+    if ( str == "FrontAndBack" ) return RenderColorBuffer::FrontAndBack ;
+    if ( str == "Color0" ) return RenderColorBuffer::Color0 ;
+    if ( str == "Color1" ) return RenderColorBuffer::Color1 ;
+    if ( str == "Color2" ) return RenderColorBuffer::Color2 ;
+    if ( str == "Color3" ) return RenderColorBuffer::Color3 ;
+    if ( str == "Color4" ) return RenderColorBuffer::Color4 ;
+    if ( str == "Color5" ) return RenderColorBuffer::Color5 ;
+    if ( str == "Color6" ) return RenderColorBuffer::Color6 ;
+    if ( str == "Color7" ) return RenderColorBuffer::Color7 ;
+    if ( str == "Color8" ) return RenderColorBuffer::Color8 ;
+    return RenderColorBuffer::None ;
+}
+
+RenderFramebufferAttachement RenderFramebufferAttachementFromString ( const std::string & str )
+{
+    if ( str == "Color0" ) return RenderFramebufferAttachement::Color0 ;
+    if ( str == "Color1" ) return RenderFramebufferAttachement::Color1 ;
+    if ( str == "Color2" ) return RenderFramebufferAttachement::Color2 ;
+    if ( str == "Color3" ) return RenderFramebufferAttachement::Color3 ;
+    if ( str == "Color4" ) return RenderFramebufferAttachement::Color4 ;
+    if ( str == "Color5" ) return RenderFramebufferAttachement::Color5 ;
+    if ( str == "Color6" ) return RenderFramebufferAttachement::Color6 ;
+    if ( str == "Color7" ) return RenderFramebufferAttachement::Color7 ;
+    if ( str == "Color8" ) return RenderFramebufferAttachement::Color8 ;
+    if ( str == "Depth" ) return RenderFramebufferAttachement::Depth ;
+    if ( str == "Stencil" ) return RenderFramebufferAttachement::Stencil ;
+    return RenderFramebufferAttachement::Null ;
+}
+
+// ---------------------------------------------------------------------------------------------------
   
 RenderFramebuffer::Attachement::Attachement()
   : texture(nullptr)
@@ -63,7 +106,8 @@ bool RenderFramebuffer::Attachement::isValid() const
 RenderFramebuffer::RenderFramebuffer(const std::string& name)
 : Resource(ResourceIdentifier::New() , name)
 {
-    
+    iWriteBuffer = RenderColorBuffer::None ;
+    iReadBuffer = RenderColorBuffer::None ;
 }
 
 RenderFramebuffer::~RenderFramebuffer()
@@ -73,6 +117,8 @@ RenderFramebuffer::~RenderFramebuffer()
 
 TextureUser RenderFramebuffer::getTextureAttachement(const RenderFramebufferAttachement& attachement)
 {
+    GreAutolock ;
+    
     auto it = iAttachements.find(attachement);
     if(it != iAttachements.end())
     {
@@ -93,6 +139,8 @@ TextureUser RenderFramebuffer::getTextureAttachement(const RenderFramebufferAtta
 
 const TextureUser RenderFramebuffer::getTextureAttachement(const RenderFramebufferAttachement& attachement) const
 {
+    GreAutolock ;
+    
     auto it = iAttachements.find(attachement);
     if(it != iAttachements.end())
     {
@@ -113,6 +161,8 @@ const TextureUser RenderFramebuffer::getTextureAttachement(const RenderFramebuff
 
 Surface RenderFramebuffer::getAttachementSurface(const RenderFramebufferAttachement& attachement) const
 {
+    GreAutolock ;
+    
     auto it = iAttachements.find(attachement);
     if(it != iAttachements.end())
 	 {
@@ -127,6 +177,8 @@ Surface RenderFramebuffer::getAttachementSurface(const RenderFramebufferAttachem
 
 void RenderFramebuffer::setAttachement(const RenderFramebufferAttachement& attachement, TextureHolder& holder)
 {
+    GreAutolock ;
+    
     auto attach = iAttachements[attachement];
   
     if(attach.isValid())
@@ -158,6 +210,26 @@ int RenderFramebuffer::getMaximumColorAttachementCount() const
     return 0;
 }
 
+void RenderFramebuffer::setWriteBuffer(const Gre::RenderColorBuffer &buffer)
+{
+    GreAutolock ; iWriteBuffer = buffer ;
+}
+
+void RenderFramebuffer::setReadBuffer(const Gre::RenderColorBuffer &buffer)
+{
+    GreAutolock ; iReadBuffer = buffer ;
+}
+
+void RenderFramebuffer::setViewport ( const Viewport & viewport )
+{
+    GreAutolock ; iViewport = viewport ;
+}
+
+const Viewport & RenderFramebuffer::getViewport() const
+{
+    GreAutolock ; return iViewport ;
+}
+
 // ---------------------------------------------------------------------------------------------------
 
 RenderFramebufferInternalCreator::RenderFramebufferInternalCreator ()
@@ -184,6 +256,11 @@ RenderFramebufferManager::~RenderFramebufferManager() noexcept ( false )
     if ( iCreator ) {
         delete iCreator ;
     }
+}
+
+RenderFramebufferHolder RenderFramebufferManager::loadBlank(const std::string &name)
+{
+    return load ( name , ResourceLoaderOptions() ) ;
 }
 
 RenderFramebufferHolder RenderFramebufferManager::load(const std::string &name, const ResourceLoaderOptions &options)
@@ -225,6 +302,16 @@ void RenderFramebufferManager::setInternalCreator(Gre::RenderFramebufferInternal
 const RenderFramebufferInternalCreator* RenderFramebufferManager::getInternalCreator() const
 {
     GreAutolock ; return iCreator ;
+}
+
+RenderFramebufferHolder RenderFramebufferManager::get(const std::string &name)
+{
+    GreAutolock ; return findFirstHolder ( name ) ;
+}
+
+const RenderFramebufferHolder RenderFramebufferManager::get(const std::string &name) const
+{
+    GreAutolock ; return findFirstHolder ( name ) ;
 }
 
 GreEndNamespace

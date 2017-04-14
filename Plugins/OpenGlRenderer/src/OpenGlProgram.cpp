@@ -335,15 +335,15 @@ bool OpenGlProgram::_setUniform(int location, const Gre::HdwProgVarType &type, c
         }
 
         else if ( type == Gre::HdwProgVarType::Float2 ) {
-            glUniform2fv(location, 1, & value.f2[0]);
+            glUniform2fv(location, 1, glm::value_ptr( value.f2 ) );
         }
 
         else if ( type == Gre::HdwProgVarType::Float3 ) {
-            glUniform3fv(location, 1, & value.f3[0]);
+            glUniform3fv(location, 1, glm::value_ptr( value.f3 ) );
         }
 
         else if ( type == Gre::HdwProgVarType::Float4 ) {
-            glUniform4fv(location, 1, & value.f4[0]);
+            glUniform4fv(location, 1, glm::value_ptr( value.f4 ) );
         }
 
         else if ( type == Gre::HdwProgVarType::Int1 ) {
@@ -363,15 +363,15 @@ bool OpenGlProgram::_setUniform(int location, const Gre::HdwProgVarType &type, c
         }
 
         else if ( type == Gre::HdwProgVarType::Matrix2 ) {
-            glUniformMatrix2fv(location, 1, false, & value.m2[0][0]);
+            glUniformMatrix2fv(location, 1, false, glm::value_ptr( value.m2 ) );
         }
 
         else if ( type == Gre::HdwProgVarType::Matrix3 ) {
-            glUniformMatrix3fv(location, 1, false, & value.m3[0][0]);
+            glUniformMatrix3fv(location, 1, false, glm::value_ptr( value.m3) );
         }
 
         else if ( type == Gre::HdwProgVarType::Matrix4 ) {
-            glUniformMatrix4fv(location, 1, false, & value.m4[0][0]);
+            glUniformMatrix4fv(location, 1, false, glm::value_ptr( value.m4 ) );
         }
 
         GLenum err = glGetError() ;

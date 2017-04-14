@@ -37,7 +37,7 @@
 
 GLenum translateGlAttachement ( const Gre::RenderFramebufferAttachement& att )
 {
-    if ( (int) att <= (int) Gre::RenderFramebufferAttachement::Color31 )
+    if ( (int) att <= (int) Gre::RenderFramebufferAttachement::Color8 )
         return GL_COLOR_ATTACHMENT0 + (int) att ;
     else if ( att == Gre::RenderFramebufferAttachement::Depth )
         return GL_DEPTH_ATTACHMENT ;
@@ -45,6 +45,11 @@ GLenum translateGlAttachement ( const Gre::RenderFramebufferAttachement& att )
         return GL_STENCIL_ATTACHMENT ;
     
     return GL_INVALID_ENUM ;
+}
+
+GLenum translateGlDrawBuffer ( const Gre::RenderColorBuffer & buffer )
+{
+    return GL_NONE ;
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -84,6 +89,17 @@ void OpenGlFramebuffer::bind() const
     if ( iGlFramebuffer )
     {
         glBindFramebuffer(GL_FRAMEBUFFER, iGlFramebuffer);
+        glDrawBuffer(translateGlDrawBuffer(iWriteBuffer));
+        glReadBuffer(translateGlDrawBuffer(iReadBuffer));
+        
+        if ( iViewport.getArea() )
+        {
+            //////////////////////////////////////////////////////////////////////
+            // We use the set Viewport to change it.
+            
+            glGetIntegerv ( GL_VIEWPORT , &iGlViewport[0] ) ;
+            glViewport(iViewport.left, iViewport.top, iViewport.width, iViewport.height);
+        }
     }
 }
 
@@ -93,7 +109,49 @@ void OpenGlFramebuffer::unbind() const
     
     if ( iGlFramebuffer )
     {
+        //////////////////////////////////////////////////////////////////////
+        // Restores the viewport if we changed it.
+        
+        if ( iViewport.getArea() )
+        glViewport(iGlViewport[0], iGlViewport[1], iGlViewport[2], iGlViewport[3]);
+        
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
+}
+
+void OpenGlFramebuffer::setAttachementNoCache(const Gre::RenderFramebufferAttachement &attachement, const Gre::TextureHolder &holder) const
+{
+    if ( iGlFramebuffer && !holder.isInvalid() )
+    {
+        GLenum textarget = translateGlTexture(holder->getType()) ;
+        GLuint texture = reinterpret_cast<const OpenGlTexture*>(holder.getObject())->getGlTexture() ;
+        
+        glBindTexture(textarget, texture);
+        glBindFramebuffer(GL_FRAMEBUFFER, iGlFramebuffer);
+        
+        if ( textarget == GL_TEXTURE_1D )
+        {
+            glFramebufferTexture1D(GL_FRAMEBUFFER,
+                                   translateGlAttachement(attachement),
+                                   textarget, texture, 0);
+        }
+        
+        else if ( textarget == GL_TEXTURE_2D )
+        {
+            glFramebufferTexture2D(GL_FRAMEBUFFER,
+                                   translateGlAttachement(attachement),
+                                   textarget, texture, 0);
+        }
+        
+        else if ( textarget == GL_TEXTURE_3D )
+        {
+            glFramebufferTexture3D(GL_FRAMEBUFFER,
+                                   translateGlAttachement(attachement),
+                                   textarget, texture, 0, 0);
+        }
+        
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glBindTexture(textarget, 0);
     }
 }
 

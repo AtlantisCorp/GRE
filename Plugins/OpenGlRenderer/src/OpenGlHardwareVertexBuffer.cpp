@@ -46,6 +46,8 @@ OpenGlHardwareVertexBuffer::OpenGlHardwareVertexBuffer ( const void* data , size
         glBufferData(GL_ARRAY_BUFFER, sz, data, GL_STATIC_DRAW);
         iSize = sz ; setVertexDescriptor(desc);
     }
+    
+    setDirty(true) ;
 }
 
 OpenGlHardwareVertexBuffer::~OpenGlHardwareVertexBuffer() noexcept ( false )
@@ -105,6 +107,8 @@ void OpenGlHardwareVertexBuffer::addData(const char *vdata, size_t sz)
             glBufferData(GL_ARRAY_BUFFER, sz, vdata, GL_STATIC_DRAW);
         }
     }
+    
+    setDirty(true) ;
 }
 
 const char* OpenGlHardwareVertexBuffer::getData() const
@@ -122,6 +126,8 @@ void OpenGlHardwareVertexBuffer::clearData()
         iGlBuffer = 0 ;
         iSize = 0 ;
     }
+    
+    setDirty(true) ;
 }
 
 size_t OpenGlHardwareVertexBuffer::getSize() const

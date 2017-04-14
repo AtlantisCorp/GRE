@@ -79,6 +79,13 @@ public:
         glBindVertexArray(0);
     }
     
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    bool needUpdate () const
+    {
+        return false ;
+    }
+    
 protected:
     
     /// @brief Vertex Array Object id.

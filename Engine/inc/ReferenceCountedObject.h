@@ -157,7 +157,6 @@ public:
     SpecializedCountedObjectHolder ( const Class * object ) :
     Gre::ReferenceCountedObjectHolder(object) , iClass ( nullptr )
     {
-        GreAutolock ;
         iClass = reinterpret_cast<Class*>(iObject) ;
     }
 
@@ -166,7 +165,6 @@ public:
     SpecializedCountedObjectHolder ( const SpecializedCountedObjectHolder<Class> & holder ) :
     Gre::ReferenceCountedObjectHolder(holder) , iClass ( nullptr )
     {
-        GreAutolock ;
         iClass = reinterpret_cast<Class*>(iObject) ;
     }
 
@@ -176,8 +174,6 @@ public:
     SpecializedCountedObjectHolder ( const SpecializedCountedObjectHolder<Subclass> & holder ) :
     Gre::ReferenceCountedObjectHolder(holder) , iClass ( nullptr )
     {
-        GreAutolock ;
-
         if ( std::is_base_of<Class, Subclass>::value )
             iClass = reinterpret_cast<Class*>(iObject) ;
         else if ( std::is_base_of<Subclass, Class>::value )
@@ -188,8 +184,11 @@ public:
     ////////////////////////////////////////////////////////////////////////
     SpecializedCountedObjectHolder<Class> & operator = ( const SpecializedCountedObjectHolder<Class> & rhs )
     {
+        GreAutolock ;
+        
         ReferenceCountedObjectHolder::operator=(rhs);
         iClass = reinterpret_cast<Class*>(iObject);
+        
         return *this ;
     }
 
@@ -197,14 +196,14 @@ public:
     ////////////////////////////////////////////////////////////////////////
     bool operator == ( const SpecializedCountedObjectHolder<Class> & rhs ) const
     {
-        return iClass == rhs.iClass ;
+        GreAutolock ; return iClass == rhs.iClass ;
     }
 
     ////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////
     bool operator < ( const SpecializedCountedObjectHolder < Class > & rhs ) const
     {
-        return iClass < rhs.iClass ;
+        GreAutolock ; return iClass < rhs.iClass ;
     }
 
     ////////////////////////////////////////////////////////////////////////
@@ -218,16 +217,14 @@ public:
     ////////////////////////////////////////////////////////////////////////
     Class * getObject ()
     {
-        GreAutolock ;
-        return iClass ;
+        GreAutolock ; return iClass ;
     }
 
     ////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////
     const Class * getObject () const
     {
-        GreAutolock ;
-        return iClass ;
+        GreAutolock ; return iClass ;
     }
 
     //////////////////////////////////////////////////////////////////////
@@ -249,9 +246,8 @@ public:
     ////////////////////////////////////////////////////////////////////////
     void clear ()
     {
-        GreAutolock ;
+        GreAutolock ; iClass = nullptr ;
         ReferenceCountedObjectHolder::clear();
-        iClass = nullptr ;
     }
 
 protected:
@@ -261,7 +257,22 @@ protected:
 };
 
 ////////////////////////////////////////////////////////////////////////
-/// @brief Non - owning object.
+/// @brief An ObjectUser is an object that will hold a pointer to the
+/// original object adress , and to its counter.
+///
+/// In order to access the original object, the 'lock()' method creates
+/// an ObjectHolder from the object adress and counter informations. If
+/// the counter is invalid, or if the holder's count is null, the user
+/// will return a null holder.
+///
+/// Notes that if the user takes a counter and this counter is invalidated
+/// during its utilisation, behaviour is undefined. Also notes that the
+/// user should use the counter mutex to accessit through multiple threads.
+///
+/// Also notes that the constructor by pointer bypass the const parameter.
+/// This system may be used to bypass any const property and should not
+/// be used for this purpose.
+///
 ////////////////////////////////////////////////////////////////////////
 class ReferenceCountedObjectUser : public Lockable
 {
@@ -277,11 +288,11 @@ public:
 
     ////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////
-    ReferenceCountedObjectUser ( const ReferenceCountedObjectHolder& holder ) ;
+    ReferenceCountedObjectUser ( const ReferenceCountedObjectHolder & holder ) ;
 
     ////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////
-    ReferenceCountedObjectUser ( const ReferenceCountedObjectUser& user ) ;
+    ReferenceCountedObjectUser ( const ReferenceCountedObjectUser & user ) ;
 
     ////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////
@@ -337,6 +348,8 @@ protected:
 };
 
 ////////////////////////////////////////////////////////////////////////
+/// @brief Specialized Class to use any ReferenceCounted object as a
+/// ReferenceCountedObjectUser.
 ////////////////////////////////////////////////////////////////////////
 template < typename Class >
 class SpecializedCountedObjectUser : public ReferenceCountedObjectUser
@@ -396,8 +409,15 @@ public:
     SpecializedCountedObjectHolder<Class> lock ()
     {
         GreAutolock ;
-        ReferenceCountedObjectHolder holder = ReferenceCountedObjectUser::lock() ;
-        return SpecializedCountedObjectHolder<Class> ( reinterpret_cast<Class*>(holder.getObject()) ) ;
+        
+        iCheckCounterValidity();
+        
+        // We create the holder depending on the object. The fallback here is , if the
+        // iObject was initialized without initializing the counter , thus this object
+        // is destroyed and we then try to lock the user , the holder will be initialized
+        // with invalid memory pointer and will lead to unexpected behaviour.
+        
+        return SpecializedCountedObjectHolder < Class > ( reinterpret_cast < Class* > (iObject) ) ;
     }
 
     ////////////////////////////////////////////////////////////////////////
@@ -405,16 +425,22 @@ public:
     const SpecializedCountedObjectHolder<Class> lock () const
     {
         GreAutolock ;
-        ReferenceCountedObjectHolder holder = ReferenceCountedObjectUser::lock() ;
-        return SpecializedCountedObjectHolder<Class> ( reinterpret_cast<Class*>(holder.getObject()) ) ;
+        
+        iCheckCounterValidity();
+        
+        // We create the holder depending on the object. The fallback here is , if the
+        // iObject was initialized without initializing the counter , thus this object
+        // is destroyed and we then try to lock the user , the holder will be initialized
+        // with invalid memory pointer and will lead to unexpected behaviour.
+        
+        return SpecializedCountedObjectHolder < Class > ( reinterpret_cast < Class* > (iObject) ) ;
     }
 
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     bool operator == ( const SpecializedCountedObjectUser<Class> & rhs ) const
     {
-        GreAutolock ;
-        return ReferenceCountedObjectUser::operator==(rhs) ;
+        GreAutolock ; return ReferenceCountedObjectUser::operator==(rhs) ;
     }
 };
 

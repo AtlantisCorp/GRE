@@ -199,7 +199,7 @@ void RenderPass::prerender(const Gre::Renderer *renderer, const TechniqueHolder 
     {
         for ( auto tech : technique -> getPreTechniques() )
         {
-            renderTechnique ( renderer , technique ) ;
+            renderTechnique ( renderer , tech ) ;
         }
     }
 }
@@ -236,24 +236,44 @@ void RenderPass::renderTechnique(const Gre::Renderer *renderer, const TechniqueH
 
         for ( const LightRenderNodeHolder & lightnode : lights )
         {
-            lightnode -> use ( technique ) ;
+            lightnode -> use ( technique , false ) ;
 
             for ( auto n : nodes )
             {
+                if ( !n -> isRenderable() )
+                    continue ;
+                
                 //////////////////////////////////////////////////////////////////////
                 // As we also need to make the 'NormalMatrix' parameter , we should calculate
                 // it here and directly sets it to the technique.
-
-                Matrix4 normalMatrix = glm::inverseTranspose ( iCamera -> getViewMatrix() * n -> getModelMatrix() ) ;
-                technique -> setAliasedParameterValue ( TechniqueParam::NormalMatrix , HdwProgVarType::Matrix4 , normalMatrix ) ;
-
+                
+                Matrix3 modelViewMat = Matrix3 ( iCamera->getViewMatrix() * n->getModelMatrix() ) ;
+                Matrix3 normalMat = glm::transpose(glm::inverse(modelViewMat)) ;
+                
+                technique -> setAliasedParameterValue ( TechniqueParam::NormalMatrix3 , HdwProgVarType::Matrix3 , normalMat ) ;
+                
+                
                 //////////////////////////////////////////////////////////////////////
                 // Lets the node uses the technique and let the renderer draw the node.
-
+                // Notes on OpenGl , drawing anything should be done under a VAO object ,
+                // we should make the mesh bindable. When the mesh binds its attributes ,
+                // it should also binds the VAO object. Unbinding unbinds the VAO object.
+                
                 n -> use ( technique ) ;
-
                 use ( technique ) ;
+                
+                n -> getMesh() -> bind ( technique ) ;
+                
                 renderer -> draw (n) ;
+                
+                n -> getMesh() -> unbind ( technique ) ;
+                
+                //////////////////////////////////////////////////////////////////////
+                // Undo the textures for the node. The mesh actually don't set textures,
+                // as the node already sets everything in 'use'. Even for light's , shadowmap
+                // is in the LightRenderNode object.
+                
+                technique -> resetTextures () ;
             }
 
             technique -> resetLights () ;
@@ -264,17 +284,24 @@ void RenderPass::renderTechnique(const Gre::Renderer *renderer, const TechniqueH
     {
         auto lights = iScene -> getActivatedLightsForCamera ( iCamera ) ;
 
-        for ( const LightRenderNodeHolder & lightnode : lights ) {
-            lightnode -> use ( technique ) ;
-        }
-
         for ( auto n : nodes )
         {
+            if ( !n -> isRenderable() )
+            continue ;
+            
+            //////////////////////////////////////////////////////////////////////
+            // We have to set every lights for each node in order to rebuild the
+            // texture units correctly.
+            
+            for ( const LightRenderNodeHolder & lightnode : lights ) {
+                lightnode -> use ( technique , false ) ;
+            }
+            
             //////////////////////////////////////////////////////////////////////
             // As we also need to make the 'NormalMatrix' parameter , we should calculate
             // it here and directly sets it to the technique.
             
-            Matrix3 modelViewMat = Matrix3 ( iCamera->getViewMatrix() * n->getModelMatrix() ) ;
+            Matrix3 modelViewMat = Matrix3 ( n->getModelMatrix() * iCamera->getViewMatrix() ) ;
             Matrix3 normalMat = glm::transpose(glm::inverse(modelViewMat)) ;
             
             technique -> setAliasedParameterValue ( TechniqueParam::NormalMatrix3 , HdwProgVarType::Matrix3 , normalMat ) ;
@@ -289,12 +316,10 @@ void RenderPass::renderTechnique(const Gre::Renderer *renderer, const TechniqueH
             n -> use ( technique ) ;
             use ( technique ) ;
             
-            if ( n -> isRenderable() )
             n -> getMesh() -> bind ( technique ) ;
             
             renderer -> draw (n) ;
             
-            if ( n -> isRenderable() )
             n -> getMesh() -> unbind ( technique ) ;
             
             //////////////////////////////////////////////////////////////////////

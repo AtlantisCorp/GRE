@@ -46,7 +46,7 @@ Renderer::Renderer (const std::string& name, const RendererOptions& options)
 
 Renderer::~Renderer() noexcept ( false )
 {
-
+    iPasses.clear();
 }
 
 void Renderer::render() const
@@ -91,7 +91,7 @@ RenderPassHolder Renderer::addPass(const std::string &name)
 
         GreDebug("[INFO] RenderPass '") << name << "' allocated.'" << gendl ;
 
-        iPasses.push_back(pass) ;
+        iPasses.add(pass) ;
         return pass ;
     }
 
@@ -124,7 +124,7 @@ RenderPassHolder Renderer::copyPass(const RenderPassHolder &pass)
 
         GreDebug("[INFO] RenderPass '") << cpy->getName() << "' copied.'" << gendl ;
 
-        iPasses.push_back(cpy) ;
+        iPasses.add(cpy) ;
         return cpy ;
     }
 
@@ -376,7 +376,7 @@ RendererUser RendererManager::load(const std::string &name, const Gre::RendererO
                         // Parse Common options.
                         
                         auto op = options.find ( "Enabled" ) ;
-                        if ( op != options.end() ) rholder->setEnabled ( op->second.toBool() ) ;
+                        if ( op != options.end() ) rholder->setEnabled ( op->second.to<bool>() ) ;
                         
                         //////////////////////////////////////////////////////////////////////
                         // Adds the renderer only for update events , and registers it to the

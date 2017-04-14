@@ -320,6 +320,10 @@ public:
     /// @brief Resets the texture unit counter to 0 .
     //////////////////////////////////////////////////////////////////////
     virtual void resetTextures () const ;
+    
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    virtual void setFramebufferAttachements ( const std::map < TechniqueParam , RenderFramebufferAttachement > & attachements ) ;
 
 protected:
 
@@ -348,6 +352,11 @@ protected:
     /// the framebuffer to render the depth buffer to the ShadowMap texture of lights objects. This lets
     /// us, in the main fragment shader, use the shadow map previously computed.
     RenderFramebufferHolder iFramebuffer ;
+    
+    /// @brief Holds attachement upon aliases for the framebuffer. Those attachements will be bound to
+    /// the framebuffer when 'setAliasedTexture()' encounter the given alias. Instead of binding it into
+    /// the shader , it will call 'setAttachement' with the given texture object.
+    std::map < TechniqueParam , RenderFramebufferAttachement > iAliasAttachements ;
 
     /// @brief Holds aliases used for this technique. They will be used when using 'setAliasedParameter'
     /// to bind a parameter to a shader program.

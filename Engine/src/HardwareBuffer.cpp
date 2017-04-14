@@ -4,7 +4,7 @@
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
-//  Copyright (c) 2015 - 2016 Luk2010
+//  Copyright (c) 2015 - 2017 Luk2010
 //  Created on 26/11/2015.
 //
 //////////////////////////////////////////////////////////////////////
@@ -48,6 +48,11 @@ HardwareBuffer::~HardwareBuffer()
 bool HardwareBuffer::isDirty() const
 {
     GreAutolock ; return iIsDirty;
+}
+
+void HardwareBuffer::clean() const
+{
+    GreAutolock ; iIsDirty = false ;
 }
 
 void HardwareBuffer::setDirty(bool dirty) const

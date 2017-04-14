@@ -51,7 +51,7 @@
 GreBeginNamespace
 
 /// @brief Info structure for Renderer.
-typedef VariantDictionnary RendererOptions ;
+typedef Dictionnary RendererOptions ;
 
 /// @brief Matrix Types used by the Engine.
 enum class MatrixType
@@ -122,10 +122,10 @@ public:
 protected:
 
     /// @brief Holds the render's passes created.
-    std::vector < RenderPassHolder > iPasses ;
+    RenderPassHolderList iPasses ;
 
 public:
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Sets only the given region for clearing the buffers. Also
     /// called a Scissor - box .
@@ -223,12 +223,12 @@ public:
     /// of its managers to the ResourceManager.
     //////////////////////////////////////////////////////////////////////
     virtual bool isInstalled ( ) const ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns 'iEnabled' .
     //////////////////////////////////////////////////////////////////////
     virtual bool isEnabled () const ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Changes 'iEnabled' .
     //////////////////////////////////////////////////////////////////////
@@ -245,7 +245,7 @@ protected:
     /// @brief Default Material used by this Renderer. The default Material is used only if
     /// the current node, mesh and technique does not have any default or set material.
     MaterialHolder iDefaultMaterial ;
-    
+
     /// @brief Sets if the renderer may be enable or not. This may be use , for example , to
     /// switch from a renderer to another already ready and loaded. By default , this property is
     /// set to true but you can set it directly at construction to 'false' using the option 'Enabled'.
@@ -325,7 +325,7 @@ public:
     /// @brief Creates a new Renderer , following given rules.
     //////////////////////////////////////////////////////////////////////
     virtual RendererUser load ( const std::string & name , const RendererOptions & options ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Call's 'Renderer::render()' for every activated Renderer's.
     /// This function will so calls the RenderPass'es registered in every

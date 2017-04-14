@@ -112,6 +112,11 @@ public:
     /// @brief Setter operator.
     BoundingBox& operator = ( const BoundingBox& rhs );
     
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the intersection with another boundingbox.
+    //////////////////////////////////////////////////////////////////////
+    IntersectionResult intersect ( const BoundingBox & rhs ) const ;
+    
 protected:
     
     /// @brief Minimum Point of the BoundingBox.

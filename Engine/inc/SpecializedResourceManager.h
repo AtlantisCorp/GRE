@@ -4,7 +4,7 @@
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
-//  Copyright (c) 2015 - 2016 Luk2010
+//  Copyright (c) 2015 - 2017 Luk2010
 //  Created on 12/11/2016.
 //
 //////////////////////////////////////////////////////////////////////
@@ -393,6 +393,25 @@ public:
         }
 
         return nullptr ;
+    }
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Finds the loader which name is given by the option field
+    /// 'Loader.Name' . If no field is found, returns nullptr.
+    //////////////////////////////////////////////////////////////////////
+    virtual ClassLoader* findLoaderFromOptions ( const ResourceLoaderOptions & ops )
+    {
+        auto loadernameit = ops.find ( "Loader.Name" ) ;
+
+        if ( loadernameit == ops.end() )
+        return nullptr ;
+
+        std::string loadername = loadernameit -> second.to<std::string> () ;
+
+        if ( loadername.empty() )
+        return nullptr ;
+
+        return findLoader ( loadername ) ;
     }
 
 protected:

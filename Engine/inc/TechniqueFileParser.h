@@ -46,12 +46,23 @@ namespace internal
     /// @brief Defines an element.
     enum class TechniqueFileElementType : int
     {
-        Shader , Program , Technique , Context
+        Shader , Program , Technique , Context , Framebuffer
     };
 
     struct TechniqueFileElement
     {
         TechniqueFileElementType type ;
+    };
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Technique File's Framebuffer definition.
+    struct TechniqueFileFramebuffer : TechniqueFileElement
+    {
+        std::map < TechniqueParam , RenderFramebufferAttachement > attachements ;
+        RenderColorBuffer writebuffer ;
+        RenderColorBuffer readbuffer ;
+        std::string name ;
+        Viewport viewport ;
     };
 
     //////////////////////////////////////////////////////////////////////
@@ -79,6 +90,7 @@ namespace internal
         std::string name ;
         std::string program ;
         TechniqueLightingMode lightingmode ;
+        std::string framebuffer ;
     };
 
     //////////////////////////////////////////////////////////////////////
@@ -86,6 +98,7 @@ namespace internal
     struct TechniqueFileContext : TechniqueFileElement
     {
         std::map < std::string , TechniqueFileProgram > programs ;
+        std::map < std::string , TechniqueFileFramebuffer > framebuffers ;
         std::map < std::string , TechniqueFileTechnique > techniques ;
     };
 
@@ -245,6 +258,11 @@ protected:
     /// context.
     //////////////////////////////////////////////////////////////////////
     virtual void convertTechnique ( internal::TechniqueFileContext* context , const internal::TechniqueFileNode* node ) ;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Interprets the given node as a Framebuffer.
+    //////////////////////////////////////////////////////////////////////
+    virtual void convertFramebuffer ( internal::TechniqueFileContext* context , const internal::TechniqueFileNode* node ) ;
 
     //////////////////////////////////////////////////////////////////////
     /// @brief Creates techniques using the context object.

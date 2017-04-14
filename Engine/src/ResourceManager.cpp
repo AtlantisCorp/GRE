@@ -49,6 +49,15 @@ ResourceManagerHolder ResourceManager::Create ( bool setdefault )
     return ret ;
 }
 
+void ResourceManager::Destroy ()
+{
+    if ( !iManagerHolder.isInvalid() )
+    {
+        iManagerHolder -> unload() ;
+        iManagerHolder.clear();
+    }
+}
+
 ResourceManagerHolder ResourceManager::Get()
 {
     return iManagerHolder;
@@ -221,7 +230,7 @@ void ResourceManager::initialize ()
 
 ResourceManager::~ResourceManager() noexcept(false)
 {
-    unload () ;
+    // unload () ;
 }
 
 void ResourceManager::unload ()

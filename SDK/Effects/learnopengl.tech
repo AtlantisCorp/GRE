@@ -1,0 +1,138 @@
+# ===================================================================
+#
+# lightingmaps.tech
+# Techniques from the 'learnopengl' site web.
+#
+# ===================================================================
+
+% version 1
+
+# ===================================================================
+# Lightingmap technique.
+
+[Program learnopengl.lightingmaps.program]
+{
+    [Vertex]
+    {
+        [GLSL "learnopengl.lightingmaps.vert"]
+    }
+    
+    [Fragment]
+    {
+        [GLSL "learnopengl.lightingmaps.frag"]
+    }
+}
+
+[Technique learnopengl.lightingmaps.technique]
+{
+    [Attribute Position position]
+    [Attribute Normal normal]
+    [Attribute Texture texCoords]
+    
+    [Alias ModelMatrix model]
+    [Alias ViewMatrix view]
+    [Alias ProjectionMatrix projection]
+    
+    [Alias CameraPosition viewPos]
+    
+    [Alias MaterialTexDiffuse "material.diffuse"]
+    [Alias MaterialTexSpecular "material.specular"]
+    [Alias MaterialShininess "material.shininess"]
+    
+    [Alias Light0 light]
+    [Alias LightPosition position]
+    [Alias LightAmbient ambient]
+    [Alias LightDiffuse diffuse]
+    [Alias LightSpecular specular]
+    
+    [LightingMode AllLights]
+    [Program learnopengl.lightingmaps.program]
+}
+
+# ===================================================================
+# Directionnal Light Caster technique.
+
+[Program learnopengl.lightcasters.directionnal.program]
+{
+    [Vertex] { [GLSL learnopengl.lightcasters.directionnal.vert] }
+    [Fragment] { [GLSL learnopengl.lightcasters.directionnal.frag] }
+}
+
+[Technique learnopengl.lightcasters.directionnal.technique]
+{
+    [Attribute Position position]
+    [Attribute Normal normal]
+    [Attribute Texture texCoords]
+    
+    [Alias ModelMatrix model]
+    [Alias ViewMatrix view]
+    [Alias ProjectionMatrix projection]
+    
+    [Alias CameraPosition viewPos]
+    
+    [Alias MaterialTexDiffuse "material.diffuse"]
+    [Alias MaterialTexSpecular "material.specular"]
+    [Alias MaterialShininess "material.shininess"]
+    
+    [Alias Light0 light]
+    [Alias LightDirection direction]
+    [Alias LightAmbient ambient]
+    [Alias LightDiffuse diffuse]
+    [Alias LightSpecular specular]
+    
+    [LightingMode AllLights]
+    [Program learnopengl.lightcasters.directionnal.program]
+}
+
+# ===================================================================
+# Shadowmapping technique.
+
+[Program learnopengl.shadowmapping.phase1.program]
+{
+    [Vertex] { [GLSL learnopengl.shadowmapping.phase1.vert] }
+    [Fragment] { [GLSL learnopengl.shadowmapping.phase1.frag] }
+}
+
+[Program learnopengl.shadowmapping.phase2.program]
+{
+    [Vertex] { [GLSL learnopengl.shadowmapping.phase2.vert] }
+    [Fragment] { [GLSL learnopengl.shadowmapping.phase2.frag] }
+}
+
+[Framebuffer learnopengl.shadowmapping.depthbuffer]
+{
+    [Attachement Depth LightTexShadow]
+    [Viewport "0" "0" "1024" "1024"]
+}
+
+[Technique learnopengl.shadowmapping.phase1.technique]
+{
+    [Attribute Position position]
+    [Alias LightShadowMatrix lightSpaceMatrix]
+    [Alias ModelMatrix model]
+    
+    [LightingMode PerLight]
+    [Program learnopengl.shadowmapping.phase1.program]
+    [Framebuffer learnopengl.shadowmapping.depthbuffer]
+}
+
+[Technique learnopengl.shadowmapping.phase2.technique]
+{
+    [Attribute Position position]
+    [Attribute Normal normal]
+    [Attribute Texture texCoords]
+    
+    [Alias ModelMatrix model]
+    [Alias ViewMatrix view]
+    [Alias ProjectionMatrix projection]
+    [Alias LightShadowMatrix lightSpaceMatrix]
+    
+    [Alias MaterialTexDiffuse diffuseTexture]
+    [Alias LightTexShadow shadowMap]
+    [Alias LightPosition lightPos]
+    [Alias CameraPosition viewPos]
+    
+    [LightingMode AllLights]
+    [Program learnopengl.shadowmapping.phase2.program]
+}
+

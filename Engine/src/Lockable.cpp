@@ -64,7 +64,7 @@ std::recursive_mutex & Lockable::iGetMutex() const
 LockableAutolock::LockableAutolock ( std::recursive_mutex* mutex )
 : iMutex ( mutex )
 {
-    iMutex->lock();
+        iMutex -> lock () ;
 }
 
 LockableAutolock::~LockableAutolock()

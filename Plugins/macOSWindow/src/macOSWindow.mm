@@ -16,10 +16,10 @@
  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  copies of the Software, and to permit persons to whom the Software is
  furnished to do so, subject to the following conditions:
- 
+
  The above copyright notice and this permission notice shall be included in
  all copies or substantial portions of the Software.
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -39,6 +39,7 @@
 #   define NSWindowStyleMaskMiniaturizable NSMiniaturizableWindowMask
 #   define NSWindowStyleMaskResizable NSResizableWindowMask
 #   define NSWindowStyleMaskTitled NSTitledWindowMask
+#   define NSWindowStyleMaskFullScreen NSFullScreenWindowMask
 #   define NSEventModifierFlagCommand NSCommandKeyMask
 #   define NSEventModifierFlagControl NSControlKeyMask
 #   define NSEventModifierFlagOption NSAlternateKeyMask
@@ -48,6 +49,158 @@
 #   define NSEventTypeApplicationDefined NSApplicationDefined
 #   define NSEventTypeKeyUp NSKeyUp
 #endif
+
+// ---------------------------------------------------------------------------------------------------------
+
+//////////////////////////////////////////////////////////////////////
+// @brief Translates Gre::WindowStyle to NSWindowStyleMask .
+int translateWindowStyle ( const WindowStyles & styles )
+{
+    int result = 0 ;
+
+    if ( std::find(styles.begin(), styles.end(), WindowStyle::Fullscreen) != styles.end() ) result |= NSWindowStyleMaskFullScreen ;
+    if ( std::find(styles.begin(), styles.end(), WindowStyle::Borderless) != styles.end() ) result |= NSWindowStyleMaskBorderless ;
+    if ( std::find(styles.begin(), styles.end(), WindowStyle::Titled) != styles.end() ) result |= NSWindowStyleMaskTitled ;
+    if ( std::find(styles.begin(), styles.end(), WindowStyle::Closable) != styles.end() ) result |= NSWindowStyleMaskClosable ;
+    if ( std::find(styles.begin(), styles.end(), WindowStyle::Miniaturizable) != styles.end() ) result |= NSWindowStyleMaskMiniaturizable ;
+    if ( std::find(styles.begin(), styles.end(), WindowStyle::Resizable) != styles.end() ) result |= NSWindowStyleMaskResizable ;
+
+    return result ;
+}
+
+//////////////////////////////////////////////////////////////////////
+// @brief Translates Gre::WindowContextAttribute to NSOpenGLPixelFormatAttribute .
+void translatePixelFormat ( NSOpenGLPixelFormatAttribute* pf , size_t max , const WindowContextAttributes & attr )
+{
+    if ( !max || !pf )
+    return ;
+
+    int counter = 0 ;
+    bool translatetoint = false ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Checks every attributes, except WCAMajorVersion and WCAMinorVersion.
+
+    for ( auto winattr : attr )
+    {
+        if ( translatetoint )
+        {
+            pf[counter] = (NSOpenGLPixelFormatAttribute) winattr ;
+
+            counter ++ ;
+            translatetoint = false ;
+
+            continue ;
+        }
+
+        if ( winattr == WCADoubleBuffer )
+        pf[counter] = NSOpenGLPFADoubleBuffer ;
+
+        else if ( winattr == WCAStereo )
+        pf[counter] = NSOpenGLPFAStereo ;
+
+        else if ( winattr == WCAFullscreen )
+        {
+            GreDebug ( "[INFO] NSOpenGLPFAFullscreen is deprecated and so flag 'WCAFullscreen' is not used on MAC OS X." ) << gendl ;
+            continue ;
+        }
+
+        else if ( winattr == WCAAccelerated )
+        pf[counter] = NSOpenGLPFAAccelerated ;
+
+        else if ( winattr == WCAMultiSample )
+        pf[counter] = NSOpenGLPFAMultisample ;
+
+        else if ( winattr == WCASampleBuffers )
+        {
+            pf[counter] = NSOpenGLPFASampleBuffers ;
+            translatetoint = true ;
+        }
+
+
+        else if ( winattr == WCASamples )
+        {
+            pf[counter] = NSOpenGLPFASamples ;
+            translatetoint = true ;
+        }
+
+        else if ( winattr == WCADepthSize )
+        {
+            pf[counter] = NSOpenGLPFADepthSize ;
+            translatetoint = true ;
+        }
+
+        else if ( winattr == WCAColorSize )
+        {
+            pf[counter] = NSOpenGLPFAColorSize ;
+            translatetoint = true ;
+        }
+
+        else if ( winattr == WCAStencilSize )
+        {
+            pf[counter] = NSOpenGLPFAStencilSize ;
+            translatetoint = true ;
+        }
+
+        else if ( winattr == WCASuperSample )
+        pf[counter] = NSOpenGLPFASupersample ;
+
+        else if ( winattr == WCATripleBuffer )
+        pf[counter] = NSOpenGLPFATripleBuffer ;
+        
+        else
+        continue ;
+
+        counter ++ ;
+
+        if ( counter == max )
+        {
+            GreDebug ( "[WARN] Maximum number of attributes reached (") << max << ")." << gendl ;
+            break ;
+        }
+    }
+
+    //////////////////////////////////////////////////////////////////////
+    // Checks WCAMajorVersion and WCAMinorVersion. By default, we take
+    // the OpenGl 3.2 Core Version. On MAC OS X , only versions 3.2 and
+    // 4.1 profiles are supported.
+
+    if ( counter < max - 2 )
+    {
+        int major = 3 ; int minor = 2 ;
+
+        auto majorit = std::find(attr.begin(), attr.end(), WCAMajorVersion) ;
+        majorit ++ ;
+
+        if ( majorit != attr.end() )
+        major = (int) (*majorit) ;
+
+        auto minorit = std::find(attr.begin(), attr.end(), WCAMinorVersion) ;
+        minorit ++ ;
+
+        if ( minorit != attr.end() )
+        minor = (int) (*minorit) ;
+
+        if ( major == 3 && minor == 2 )
+        {
+            pf[counter]   = NSOpenGLPFAOpenGLProfile ;
+            pf[counter++] = NSOpenGLProfileVersion3_2Core ;
+            counter ++ ;
+        }
+
+        else if ( major == 4 && minor == 1 )
+        {
+            pf[counter]   = NSOpenGLPFAOpenGLProfile ;
+            pf[counter++] = NSOpenGLProfileVersion4_1Core ;
+            counter ++ ;
+        }
+
+        else
+        GreDebug ( "[WARN] Requested OpenGl Version not supported (") << major << "." << minor << ")." << gendl ;
+    }
+
+    pf[counter] = 0 ;
+}
 
 // ---------------------------------------------------------------------------------------------------------
 // KeyCodes translation.
@@ -61,10 +214,10 @@ void initKeycodes ()
 {
     keycodes = (Key*) malloc ( MAX_SCANCODES * sizeof(Key) ) ;
     memset ( keycodes , 0 , MAX_SCANCODES * sizeof(Key) ) ;
-    
+
     scancodes = (unsigned int*) malloc ( MAX_SCANCODES * sizeof(unsigned int) ) ;
     memset ( scancodes , 0 , MAX_SCANCODES * sizeof(unsigned int) ) ;
-    
+
     keycodes[0x1D] = Key::K0;
     keycodes[0x12] = Key::K1;
     keycodes[0x13] = Key::K2;
@@ -101,7 +254,7 @@ void initKeycodes ()
     keycodes[0x07] = Key::X;
     keycodes[0x10] = Key::Y;
     keycodes[0x06] = Key::Z;
-    
+
     keycodes[0x27] = Key::Apostrophe;
     keycodes[0x2A] = Key::Backslash;
     keycodes[0x2B] = Key::Comma;
@@ -114,7 +267,7 @@ void initKeycodes ()
     keycodes[0x29] = Key::Semicolon;
     keycodes[0x2C] = Key::Slash;
     keycodes[0x0A] = Key::World1;
-    
+
     keycodes[0x33] = Key::Backspace;
     keycodes[0x39] = Key::CapsLock;
     keycodes[0x75] = Key::Delete;
@@ -161,7 +314,7 @@ void initKeycodes ()
     keycodes[0x31] = Key::Space;
     keycodes[0x30] = Key::Tab;
     keycodes[0x7E] = Key::Up;
-    
+
     keycodes[0x52] = Key::KP0;
     keycodes[0x53] = Key::KP1;
     keycodes[0x54] = Key::KP2;
@@ -179,11 +332,11 @@ void initKeycodes ()
     keycodes[0x51] = Key::KPEqual;
     keycodes[0x43] = Key::KPMultiply;
     keycodes[0x4E] = Key::KPSubstract;
-    
+
     for ( int scancode = 0 ; scancode < MAX_SCANCODES ; scancode++ )
     {
         if ( (int) keycodes[scancode] > 0 )
-            scancodes[(int)keycodes[scancode]] = scancode ;
+        scancodes[(int)keycodes[scancode]] = scancode ;
     }
 }
 
@@ -194,14 +347,14 @@ Key translateKey ( unsigned int key )
 {
     if ( !keycodes )
         initKeycodes () ;
-    
+
     return keycodes[key] ;
 }
 
 int translateFlags ( NSUInteger flags )
 {
     int mods = 0 ;
-    
+
     if ( flags & NSEventModifierFlagShift )
         mods |= (int) KeyModifier::Shift ;
     if ( flags & NSEventModifierFlagControl )
@@ -210,7 +363,7 @@ int translateFlags ( NSUInteger flags )
         mods |= (int) KeyModifier::Alt ;
     if ( flags & NSEventModifierFlagCommand )
         mods |= (int) KeyModifier::Super ;
-    
+
     return mods ;
 }
 
@@ -233,7 +386,7 @@ int translateFlags ( NSUInteger flags )
     self = [super init];
     if ( self != nil )
         _window = window ;
-    
+
     return self ;
 }
 
@@ -271,7 +424,7 @@ int translateFlags ( NSUInteger flags )
 - (void) windowDidChangeOcclusionState:(NSNotification*) notification
 {
     NSWindow* win = notification.object ;
-    
+
     if ( win.occlusionState & NSWindowOcclusionStateVisible )
     {
         NSRect frame = [[notification object] frame] ;
@@ -319,7 +472,7 @@ int translateFlags ( NSUInteger flags )
         window = win ;
         trackingArea = nil ;
     }
-    
+
     return self ;
 }
 
@@ -379,7 +532,7 @@ int translateFlags ( NSUInteger flags )
         [self removeTrackingArea:trackingArea] ;
         [trackingArea release] ;
     }
-    
+
     int opts = (NSTrackingMouseEnteredAndExited | NSTrackingActiveAlways);
     trackingArea = [ [NSTrackingArea alloc] initWithRect:[self bounds]
                                                  options:opts
@@ -397,7 +550,7 @@ int translateFlags ( NSUInteger flags )
 {
     const Key key = translateKey([theEvent keyCode]) ;
     const int mods = translateFlags([theEvent modifierFlags]) ;
-    
+
     window->notifiateKeyDown ( key , mods ) ;
 }
 
@@ -405,7 +558,7 @@ int translateFlags ( NSUInteger flags )
 {
     const Key key = translateKey([theEvent keyCode]) ;
     const int mods = translateFlags([theEvent modifierFlags]) ;
-    
+
     window->notifiateKeyUp ( key , mods ) ;
 }
 
@@ -414,7 +567,7 @@ int translateFlags ( NSUInteger flags )
 // ---------------------------------------------------------------------------------------------------------
 // macWindow C++ Class
 
-macWindow::macWindow ( const std::string & name , const WindowOptions& options )
+macWindow::macWindow ( const std::string & name , const ResourceLoaderOptions& options )
 : Gre::Window ( name , options ) , context ( nullptr )
 {
     nsWindow = nil ;
@@ -425,7 +578,7 @@ macWindow::macWindow ( const std::string & name , const WindowOptions& options )
 
 macWindow::~macWindow () noexcept ( false )
 {
-    
+
 }
 
 void macWindow::bind () const
@@ -493,10 +646,10 @@ void macWindow::notifiateSize(int width, int height)
 {
     if ( nsglContext != nullptr )
         [nsglContext->nsglContext update] ;
-    
+
     iSurface.width = width ;
     iSurface.height = height ;
-    
+
     EventHolder e = EventHolder ( new WindowSizedEvent(this , width , height) ) ;
     sendEvent(e);
 }
@@ -505,7 +658,7 @@ void macWindow::notifiatePosition(int x, int y)
 {
     iSurface.top = y ;
     iSurface.left = x ;
-    
+
     EventHolder e = EventHolder ( new WindowMovedEvent(this, x, y) ) ;
     sendEvent(e);
 }
@@ -572,59 +725,43 @@ void macWindow::_setTitle ( const std::string & title ) const
 // ---------------------------------------------------------------------------------------------------------
 // Creates an NSOpenGLContext and loads it to the macOSWindow object.
 
-void CreateContextForWindow ( macWindow* window )
+void CreateContextForWindow ( macWindow* window , NSOpenGLPixelFormatAttribute* attributes )
 {
-    NSOpenGLPixelFormatAttribute attributes[40] ;
-    int attributeCount = 0 ;
-    
-#define ADD_ATTR(x) { attributes[attributeCount++] = x; }
-#define ADD_ATTR2(x, y) { ADD_ATTR(x); ADD_ATTR(y); }
-    
-    ADD_ATTR(NSOpenGLPFAAccelerated);
-    ADD_ATTR(NSOpenGLPFAClosestPolicy);
-    
-    ADD_ATTR2(NSOpenGLPFAOpenGLProfile, NSOpenGLProfileVersion3_2Core);
-    ADD_ATTR(NSOpenGLPFADoubleBuffer);
-    
-    ADD_ATTR2(NSOpenGLPFADepthSize, 24) ;
-    
-    ADD_ATTR(0);
-    
-#undef ADD_ATTR
-#undef ADD_ATTR2
-    
+    if ( !attributes )
+    return ;
+
     window->nsglContext = new nsContext ( "" , RenderContextInfo() , nil , nil ) ;
     if ( !window->nsglContext )
     {
         GreDebug("[WARN] Can't create nsContext.") << Gre::gendl ;
         return ;
     }
-    
+
     window->nsglContext->nsglPixelFormat = [[NSOpenGLPixelFormat alloc] initWithAttributes:attributes];
     if ( window->nsglContext->nsglPixelFormat == nil )
     {
         GreDebug("[WARN] Can't create NSOpenGLPixelFormat.") << Gre::gendl ;
-        
+
         delete window->nsglContext ;
         window->nsglContext = nullptr ;
-        
+
         return ;
     }
-    
+
     window->nsglContext->nsglContext = [[NSOpenGLContext alloc] initWithFormat:window->nsglContext->nsglPixelFormat
                                                                   shareContext:nil];
     if ( window->nsglContext->nsglContext == nil )
     {
         GreDebug("[WARN] Can't create NSOpenGLContext.") << Gre::gendl ;
-        
+
         [window->nsglContext->nsglPixelFormat release];
         window->nsglContext->nsglPixelFormat = nil ;
         delete window->nsglContext;
         window->nsglContext = nullptr ;
-        
+
         return ;
     }
-    
+
     [window->nsglContext->nsglContext setView:window->view];
     return ;
 }
@@ -634,69 +771,130 @@ void CreateContextForWindow ( macWindow* window )
 
 macOSWindowLoader::macOSWindowLoader ()
 {
-    
+
 }
 
 macOSWindowLoader::~macOSWindowLoader() noexcept ( false )
 {
-    
+
 }
 
-WindowHolder macOSWindowLoader::load(const std::string &name, const WindowOptions &info) const
+//////////////////////////////////////////////////////////////////////
+// Returns the Window's size using the normal size format , or a default
+// pair ( 1024 , 768 ). The size format is 'WidthXHeight' or 'WidthXHeight'.
+// The Window's size is under the 'Window.Size' option.
+std::pair < int , int > GetWindowSize ( const ResourceLoaderOptions & ops )
 {
-    if ( name.empty() ) {
-        GreDebug("[WARN] Given name is empty when creating Window.");
-    }
-    
-    auto it = info.find("Size");
-    if ( it == info.end() ) {
-        GreDebug("[WARN] Invalid size for Window '") << name << "'." << Gre::gendl ;
-        return WindowHolder ( nullptr ) ;
-    }
-    
-    std::vector<std::string> sizes = split((*it).second.toString(), 'x');
-    std::pair<int, int> size = std::make_pair(strtol(sizes[0].c_str(), NULL, 10) , strtol(sizes[1].c_str(), NULL, 10));
-    
-    if ( size.first <= 0 || size.second <= 0 ) {
-        GreDebug("[WARN] Invalid size format for Window '") << name << "'." << Gre::gendl ;
-        return WindowHolder ( nullptr ) ;
-    }
-    
-    it = info.find("Title");
-    std::string title = "macOS Default Window" ;
-    
-    if ( it != info.end() )
-        title = (*it).second.toString() ;
-    
-    // Create the macOSWindow class.
-	GreDebug("[INFO] Creating Mac OS X Window class.") << Gre::gendl ;
-    
+    auto formattedit = ops.find ( "Window.Size" ) ;
+
+    if ( formattedit == ops.end() )
+    return std::make_pair ( 1024 , 768 ) ;
+
+    std::string formatted = formattedit -> second.to<std::string>() ;
+
+    if ( formatted.empty() )
+    return std::make_pair ( 1024 , 768 ) ;
+
+    auto formsizes = split ( formatted , 'x' ) ;
+
+    if ( formsizes.size() < 2 )
+    formsizes = split ( formatted , 'X' ) ;
+
+    if ( formsizes.size() < 2 )
+    return std::make_pair ( 1024 , 768 ) ;
+
+    int width  = strtol ( formsizes.at(0).c_str() , NULL , 10 ) ;
+    int height = strtol ( formsizes.at(1).c_str() , NULL , 10 ) ;
+
+    if ( width <= 0 || height <= 0 )
+    return std::make_pair ( 1024 , 768 ) ;
+
+    return std::make_pair ( width , height ) ;
+}
+
+//////////////////////////////////////////////////////////////////////
+// Returns the Window's title depending on options given. The Window's
+// title is under the 'Window.Title' option. No default option.
+std::string GetWindowTitle ( const ResourceLoaderOptions & ops )
+{
+    auto titleit = ops.find ( "Window.Title" ) ;
+
+    if ( titleit == ops.end() )
+    return std::string () ;
+
+    return titleit -> second.to<std::string> () ;
+}
+
+//////////////////////////////////////////////////////////////////////
+// Returns the Window's style mask with given option. The default mask
+// is Closable | Resizable | Miniaturizable | Titled.
+int GetWindowMask ( const ResourceLoaderOptions & ops )
+{
+    int defaultmask =
+        NSWindowStyleMaskTitled | NSWindowStyleMaskClosable |
+        NSWindowStyleMaskResizable | NSWindowStyleMaskMiniaturizable ;
+
+    auto maskit = ops.find ( "Window.Styles" ) ;
+
+    if ( maskit == ops.end() )
+    return defaultmask ;
+
+    return translateWindowStyle ( maskit->second.to<WindowStyles>() ) ;
+}
+
+WindowHolder macOSWindowLoader::load(const std::string &name, const ResourceLoaderOptions &info) const
+{
+    if ( name.empty() )
+    GreDebug("[WARN] Given name is empty when creating Window.");
+
+    //////////////////////////////////////////////////////////////////////
+    // Gets Window's Size.
+
+    auto size = GetWindowSize ( info ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Gets Window's title.
+
+    std::string title = GetWindowTitle ( info ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Creates the macOSWindow class.
+
+    GreDebug("[INFO] Creating Mac OS X Window class.") << Gre::gendl ;
+
     macWindow* window = new macWindow ( name , info ) ;
+
     if ( !window )
     {
         GreDebug("[WARN] Can't create Window '") << name << "'." << Gre::gendl ;
         return WindowHolder ( nullptr ) ;
     }
-	
-	GreDebug("[INFO] Creating Mac OS X WindowDelegate class.") << Gre::gendl ;
-    
+
+    GreDebug("[INFO] Creating Mac OS X WindowDelegate class.") << Gre::gendl ;
+
     window->nsDelegate = [[nsWindowDelegate alloc] initWithWindow:window];
+
     if ( window->nsDelegate == nil )
     {
         GreDebug("[WARN] Can't associate Delegate to Window '") << name << "'." << Gre::gendl ;
         delete window ;
         return WindowHolder ( nullptr ) ;
     }
-	
-	GreDebug("[INFO] Creating NSWindow object.") << Gre::gendl ;
-    
+
+    GreDebug("[INFO] Creating NSWindow object.") << Gre::gendl ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Guesses the Window's style mask and surface rect.
+
+    int windowmask = GetWindowMask ( info ) ;
     NSRect contentrect = NSMakeRect(0, 0, size.first, size.second);
+
     window->nsWindow = [[nsWindow alloc]
-                        initWithContentRect:contentrect
-                        styleMask:NSWindowStyleMaskTitled|NSWindowStyleMaskClosable|NSWindowStyleMaskResizable|NSWindowStyleMaskMiniaturizable
-                        backing:NSBackingStoreBuffered
-                        defer:NO];
-    
+        initWithContentRect:contentrect
+        styleMask:windowmask
+        backing:NSBackingStoreBuffered
+        defer:NO];
+
     if ( window->nsWindow == nil )
     {
         GreDebug("[WARN] Can't create Window '") << name << "' object." << Gre::gendl ;
@@ -705,56 +903,80 @@ WindowHolder macOSWindowLoader::load(const std::string &name, const WindowOption
         delete window ;
         return WindowHolder ( nullptr ) ;
     }
-    
+
     [window->nsWindow center];
-	
-	GreDebug("[INFO] Creating NSView object.") << Gre::gendl ;
-    
+
+    GreDebug("[INFO] Creating NSView object.") << Gre::gendl ;
+
     window->view = [[nsWindowContentView alloc] initWithWindow:window];
+
     if ( window->view == nil )
     {
         GreDebug("[WARN] Can't create Window View '") << name << "'." << Gre::gendl ;
-        
+
         [window->nsWindow release];
         window->nsWindow = nil ;
         [window->nsDelegate release];
         window->nsDelegate = nil ;
         delete window ;
-        
+
         return WindowHolder ( nullptr ) ;
     }
-    
+
     [window->view setWantsBestResolutionOpenGLSurface:YES];
-    
+
     [window->nsWindow setContentView:window->view];
     [window->nsWindow makeFirstResponder:window->view];
     [window->nsWindow setTitle:[NSString stringWithUTF8String:title.c_str()]];
     [window->nsWindow setDelegate:window->nsDelegate];
     [window->nsWindow setAcceptsMouseMovedEvents:YES];
     [window->nsWindow setRestorable:NO];
+
+    //////////////////////////////////////////////////////////////////////
+    // Guesses the NSOpenGLPixelFormat. Default attributes is Doublebuffer,
+    // Accelerated, 24bits Depth size, ClosestPolicy and Version 3.2.
+
+    NSOpenGLPixelFormatAttribute pf [40] ;
+    memset(pf, 0, sizeof(NSOpenGLPixelFormatAttribute)*40);
     
-    CreateContextForWindow ( window ) ;
-	
+    auto windowit = info.find ( "Window.ContextAttributes" ) ;
+
+    if ( windowit != info.end () ) {
+        translatePixelFormat ( pf , 40 , windowit->second.to<WindowContextAttributes>() ) ;
+    }
+
+    else
+    {
+        pf [0] = NSOpenGLPFADoubleBuffer ;
+        pf [1] = NSOpenGLPFAAccelerated ;
+        pf [2] = NSOpenGLPFADepthSize ; pf [3] = 24 ;
+        pf [4] = NSOpenGLPFAOpenGLProfile ; pf [5] = NSOpenGLProfileVersion3_2Core ;
+        pf [6] = NSOpenGLPFAClosestPolicy ;
+        pf [7] = 0 ;
+    }
+
+    CreateContextForWindow ( window , pf ) ;
+
 	if ( window->nsglContext == nil )
 	{
-		GreDebug("[WARN] Can't create NSOpenGLContext object.") << Gre::gendl ;
-		
-		[window->view release];
-		window->view = nil ;
-		[window->nsWindow release];
+        GreDebug("[WARN] Can't create NSOpenGLContext object.") << Gre::gendl ;
+
+        [window->view release];
+        window->view = nil ;
+        [window->nsWindow release];
         window->nsWindow = nil ;
         [window->nsDelegate release];
         window->nsDelegate = nil ;
         delete window ;
-		
-		return WindowHolder ( nullptr ) ;
+
+        return WindowHolder ( nullptr ) ;
 	}
-	
+
     window->context = RenderContextHolder ( window->nsglContext ) ;
-    
+
     [window->nsWindow makeKeyAndOrderFront:nil];
     [window->nsWindow makeMainWindow];
-    
+
 	GreDebug("[INFO] Created Mac OS X native Window '") << name << "'." << Gre::gendl ;
     return WindowHolder ( window ) ;
 }
@@ -768,5 +990,3 @@ bool macOSWindowLoader::isLoadable(const std::string &filepath) const
 {
     return false ;
 }
-
-

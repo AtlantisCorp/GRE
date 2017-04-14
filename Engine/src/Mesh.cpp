@@ -136,15 +136,7 @@ const MaterialHolder & Mesh::getDefaultMaterial() const
 
 MaterialHolder & Mesh::getDefaultMaterial()
 {
-    GreAutolock ;
-    
-    //////////////////////////////////////////////////////////////////////
-    // If the default material is not present , load a blank material.
-    
-    if ( iDefaultMaterial.isInvalid() )
-    iDefaultMaterial = ResourceManager::Get() -> getMaterialManager() -> loadBlank ( getName() + ".material" ) ;
-    
-    return iDefaultMaterial ;
+    GreAutolock ; return iDefaultMaterial ;
 }
 
 void Mesh::setDefaultMaterial(const MaterialHolder &material)
@@ -157,11 +149,10 @@ void Mesh::use ( const TechniqueHolder& technique ) const
     GreAutolock ;
     
     //////////////////////////////////////////////////////////////////////
-    // Binds Material's default parameters. They will be overwritten by the
-    // node's material if this one is not null.
-
-    if ( !iDefaultMaterial.isInvalid() )
-        iDefaultMaterial -> use ( technique ) ;
+    // The mesh'es default material is already bound by the node's use
+    // function. In fact , the node use the mesh material if no other material
+    // has been given to the node. More , if this mesh does not contain any
+    // material , the node will keep a blank material.
     
     //////////////////////////////////////////////////////////////////////
     // Binds Custom parameters.
@@ -182,6 +173,15 @@ void Mesh::bind ( const TechniqueHolder & technique ) const
     iBinder -> bind ( this , technique ) ;
     
     //////////////////////////////////////////////////////////////////////
+    // Notes that as in OpenGl , and maybe other APIs , we don't need to
+    // updates the bound values in , for example , a VAO if the datas did not
+    // changed , we use that specific function to know if we have to update the
+    // VAO's values.
+    
+    if ( !iBinder->needUpdate() && !isAnyBufferDirty() )
+    return ;
+    
+    //////////////////////////////////////////////////////////////////////
     // Binds Vertex Descriptors Attributes to the technique. This step is
     // fundamental before rendering the object through the shader program.
     // Notes that a HardwareProgram must be valid in the technique.
@@ -194,9 +194,10 @@ void Mesh::bind ( const TechniqueHolder & technique ) const
         {
             if ( !buffer.isInvalid() )
             {
-                if ( buffer->isEnabled() )
+                if ( buffer->isEnabled() && buffer->getSize() )
                 {
                     const VertexDescriptor & vdesc = buffer -> getVertexDescriptor() ;
+                    buffer -> bind() ;
                     
                     for ( auto component : vdesc.getComponents() )
                     {
@@ -207,9 +208,21 @@ void Mesh::bind ( const TechniqueHolder & technique ) const
                                                     vdesc.getStride(component) ,
                                                     (void*) (buffer -> getData() + vdesc.getOffset(component)) ) ;
                     }
+                    
+                    buffer -> unbind () ;
                 }
             }
         }
+        
+        //////////////////////////////////////////////////////////////////////
+        // Reset the buffers dirty flag.
+        
+        if ( !iIndexBuffer.isInvalid() )
+        iIndexBuffer -> clean () ;
+        
+        for ( auto buffer : iVertexBuffers )
+            if ( !buffer.isInvalid() )
+            buffer -> clean () ;
     }
 }
 
@@ -229,6 +242,24 @@ void Mesh::unbind ( const TechniqueHolder & technique ) const
 void Mesh::setBinder(Gre::MeshBinder *binder)
 {
     GreAutolock ; iBinder = binder ;
+}
+
+bool Mesh::isAnyBufferDirty () const
+{
+    GreAutolock ;
+    
+    if ( !iIndexBuffer.isInvalid() )
+    if ( iIndexBuffer -> isDirty() )
+    return true ;
+    
+    for ( auto buffer : iVertexBuffers )
+    {
+        if ( !buffer.isInvalid() )
+        if ( buffer -> isDirty() )
+        return true ;
+    }
+    
+    return false ;
 }
 
 // ---------------------------------------------------------------------------------------------------

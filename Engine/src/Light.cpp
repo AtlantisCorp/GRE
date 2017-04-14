@@ -101,6 +101,12 @@ void Light::setEnabled(bool value)
 void Light::setPosition(const Vector3 &position)
 {
     GreAutolock ; iPosition = position ;
+    
+    //////////////////////////////////////////////////////////////////////
+    // Sends a Position changed event.
+    
+    EventHolder e = new PositionChangedEvent ( this , position ) ;
+    sendEvent(e) ;
 }
 
 const Vector3& Light::getPosition () const
@@ -181,6 +187,13 @@ const Vector3& Light::getDirection () const
 void Light::setDirection(const Vector3& direction)
 {
     GreAutolock ; iDirection = direction ;
+    
+    //////////////////////////////////////////////////////////////////////
+    // Sends a Direction Changed event. ( This helps the camera from shadow
+    // matrix knows updates )
+    
+    EventHolder e = new DirectionChangedEvent ( this , iDirection ) ;
+    sendEvent(e) ;
 }
 
 float Light::getAngle () const
@@ -201,6 +214,61 @@ float Light::getExposition() const
 void Light::setExposition(float value)
 {
     GreAutolock ; iExposition = value ;
+}
+
+IntersectionResult Light::intersectFrustrum(const Gre::Frustrum &frustrum) const
+{
+    GreAutolock ;
+    
+    //////////////////////////////////////////////////////////////////////
+    // If the light is direction , return always intersect.
+    
+    if ( iType == LightType::Directionnal )
+    return IntersectionResult::Between ;
+    
+    //////////////////////////////////////////////////////////////////////
+    // If the light is a point , make a sphere from attenuation value and
+    // test it with the frustrum planes.
+    
+    if (iType == LightType::Directionnal &&
+        !iAttenuationCst && !iAttenuationQuad && !iAttenuationLinear)
+    return IntersectionResult::Between ;
+    
+    //////////////////////////////////////////////////////////////////////
+    // Computes the maximum distance from attenuations values.
+    
+    float maxatt = 1/0.001f ;
+    float a = iAttenuationQuad ;
+    float b = iAttenuationLinear ;
+    float c = iAttenuationCst - maxatt ;
+    
+    float delta = b*b - 4*a*c ;
+    float x1 = (-b - sqrtf(delta)) / 2 * a ;
+    float x2 = ( -b - sqrtf(delta) ) / 2 * a ;
+    float dist = std::max(x1, x2) ;
+    
+    if ( iType == LightType::Point )
+    {
+        //////////////////////////////////////////////////////////////////////
+        // The light sphere has for radius the distance , and for center the
+        // light position . Returns it intersection with the frustrum .
+        
+        return frustrum.intersect ( dist , iPosition ) ;
+    }
+    
+    if ( iType == LightType::Spot )
+    {
+        //////////////////////////////////////////////////////////////////////
+        // Computes the frustrum which goes with this spot.
+        
+        Frustrum lightproj (iAngle, 16/9, 0.1f, dist) ;
+        lightproj.setView(glm::lookAt(iPosition, iPosition + iDirection, {0.0f , 1.0f , 0.0f}));
+        lightproj.computePlanes() ;
+        
+        return frustrum.intersect ( lightproj ) ;
+    }
+    
+    return IntersectionResult::Outside ;
 }
 
 GreEndNamespace

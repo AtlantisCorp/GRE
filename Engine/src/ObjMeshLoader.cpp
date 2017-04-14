@@ -112,6 +112,12 @@ struct OBJ_O
     int32_t verticecount ;
     int32_t normalcount ;
     int32_t texcount ;
+    
+    /// @brief Bounding Box Max point.
+    OBJ_V ptmin ;
+    
+    /// @brief Bouding Box Min point.
+    OBJ_V ptmax ;
 };
 
 void CalculateTangentBinormal ( const OBJ_VERTEX& v1 , const OBJ_VERTEX& v2 , const OBJ_VERTEX& v3 , OBJ_V& tan , OBJ_V& bi )
@@ -239,6 +245,13 @@ void _objecttomesh ( MeshHolderList& list , OBJ_O* obj )
             mesh -> setVertexBuffers(buflist) ;
             buf -> setEnabled(true) ;
         }
+        
+        //////////////////////////////////////////////////////////////////////
+        // Computes boundingbox.
+        
+        BoundingBox bbox ({ obj->ptmax.x, obj->ptmax.y, obj->ptmax.z } ,
+                          { obj->ptmin.x, obj->ptmin.y, obj->ptmin.z });
+        mesh -> setBoundingBox(bbox) ;
         
         list.add(mesh) ;
     }
@@ -391,6 +404,30 @@ MeshHolderList ObjMeshLoader::load(const std::string &filepath, const ResourceLo
                     
                     for ( OBJ_VERTEX & vertex : newvertex )
                     {
+                        //////////////////////////////////////////////////////////////////////
+                        // If the object has no vertexes yet , this means the current processed
+                        // vertex will take place has min and max point.
+                        
+                        if ( current -> vertexs.empty() )
+                        {
+                            current -> ptmax = vertex.vertice ;
+                            current -> ptmin = vertex.vertice ;
+                        }
+                        
+                        else
+                        {
+                            if ( current->ptmax.x < vertex.vertice.x ) current->ptmax.x = vertex.vertice.x ;
+                            if ( current->ptmax.y < vertex.vertice.y ) current->ptmax.y = vertex.vertice.y ;
+                            if ( current->ptmax.z < vertex.vertice.z ) current->ptmax.z = vertex.vertice.z ;
+                            
+                            if ( current->ptmin.x > vertex.vertice.x ) current->ptmin.x = vertex.vertice.x ;
+                            if ( current->ptmin.y > vertex.vertice.y ) current->ptmin.y = vertex.vertice.y ;
+                            if ( current->ptmin.z > vertex.vertice.z ) current->ptmin.z = vertex.vertice.z ;
+                        }
+                        
+                        //////////////////////////////////////////////////////////////////////
+                        // Computes the vertice indice.
+                        
                         auto it = std::find(current->vertexs.begin(), current->vertexs.end(), vertex) ;
                         if ( it == current->vertexs.end() ) {
                             current->vertexs.push_back(vertex) ;

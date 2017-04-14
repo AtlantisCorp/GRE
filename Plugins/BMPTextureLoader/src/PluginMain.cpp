@@ -113,7 +113,7 @@ extern "C" void StartPlugin ( void )
 
 extern "C" void StopPlugin ( void )
 {
-    
+    GreDebug ( "[INFO] BMP Texture Loader Plugin stopped." ) << Gre::gendl ;
 }
 
 

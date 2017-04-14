@@ -4,7 +4,7 @@
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
-//  Copyright (c) 2015 - 2016 Luk2010
+//  Copyright (c) 2015 - 2017 Luk2010
 //  Created on 23/11/2015.
 //
 //////////////////////////////////////////////////////////////////////
@@ -16,10 +16,10 @@
  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  copies of the Software, and to permit persons to whom the Software is
  furnished to do so, subject to the following conditions:
- 
+
  The above copyright notice and this permission notice shall be included in
  all copies or substantial portions of the Software.
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -118,12 +118,12 @@
 #
 #   include <Windows.h>
 #
-#elif defined __APPLE__ 
+#elif defined __APPLE__
 //  Mac Os X
 #   define GrePlatformDarwin
 #   if defined __GNUC__ && defined __x86_64__
 #       define GrePlatformBits64
-#   else   
+#   else
 #       define GrePlatformBits32
 #   endif
 #
@@ -184,7 +184,7 @@ typedef glm::quat Quaternion;
 // Times definition .
 
 /// @brief The Time definition.
-typedef std::chrono::high_resolution_clock Time ;
+typedef std::chrono::steady_clock Time ;
 
 /// @brief A Time Point structure.
 typedef Time::time_point TimePoint ;
@@ -200,6 +200,7 @@ GreEndNamespace
 // This file is here to includes some third-party code help.
 #include "ThirdParty.h"
 #include "Exceptions.h"
+#include "Debug.h"
 
 GreBeginNamespace
 
@@ -219,34 +220,6 @@ typedef struct Version
 
 #define localVersion (Version({ GreVersionMajor , GreVersionMinor , GreVersionBuild }))
 DLL_PUBLIC Version GetLibVersion ();
-
-/// @brief For multithreaded purpose , we make a safe debug function.
-/// 'GreDebugBase()' locks a global mutex.
-/// 'gendl' unlocks this mutex.
-
-extern std::recursive_mutex __globcoutmutex ;
-
-template <class _CharT, class _Traits>
-inline std::basic_ostream<_CharT, _Traits>& gendl(std::basic_ostream<_CharT, _Traits>& __os)
-{
-    __os.put(__os.widen('\n'));
-    __os.flush();
-    __globcoutmutex.unlock();
-    return __os;
-}
-
-/// @brief Debug using an intro (should use __COMPACT_PRETTY_FUNCTION__ macro) and the body message.
-DLL_PUBLIC std::ostream& GreDebugBase(const std::string& func);
-#define GreDebugPretty() Gre::GreDebugBase( __COMPACT_PRETTY_FUNCTION__ )
-#define GreDebug(msg) GreDebugPretty() << msg 
-
-#define _GreDebugNotImplemented( message , arg ) \
-    static std::string __message##__arg = std::string( message ); \
-    static bool __already_passed##__arg = false; \
-    if( __already_passed##__arg ) { GreDebugPretty() << message << Gre::gendl; __already_passed##__arg = true; }
-
-#define GreDebugNotImplemented( message ) _GreDebugNotImplemented( message , __LINE__ )
-#define GreDebugFunctionNotImplemented() GreDebugNotImplemented( std::string ( __COMPACT_PRETTY_FUNCTION__ ) + " : Not implemented !" )
 
 /// @brief Defines the Primitives type.
 /// @note This has no use for now.
@@ -290,7 +263,7 @@ struct Surface
     int left;
     int width ;
     int height ;
-    
+
     /// @brief A Zero'd surface.
     static Surface Null;
 };
@@ -322,7 +295,7 @@ enum class CloseBehaviour
 {
     /// @brief Close only when user decides it.
     Manual,
-    
+
     /// @brief Closes when every Window has closed.
     AllWindowClosed
 };
@@ -332,14 +305,14 @@ typedef std::exception GreException;
 class GreExceptionWithText : public GreException
 {
 public:
-    
+
     GreExceptionWithText(const std::string& reason) : _reason(reason) { }
     ~GreExceptionWithText() { }
-    
+
     const char* what() const throw() { return _reason.c_str(); }
-                             
+
 private:
-    
+
     std::string _reason;
 };
 
@@ -349,31 +322,65 @@ typedef GreExceptionWithText GreUnsupportedOperation;
 typedef GreExceptionWithText GreInvalidUserException;
 
 //////////////////////////////////////////////////////////////////////
+/// @brief Exception that define Allocation Problems.
+class AllocationBadMemory : public GreException
+{
+public:
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    AllocationBadMemory ( const std::string & classname , size_t sz ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    const char * what () const throw () ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the allocation size that failed to be allocated.
+    //////////////////////////////////////////////////////////////////////
+    size_t size () const ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the class name of the allocation.
+    //////////////////////////////////////////////////////////////////////
+    const std::string & name () const ;
+
+    /// @brief Complete 'what' sentence.
+    std::string iWhat ;
+
+    /// @brief Class's name.
+    std::string iClassname ;
+
+    /// @brief Class size.
+    size_t iClasssize ;
+};
+
+//////////////////////////////////////////////////////////////////////
 /// @brief Describes an Error where a Constructor has failed to
 /// initialize.
 //////////////////////////////////////////////////////////////////////
 class GreConstructorException : public GreException
 {
 public:
-    
+
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     GreConstructorException(const char* constructor);
-    
+
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     GreConstructorException(const char* constructor, const char* error);
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Tells which was the Constructor involved, and the error.
     //////////////////////////////////////////////////////////////////////
     const char* what() const throw();
-    
+
 private:
-    
+
     /// @brief Constructor involved.
     std::string iConstructor;
-    
+
     /// @brief Error involved.
     std::string iError;
 };
@@ -384,30 +391,30 @@ private:
 class GreIndexException : public GreException
 {
 public:
-    
+
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     GreIndexException(const char* emitter, size_t idx, size_t max);
-    
+
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     ~GreIndexException();
-    
+
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     const char* what() const throw();
-    
+
 public:
-    
+
     /// @brief Emitter who send this Exception.
     std::string iEmitter;
-    
+
     /// @brief Index given.
     size_t iIndex;
-    
+
     /// @brief Maximum index that could be reached.
     size_t iMaxIndex;
-    
+
     /// @brief Sentence returned by 'what' function.
     std::string iWhat;
 };
@@ -438,14 +445,14 @@ struct Volume
             float height;
             float depth;
         };
-        
+
         struct
         {
             float x;
             float y;
             float z;
         };
-        
+
         Vector3 vec3;
     };
 };
@@ -463,10 +470,10 @@ enum class ClearBuffer : int
     Color   = 0 ,
     Depth   = 1 ,
     Stencil = 2 ,
-    
+
     Size    = 3
 };
-    
+
 /// @brief bitset to manipulate clear buffers.
 typedef std::bitset < (size_t) ClearBuffer::Size > ClearBuffers ;
 

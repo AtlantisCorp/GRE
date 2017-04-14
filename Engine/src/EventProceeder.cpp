@@ -43,7 +43,7 @@ EventProceeder::EventProceeder ()
 
 EventProceeder::~EventProceeder() noexcept ( false )
 {
-    clear () ;
+    
 }
 
 void EventProceeder::sendEvent(EventHolder &holder)
@@ -56,7 +56,7 @@ void EventProceeder::sendEvent(EventHolder &holder)
     // Processes non-filtered listeners. Those listeners will receive every events, as no filters
     // applies.
     
-    for ( EventProceederUser & listener : iListeners)
+    for ( EventProceederUser listener : iListeners)
     {
         if ( !listener.isInvalid() ) {
             listener.lock() -> onEvent(holder) ;

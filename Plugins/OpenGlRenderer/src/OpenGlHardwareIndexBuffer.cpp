@@ -46,6 +46,8 @@ OpenGlHardwareIndexBuffer::OpenGlHardwareIndexBuffer ( const void* data , size_t
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, sz, data, GL_STATIC_DRAW);
         iSize = sz ; setIndexDescriptor(desc);
     }
+    
+    setDirty(true) ;
 }
 
 OpenGlHardwareIndexBuffer::~OpenGlHardwareIndexBuffer() noexcept ( false )
@@ -105,6 +107,8 @@ void OpenGlHardwareIndexBuffer::addData(const char *vdata, size_t sz)
             glBufferData(GL_ELEMENT_ARRAY_BUFFER, sz, vdata, GL_STATIC_DRAW);
         }
     }
+    
+    setDirty(true) ;
 }
 
 const char* OpenGlHardwareIndexBuffer::getData() const
@@ -122,6 +126,8 @@ void OpenGlHardwareIndexBuffer::clearData()
         iGlBuffer = 0 ;
         iSize = 0 ;
     }
+    
+    setDirty(true) ;
 }
 
 size_t OpenGlHardwareIndexBuffer::getSize() const

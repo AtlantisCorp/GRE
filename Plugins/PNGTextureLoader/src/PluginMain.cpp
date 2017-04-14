@@ -231,7 +231,7 @@ extern "C" void StartPlugin ( void )
 
 extern "C" void StopPlugin ( void )
 {
-    
+    GreDebug ( "[INFO] PNG Texture Loader Plugin stopped." ) << Gre::gendl ;
 }
 
 

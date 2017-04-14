@@ -200,11 +200,11 @@ CameraHolder FreeMovingCameraLoader::load(const std::string &name, const CameraO
 
     auto it = options.find ( "Sensibility" ) ;
     if ( it != options.end() )
-        ret -> setSensibility(it->second.toFloat()) ;
+        ret -> setSensibility(it->second.to<float>()) ;
 
     it = options.find ( "Sensitivity" ) ;
     if ( it != options.end() )
-        ret -> setSensitivity(it->second.toFloat()) ;
+        ret -> setSensitivity(it->second.to<float>()) ;
 
     return CameraHolder (ret) ;
 }

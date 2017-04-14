@@ -289,52 +289,52 @@ void OpenGlTexture::_setParameters ( GLenum target ) const
     
 #ifdef GL_TEXTURE_BASE_LEVEL
     glTexParameteri(target, GL_TEXTURE_BASE_LEVEL,
-                    getParameterValue(TextureParameter::MipmapBaseLevel).toInteger());
+                    getParameterValue(TextureParameter::MipmapBaseLevel).to<int>());
 #endif
     
 #ifdef GL_TEXTURE_BORDER_COLOR
     glTexParameterfv(target, GL_TEXTURE_BORDER_COLOR,
-                     &getParameterValue(TextureParameter::BorderColor).toColor().toFloat4()[0]);
+                     &getParameterValue(TextureParameter::BorderColor).to<Color>().toFloat4()[0]);
 #endif
     
 #ifdef GL_TEXTURE_COMPARE_FUNC
     glTexParameteri(target, GL_TEXTURE_COMPARE_FUNC,
-                    translateGlCompareFunc((TextureCompareFunc)getParameterValue(TextureParameter::CompareFunc).toInteger()));
+                    translateGlCompareFunc((TextureCompareFunc)getParameterValue(TextureParameter::CompareFunc).to<int>()));
 #endif
     
 #ifdef GL_TEXTURE_COMPARE_MODE
     glTexParameteri(target, GL_TEXTURE_COMPARE_MODE,
-                    translateGlCompareMode((TextureCompareMode)getParameterValue(TextureParameter::CompareMode).toInteger()));
+                    translateGlCompareMode((TextureCompareMode)getParameterValue(TextureParameter::CompareMode).to<int>()));
 #endif
     
 #ifdef GL_TEXTURE_LOD_BIAS
     glTexParameterf(target, GL_TEXTURE_LOD_BIAS,
-                    getParameterValue(TextureParameter::LODBias).toFloat());
+                    getParameterValue(TextureParameter::LODBias).to<float>());
 #endif
     
 #ifdef GL_TEXTURE_MIN_FILTER
     glTexParameteri(target, GL_TEXTURE_MIN_FILTER,
-                    translateGlMinFilter((TextureMinFilter)getParameterValue(TextureParameter::MinFilter).toInteger()));
+                    translateGlMinFilter((TextureMinFilter)getParameterValue(TextureParameter::MinFilter).to<int>()));
 #endif
     
 #ifdef GL_TEXTURE_MAG_FILTER
     glTexParameteri(target, GL_TEXTURE_MAG_FILTER,
-                    translateGlMagFilter((TextureMagFilter)getParameterValue(TextureParameter::MagFilter).toInteger()));
+                    translateGlMagFilter((TextureMagFilter)getParameterValue(TextureParameter::MagFilter).to<int>()));
 #endif
     
 #ifdef GL_TEXTURE_WRAP_S
     glTexParameteri(target, GL_TEXTURE_WRAP_S,
-                    translateGlWrap((TextureWrap)getParameterValue(TextureParameter::WrapS).toInteger()));
+                    translateGlWrap((TextureWrap)getParameterValue(TextureParameter::WrapS).to<int>()));
 #endif
     
 #ifdef GL_TEXTURE_WRAP_T
     glTexParameteri(target, GL_TEXTURE_WRAP_T,
-                    translateGlWrap((TextureWrap)getParameterValue(TextureParameter::WrapT).toInteger()));
+                    translateGlWrap((TextureWrap)getParameterValue(TextureParameter::WrapT).to<int>()));
 #endif
     
 #ifdef GL_TEXTURE_WRAP_R
     glTexParameteri(target, GL_TEXTURE_WRAP_R,
-                    translateGlWrap((TextureWrap)getParameterValue(TextureParameter::WrapR).toInteger()));
+                    translateGlWrap((TextureWrap)getParameterValue(TextureParameter::WrapR).to<int>()));
 #endif
 }
 

@@ -92,7 +92,7 @@ public:
     /// @brief Binds the actual light , with its camera projection-view
     /// matrix , and use the RenderNode::use() function.
     //////////////////////////////////////////////////////////////////////
-    virtual void use ( const TechniqueHolder & technique ) const ;
+    virtual void use ( const TechniqueHolder & technique , bool prepareforrender = true ) const ;
 
     //////////////////////////////////////////////////////////////////////
     /// @brief Loads a Camera bound to the active light position and direction's
@@ -105,6 +105,11 @@ public:
     /// map for a technique shader.
     //////////////////////////////////////////////////////////////////////
     virtual void loadShadowTexture ( uint32_t width , uint32_t height ) ;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns true if the light is visible from the camera.
+    //////////////////////////////////////////////////////////////////////
+    virtual bool isLightVisibleFrom ( const CameraHolder & camera ) const ;
 
 protected:
 
@@ -353,10 +358,16 @@ protected:
     virtual void onUpdateEvent ( const UpdateEvent & e ) ;
 
     ////////////////////////////////////////////////////////////////////////
-    /// @brief Recursive function to update visible nodes.
-    /// @see onUpdateEvent for more explanation.
-    ////////////////////////////////////////////////////////////////////////
-    virtual void updateNode ( const RenderNodeHolder & node ) ;
+    /// @brief Computes light nodes visible by the camera.
+    //////////////////////////////////////////////////////////////////////
+    virtual std::list < LightRenderNodeHolder > iComputeLightNodes (const CameraHolder & camera ,
+                                                                    float elapsed) const ;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Computes the nodes visible by the camera.
+    //////////////////////////////////////////////////////////////////////
+    virtual RenderNodeHolderList iComputeNodes (const CameraHolder & camera ,
+                                                float elapsed) const ;
 
 protected:
 

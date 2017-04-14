@@ -4,7 +4,7 @@
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
-//  Copyright (c) 2015 - 2016 Luk2010
+//  Copyright (c) 2015 - 2017 Luk2010
 //  Created on 05/07/2016.
 //
 //////////////////////////////////////////////////////////////////////
@@ -129,7 +129,7 @@ void Frustrum::computePlanes(bool normalize)
     
     // See : http://pastebin.com/1Wsk8LgU
     
-    iViewProjection = iView * iPerspective;
+    iViewProjection = iPerspective * iView;
     
     // create non-normalized clipping planes
     iPlanes[0] = Plane( iViewProjection[3] + iViewProjection[0] );       // left
@@ -186,43 +186,11 @@ bool Frustrum::contains(const Vector3 &pt) const
 
 IntersectionResult Frustrum::intersect(const Gre::BoundingBox &bbox) const
 {
+    //////////////////////////////////////////////////////////////////////
     // Bounding Box Frustrum Culling algorithm.
-    // http://www.txutxi.com/?p=584 and http://www.cescg.org/CESCG-2002/DSykoraJJelinek/
+    // http://www.lighthouse3d.com/tutorials/view-frustum-culling/geometric-approach-testing-boxes-ii/
     
-    float m, n;
-    IntersectionResult result = IntersectionResult::Inside;
-    
-    const Vector3& bmax = bbox.getMax();
-    const Vector3& bmin = bbox.getMin();
-    
-    for ( int i = 0; i < 6; ++i )
-    {
-        const Plane& p = iPlanes[i];
-        
-        // The Plane normal is { p.x, p.y, p.z }. We can populate the p-vertex and n-vertex depending on this.
-        // See table 1.
-        
-        Vector3 pv, nv;
-        
-        if ( p.x >= 0 ) { pv.x = bmax.x; nv.x = bmin.x; }
-        else { pv.x = bmin.x; nv.x = bmax.x; }
-        
-        if ( p.y >= 0 ) { pv.y = bmax.y; nv.y = bmin.y; }
-        else { pv.y = bmin.y; nv.y = bmax.y; }
-        
-        if ( p.z >= 0 ) { pv.z = bmax.z; nv.z = bmin.z; }
-        else { pv.z = bmin.z; nv.z = bmax.z; }
-        
-        // Calculate m and n.
-        
-        m = (p.x * nv.x) + (p.y * nv.y) + (p.z * nv.z);
-        if ( m > - p.w ) return IntersectionResult::Outside;
-        
-        n = (p.x * pv.x) + (p.y * pv.y) + (p.z * pv.z);
-        if ( n > - p.w ) result = IntersectionResult::Between;
-    }
-    
-    return result;
+    return getBoundingBox().intersect(bbox);
 }
 
 const ProjectionType & Frustrum::getProjectionType() const
@@ -267,6 +235,70 @@ float Frustrum::getAspectRatio() const
 void Frustrum::setAspectRatio(float v)
 {
     iAspect = v ;
+}
+
+IntersectionResult Frustrum::intersect ( float radius , const Vector3 & center ) const
+{
+    float fDistance;
+    
+    //////////////////////////////////////////////////////////////////////
+    // Calculate our distances to each of the planes
+    
+    for(int i = 0; i < 6; ++i)
+    {
+        //////////////////////////////////////////////////////////////////////
+        // Find the distance to this plane
+        
+        fDistance = glm::dot( Vector3(iPlanes[i]) , center ) + iPlanes[i].w ;
+        
+        //////////////////////////////////////////////////////////////////////
+        // If this distance is < -sphere.radius, we are outside.
+        
+        if( fDistance < -radius )
+        return IntersectionResult::Outside ;
+        
+        //////////////////////////////////////////////////////////////////////
+        // Else if the distance is between +- radius, then we intersect
+        
+        if( (float)fabs(fDistance) < radius )
+        return IntersectionResult::Between ;
+    }
+    
+    return IntersectionResult::Inside ;
+}
+
+IntersectionResult Frustrum::intersect(const Gre::Frustrum &rhs) const
+{
+    //////////////////////////////////////////////////////////////////////
+    // Calculates the bounding box and intersect it with the given frustrum.
+    
+    return intersect ( rhs.getBoundingBox() ) ;
+}
+
+BoundingBox Frustrum::getBoundingBox() const
+{
+    //////////////////////////////////////////////////////////////////////
+    // Calculates the bounding box using the method described here :
+    // https://www.gamedev.net/topic/321595-how-to-get-the-frustum-bounding-box/
+    
+    Matrix4 invmat = glm::inverse( getPerspective() * getView() ) ;
+    
+    Vector3 p1 = Vector3 ( Vector4( -1 , -1 , -1 , 1 ) * invmat ) ;
+    Vector3 p2 = Vector3 ( Vector4( 1 , -1 , -1 , 1 ) * invmat ) ;
+    Vector3 p3 = Vector3 ( Vector4( 1 , 1 , -1 , 1 ) * invmat ) ;
+    Vector3 p4 = Vector3 ( Vector4( -1 , 1 , -1 , 1 ) * invmat ) ;
+    
+    Vector3 p5 = Vector3 ( Vector4( -1 , -1 , 1 , 1 ) * invmat ) ;
+    Vector3 p6 = Vector3 ( Vector4( 1 , -1 , 1 , 1 ) * invmat ) ;
+    Vector3 p7 = Vector3 ( Vector4( 1 , 1 , 1 , 1 ) * invmat ) ;
+    Vector3 p8 = Vector3 ( Vector4( -1 , 1 , 1 , 1 ) * invmat ) ;
+    
+    BoundingBox result ( p1 , p2 ) ;
+    result.add(p3) ; result.add(p4) ;
+    result.add(p5) ; result.add(p6) ;
+    result.add(p7) ; result.add(p8) ;
+    
+    return result ;
 }
 
 GreEndNamespace
