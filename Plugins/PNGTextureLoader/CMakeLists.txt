@@ -5,13 +5,13 @@ project(PNGTextureLoaderPlugin LANGUAGES CXX)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 # Sources files
-file(GLOB sources "${GRE_ROOT_DIRECTORY}/plugins/PNGTextureLoader/inc/*.h")
-file(GLOB headers "${GRE_ROOT_DIRECTORY}/plugins/PNGTextureLoader/src/*.cpp")
+file(GLOB headers "${GRE_ROOT_DIRECTORY}/Plugins/PNGTextureLoader/inc/*.h")
+file(GLOB sources "${GRE_ROOT_DIRECTORY}/Plugins/PNGTextureLoader/src/*.cpp")
 
 # Adds includes
 include_directories( PUBLIC
 	"${GRE_ROOT_DIRECTORY}/Engine/inc"
-	"${GRE_ROOT_DIRECTORY}/plugins/PNGTextureLoader/inc"
+	"${GRE_ROOT_DIRECTORY}/Plugins/PNGTextureLoader/inc"
 	"$<INSTALL_INTERFACE:include>"
 	PRIVATE src 
 )

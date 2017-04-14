@@ -1,5 +1,6 @@
 ### We should ignore C::B temp save files.
 ._*
+*.save
 
 ### Ignores .DS_Store , .clang_complete and .pch files.
 .DS_Store
@@ -8,3 +9,8 @@
 
 ### Ignores CMakeFiles files.
 CMakeFiles/*
+
+### Ignores binaries
+SDK/Plugins/*
+SDK/example
+SDK/libgre.*

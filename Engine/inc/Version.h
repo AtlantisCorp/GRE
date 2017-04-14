@@ -103,6 +103,7 @@
 #   include <mutex>
 #   include <list>
 #   include <streambuf>
+#   include <bitset>
 
 #if defined _WIN32
 //  Windows 32 bits
@@ -159,9 +160,9 @@
 GreBeginNamespace
 
 #ifdef GrePlatformUnix
-    template<typename T> using TVector2 = glm::details::tvec2<T, glm::highp>;
-    template<typename T> using TVector3 = glm::details::tvec3<T, glm::highp>;
-    template<typename T> using TVector4 = glm::details::tvec4<T, glm::highp>;
+    template<typename T> using TVector2 = glm::detail::tvec2<T, glm::highp>;
+    template<typename T> using TVector3 = glm::detail::tvec3<T, glm::highp>;
+    template<typename T> using TVector4 = glm::detail::tvec4<T, glm::highp>;
 #else
     template<typename T> using TVector2 = glm::tvec2<T, glm::highp>;
     template<typename T> using TVector3 = glm::tvec3<T, glm::highp>;

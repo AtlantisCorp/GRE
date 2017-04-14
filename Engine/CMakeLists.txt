@@ -18,6 +18,21 @@ include_directories(PUBLIC
 # Link with used libraries.
 target_link_libraries(gre dl)
 
+# =========================================================================
+# Enables only on Linux platform. On Linux , we also links against the libuuid.
+if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+# =========================================================================
+
+	find_package(PkgConfig REQUIRED)
+
+	pkg_search_module(UUID REQUIRED uuid)
+	include_directories(${UUID_INCLUDE_DIRS})
+	target_link_libraries(gre ${UUID_LIBRARIES})
+
+# =========================================================================
+endif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+# =========================================================================
+
 set_target_properties( gre
         PROPERTIES
         ARCHIVE_OUTPUT_DIRECTORY ${GRE_LIB_DIRECTORY}

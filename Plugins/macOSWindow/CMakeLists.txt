@@ -1,3 +1,8 @@
+# =========================================================================
+# Enables only on Darwin platform.
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+# =========================================================================
+
 # Defines macOS Window project.
 project(macOSWindowPlugin LANGUAGES CXX)
 
@@ -60,3 +65,7 @@ else()
     set_property(TARGET macOSWindow PROPERTY CXX_STANDARD_REQUIRED ON)
 
 endif(${CMAKE_GENERATOR} MATCHES "Xcode")
+
+# =========================================================================
+endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+# =========================================================================

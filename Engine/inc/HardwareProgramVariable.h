@@ -68,6 +68,12 @@ union RealProgramVariable
     	memset( this, 0, sizeof(rhs) );
     	memcpy( this, &rhs, sizeof(rhs) );
     }
+    
+    RealProgramVariable& operator = ( const RealProgramVariable& rhs ) 
+    {
+    	memset( this, 0, sizeof(rhs) );
+    	memcpy( this, &rhs, sizeof(rhs) );
+    }
 
     RealProgramVariable ( const float& v ) : f1(v) { }
     RealProgramVariable ( const Vector2& v ) : f2(v) { }
