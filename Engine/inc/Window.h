@@ -77,7 +77,7 @@ typedef std::vector < WindowStyle > WindowStyles ;
 enum WindowContextAttribute
 {
     /// @brief Indicates double-buffering should be used. (boolean)
-    WCADoubleBuffer ,
+    WCADoubleBuffer = 0 ,
 
     /// @brief Indicates only stereo pixel formats are accepted. (boolean)
     WCAStereo ,

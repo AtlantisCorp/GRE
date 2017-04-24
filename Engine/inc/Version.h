@@ -104,6 +104,7 @@
 #   include <list>
 #   include <streambuf>
 #   include <bitset>
+#   include <stack>
 
 #if defined _WIN32
 //  Windows 32 bits

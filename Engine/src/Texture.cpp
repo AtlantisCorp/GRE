@@ -192,7 +192,7 @@ TextureHolder TextureManager::loadFromArea (const std::string & name ,
 
     pixels -> setInternalPixelFormat ( InternalPixelFormat::RGBA ) ;
     pixels -> setPixelFormat ( PixelFormat::RGBA ) ;
-    pixels -> setPixelType ( PixelType::Float ) ;
+    pixels -> setPixelType ( PixelType::UnsignedByte ) ;
     pixels -> setSurface ({ 0 , 0 , (int) width , (int) height }) ;
 
     //////////////////////////////////////////////////////////////////////
@@ -223,38 +223,38 @@ TextureHolder TextureManager::loadBundledFile(const std::string & name ,
                                               const ResourceLoaderOptions & ops)
 {
     GreAutolock ;
-    
+
     //////////////////////////////////////////////////////////////////////
     // Checks input value.
-    
+
     if ( path.empty() || name.empty() )
     return TextureHolder ( nullptr ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     // Tries to find correct loader.
-    
+
     TextureFileLoader * loader = iFindBestLoader(path) ;
-    
+
     if ( !loader )
     return TextureHolder ( nullptr ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     // Tries to compute the subdirectory path.
-    
+
     std::string subdir = loader -> getDirectory () ;
     std::string bundlepath = !subdir.empty() ? subdir + Platform::GetSeparator() + path : path ;
-    
+
     if ( bundlepath.empty() )
     return TextureHolder ( nullptr ) ;
-    
+
     std::string realpath = ResourceManager::Get() -> findBundledFile(ResourceType::Texture, bundlepath) ;
-    
+
     if ( realpath.empty() )
     return TextureHolder ( nullptr ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     // Now loads the file.
-    
+
     return loadFile ( name , realpath , type , ops ) ;
 }
 
@@ -264,32 +264,32 @@ TextureHolder TextureManager::loadFile(const std::string & name ,
                                        const ResourceLoaderOptions & ops)
 {
     GreAutolock ;
-    
+
     //////////////////////////////////////////////////////////////////////
     // Checks input value.
-    
+
     if ( path.empty() || name.empty() )
     return TextureHolder ( nullptr ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     // Tries to find correct loader.
-    
+
     TextureFileLoader * loader = iFindBestLoader(path) ;
-    
+
     if ( !loader )
     return TextureHolder ( nullptr ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     // Loads the file.
-    
+
     SoftwarePixelBufferHolder pixels = loader -> load ( path , ops ) ;
-    
+
     if ( pixels.isInvalid() )
     return TextureHolder ( nullptr ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     // Creates a new texture and assignate the pixel buffer.
-    
+
     return loadPixelBuffer ( name , pixels , type , ops ) ;
 }
 
@@ -299,24 +299,24 @@ TextureHolder TextureManager::loadPixelBuffer (const std::string & name ,
                                                const ResourceLoaderOptions & ops )
 {
     GreAutolock ;
-    
+
     //////////////////////////////////////////////////////////////////////
     // Checks input values.
-    
+
     if ( name.empty() || pixels.isInvalid() || !iCreator )
     return TextureHolder ( nullptr ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     // Creates a texture from creator.
-    
+
     SoftwarePixelBufferHolderList buffers ;
     buffers.add(pixels) ;
-    
+
     TextureHolder texture = iCreator -> load ( name , buffers , type , ops ) ;
-    
+
     if ( texture.isInvalid() )
     return TextureHolder ( nullptr ) ;
-    
+
     iHolders.add(texture) ;
     return texture ;
 }
@@ -327,23 +327,58 @@ TextureHolder TextureManager::loadPixelBuffers (const std::string & name ,
                                                 const ResourceLoaderOptions & ops )
 {
     GreAutolock ;
-    
+
     //////////////////////////////////////////////////////////////////////
     // Checks input values.
-    
+
     if ( name.empty() || buffers.empty() || !iCreator )
     return TextureHolder ( nullptr ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     // Creates a texture from creator.
-    
+
     TextureHolder texture = iCreator -> load ( name , buffers , type , ops ) ;
-    
+
     if ( texture.isInvalid() )
     return TextureHolder ( nullptr ) ;
-    
+
     iHolders.add(texture) ;
     return texture ;
+}
+
+const TextureHolder & TextureManager::getDefaultTexture () const
+{
+    GreAutolock ; return iDefaultTexture ;
+}
+
+void TextureManager::setDefaultTexture ( const TextureHolder & texture )
+{
+    GreAutolock ; iDefaultTexture = texture ;
+}
+
+TextureHolder TextureManager::loadFromNewPixelBuffer(const std::string &name, int width, int height, int depth, const Gre::PixelFormat &pf, const Gre::InternalPixelFormat &ipf, const Gre::PixelType &pt, const Gre::TextureType &tt, int psize)
+{
+    if ( width <= 0 || height <= 0 || depth < 0 )
+    return TextureHolder ( nullptr ) ;
+    
+    SoftwarePixelBufferHolder pb = new SoftwarePixelBuffer () ;
+    
+    if ( pb.isInvalid() )
+    return TextureHolder ( nullptr ) ;
+    
+    pb -> setSurface({ 0, 0, width, height }) ;
+    pb -> setDepth(depth) ;
+    pb -> setPixelFormat(pf) ;
+    pb -> setInternalPixelFormat(ipf) ;
+    pb -> setPixelType(pt) ;
+    
+    if ( depth )
+    pb -> setData(nullptr, width * height * depth * psize) ;
+    
+    else
+    pb -> setData(nullptr, width * height * psize) ;
+    
+    return loadPixelBuffer(name, pb, tt, ResourceLoaderOptions()) ;
 }
 
 GreEndNamespace

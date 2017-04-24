@@ -84,6 +84,18 @@ void Application::WorkerThreadMain ( Application * app )
     while ( !app->shouldTerminate() )
     {
         Duration elapsed = (Time::now() - t) ;
+        
+        //////////////////////////////////////////////////////////////////////
+        // When elapsed time is inferior to 60 FPS ( 1/60e seconds ) , we do not
+        // launch any update event.
+        
+        float elapsedsec = elapsed.count() ;
+        
+        if ( elapsedsec < 1.0f / 60.0f )
+        continue ;
+        
+        t = Time::now() ;
+        
         EventHolder uevent = EventHolder ( new UpdateEvent( (const EventProceeder*) app , elapsed ) ) ;
         
         app -> threadLock() ;
@@ -95,8 +107,6 @@ void Application::WorkerThreadMain ( Application * app )
         }
         
         app -> threadUnlock() ;
-        
-        t = Time::now() ;
     }
 }
 
@@ -231,6 +241,16 @@ void Application::iMainThreadLoop()
     while ( !iShouldTerminate )
     {
         Duration delta = Time::now() - iMainStart ;
+        
+        //////////////////////////////////////////////////////////////////////
+        // When elapsed time is inferior to 60 FPS ( 1/60e seconds ) , we do not
+        // launch any update event.
+        
+        float elapsedsec = delta.count() ;
+        
+        if ( elapsedsec < 1.0f / 120.0f )
+            continue ;
+        
         EventHolder elapsed = EventHolder ( new UpdateEvent ( this , delta ) ) ;
         iMainStart = Time::now() ;
         
@@ -241,8 +261,8 @@ void Application::iMainThreadLoop()
         // to any hardware event like keyboard , mouse , ... and also OS - specific events ( Window moves ,
         // sizes , ... ) .
         
-        iRendererManager -> render () ;
         iWindowManager -> pollEvents (delta) ;
+        iRendererManager -> render () ;
         iWindowManager -> onEvent(elapsed) ;
     }
 }

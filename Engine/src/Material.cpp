@@ -31,10 +31,11 @@
  */
 
 #include "Material.h"
+#include "ResourceManager.h"
 
 GreBeginNamespace
 
-Material::Material(const std::string& name) : Gre::Resource(name)
+Material::Material(const std::string& name) : Gre::Renderable(name)
 , iEmission(Color(1.0f, 1.0f, 1.0f, 1.0f))
 {
     //////////////////////////////////////////////////////////////////////
@@ -46,7 +47,9 @@ Material::Material(const std::string& name) : Gre::Resource(name)
     iShininess = 32.0f ;
 
     //////////////////////////////////////////////////////////////////////
-    // Initializes every textures to null , making the map complete.
+    // Initializes every textures to null , making the map complete. Notes
+    // no texturing is enabled. When enabling texturing, 'clearTextures()'
+    // should set every textures to the default blank one.
 
     for ( int i = (int) TechniqueParam::Texture0 ; i < (int) TechniqueParam::Texture9 ; ++i )
         iTextures [(TechniqueParam)i] = nullptr ;
@@ -55,6 +58,8 @@ Material::Material(const std::string& name) : Gre::Resource(name)
     iTextures [TechniqueParam::MaterialTexDiffuse] = nullptr ;
     iTextures [TechniqueParam::MaterialTexSpecular] = nullptr ;
     iTextures [TechniqueParam::MaterialTexNormal] = nullptr ;
+
+    iUseTextures = false ;
 }
 
 Material::~Material() noexcept ( false )
@@ -169,16 +174,64 @@ void Material::setNormalTexture(const TextureHolder &texture)
 
 void Material::use(const TechniqueHolder &technique) const
 {
+    GreAutolock ;
+
     if ( !technique.isInvalid() )
     {
         technique -> setAliasedParameterValue(TechniqueParam::MaterialAmbient, HdwProgVarType::Float3, iAmbient.toFloat3());
         technique -> setAliasedParameterValue(TechniqueParam::MaterialDiffuse, HdwProgVarType::Float3, iDiffuse.toFloat3());
         technique -> setAliasedParameterValue(TechniqueParam::MaterialSpecular, HdwProgVarType::Float3, iSpecular.toFloat3());
         technique -> setAliasedParameterValue(TechniqueParam::MaterialShininess, HdwProgVarType::Float1, iShininess);
-        
-        for ( auto it : iTextures )
-        technique -> setAliasedTexture(it.first, it.second) ;
+
+        if ( iUseTextures )
+        {
+            for ( auto it : iTextures )
+            technique -> setAliasedTexture(it.first, it.second) ;
+        }
     }
+}
+
+void Material::setUseTextures ( bool value )
+{
+    GreAutolock ;
+
+    if ( !iUseTextures && value )
+    clearTextures () ;
+
+    iUseTextures = value ;
+}
+
+bool Material::usesTextures () const
+{
+    GreAutolock ; return iUseTextures ;
+}
+
+void Material::clearTextures ()
+{
+    GreAutolock ;
+
+    //////////////////////////////////////////////////////////////////////
+    // For every Textures that can be bound to a Technique , sets the default
+    // blank texture provided by the TextureManager.
+
+    TextureManagerHolder textmanager = ResourceManager::Get() -> getTextureManager () ;
+
+    if ( textmanager.isInvalid() )
+    {
+        GreDebug ( "[WARN] Material '" ) << getName() << "' can't clear Textures because no Texture Manager is installed." << gendl ;
+        return ;
+    }
+
+    TextureHolder blanktext = textmanager -> getDefaultTexture () ;
+
+    if ( blanktext.isInvalid() )
+    {
+        GreDebug ( "[WARN] Material '" ) << getName() << "' can't clear Textures because no Default Texture is loaded." << gendl ;
+        return ;
+    }
+
+    for ( auto & it : iTextures )
+    it.second = blanktext ;
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -198,10 +251,10 @@ MaterialLoader::~MaterialLoader()
 MaterialManager::MaterialManager(const std::string& name)
 : SpecializedResourceManager<Gre::Material, Gre::MaterialLoader>()
 {
-    
+
 }
 
-MaterialManager::~MaterialManager() noexcept ( false ) 
+MaterialManager::~MaterialManager() noexcept ( false )
 {
 
 }
@@ -209,21 +262,21 @@ MaterialManager::~MaterialManager() noexcept ( false )
 MaterialHolder MaterialManager::loadBlank(const std::string &name)
 {
     GreAutolock ;
-    
+
     //////////////////////////////////////////////////////////////////////
     // Checks input values.
-    
+
     if ( name.empty() )
     return MaterialHolder ( nullptr ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     // Checks if material doesn't exists.
-    
+
     MaterialHolder material = get ( name ) ;
-    
+
     if ( material.isInvalid() )
     return loadHolder ( MaterialHolder ( new Material (name) ) ) ;
-    
+
     material -> clear () ;
     return material ;
 }
@@ -236,13 +289,13 @@ MaterialHolder MaterialManager::get(const std::string &name)
 MaterialHolder MaterialManager::loadHolder ( const MaterialHolder & material )
 {
     GreAutolock ;
-    
+
     if ( material.isInvalid() )
     return MaterialHolder ( nullptr ) ;
-    
+
     if ( findHolder(material->getIdentifier()).isInvalid() )
     iHolders.add(material);
-    
+
     return material ;
 }
 

@@ -35,7 +35,7 @@
 
 GreBeginNamespace
 
-RenderPass::RenderPass ( const std::string & name ) : Gre::Resource ( name )
+RenderPass::RenderPass ( const std::string & name ) : Gre::Renderable ( name )
 {
     iClearDepth = 1.0f ;
     iClearBuffers.set((int)ClearBuffer::Color, true);
@@ -134,13 +134,28 @@ void RenderPass::use ( const TechniqueHolder & technique ) const
 
     if ( !technique.isInvalid() )
     {
-        technique -> setAliasedParameterValue ( TechniqueParam::ViewportLeft , HdwProgVarType::Int1 , iViewport.left ) ;
-        technique -> setAliasedParameterValue ( TechniqueParam::ViewportTop , HdwProgVarType::Int1 , iViewport.top ) ;
-        technique -> setAliasedParameterValue ( TechniqueParam::ViewportWidth , HdwProgVarType::Int1 , iViewport.width ) ;
-        technique -> setAliasedParameterValue ( TechniqueParam::ViewportHeight , HdwProgVarType::Int1 , iViewport.height ) ;
+        //////////////////////////////////////////////////////////////////////
+        // When the technique is Self-Rendered , we bind only the params hold
+        // by iSelfUsedParams. When not , we only bind the Viewport and the
+        // clear colors and depth.
 
-        technique -> setAliasedParameterValue ( TechniqueParam::ClearColor , HdwProgVarType::Float4 , iClearColor.toFloat4() ) ;
-        technique -> setAliasedParameterValue ( TechniqueParam::ClearDepth , HdwProgVarType::Float1 , iClearDepth ) ;
+        if ( technique -> isSelfRendered() )
+        {
+            for ( const auto & param : iSelfUsedParams )
+            if ( !param.isInvalid() )
+            param -> use ( technique ) ;
+        }
+
+        else
+        {
+            technique -> setAliasedParameterValue ( TechniqueParam::ViewportLeft , HdwProgVarType::Int1 , iViewport.left ) ;
+            technique -> setAliasedParameterValue ( TechniqueParam::ViewportTop , HdwProgVarType::Int1 , iViewport.top ) ;
+            technique -> setAliasedParameterValue ( TechniqueParam::ViewportWidth , HdwProgVarType::Int1 , iViewport.width ) ;
+            technique -> setAliasedParameterValue ( TechniqueParam::ViewportHeight , HdwProgVarType::Int1 , iViewport.height ) ;
+
+            technique -> setAliasedParameterValue ( TechniqueParam::ClearColor , HdwProgVarType::Float4 , iClearColor.toFloat4() ) ;
+            technique -> setAliasedParameterValue ( TechniqueParam::ClearDepth , HdwProgVarType::Float1 , iClearDepth ) ;
+        }
     }
 
     TechniqueParamBinder::use(technique);
@@ -162,16 +177,16 @@ void RenderPass::render ( const Renderer * renderer ) const
 
     if ( renderer && !iTechnique.isInvalid() )
     {
-        
+
         //////////////////////////////////////////////////////////////////////
         // Checks the viewport area : If it is null , we don't need to render
         // the pass.
-        
+
         if ( !iViewport.getArea() )
         return ;
-        
+
         renderer -> setViewport ( iViewport ) ;
-        
+
         if ( iClearViewport )
         renderer -> setClearRegion ( iViewport ) ;
 
@@ -179,7 +194,23 @@ void RenderPass::render ( const Renderer * renderer ) const
         renderer -> setClearDepth ( iClearDepth ) ;
         renderer -> clearBuffers ( iClearBuffers ) ;
 
+        //////////////////////////////////////////////////////////////////////
+        // Uses preprocessing techniques here. Those techniques will use adequate
+        // binding to be draw by the renderer.
+
+        for ( auto tech : iPreProcessTechniques )
+        renderTechnique ( renderer , tech ) ;
+
+        //////////////////////////////////////////////////////////////////////
+        // Uses the main technique.
+
         renderTechnique ( renderer , iTechnique ) ;
+
+        //////////////////////////////////////////////////////////////////////
+        // Uses postprocessing techniques.
+
+        for ( auto tech : iPostProcessTechniques )
+        renderTechnique ( renderer , tech ) ;
     }
 }
 
@@ -193,169 +224,275 @@ bool RenderPass::isClearViewport() const
     GreAutolock ; return iClearViewport ;
 }
 
-void RenderPass::prerender(const Gre::Renderer *renderer, const TechniqueHolder &technique) const
+void RenderPass::addSelfUsedRenderable ( const RenderableHolder & renderable )
 {
-    if ( !technique.isInvalid() )
-    {
-        for ( auto tech : technique -> getPreTechniques() )
-        {
-            renderTechnique ( renderer , tech ) ;
-        }
-    }
+    GreAutolock ; iSelfUsedParams.push_back ( renderable ) ;
 }
 
-void RenderPass::postrender(const Gre::Renderer *renderer, const TechniqueHolder &technique) const
+const std::vector < RenderableHolder > & RenderPass::getSelfUsedRenderables () const
 {
-    if ( !technique.isInvalid() )
-    {
-        for ( auto tech : technique -> getPostTechniques() )
-        {
-            renderTechnique ( renderer , technique ) ;
-        }
-    }
+    GreAutolock ; return iSelfUsedParams ;
 }
 
 void RenderPass::renderTechnique(const Gre::Renderer *renderer, const TechniqueHolder &technique) const
 {
     if ( technique.isInvalid() )
-        return ;
+    return ;
 
-    prerender ( renderer , technique ) ;
+    GreAutolock ;
 
-    technique -> resetLights () ;
+    //////////////////////////////////////////////////////////////////////
+    // First binds the technique. Binding the technique should also binds
+    // the framebuffer if it has one.
+
     technique -> bind () ;
 
-    iCamera -> use (technique) ;
+    //////////////////////////////////////////////////////////////////////
+    // If technique is Self-Rendered , use it and use the renderer to draw
+    // it normally. It should inform the Renderer on how to render it.
 
-    auto nodes = iScene -> getNodesForCamera ( iCamera ) ;
-    iScene -> use ( technique ) ;
-
-    if ( technique->getLightingMode() == TechniqueLightingMode::PerLight )
+    if ( technique -> isSelfRendered() )
     {
-        auto lights = iScene -> getActivatedLightsForCamera ( iCamera ) ;
+        use ( technique ) ;
+        renderer -> draw ( technique ) ;
+    }
 
-        for ( const LightRenderNodeHolder & lightnode : lights )
+    else
+    {
+        RenderNodeHolderList nodes ;
+
+        //////////////////////////////////////////////////////////////////////
+        // When the Scene is invalid , we choose to use an empty node list and
+        // so call the renderer draw function with the technique as argument. This
+        // let the renderer choose if it should draw the technique as a Self-Rendered
+        // or just left blank screen.
+
+        if ( !iScene.isInvalid() && !iCamera.isInvalid() )
+        nodes = iScene -> getNodesForCamera ( iCamera ) ;
+
+        if ( !iCamera.isInvalid() )
+        iCamera -> use ( technique ) ;
+
+        if ( !iScene.isInvalid() )
+        iScene -> use ( technique ) ;
+
+        //////////////////////////////////////////////////////////////////////
+        // Computes lights depending on scene , camera and technique informations.
+
+        std::list<LightRenderNodeHolder> lights ;
+
+        if (technique -> getLightingMode() != TechniqueLightingMode::None &&
+            !iScene.isInvalid() && !iCamera.isInvalid() )
+        lights = iScene -> getActivatedLightsForCamera ( iCamera ) ;
+
+        if ( !nodes.empty() )
         {
-            lightnode -> use ( technique , false ) ;
+            //////////////////////////////////////////////////////////////////////
+            // For each nodes , bind lights , bind material , draw it with renderer.
 
-            for ( auto n : nodes )
-            {
-                if ( !n -> isRenderable() )
-                    continue ;
-                
-                //////////////////////////////////////////////////////////////////////
-                // As we also need to make the 'NormalMatrix' parameter , we should calculate
-                // it here and directly sets it to the technique.
-                
-                Matrix3 modelViewMat = Matrix3 ( iCamera->getViewMatrix() * n->getModelMatrix() ) ;
-                Matrix3 normalMat = glm::transpose(glm::inverse(modelViewMat)) ;
-                
-                technique -> setAliasedParameterValue ( TechniqueParam::NormalMatrix3 , HdwProgVarType::Matrix3 , normalMat ) ;
-                
-                
-                //////////////////////////////////////////////////////////////////////
-                // Lets the node uses the technique and let the renderer draw the node.
-                // Notes on OpenGl , drawing anything should be done under a VAO object ,
-                // we should make the mesh bindable. When the mesh binds its attributes ,
-                // it should also binds the VAO object. Unbinding unbinds the VAO object.
-                
-                n -> use ( technique ) ;
-                use ( technique ) ;
-                
-                n -> getMesh() -> bind ( technique ) ;
-                
-                renderer -> draw (n) ;
-                
-                n -> getMesh() -> unbind ( technique ) ;
-                
-                //////////////////////////////////////////////////////////////////////
-                // Undo the textures for the node. The mesh actually don't set textures,
-                // as the node already sets everything in 'use'. Even for light's , shadowmap
-                // is in the LightRenderNode object.
-                
-                technique -> resetTextures () ;
-            }
+            for ( auto node : nodes )
+            renderTechniqueWithNodeAndLights ( renderer , technique , node , lights ) ;
+        }
+
+        else
+        {
+            //////////////////////////////////////////////////////////////////////
+            // Depending on lighting mode , bind lights and call technique.
+
+            renderTechniqueWithLights ( renderer , technique , RenderNodeHolder ( nullptr ) , lights ) ;
+        }
+
+    }
+
+    //////////////////////////////////////////////////////////////////////
+    // Unbinding the technique should unbind the framebuffer , reste lights
+    // and textures counter.
+
+    technique -> reset () ;
+    technique -> unbind () ;
+}
+
+void RenderPass::renderTechniqueWithNodeAndLights (const Renderer* renderer ,
+                                                   const TechniqueHolder & technique ,
+                                                   const RenderNodeHolder & node ,
+                                                   const std::list < LightRenderNodeHolder > & lights) const
+{
+    if ( node.isInvalid() || technique.isInvalid() )
+    return ;
+    
+    if ( !node->isRenderable() )
+    return ;
+
+    //////////////////////////////////////////////////////////////////////
+    // If node is not invalid , see if it has preprocessing techniques. If
+    // this is the case , we unbind the current technique and binds the
+    // preprocessed technique , making a rendering exclusively for the current
+    // node.
+
+    auto preprocess = node -> getPreProcessTechniques () ;
+
+    if ( !preprocess.empty() )
+    technique -> unbind () ;
+
+    for ( auto tech : preprocess )
+    renderTechniqueWithNode ( renderer , tech , node , lights ) ;
+
+    if ( !preprocess.empty() )
+    technique -> bind () ;
+
+    //////////////////////////////////////////////////////////////////////
+    // As we also need to make the 'NormalMatrix' parameter , we should calculate
+    // it here and directly sets it to the technique.
+
+    if ( !iCamera.isInvalid() )
+    {
+        Matrix3 modelViewMat = Matrix3 ( node->getModelMatrix() * iCamera->getViewMatrix() ) ;
+        Matrix3 normalMat = glm::transpose(glm::inverse(modelViewMat)) ;
+
+        technique -> setAliasedParameterValue ( TechniqueParam::NormalMatrix3 , HdwProgVarType::Matrix3 , normalMat ) ;
+    }
+
+    //////////////////////////////////////////////////////////////////////
+    // Binds the node. Notes that if the node does not contains any renderable,
+    // we do not render it.
+    
+    if ( node -> isRenderable() )
+    node -> getMesh() -> bind ( technique ) ;
+
+    node -> use ( technique ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Binds every lights and render the node.
+
+    renderTechniqueWithLights ( renderer , technique , node , lights ) ;
+    
+    if ( node -> isRenderable() )
+    node -> getMesh() -> unbind ( technique ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    // After using lights and textures , we should always reset the
+    // technique counters.
+
+    technique -> reset () ;
+
+    //////////////////////////////////////////////////////////////////////
+    // If node is not invalid , see if it has postprocessing techniques. If
+    // this is the case , we unbind the current technique and binds the
+    // postprocessed technique , making a rendering exclusively for the current
+    // node.
+
+    auto postprocess = node -> getPostProcessTechniques () ;
+
+    if ( !postprocess.empty() )
+    technique -> unbind () ;
+
+    for ( auto tech : postprocess )
+    renderTechniqueWithNode ( renderer , tech , node , lights ) ;
+
+    if ( !postprocess.empty() )
+    technique -> bind () ;
+}
+
+void RenderPass::renderTechniqueWithLights (const Renderer* renderer ,
+                                            const TechniqueHolder & technique ,
+                                            const RenderNodeHolder & node ,
+                                            const std::list < LightRenderNodeHolder > & lights ) const
+{
+    if ( technique.isInvalid() )
+    return ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Binds lights.
+
+    if ( technique -> getLightingMode() == TechniqueLightingMode::AllLights )
+    {
+        for ( auto light : lights )
+        if ( !light.isInvalid() )
+        light -> use ( technique , false ) ;
+
+        renderTechniqueWithNode ( renderer , technique , node ) ;
+    }
+
+    else if ( technique -> getLightingMode() == TechniqueLightingMode::PerLight )
+    {
+        for ( auto light : lights )
+        {
+            if ( light.isInvalid() )
+            continue ;
+
+            light -> use ( technique , false ) ;
+
+            renderTechniqueWithNode ( renderer , technique , node ) ;
 
             technique -> resetLights () ;
         }
     }
 
-    else if ( technique->getLightingMode() == TechniqueLightingMode::AllLights )
+    else if ( technique -> getLightingMode() == TechniqueLightingMode::None )
     {
-        auto lights = iScene -> getActivatedLightsForCamera ( iCamera ) ;
+        renderTechniqueWithNode ( renderer , technique , node ) ;
+    }
+}
 
-        for ( auto n : nodes )
-        {
-            if ( !n -> isRenderable() )
-            continue ;
-            
-            //////////////////////////////////////////////////////////////////////
-            // We have to set every lights for each node in order to rebuild the
-            // texture units correctly.
-            
-            for ( const LightRenderNodeHolder & lightnode : lights ) {
-                lightnode -> use ( technique , false ) ;
-            }
-            
-            //////////////////////////////////////////////////////////////////////
-            // As we also need to make the 'NormalMatrix' parameter , we should calculate
-            // it here and directly sets it to the technique.
-            
-            Matrix3 modelViewMat = Matrix3 ( n->getModelMatrix() * iCamera->getViewMatrix() ) ;
-            Matrix3 normalMat = glm::transpose(glm::inverse(modelViewMat)) ;
-            
-            technique -> setAliasedParameterValue ( TechniqueParam::NormalMatrix3 , HdwProgVarType::Matrix3 , normalMat ) ;
+void RenderPass::renderTechniqueWithNode (const Renderer* renderer ,
+                                          const TechniqueHolder & technique ,
+                                          const RenderNodeHolder & node ,
+                                          const std::list < LightRenderNodeHolder > & lights) const
+{
+    if ( technique.isInvalid() )
+    return ;
 
+    GreAutolock ;
 
-            //////////////////////////////////////////////////////////////////////
-            // Lets the node uses the technique and let the renderer draw the node.
-            // Notes on OpenGl , drawing anything should be done under a VAO object ,
-            // we should make the mesh bindable. When the mesh binds its attributes ,
-            // it should also binds the VAO object. Unbinding unbinds the VAO object.
+    //////////////////////////////////////////////////////////////////////
+    // First binds the technique. Binding the technique should also binds
+    // the framebuffer if it has one.
 
-            n -> use ( technique ) ;
-            use ( technique ) ;
-            
-            n -> getMesh() -> bind ( technique ) ;
-            
-            renderer -> draw (n) ;
-            
-            n -> getMesh() -> unbind ( technique ) ;
-            
-            //////////////////////////////////////////////////////////////////////
-            // Undo the textures for the node. The mesh actually don't set textures,
-            // as the node already sets everything in 'use'. Even for light's , shadowmap
-            // is in the LightRenderNode object.
-            
-            technique -> resetTextures () ;
-        }
+    technique -> bind () ;
 
-        technique -> resetLights () ;
+    //////////////////////////////////////////////////////////////////////
+    // If technique is Self-Rendered , use it and use the renderer to draw
+    // it normally. It should inform the Renderer on how to render it.
+
+    if ( technique -> isSelfRendered() )
+    {
+        use ( technique ) ;
+        renderer -> draw ( technique ) ;
     }
 
-    else if ( technique->getLightingMode() == TechniqueLightingMode::None )
+    else
     {
-        for ( auto n : nodes )
-        {
-            //////////////////////////////////////////////////////////////////////
-            // As we also need to make the 'NormalMatrix' parameter , we should calculate
-            // it here and directly sets it to the technique.
+        if ( !iCamera.isInvalid() )
+        iCamera -> use ( technique ) ;
 
-            Matrix4 normalMatrix = glm::inverseTranspose ( iCamera -> getViewMatrix() * n -> getModelMatrix() ) ;
-            technique -> setAliasedParameterValue ( TechniqueParam::NormalMatrix , HdwProgVarType::Matrix4 , normalMatrix ) ;
+        if ( !iScene.isInvalid() )
+        iScene -> use ( technique ) ;
 
-            //////////////////////////////////////////////////////////////////////
-            // Lets the node uses the technique and let the renderer draw the node.
-
-            n -> use ( technique ) ;
-
-            use ( technique ) ;
-            renderer -> draw (n) ;
-        }
+        renderTechniqueWithNodeAndLights ( renderer , technique , node , lights ) ;
     }
 
+    //////////////////////////////////////////////////////////////////////
+    // Unbinding the technique should unbind the framebuffer , reste lights
+    // and textures counter.
+
+    technique -> reset () ;
     technique -> unbind () ;
-    postrender ( renderer , technique ) ;
+}
+
+void RenderPass::renderTechniqueWithNode (const Renderer* renderer ,
+                                          const TechniqueHolder & technique ,
+                                          const RenderNodeHolder & node) const
+{
+    //////////////////////////////////////////////////////////////////////
+    // Binds this renderable and draw using the renderer.
+
+    use ( technique ) ;
+
+    if ( node.isInvalid() )
+    renderer -> draw ( technique ) ;
+
+    else
+    renderer -> draw ( node ) ;
 }
 
 void RenderPass::onWindowSizedEvent ( const WindowSizedEvent & e )

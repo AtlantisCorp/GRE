@@ -112,13 +112,6 @@ public:
     //////////////////////////////////////////////////////////////////////
     virtual void clearPasses () ;
 
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Should draw the given node's mesh , if it has one. Notes this
-    /// function is not recursive and will not draw any children in the given
-    /// node.
-    //////////////////////////////////////////////////////////////////////
-    virtual void draw ( const RenderNodeHolder & node ) const ;
-
 protected:
 
     /// @brief Holds the render's passes created.
@@ -172,6 +165,28 @@ public:
     ///
     //////////////////////////////////////////////////////////////////////
     virtual void drawMesh ( const MeshHolder & mesh ) const = 0 ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Draw the mesh hold by the given node.
+    ///
+    /// @note
+    /// This function should not bind anything , but only call 'drawMesh()'.
+    /// Binding to the shader's program is done by the renderpass object.
+    ///
+    //////////////////////////////////////////////////////////////////////
+    virtual void draw ( const Gre::RenderNodeHolder & node ) const ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Draw generally a quad to the screen using the given technique.
+    ///
+    /// @note
+    /// No binding is done in this function. Generally, this function is called
+    /// when the technique is Self-Rendered. The Renderer may draw a static
+    /// fullscreen quad using the given technique. The technique should already
+    /// be binded when calling this function , and thus no binding is required.
+    ///
+    //////////////////////////////////////////////////////////////////////
+    virtual void draw ( const Gre::TechniqueHolder & technique ) const = 0 ;
 
 public:
 

@@ -33,7 +33,7 @@
 #ifndef GRE_Mesh_h
 #define GRE_Mesh_h
 
-#include "Resource.h"
+#include "Renderable.h"
 #include "ResourceLoader.h"
 #include "SpecializedResourceManager.h"
 
@@ -43,7 +43,6 @@
 #include "SoftwareIndexBuffer.h"
 
 #include "HardwareProgram.h"
-#include "TechniqueParamBinder.h"
 
 GreBeginNamespace
 
@@ -56,19 +55,19 @@ class Mesh ;
 class DLL_PUBLIC MeshBinder
 {
 public:
-    
+
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     virtual ~MeshBinder () ;
-    
+
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     virtual void bind ( const Mesh* mesh , const TechniqueHolder & technique ) const = 0 ;
-    
+
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     virtual void unbind ( const Mesh* mesh , const TechniqueHolder & technique ) const = 0 ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Should returns true if the implemented mesh should update
     /// its buffers locations at each frame ( for example it will return
@@ -95,7 +94,7 @@ public:
 /// when loading the Mesh.
 ///
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC Mesh : public Resource , public TechniqueParamBinder
+class DLL_PUBLIC Mesh : public Renderable
 {
 public:
 
@@ -172,7 +171,7 @@ public:
     /// @brief Returns 'iDefaultMaterial'.
     //////////////////////////////////////////////////////////////////////
     virtual const MaterialHolder& getDefaultMaterial () const ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns 'iDefaultMaterial'.
     //////////////////////////////////////////////////////////////////////
@@ -187,24 +186,24 @@ public:
     /// @brief Binds the material parameters , if present.
     //////////////////////////////////////////////////////////////////////
     virtual void use ( const TechniqueHolder & technique ) const ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Binds the vertex attribute. OpenGl implementation should also
     /// binds a Vertex Array Object here.
     //////////////////////////////////////////////////////////////////////
     virtual void bind ( const TechniqueHolder & technique ) const ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Unbinds the vertex attributes. Obviously so call 'unbind()'
     /// implementation. OpenGl implementation should unbind the VAO object .
     //////////////////////////////////////////////////////////////////////
     virtual void unbind ( const TechniqueHolder & technique ) const ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Changes the mesh binder.
     //////////////////////////////////////////////////////////////////////
     virtual void setBinder ( MeshBinder* binder ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Tells if at least one of the buffers has been changed.
     //////////////////////////////////////////////////////////////////////
@@ -226,10 +225,10 @@ protected:
 
     /// @brief Preferred Material for this Mesh.
     MaterialHolder iDefaultMaterial ;
-    
+
     /// @brief Binding implementation for the Mesh object. If null , the mesh can't be bound.
     MeshBinder* iBinder ;
-    
+
 };
 
 /// @brief SpecializedCountedObjectHolder for Mesh .
@@ -308,7 +307,7 @@ public:
     /// @brief Creates a HardwareIndexBuffer with given data.
     //////////////////////////////////////////////////////////////////////
     virtual HardwareIndexBufferHolder createIndexBuffer ( const void* data , size_t sz , const IndexDescriptor& desc ) const = 0 ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Loads a Bundled File. The subdirectory is computed from the
     /// object file extension. For example , an '.obj' file will be in subdir
@@ -317,25 +316,25 @@ public:
     /// Returns the number of meshes found in loaded file.
     //////////////////////////////////////////////////////////////////////
     virtual int loadBundledFile ( const std::string & path , const ResourceLoaderOptions & ops ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Loads a File. The path is considered as relative from the
     /// working directory. Returns the number of meshes found in the file.
     //////////////////////////////////////////////////////////////////////
     virtual int loadFile ( const std::string & path , const ResourceLoaderOptions & ops ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the first mesh encountered with given name.
     //////////////////////////////////////////////////////////////////////
     virtual MeshHolder get ( const std::string & name ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the first mesh encountered with given name.
     //////////////////////////////////////////////////////////////////////
     virtual const MeshHolder get ( const std::string & name ) const ;
-    
+
 protected:
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Creates a MeshBinder to use with every newly created mesh.
     //////////////////////////////////////////////////////////////////////

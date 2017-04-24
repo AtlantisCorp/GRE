@@ -36,7 +36,7 @@
 #include <Renderer.h>
 
 //////////////////////////////////////////////////////////////////////
-// On Darwin OS , we only need to include the GL framework. Extension 
+// On Darwin OS , we only need to include the GL framework. Extension
 // management is done within the framework.
 
 #ifdef GrePlatformDarwin
@@ -53,6 +53,7 @@
 #endif
 
 GLenum translateGlTexture ( const Gre::TextureType & type ) ;
+GLenum translateGlInternalPixelFormat ( Gre::InternalPixelFormat format ) ;
 GLenum translateGlAttachement ( const Gre::RenderFramebufferAttachement & att ) ;
 std::string translateGlError ( GLenum err ) ;
 
@@ -86,23 +87,52 @@ public:
     virtual void unbind() const ;
 
     //////////////////////////////////////////////////////////////////////
-    /// @brief Attachs the given texture object to the given Attachement.
+    /// @brief Returns true if the framebuffer is binded.
     //////////////////////////////////////////////////////////////////////
-    virtual void setAttachement(const Gre::RenderFramebufferAttachement& attachement, Gre::TextureHolder& holder) ;
-    
+    virtual bool binded () const ;
+
+protected:
+
     //////////////////////////////////////////////////////////////////////
-    /// @brief Attaches the given texture but don't cache it.
+    /// @brief Attaches the given attachment to the framebuffer. If the
+    /// framebuffer was not binded , it should bind then unbind it.
+    /// @return True on success, otherwise false.
+    ///
+    /// @notes If the attachment is a Renderbuffer , the framebuffer should
+    /// set appropriate settings to create and manage it.
+    ///
     //////////////////////////////////////////////////////////////////////
-    virtual void setAttachementNoCache (const Gre::RenderFramebufferAttachement & attachement ,
-                                        const Gre::TextureHolder & holder ) const ;
+    virtual bool _bindAttachment ( const Gre::FramebufferAttachment & attachment ) const ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Subfunction to attach a texture to the framebuffer.
+    //////////////////////////////////////////////////////////////////////
+    virtual bool _bindglTexture ( const Gre::FramebufferAttachment & attachment ) const ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Subfunction to attach a renderbuffer to the framebuffer.
+    //////////////////////////////////////////////////////////////////////
+    virtual bool _bindglRenderbuffer ( const Gre::FramebufferAttachment & attachment ) const ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Unbinds the given attchament. If the attachment is a renderbuffer,
+    /// destruction of this buffer should be done by the framebuffer implementation.
+    //////////////////////////////////////////////////////////////////////
+    virtual void _unbindAttachment ( const Gre::FramebufferAttachment & attachment ) const ;
 
 protected:
 
     /// @brief OpenGl 's framebuffer id.
     GLuint iGlFramebuffer ;
-    
+
     /// @brief Pushed surface when changing the viewport.
     mutable GLint iGlViewport[4] ;
+
+    /// @brief Holds renderbuffers. Destroys it when calling '_unbindAttachment'.
+    mutable std::map < Gre::RenderFramebufferAttachement , GLuint > iRenderbuffers ;
+
+    /// @brief Property to hold the bind state of the framebuffer.
+    mutable bool iBinded ;
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -523,9 +553,9 @@ public:
     /// @brief Creates a HardwareIndexBuffer with given data.
     //////////////////////////////////////////////////////////////////////
     virtual Gre::HardwareIndexBufferHolder createIndexBuffer ( const void* data , size_t sz , const Gre::IndexDescriptor& desc ) const  ;
-    
+
 protected:
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Creates a MeshBinder to use with every newly created mesh.
     //////////////////////////////////////////////////////////////////////
@@ -555,7 +585,7 @@ public:
     virtual ~OpenGlRenderer () noexcept ( false ) ;
 
 public:
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Sets only the given region for clearing the buffers. Also
     /// called a Scissor - box .
@@ -603,6 +633,18 @@ public:
     //////////////////////////////////////////////////////////////////////
     virtual void drawMesh ( const Gre::MeshHolder & mesh ) const ;
 
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Draw generally a quad to the screen using the given technique.
+    ///
+    /// @note
+    /// No binding is done in this function. Generally, this function is called
+    /// when the technique is Self-Rendered. The Renderer may draw a static
+    /// fullscreen quad using the given technique. The technique should already
+    /// be binded when calling this function , and thus no binding is required.
+    ///
+    //////////////////////////////////////////////////////////////////////
+    virtual void draw ( const Gre::TechniqueHolder & technique ) const ;
+
 public:
 
     //////////////////////////////////////////////////////////////////////
@@ -624,6 +666,24 @@ public:
     /// @brief Creates the Framebuffer internal creator.
     //////////////////////////////////////////////////////////////////////
     virtual Gre::RenderFramebufferInternalCreator* iCreateFramebufferCreator ( ) const ;
+
+protected:
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Tries to initialize Default Quad VAO and VBO. Returns true
+    /// on success , false otherwise.
+    //////////////////////////////////////////////////////////////////////
+    virtual bool loadDefaultQuad () ;
+
+protected:
+
+    /// @brief VAO used to draw a fullscreen default quad. Notes this data is initialized
+    /// at first use of 'draw(Technique)' when context is valid.
+    GLuint iDefaultQuadVAO ;
+
+    /// @brief VBO used to draw a fullscreen default quad. Notes this data is initialized
+    /// at first use of 'draw(Technique)' when context is valid.
+    GLuint iDefaultQuadVBO ;
 };
 
 //////////////////////////////////////////////////////////////////////

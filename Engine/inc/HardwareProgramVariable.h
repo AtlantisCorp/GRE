@@ -73,6 +73,7 @@ union RealProgramVariable
     {
     	memset( this, 0, sizeof(rhs) );
     	memcpy( this, &rhs, sizeof(rhs) );
+        return *this ;
     }
 
     RealProgramVariable ( const float& v ) : f1(v) { }

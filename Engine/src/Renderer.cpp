@@ -60,18 +60,18 @@ void Renderer::render() const
         // for rendering it , and also for swapping buffers (flush) operations.
         // Passes that are drawed using the same render context should not swap
         // buffers between them. But , drawing to different framebuffers is done
-        // in the technique object. 
-        
+        // in the technique object.
+
         if ( iContext.isInvalid() )
         return ;
-        
+
         iContext -> bind() ;
-        
+
         for ( const RenderPassHolder & pass : iPasses )
         if ( !pass.isInvalid() ) pass -> render ( this ) ;
-        
-        iContext -> unbind() ;
+
         iContext -> flush() ;
+        iContext -> unbind() ;
     }
 }
 
@@ -136,14 +136,11 @@ void Renderer::clearPasses ()
     GreAutolock ; iPasses.clear() ;
 }
 
-void Renderer::draw(const RenderNodeHolder &node) const
+void Renderer::draw ( const RenderNodeHolder & node ) const
 {
-    GreAutolock ;
-
     if ( !node.isInvalid() )
-    {
-        drawMesh ( node->getMesh() ) ;
-    }
+    if ( node -> isRenderable() )
+    drawMesh ( node -> getMesh() ) ;
 }
 
 bool Renderer::installManagers ()
@@ -374,17 +371,17 @@ RendererUser RendererManager::load(const std::string &name, const Gre::RendererO
                     {
                         //////////////////////////////////////////////////////////////////////
                         // Parse Common options.
-                        
+
                         auto op = options.find ( "Enabled" ) ;
                         if ( op != options.end() ) rholder->setEnabled ( op->second.to<bool>() ) ;
-                        
+
                         //////////////////////////////////////////////////////////////////////
                         // Adds the renderer only for update events , and registers it to the
                         // manager.
-                        
+
                         addFilteredListener( EventProceederUser(rholder) , { EventType::Update } ) ;
                         iHolders.push_back(rholder);
-                        
+
                         return RendererUser ( rholder );
                     }
                 }
@@ -409,13 +406,13 @@ RendererUser RendererManager::load(const std::string &name, const Gre::RendererO
 void RendererManager::render() const
 {
     GreAutolock ;
-    
+
     for ( auto renderer : iHolders )
     {
         //////////////////////////////////////////////////////////////////////
         // Calls the renderer's RenderPass'es only if this one is valid AND
         // enabled.
-        
+
         if ( !renderer.isInvalid() )
         {
             if ( renderer->isEnabled() )

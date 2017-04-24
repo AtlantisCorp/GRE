@@ -76,88 +76,84 @@ void translatePixelFormat ( NSOpenGLPixelFormatAttribute* pf , size_t max , cons
     return ;
 
     int counter = 0 ;
-    bool translatetoint = false ;
+    
+    int major = 3 ;
+    int minor = 2 ;
 
     //////////////////////////////////////////////////////////////////////
     // Checks every attributes, except WCAMajorVersion and WCAMinorVersion.
-
-    for ( auto winattr : attr )
+    
+    for ( WindowContextAttributes::const_iterator it = attr.begin() ; it != attr.end() ; it++ )
     {
-        if ( translatetoint )
+        switch ( (*it) )
         {
-            pf[counter] = (NSOpenGLPixelFormatAttribute) winattr ;
-
-            counter ++ ;
-            translatetoint = false ;
-
-            continue ;
+            case Gre::WCADoubleBuffer:
+                pf[counter++] = NSOpenGLPFADoubleBuffer ;
+                break ;
+            
+            case Gre::WCAStereo:
+                pf[counter++] = NSOpenGLPFAStereo ;
+                break ;
+                
+            case Gre::WCAAccelerated:
+                pf[counter++] = NSOpenGLPFAAccelerated ;
+                break ;
+                
+            case Gre::WCAMultiSample:
+                pf[counter++] = NSOpenGLPFAMultisample ;
+                break ;
+                
+            case Gre::WCASuperSample:
+                pf[counter++] = NSOpenGLPFASupersample ;
+                break ;
+                
+            case Gre::WCASampleBuffers:
+                pf[counter++] = NSOpenGLPFASampleBuffers ;
+                it++ ; pf[counter++] = (*it) ;
+                break ;
+                
+            case Gre::WCASamples:
+                pf[counter++] = NSOpenGLPFASamples ;
+                it++ ; pf[counter++] = (*it) ;
+                break ;
+                
+            case Gre::WCADepthSize:
+                pf[counter++] = NSOpenGLPFADepthSize ;
+                it++ ; pf[counter++] = (*it) ;
+                break ;
+                
+            case Gre::WCAColorSize:
+                pf[counter++] = NSOpenGLPFAColorSize ;
+                it++ ; pf[counter++] = (*it) ;
+                break ;
+                
+            case Gre::WCAStencilSize:
+                pf[counter++] = NSOpenGLPFAStencilSize ;
+                it++ ; pf[counter++] = (*it) ;
+                break ;
+                
+            case Gre::WCATripleBuffer:
+                pf[counter++] = NSOpenGLPFATripleBuffer ;
+                break ;
+                
+            case Gre::WCAMajorVersion:
+                it ++ ; major = (int) (*it) ;
+                break ;
+                
+            case Gre::WCAMinorVersion:
+                it ++ ; minor = (int) (*it) ;
+                break ;
+                
+            case Gre::WCAFullscreen:
+                GreDebug ( "[INFO] Gre::WCAFullscreen attribute not used on this platform." ) << Gre::gendl ;
+                break ;
+                
+            default:
+                break ;
         }
-
-        if ( winattr == WCADoubleBuffer )
-        pf[counter] = NSOpenGLPFADoubleBuffer ;
-
-        else if ( winattr == WCAStereo )
-        pf[counter] = NSOpenGLPFAStereo ;
-
-        else if ( winattr == WCAFullscreen )
-        {
-            GreDebug ( "[INFO] NSOpenGLPFAFullscreen is deprecated and so flag 'WCAFullscreen' is not used on MAC OS X." ) << gendl ;
-            continue ;
-        }
-
-        else if ( winattr == WCAAccelerated )
-        pf[counter] = NSOpenGLPFAAccelerated ;
-
-        else if ( winattr == WCAMultiSample )
-        pf[counter] = NSOpenGLPFAMultisample ;
-
-        else if ( winattr == WCASampleBuffers )
-        {
-            pf[counter] = NSOpenGLPFASampleBuffers ;
-            translatetoint = true ;
-        }
-
-
-        else if ( winattr == WCASamples )
-        {
-            pf[counter] = NSOpenGLPFASamples ;
-            translatetoint = true ;
-        }
-
-        else if ( winattr == WCADepthSize )
-        {
-            pf[counter] = NSOpenGLPFADepthSize ;
-            translatetoint = true ;
-        }
-
-        else if ( winattr == WCAColorSize )
-        {
-            pf[counter] = NSOpenGLPFAColorSize ;
-            translatetoint = true ;
-        }
-
-        else if ( winattr == WCAStencilSize )
-        {
-            pf[counter] = NSOpenGLPFAStencilSize ;
-            translatetoint = true ;
-        }
-
-        else if ( winattr == WCASuperSample )
-        pf[counter] = NSOpenGLPFASupersample ;
-
-        else if ( winattr == WCATripleBuffer )
-        pf[counter] = NSOpenGLPFATripleBuffer ;
         
-        else
-        continue ;
-
-        counter ++ ;
-
-        if ( counter == max )
-        {
-            GreDebug ( "[WARN] Maximum number of attributes reached (") << max << ")." << gendl ;
-            break ;
-        }
+        if ( counter == max -1 )
+        break ;
     }
 
     //////////////////////////////////////////////////////////////////////
@@ -167,39 +163,29 @@ void translatePixelFormat ( NSOpenGLPixelFormatAttribute* pf , size_t max , cons
 
     if ( counter < max - 2 )
     {
-        int major = 3 ; int minor = 2 ;
-
-        auto majorit = std::find(attr.begin(), attr.end(), WCAMajorVersion) ;
-        majorit ++ ;
-
-        if ( majorit != attr.end() )
-        major = (int) (*majorit) ;
-
-        auto minorit = std::find(attr.begin(), attr.end(), WCAMinorVersion) ;
-        minorit ++ ;
-
-        if ( minorit != attr.end() )
-        minor = (int) (*minorit) ;
-
         if ( major == 3 && minor == 2 )
         {
-            pf[counter]   = NSOpenGLPFAOpenGLProfile ;
+            pf[counter++] = NSOpenGLPFAOpenGLProfile ;
             pf[counter++] = NSOpenGLProfileVersion3_2Core ;
-            counter ++ ;
         }
 
         else if ( major == 4 && minor == 1 )
         {
-            pf[counter]   = NSOpenGLPFAOpenGLProfile ;
+            pf[counter++] = NSOpenGLPFAOpenGLProfile ;
             pf[counter++] = NSOpenGLProfileVersion4_1Core ;
-            counter ++ ;
         }
 
         else
         GreDebug ( "[WARN] Requested OpenGl Version not supported (") << major << "." << minor << ")." << gendl ;
     }
+    
+    //////////////////////////////////////////////////////////////////////
+    // Check if we can set the NSOpenGLOFAClosestPolicy.
+    
+    if ( counter < max )
+    pf[counter++] = NSOpenGLPFAClosestPolicy ;
 
-    pf[counter] = 0 ;
+    pf[counter++] = 0 ;
 }
 
 // ---------------------------------------------------------------------------------------------------------
@@ -942,7 +928,7 @@ WindowHolder macOSWindowLoader::load(const std::string &name, const ResourceLoad
     auto windowit = info.find ( "Window.ContextAttributes" ) ;
 
     if ( windowit != info.end () ) {
-        translatePixelFormat ( pf , 40 , windowit->second.to<WindowContextAttributes>() ) ;
+        translatePixelFormat ( & pf[0] , 40 , windowit->second.to<WindowContextAttributes>() ) ;
     }
 
     else

@@ -204,20 +204,26 @@ void MyApplicationExample::createScene()
     WinOptions ["Window.Size"]  = std::string ( "1024x768" ) ;
 
     WindowStyles styles = {
-        WindowStyle::Fullscreen , WindowStyle::Resizable ,
+        WindowStyle::Resizable ,
         WindowStyle::Closable , WindowStyle::Titled
     };
 
     WinOptions ["Window.Styles"] = styles ;
 
     WindowContextAttributes attr ({
+        
+        WCAAccelerated ,
         WCADoubleBuffer ,
+        
         WCADepthSize , (WindowContextAttribute) 32 ,
-        //WCAMultiSample ,
-        //WCASampleBuffers , (WindowContextAttribute) 1 ,
-        //WCASamples , (WindowContextAttribute) 4 ,
+        
+        WCAMultiSample ,
+        WCASampleBuffers , (WindowContextAttribute) 1 ,
+        WCASamples , (WindowContextAttribute) 4 ,
+        
         WCAMajorVersion , (WindowContextAttribute) 3 ,
         WCAMinorVersion , (WindowContextAttribute) 2
+        
     }) ;
 
     WinOptions ["Window.ContextAttributes"] = attr ;
@@ -273,10 +279,10 @@ void MyApplicationExample::createScene()
         auto tech2 = tmanager -> get ( "learnopengl.shadowmapping.phase2.technique" ) ;
         if ( tech2.isInvalid() ) exit ( -6 ) ;
 
-        tech2 -> addPreTechnique(tech1) ;
+        renderpass -> addPreProcessTechnique ( tech1 ) ;
         renderpass -> setTechnique ( tech2 ) ;
 
-        renderpass -> addNamedParameter("shadows", HdwProgVarType::Int1, (int) 0) ;
+        renderpass -> addNamedParameter("shadows", HdwProgVarType::Int1, (int) 1) ;
 
         //////////////////////////////////////////////////////////////////////
         // Tries to create an FPS-like Camera.
@@ -301,8 +307,15 @@ void MyApplicationExample::createScene()
     }
 
     {
-        auto mmanager = ResourceManager::Get()->getMeshManager() ;
+        auto mmanager = ResourceManager::Get() -> getMeshManager() ;
         auto textures = ResourceManager::Get() -> getTextureManager() ;
+        
+        //////////////////////////////////////////////////////////////////////
+        // Loads a default blank texture of 256x256 to fill null textures.
+        
+        TextureHolder defaulttexture = textures -> loadFromArea("Default", TextureType::Texture2D, 256, 256) ;
+        if ( defaulttexture.isInvalid() ) exit ( -20 ) ;
+        textures -> setDefaultTexture(defaulttexture) ;
 
         // Create our Root node for the scene.
         RenderNodeHolder root = scene -> setRootNode(scene->createNode()) ;
@@ -321,8 +334,8 @@ void MyApplicationExample::createScene()
         light -> setAmbient ({ 0.5f , 0.5f , 0.5f }) ;
         light -> setDiffuse ({ 0.8f , 0.8f , 0.8f }) ;
         light -> setSpecular ({ 1.0f , 1.0f , 1.0f }) ;
-        light -> setPosition ({ 0.0f , 0.0f , 3.0f }) ;
-        light -> setDirection ({ -0.5f , -0.5f , 0.0f }) ;
+        light -> setPosition ({ 0.0f , 0.0f , 2.0f }) ;
+        light -> setDirection ({ 0.0f , 0.0f , -1.0f }) ;
 
         scene -> addLightNode ( lightnode ) ;
 
@@ -353,6 +366,7 @@ void MyApplicationExample::createScene()
                                                                   TextureType::Texture2D , ops ) ;
         if ( cubespectex.isInvalid() ) exit ( -12 ) ;
 
+        cubenode -> getMaterial () -> setUseTextures ( true ) ;
         cubenode -> getMaterial () -> setDiffuseTexture ( cubetex ) ;
         cubenode -> getMaterial () -> setSpecularTexture ( cubespectex ) ;
 
@@ -369,8 +383,9 @@ void MyApplicationExample::createScene()
         if ( planenode.isInvalid() ) exit ( -13 ) ;
 
         planenode -> setMesh ( cubemesh ) ;
-        planenode -> setPosition ({ -1.0f , 0.0f , -1.5f }) ;
+        planenode -> setPosition ({ 0.0f , 0.0f , -1.5f }) ;
 
+        planenode -> getMaterial () -> setUseTextures ( true ) ;
         planenode -> getMaterial () -> setDiffuseTexture ( cubetex ) ;
         planenode -> getMaterial () -> setSpecularTexture ( cubespectex ) ;
 
@@ -378,7 +393,7 @@ void MyApplicationExample::createScene()
 
         //////////////////////////////////////////////////////////////////////
         // Adds our 'Elexis.obj' file.
-
+/*
         meshes = mmanager -> loadBundledFile("Elexis.obj", ops) ;
         if ( !meshes ) exit ( -14 ) ;
 
@@ -389,7 +404,7 @@ void MyApplicationExample::createScene()
         elexisnode -> setMesh(elexismesh) ;
         elexisnode -> setPosition({ 0.0f , 0.0f , -5.0f }) ;
         scene -> addNode(elexisnode) ;
-
+*/
         //////////////////////////////////////////////////////////////////////
         // Adds the key listener for our example.
 

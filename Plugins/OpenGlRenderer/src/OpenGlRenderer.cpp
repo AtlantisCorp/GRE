@@ -101,7 +101,8 @@ void checkOpenGlError ( void )
 OpenGlRenderer::OpenGlRenderer ( const std::string& name , const Gre::RendererOptions& options )
 : Gre::Renderer(name, options)
 {
-
+    iDefaultQuadVAO = 0 ;
+    iDefaultQuadVBO = 0 ;
 }
 
 OpenGlRenderer::~OpenGlRenderer() noexcept ( false )
@@ -145,14 +146,14 @@ void OpenGlRenderer::clearBuffers ( const Gre::ClearBuffers & buffers ) const
         buffs = buffs | GL_STENCIL_BUFFER_BIT ;
 
     if ( buffs ) glClear(buffs) ;
-    
+
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
 void OpenGlRenderer::drawMesh(const Gre::MeshHolder &mesh) const
 {
     GreAutolock ;
-    
+
     if ( mesh.isInvalid() )
         return ;
 
@@ -166,6 +167,28 @@ void OpenGlRenderer::drawMesh(const Gre::MeshHolder &mesh) const
                    index->count(),
                    translateGlType(index->getIndexDescriptor().getType()),
                    index->getData());
+}
+
+void OpenGlRenderer::draw ( const Gre::TechniqueHolder & technique ) const
+{
+    GreAutolock ;
+
+    //////////////////////////////////////////////////////////////////////
+    // If VAO and VBO are not initialized , initializes them , const_casting
+    // this object. This way , the quad can be initialized at first time this
+    // function is used , but normally this function should not change anything
+    // in the renderer (and so the 'const' parameter).
+
+    if ( !iDefaultQuadVAO || !iDefaultQuadVBO )
+    {
+        if ( ! const_cast < OpenGlRenderer* > (this) -> loadDefaultQuad () )
+        GreDebug ( "[WARN] Can't load default Quad to render technique." ) << Gre::gendl ;
+    }
+
+    glBindVertexArray ( iDefaultQuadVAO ) ;
+    glDrawArrays ( GL_TRIANGLE_STRIP , 0 , 4 ) ;
+
+    glBindVertexArray ( 0 ) ;
 }
 
 Gre::MeshManagerHolder OpenGlRenderer::iCreateMeshManager() const
@@ -186,4 +209,33 @@ Gre::TextureInternalCreator* OpenGlRenderer::iCreateTextureCreator() const
 Gre::RenderFramebufferInternalCreator* OpenGlRenderer::iCreateFramebufferCreator() const
 {
     return new OpenGlFramebufferCreator(this) ;
+}
+
+bool OpenGlRenderer::loadDefaultQuad ()
+{
+    GreAutolock ;
+
+    if ( iContext.isInvalid() )
+    return false ;
+
+    GLfloat defaultQuadVertices [] =
+    {
+        -1.0f , -1.0f , 0.0f ,
+         1.0f , -1.0f , 0.0f ,
+        -1.0f ,  1.0f , 0.0f ,
+         1.0f ,  1.0f , 0.0f
+    };
+
+    glGenVertexArrays ( 1 , &iDefaultQuadVAO ) ;
+    glBindVertexArray ( iDefaultQuadVAO ) ;
+
+    glGenBuffers ( 1 , &iDefaultQuadVBO ) ;
+    glBindBuffer ( GL_ARRAY_BUFFER , iDefaultQuadVBO ) ;
+    glBufferData ( GL_ARRAY_BUFFER , sizeof(defaultQuadVertices) , defaultQuadVertices , GL_STATIC_DRAW ) ;
+
+    glEnableVertexAttribArray ( 0 ) ;
+    glVertexAttribPointer ( (GLuint) 0 , 3 , GL_FLOAT , GL_FALSE , 0 , 0 ) ;
+
+    glBindVertexArray ( 0 ) ;
+    return true ;
 }

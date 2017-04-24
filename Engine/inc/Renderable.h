@@ -1,11 +1,11 @@
 //////////////////////////////////////////////////////////////////////
 //
-//  TechniqueParamBinder.h
+//  Renderable.h
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
 //  Copyright (c) 2015 - 2017 Luk2010
-//  Created on 24/03/2017.
+//  Created on 18/04/2017.
 //
 //////////////////////////////////////////////////////////////////////
 /*
@@ -30,64 +30,69 @@
  -----------------------------------------------------------------------------
  */
 
-#ifndef GRE_TECHNIQUEPARAMBINDER_H
-#define GRE_TECHNIQUEPARAMBINDER_H
+#ifndef GRE_RENDERABLE_H
+#define GRE_RENDERABLE_H
 
-#include "HardwareProgram.h"
-#include "Technique.h"
+#include "TechniqueParamBinder.h"
+#include "Resource.h"
 
 GreBeginNamespace
 
 //////////////////////////////////////////////////////////////////////
-/// @brief Interface to bind named , aliased or custom parameters to
-/// any technique.
+/// @brief Renderable is an object mixing the Resource and the TechniqueParamBinder
+/// class , which means it is an object able to use a Technique.
+///
+/// A Renderable object can also holds preprocessing and postprocessing
+/// techniques. Those are responsible for custom per-object pre/post processing
+/// using custom techniques. When a Renderpass use this object , it will use the
+/// preprocessing techniques in the order specified by the user and then
+/// the postprocessing techniques (after using the main technique). A Renderable
+/// even can set that no technique should be used as main technique if the
+/// flag 'iNoMainTechnique' is set to true.
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC TechniqueParamBinder : virtual public Lockable
+class DLL_PUBLIC Renderable : public Resource , public TechniqueParamBinder
 {
 public:
 
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    TechniqueParamBinder () ;
+    Renderable ( const std::string & name = std::string() ) ;
 
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    virtual ~TechniqueParamBinder () ;
+    virtual ~Renderable () noexcept ( false ) ;
 
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    virtual void addNamedParameter (const std::string & name , const HdwProgVarType & type , const RealProgramVariable & value);
+    bool hasNoMainTechnique () const ;
 
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    virtual const HardwareProgramVariable & getNamedParameter ( const std::string & name ) const ;
+    void setNoMainTechnique ( bool value ) ;
 
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    virtual HardwareProgramVariable & getNamedParameter ( const std::string & name ) ;
+    void addPreProcessTechnique ( const TechniqueHolder & technique ) ;
 
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    virtual void addAliasedParameter (const TechniqueParam & alias , const HdwProgVarType & type , const RealProgramVariable & value);
+    const TechniqueHolderList & getPreProcessTechniques () const ;
 
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    virtual const HardwareProgramVariable & getAliasedParameter ( const TechniqueParam & alias ) const ;
+    void clearPreProcessTechniques () ;
 
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    virtual HardwareProgramVariable & getAliasedParameter ( const TechniqueParam & alias ) ;
+    void addPostProcessTechnique ( const TechniqueHolder & technique ) ;
 
     //////////////////////////////////////////////////////////////////////
-    /// @brief Lets the binder binds parameters to the technique in order
-    /// to use it. When binding , the default function binds every named
-    /// and aliased parameters.
-    ///
-    /// @note An object that use other binder should call their use function
-    /// inside this one. Also , overwriting this function should always call
-    /// the 'TechniqueParamBinder::use()' default function.
     //////////////////////////////////////////////////////////////////////
-    virtual void use ( const TechniqueHolder & technique ) const ;
+    const TechniqueHolderList & getPostProcessTechniques () const ;
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    void clearPostProcessTechniques () ;
 
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
@@ -95,15 +100,27 @@ public:
 
 protected:
 
-    /// @brief List of parameters for the technique , by names. Notes that only the
-    /// 'name' , 'value' and 'type' fields are used.
-    std::map < std::string , HardwareProgramVariable > iNamedParams ;
+    /// @brief True if the main renderpass technique that render this object
+    /// should not be used to draw this object. Notes the first postprocessing
+    /// or the last preprocessing can be considered as the 'main' technique of
+    /// this object if the renderpass's main technique is discarded.
+    bool iNoMainTechnique ;
 
-    /// @brief List of parameters for the technique , by alias. Notes that only the
-    /// 'value' and 'type' fields are used.
-    std::map < TechniqueParam , HardwareProgramVariable > iAliasedParams ;
+    /// @brief Retains preprocessing techniques used for this renderable. Notes
+    /// those will be called after the renderpass's preprocessing techniques.
+    TechniqueHolderList iPreProcessTechniques ;
+
+    /// @brief Retains postprocessing techniques used for this renderable. Notes
+    /// those will be called before the renderpass's postprocessing techniques.
+    TechniqueHolderList iPostProcessTechniques ;
 };
+
+/// @brief
+typedef SpecializedCountedObjectHolder < Renderable > RenderableHolder ;
+
+/// @Brief
+typedef SpecializedResourceHolderList < Renderable > RenderableHolderList ;
 
 GreEndNamespace
 
-#endif
+#endif // GRE_RENDERABLE_H

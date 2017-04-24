@@ -34,7 +34,7 @@ THE SOFTWARE.
 #define GRE_Scene_h
 
 #include "SpecializedResourceManager.h"
-#include "TechniqueParamBinder.h"
+#include "Renderable.h"
 
 #include "SceneNode.h"
 #include "Camera.h"
@@ -105,7 +105,7 @@ public:
     /// map for a technique shader.
     //////////////////////////////////////////////////////////////////////
     virtual void loadShadowTexture ( uint32_t width , uint32_t height ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns true if the light is visible from the camera.
     //////////////////////////////////////////////////////////////////////
@@ -219,7 +219,7 @@ public:
 /// binds only custom parameters.
 ///
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC RenderScene : public Resource , public TechniqueParamBinder
+class DLL_PUBLIC RenderScene : public Renderable
 {
 public:
 
@@ -362,7 +362,7 @@ protected:
     //////////////////////////////////////////////////////////////////////
     virtual std::list < LightRenderNodeHolder > iComputeLightNodes (const CameraHolder & camera ,
                                                                     float elapsed) const ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Computes the nodes visible by the camera.
     //////////////////////////////////////////////////////////////////////

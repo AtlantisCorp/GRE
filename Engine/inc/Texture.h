@@ -375,7 +375,7 @@ public:
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     virtual bool isInternalCreatorValid () const ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Loads a Texture Bundled file. The loader may or may not specify
     /// a subdirectory where the bundle may look for the file. The loader
@@ -385,7 +385,7 @@ public:
                                            const std::string & path ,
                                            const TextureType & type ,
                                            const ResourceLoaderOptions & ops ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Loads a Texture File.
     //////////////////////////////////////////////////////////////////////
@@ -393,7 +393,7 @@ public:
                                     const std::string & path ,
                                     const TextureType & type ,
                                     const ResourceLoaderOptions & ops ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Loads a pixel buffer to a texture object.
     //////////////////////////////////////////////////////////////////////
@@ -401,7 +401,7 @@ public:
                                            const SoftwarePixelBufferHolder & pixels ,
                                            const TextureType & type ,
                                            const ResourceLoaderOptions & ops ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Loads a batch of pixel buffers to create a texture object
     /// (usually this is useful for cubemaps).
@@ -411,10 +411,36 @@ public:
                                             const TextureType & type ,
                                             const ResourceLoaderOptions & ops ) ;
 
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the default texture if set.
+    //////////////////////////////////////////////////////////////////////
+    virtual const TextureHolder& getDefaultTexture () const ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Sets the default texture.
+    //////////////////////////////////////////////////////////////////////
+    virtual void setDefaultTexture ( const TextureHolder & texture ) ;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Creates a new pixel buffer and loads it to a texture object.
+    //////////////////////////////////////////////////////////////////////
+    virtual TextureHolder loadFromNewPixelBuffer (const std::string & name ,
+                                                  int width , int height , int depth ,
+                                                  const PixelFormat & pf ,
+                                                  const InternalPixelFormat & ipf ,
+                                                  const PixelType & pt ,
+                                                  const TextureType & tt ,
+                                                  int psize) ;
+
 protected:
 
     /// @brief An internal creator wich should be set by the Renderer.
     TextureInternalCreator* iCreator ;
+
+    /// @brief Default's texture if set. By default, this texture is null. A user
+    /// should set a default texture to whatever he wants. Every Materials will load
+    /// their textures using this one. 
+    TextureHolder iDefaultTexture ;
 };
 
 /// @brief SpecializedCountedObjectHolder for TextureManager .

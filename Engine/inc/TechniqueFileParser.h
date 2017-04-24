@@ -53,7 +53,7 @@ namespace internal
     {
         TechniqueFileElementType type ;
     };
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Technique File's Framebuffer definition.
     struct TechniqueFileFramebuffer : TechniqueFileElement
@@ -91,6 +91,7 @@ namespace internal
         std::string program ;
         TechniqueLightingMode lightingmode ;
         std::string framebuffer ;
+        bool selfrendered ;
     };
 
     //////////////////////////////////////////////////////////////////////
@@ -258,7 +259,7 @@ protected:
     /// context.
     //////////////////////////////////////////////////////////////////////
     virtual void convertTechnique ( internal::TechniqueFileContext* context , const internal::TechniqueFileNode* node ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Interprets the given node as a Framebuffer.
     //////////////////////////////////////////////////////////////////////

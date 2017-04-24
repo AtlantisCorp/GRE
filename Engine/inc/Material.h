@@ -35,7 +35,7 @@
 
 #include "Color.h"
 #include "Texture.h"
-#include "TechniqueParamBinder.h"
+#include "Renderable.h"
 
 // [14.03.07] NOTES : Material should not use HardwareProgram to bind/unbind things. This
 // is only the Technique's job. [26.03.2017] Thought the material can bind parameters to
@@ -54,7 +54,7 @@ enum class FaceType
 /// @brief Regroups every data used to draw a Face like the Textures
 /// and others data.
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC Material : public Resource , public TechniqueParamBinder
+class DLL_PUBLIC Material : public Renderable
 {
 public:
 
@@ -169,6 +169,21 @@ public:
     //////////////////////////////////////////////////////////////////////
     virtual void use ( const TechniqueHolder & technique ) const ;
 
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Sets 'iUseTextures' .
+    //////////////////////////////////////////////////////////////////////
+    virtual void setUseTextures ( bool value ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns 'iUseTextures' .
+    //////////////////////////////////////////////////////////////////////
+    virtual bool usesTextures () const ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Clears every Textures and replace them by blank texture.
+    //////////////////////////////////////////////////////////////////////
+    virtual void clearTextures () ;
+
 private:
 
     /// @brief Emission color.
@@ -189,8 +204,13 @@ private:
     /// @brief Textures holded by the Material , with their alias. Notes this alias should always
     /// be between 'Texture0' and 'TextureMax' , as setting another alias could bind a texture at the
     /// wrong place. 'MaterialTexAmbient' , 'MaterialTexDiffuse' , 'MaterialTexSpecular' and 'MaterialTexNormal'
-    /// are also supported.
+    /// are also supported. See also iUseTextures if you want to disable texturing.
     std::map < TechniqueParam , TextureHolder > iTextures ;
+
+    /// @brief True if Texturing is enabled. When texturing is enabled , the Material provides textures for
+    /// every possible Technique Parameters. Notes that the default blank texture is used if no texture is
+    /// provided for the given parameter. By default, this parameter is false.
+    bool iUseTextures ;
 };
 
 /// @brief SpecializedCountedObjectHolder for MaterialPrivate.
@@ -247,18 +267,18 @@ public:
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     virtual ~MaterialManager() noexcept ( false ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Loads a new material with given name. Notes if the material
     /// already exists , reset it and returns it.
     //////////////////////////////////////////////////////////////////////
     virtual MaterialHolder loadBlank ( const std::string & name ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns a material when the first name is encountered.
     //////////////////////////////////////////////////////////////////////
     virtual MaterialHolder get ( const std::string & name ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Loads a Material from its holder. If the holder is already
     /// registered , does nothing.

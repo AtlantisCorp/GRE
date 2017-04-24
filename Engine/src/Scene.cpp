@@ -158,16 +158,16 @@ void LightRenderNode::loadLightCamera ()
 
         iLightCamera -> setPosition ( iLight -> getPosition() ) ;
         iLightCamera -> setDirection ( iLight -> getDirection() ) ;
-        
+
         if ( iLight -> getType() == LightType::Directionnal )
         {
-            Frustrum ortho ({-10.0f , 10.0f , -10.0f , 10.0f} , 0.1f , 100.0f);
+            Frustrum ortho ({-10.0f , 10.0f , -10.0f , 10.0f} , 0.01f , 100.0f);
             iLightCamera -> setFrustrum(ortho) ;
         }
-        
+
         else
         {
-            Frustrum proj ( 60.0f , 16/9 , 0.1f , 100.0f ) ;
+            Frustrum proj ( 60.0f , 16/9 , 0.01f , 100.0f ) ;
             iLightCamera -> setFrustrum(proj) ;
         }
 
@@ -190,26 +190,42 @@ void LightRenderNode::loadShadowTexture ( uint32_t width , uint32_t height )
 
     //////////////////////////////////////////////////////////////////////
     // Tries to create a shadow texture for the light.
-
-    iShadowTexture = ResourceManager::Get() -> getTextureManager() -> loadFromArea ( getName() + ".shadowtex" ,
-        TextureType::Texture2D , width , height ) ;
+    
+    TextureManagerHolder tm = ResourceManager::Get() -> getTextureManager() ;
+    
+    if ( tm.isInvalid() )
+    {
+        GreDebug( "[WARN] Trying to create Shadow Texture but TextureManager is not loaded." ) << gendl ;
+        return ;
+    }
+    
+    iShadowTexture = tm -> loadFromNewPixelBuffer (getName() + ".shadowtex" ,
+                                                   width , height , 0 ,
+                                                   PixelFormat::DepthComponent ,
+                                                   InternalPixelFormat::DepthComponent ,
+                                                   PixelType::Float ,
+                                                   TextureType::Texture2D ,
+                                                   sizeof(float) ) ;
+    
+    if ( iShadowTexture.isInvalid() )
+    GreDebug( "[WARN] Error creating Shadow Texture '" ) << getName() + ".shadowtex" << "'." << gendl ;
 }
 
 bool LightRenderNode::isLightVisibleFrom ( const CameraHolder & camera ) const
 {
     GreAutolock ;
-    
+
     if ( camera.isInvalid() )
     return false ;
-    
+
     //////////////////////////////////////////////////////////////////////
     // Computes intersection between light and camera frustrum.
-    
+
     bool value = isVisible() ;
-    
+
     if ( value && !iLight.isInvalid() )
         value = iLight -> intersectFrustrum ( camera -> getFrustrum() ) != IntersectionResult::Outside ;
-    
+
     return value ;
 }
 
@@ -228,7 +244,7 @@ void LightRenderNode::onDirectionChangedEvent(const Gre::DirectionChangedEvent &
 // ---------------------------------------------------------------------------------------------------
 
 RenderScene::RenderScene(const std::string& name, const RenderSceneOptions& options)
-: Gre::Resource(name) , iRootNode(nullptr)
+: Gre::Renderable(name) , iRootNode(nullptr)
 {
     setTransmitBehaviour(EventProceederTransmitBehaviour::SendsBefore);
 }
@@ -476,23 +492,23 @@ const CameraHolder RenderScene::getCamera(const std::string &name) const
 void RenderScene::onUpdateEvent(const Gre::UpdateEvent &e)
 {
     GreAutolock ;
-    
+
     //////////////////////////////////////////////////////////////////////
     // Converts the elapsed time in milliseconds.
-    
+
     float milliseconds = e.elapsedTime.count() * 1000.0f ;
 
     //////////////////////////////////////////////////////////////////////
     // This function needs to updates the visible lights , and computes the
     // nodes visible by the camera.
-    
+
     for ( auto it = iLightNodesByCamera.begin() ; it != iLightNodesByCamera.end() ; it++ )
     (*it).second = iComputeLightNodes ( it->first , milliseconds ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     // Calls the 'iComputeNodes' for each camera. This function should returns
     // a valid list of nodes visible by the camera.
-    
+
     for ( auto it = iNodesByCamera.begin() ; it != iNodesByCamera.end() ; it++ )
     it->second = iComputeNodes ( it->first , milliseconds ) ;
 }
@@ -500,33 +516,33 @@ void RenderScene::onUpdateEvent(const Gre::UpdateEvent &e)
 std::list < LightRenderNodeHolder > RenderScene::iComputeLightNodes(const CameraHolder &camera, float elapsed) const
 {
     GreAutolock ;
-    
+
     //////////////////////////////////////////////////////////////////////
     // Traverse every light nodes registered and make a list of those visible
     // by the camera given.
-    
+
     std::list < LightRenderNodeHolder > nodes ;
-    
+
     for ( auto node : iLightNodes )
     if ( node -> isLightVisibleFrom(camera) ) nodes.push_back(node) ;
-    
+
     return nodes ;
 }
 
 RenderNodeHolderList RenderScene::iComputeNodes(const CameraHolder &camera, float elapsed) const
 {
     GreAutolock ;
-    
+
     //////////////////////////////////////////////////////////////////////
     // Constructs a list of nodes visible by the camera. Notes those nodes
     // must not be treated as subtree's root nodes when displaying them.
-    
+
     RenderNodeHolderList nodes ;
-    
+
     if ( !iRootNode.isInvalid() )
     iRootNode -> iComputeChildren ( nodes , camera , elapsed ) ;
-    
-    return nodes ; 
+
+    return nodes ;
 }
 
 /*
@@ -567,10 +583,10 @@ void RenderScene::updateNode ( const RenderNodeHolder & node )
                         updateNode ( child ) ;
                     }
                 }
-                
+
                 else
                 {
-                    
+
                 }
             }
         }

@@ -4,7 +4,7 @@
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
-//  Copyright (c) 2015 - 2016 Luk2010
+//  Copyright (c) 2015 - 2017 Luk2010
 //  Created on 25/01/2016.
 //
 //////////////////////////////////////////////////////////////////////
@@ -16,10 +16,10 @@
  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  copies of the Software, and to permit persons to whom the Software is
  furnished to do so, subject to the following conditions:
- 
+
  The above copyright notice and this permission notice shall be included in
  all copies or substantial portions of the Software.
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -58,28 +58,71 @@ enum class RenderFramebufferAttachement : int
 {
     Color0 = 0,   Color1 = 1,   Color2 = 2,   Color3 = 3,   Color4 = 4,   Color5 = 5,
     Color6 = 6,   Color7 = 7,   Color8 = 8,
-    
+
     // [...] Normally this value is up to Renderer::getCapacity(Capacity::MaxFrameBufferColorAttachement) .
     // We support up to 9 Color Attachement. Default value for OpenGl is 4.
     // Notes 'Renderer::getCapacity()' function is not yet implemented. You can use
     // 'RenderFramebuffer::getMaximumColorAttachement()' to get the same result.
-  
+
     Depth = 32,
-    Stencil = 33, 
-    
+    Stencil = 33,
+    DepthStencil = 34 ,
+
     // Invalid value.
     Null
 };
-    
+
 /// @brief Converts RenderFramebufferAttachement from a string.
 RenderFramebufferAttachement RenderFramebufferAttachementFromString ( const std::string & str ) ;
+
+/// @brief Converts RenderFramebufferAttachement to a string.
+std::string RenderFramebufferAttachementToString ( const RenderFramebufferAttachement& layer ) ;
 
 /// @brief Type of surface used for the Framebuffer in a particular
 /// attachement.
 enum class RenderFramebufferAttachementType
 {
     /// @brief The attachement used is a Texture object (usually a TextureHolder).
-    Texture = 0
+    Texture ,
+
+    /// @brief Attachement for Renderbuffers.
+    Renderbuffer
+};
+
+//////////////////////////////////////////////////////////////////////
+/// @brief Defines basic proprties for a Renderbuffer.
+struct Renderbuffer
+{
+    /// @brief Width and Height to initialize it.
+    std::pair < int , int > size ;
+
+    /// @brief Internal stored format.
+    InternalPixelFormat format ;
+};
+
+//////////////////////////////////////////////////////////////////////
+/// @brief Defines a basic Attachement for a framebuffer.
+struct FramebufferAttachment
+{
+    /// @brief The Attachement layer.
+    RenderFramebufferAttachement layer;
+
+    /// @brief The Attachement type.
+    RenderFramebufferAttachementType type;
+
+    /// @brief Valid if RenderFramebufferAttachementType is Texture.
+    TextureHolder texture;
+
+    /// @brief Valid if RenderFramebufferAttachementType is Renderbuffer.
+    Renderbuffer renderbuffer ;
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    FramebufferAttachment();
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    void reset();
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -95,131 +138,127 @@ enum class RenderFramebufferAttachementType
 class DLL_PUBLIC RenderFramebuffer : public Resource
 {
 public:
-    
+
     POOLED(Pools::Resource)
 
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     RenderFramebuffer(const std::string& name);
-    
+
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     virtual ~RenderFramebuffer();
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Make the FrameBuffer usable.
     //////////////////////////////////////////////////////////////////////
     virtual void bind() const = 0 ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Make the FrameBuffer unusable.
     //////////////////////////////////////////////////////////////////////
     virtual void unbind() const = 0 ;
-    
+
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Texture attached to the given attachement.
-    /// This Texture can be invalid.
+    /// @brief Returns true if the framebuffer is binded.
     //////////////////////////////////////////////////////////////////////
-    virtual TextureUser getTextureAttachement(const RenderFramebufferAttachement& attachement);
-    
+    virtual bool binded () const = 0 ;
+
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Texture attached to the given attachement.
-    /// This Texture can be invalid.
+    /// @brief Returns the attachment.
     //////////////////////////////////////////////////////////////////////
-    virtual const TextureUser getTextureAttachement(const RenderFramebufferAttachement& attachement) const;
-    
+    virtual FramebufferAttachment & getAttachment ( const RenderFramebufferAttachement & value ) ;
+
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Surface associated with a given Attachement.
+    /// @brief Returns the attachement for given key.
     //////////////////////////////////////////////////////////////////////
-    virtual Surface getAttachementSurface(const RenderFramebufferAttachement& attachement) const;
-    
+    virtual const FramebufferAttachment & getAttachment ( const RenderFramebufferAttachement & value ) const ;
+
     //////////////////////////////////////////////////////////////////////
-    /// @brief Attachs the given texture object to the given Attachement.
+    /// @brief Sets the attachment for the framebuffer to given texture. As
+    /// one can set an attachment during the rendering process, this method
+    /// is constant.
     //////////////////////////////////////////////////////////////////////
-    virtual void setAttachement(const RenderFramebufferAttachement& attachement, TextureHolder& holder);
-    
+    virtual void setAttachment (const RenderFramebufferAttachement & value ,
+                                const TextureHolder & texture ) const ;
+
     //////////////////////////////////////////////////////////////////////
-    /// @brief Attaches the given texture but don't cache it.
+    /// @brief Sets the attachment for the framebuffer using a renderbuffer
+    /// of given size. Notes if the size is different from other attachements
+    /// size, the attachment will be discarded.
     //////////////////////////////////////////////////////////////////////
-    virtual void setAttachementNoCache (const RenderFramebufferAttachement & attachement ,
-                                        const TextureHolder & holder ) const = 0 ;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Maximum Width a Framebuffer Attachement can
-    /// have.
-    //////////////////////////////////////////////////////////////////////
-    virtual int getMaximumWidth() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Maximum Height a Framebuffer Attachement can
-    /// have.
-    //////////////////////////////////////////////////////////////////////
-    virtual int getMaximumHeight() const;
-    
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Maximum number of Color Attachement a Framebuffer
-    /// can have.
-    //////////////////////////////////////////////////////////////////////
-    virtual int getMaximumColorAttachementCount() const;
-    
+    virtual void setAttachmentBuffer (const RenderFramebufferAttachement & value ,
+                                      const std::pair < int , int > & size ,
+                                      const InternalPixelFormat & format ) const ;
+
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     virtual void setWriteBuffer ( const RenderColorBuffer & buffer ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     virtual void setReadBuffer ( const RenderColorBuffer & buffer ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     virtual void setViewport ( const Viewport & viewport ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     virtual const Viewport & getViewport () const ;
-    
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the default size.
+    //////////////////////////////////////////////////////////////////////
+    virtual const std::pair < int , int > & getDefaultSize () const ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Clear the given attachment , resetting it to a default value.
+    //////////////////////////////////////////////////////////////////////
+    virtual void clear ( const RenderFramebufferAttachement & layer ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Resets the framebuffer. Also unbinds it if binded.
+    //////////////////////////////////////////////////////////////////////
+    virtual void clear () ;
+
 protected:
-    
-    /// @brief Defines a basic Attachement.
-    struct Attachement
-    {
-        /// @brief The Attachement layer.
-        RenderFramebufferAttachement attachement;
-        
-        /// @brief The Attachement type.
-        RenderFramebufferAttachementType attachType;
-        
-        /// @brief The Surface associated with the Attachement.
-        Surface surface;
-        
-        /// @brief Depending on attachType , can holds a Texture.
-        TextureHolder texture;
-        
-        //////////////////////////////////////////////////////////////////////
-        //////////////////////////////////////////////////////////////////////
-        Attachement();
-      
-        //////////////////////////////////////////////////////////////////////
-        //////////////////////////////////////////////////////////////////////
-        void reset();
-      
-        //////////////////////////////////////////////////////////////////////
-        //////////////////////////////////////////////////////////////////////
-        bool isValid() const;
-    };
-    
-    /// @brief std::map<> for Attachement.
-    typedef std::map<RenderFramebufferAttachement , Attachement> AttachementMap;
-    
-    /// @brief Holds the Attachement objects.
-    AttachementMap iAttachements;
-    
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Attaches the given attachment to the framebuffer. If the
+    /// framebuffer was not binded , it should bind then unbind it.
+    /// @return True on success, otherwise false.
+    ///
+    /// @notes If the attachment is a Renderbuffer , the framebuffer should
+    /// set appropriate settings to create and manage it.
+    ///
+    //////////////////////////////////////////////////////////////////////
+    virtual bool _bindAttachment ( const FramebufferAttachment & attachment ) const = 0 ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Unbinds the given attchament. If the attachment is a renderbuffer,
+    /// destruction of this buffer should be done by the framebuffer implementation.
+    //////////////////////////////////////////////////////////////////////
+    virtual void _unbindAttachment ( const FramebufferAttachment & attachment ) const = 0 ;
+
+protected:
+
+    /// @brief Holds attachments to this framebuffer. The attachment can be a texture, or
+    /// a renderbuffer. Notes this property is 'mutable' because one can attach a framebuffer
+    /// during rendering, modifying the target buffers.
+    mutable std::map < RenderFramebufferAttachement , FramebufferAttachment > iAttachments ;
+
+    /// @brief Default size for this framebuffer. When setting an attachment, if the texture
+    /// or renderbuffer has a different size, it will be discarded only if another attachment is
+    /// already present. If none, the default size is set to the newly attached.
+    mutable std::pair < int , int > iDefaultSize ;
+
     /// @brief Write buffer used.
     RenderColorBuffer iWriteBuffer ;
-    
+
     /// @brief Read buffer used.
     RenderColorBuffer iReadBuffer ;
-    
+
     /// @brief Viewport used by this framebuffer. When sets , the framebuffer will
     /// automatically push the current viewport and set this one when binding itself.
     Viewport iViewport ;
@@ -240,15 +279,15 @@ typedef SpecializedCountedObjectUser<RenderFramebuffer> RenderFramebufferUser;
 class DLL_PUBLIC RenderFramebufferInternalCreator
 {
 public:
-    
+
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     RenderFramebufferInternalCreator () ;
-    
+
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     virtual ~RenderFramebufferInternalCreator () ;
-    
+
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     virtual RenderFramebuffer* load ( const std::string & name , const ResourceLoaderOptions& options ) const = 0 ;
@@ -266,49 +305,49 @@ public:
 class DLL_PUBLIC RenderFramebufferManager : public ResourceManagerBase < RenderFramebuffer >
 {
 public:
-    
+
     POOLED ( Pools::Manager )
-    
+
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     RenderFramebufferManager ( const std::string & name = "DefaultRenderFramebufferManager" ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     virtual ~RenderFramebufferManager () noexcept ( false ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Creates a blank framebuffer.
     //////////////////////////////////////////////////////////////////////
     virtual RenderFramebufferHolder loadBlank ( const std::string & name ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Loads a new framebuffer given options.
     //////////////////////////////////////////////////////////////////////
     virtual RenderFramebufferHolder load ( const std::string & name , const ResourceLoaderOptions & options ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Changes 'iCreator'.
     //////////////////////////////////////////////////////////////////////
     virtual void setInternalCreator ( RenderFramebufferInternalCreator* creator ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns 'iCreator'.
     //////////////////////////////////////////////////////////////////////
     virtual const RenderFramebufferInternalCreator* getInternalCreator () const ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns first framebuffer encountered with given name.
     //////////////////////////////////////////////////////////////////////
     virtual RenderFramebufferHolder get ( const std::string & name ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns first framebuffer encountered with given name.
     //////////////////////////////////////////////////////////////////////
     virtual const RenderFramebufferHolder get ( const std::string & name ) const ;
-    
+
 protected:
-    
+
     /// @brief Internal creator for RenderFramebuffer.
     RenderFramebufferInternalCreator* iCreator ;
 };

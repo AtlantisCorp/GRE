@@ -49,7 +49,7 @@ FreeMovingCamera::FreeMovingCamera(const std::string &name)
     iArrowLeftState = KeyState::Released ;
     iArrowRightState = KeyState::Released ;
     
-    iSensibility = 1.0f ;
+    iSensibility = 3.0f ;
     iSensitivity = 0.2f ;
 }
 
@@ -132,7 +132,7 @@ void FreeMovingCamera::onUpdateEvent(const UpdateEvent &e)
     if ( iArrowUpState == KeyState::Pressed )
     {
         Vector3 direction = iTarget - iPosition ;
-        Vector3 step = direction * iSensibility * e.elapsedTime.count() * 1000.0f ;
+        Vector3 step = direction * iSensibility * e.elapsedTime.count() ;
 
         setPosition ( iPosition + step ) ;
         setTarget ( iTarget + step ) ;
@@ -141,7 +141,7 @@ void FreeMovingCamera::onUpdateEvent(const UpdateEvent &e)
     if ( iArrowDownState == KeyState::Pressed )
     {
         Vector3 direction = iTarget - iPosition ;
-        Vector3 step = direction * iSensibility * e.elapsedTime.count() * 1000.0f ;
+        Vector3 step = direction * iSensibility * e.elapsedTime.count() ;
 
         setPosition ( iPosition - step ) ;
         setTarget ( iTarget - step ) ;
@@ -151,7 +151,7 @@ void FreeMovingCamera::onUpdateEvent(const UpdateEvent &e)
     {
         Vector3 direction = iTarget - iPosition ;
         Vector3 directionRight = glm::cross(direction, iUpwardDirection) ;
-        Vector3 stepRight = directionRight * iSensibility * e.elapsedTime.count() * 1000.0f ;
+        Vector3 stepRight = directionRight * iSensibility * e.elapsedTime.count() ;
 
         setPosition ( iPosition - stepRight ) ;
         setTarget ( iTarget - stepRight ) ;
@@ -161,7 +161,7 @@ void FreeMovingCamera::onUpdateEvent(const UpdateEvent &e)
     {
         Vector3 direction = iTarget - iPosition ;
         Vector3 directionRight = glm::cross(direction, iUpwardDirection) ;
-        Vector3 stepRight = directionRight * iSensibility * e.elapsedTime.count() * 1000.0f ;
+        Vector3 stepRight = directionRight * iSensibility * e.elapsedTime.count() ;
 
         setPosition ( iPosition + stepRight ) ;
         setTarget ( iTarget + stepRight ) ;

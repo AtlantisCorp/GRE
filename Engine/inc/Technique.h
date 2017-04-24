@@ -188,26 +188,6 @@ public:
     virtual void setHardwareProgram ( const HardwareProgramHolder & program ) ;
 
     //////////////////////////////////////////////////////////////////////
-    /// @brief True if has techniques before itself.
-    //////////////////////////////////////////////////////////////////////
-    virtual bool hasPreTechniques () const ;
-
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns 'iPreTechniques'.
-    //////////////////////////////////////////////////////////////////////
-    virtual const std::vector < TechniqueHolder > & getPreTechniques () const ;
-
-    //////////////////////////////////////////////////////////////////////
-    /// @brief True if 'iPostTechniques' is not empty.
-    //////////////////////////////////////////////////////////////////////
-    virtual bool hasPostTechniques () const ;
-
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns 'iPostTechniques'.
-    //////////////////////////////////////////////////////////////////////
-    virtual const std::vector < TechniqueHolder > & getPostTechniques () const ;
-
-    //////////////////////////////////////////////////////////////////////
     /// @brief Returns 'iLightingMode'.
     //////////////////////////////////////////////////////////////////////
     virtual TechniqueLightingMode getLightingMode () const ;
@@ -226,11 +206,6 @@ public:
     /// @brief Sets 'iFramebuffer'.
     //////////////////////////////////////////////////////////////////////
     virtual void setFramebuffer ( const RenderFramebufferHolder & framebuffer ) ;
-
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Adds a Technique to pre-technique list.
-    //////////////////////////////////////////////////////////////////////
-    virtual void addPreTechnique ( const TechniqueHolder & tech ) ;
 
     //////////////////////////////////////////////////////////////////////
     /// @brief Sets the alias for the given parameter.
@@ -315,17 +290,40 @@ public:
     /// or an empty string if it doesn't exist.
     //////////////////////////////////////////////////////////////////////
     virtual const std::string getAttribName ( const VertexAttribAlias & alias ) const ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Resets the texture unit counter to 0 .
     //////////////////////////////////////////////////////////////////////
     virtual void resetTextures () const ;
-    
+
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     virtual void setFramebufferAttachements ( const std::map < TechniqueParam , RenderFramebufferAttachement > & attachements ) ;
 
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns 'iSelfRendered'.
+    //////////////////////////////////////////////////////////////////////
+    virtual bool isSelfRendered () const ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Sets 'iSelfRendered'.
+    //////////////////////////////////////////////////////////////////////
+    virtual void setSelfRendered ( bool value ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Resets lights and textures counters.
+    //////////////////////////////////////////////////////////////////////
+    virtual void reset () const ;
+
 protected:
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Pushes a new texture, activating the corresponding texture
+    /// unit and binding the texture. The texture unit is given by the
+    /// size of the texture's stack.
+    /// @return The texture unit activated.
+    //////////////////////////////////////////////////////////////////////
+    virtual int bindTexture ( const TextureHolder & texture ) const ;
 
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
@@ -335,12 +333,6 @@ protected:
 
     /// @brief HardwareProgram used to render this technique.
     HardwareProgramHolder iProgram ;
-
-    /// @brief Techniques that should be called 'before' this technique (pre-render effects).
-    std::vector < TechniqueHolder > iPreTechniques ;
-
-    /// @brief Techniques that should be called 'after' this technique (post-render effects).
-    std::vector < TechniqueHolder > iPostTechniques ;
 
     /// @brief Lighting Render Mode used by this Technique.
     TechniqueLightingMode iLightingMode ;
@@ -352,7 +344,7 @@ protected:
     /// the framebuffer to render the depth buffer to the ShadowMap texture of lights objects. This lets
     /// us, in the main fragment shader, use the shadow map previously computed.
     RenderFramebufferHolder iFramebuffer ;
-    
+
     /// @brief Holds attachement upon aliases for the framebuffer. Those attachements will be bound to
     /// the framebuffer when 'setAliasedTexture()' encounter the given alias. Instead of binding it into
     /// the shader , it will call 'setAttachement' with the given texture object.
@@ -366,18 +358,24 @@ protected:
     /// to look for a valid attribute location.
     std::map < VertexAttribAlias , std::string > iAttribAliases ;
 
-    /// @brief Holds the current texture unit used in the binded program. When rendering the
-    /// technique , it uses this number to know which texture unit the next texture should
-    /// activate. When binding a new program, this number is -1 (next texture unit is 0). When
-    /// unbinding the program, this number falls down from the number of activated units minus 1
-    /// to -1 . This number should never be accessed to technique's user.
-    mutable int iCurrentTextureUnit ;
-
     /// @brief Counter used to access light's alias. The light is accessed using 'Light0' + this
     /// counter. It must be inferior or equal to 'Light9'. This counter is incremented by using 'useLight'
     /// and reset to Zero when using 'resetLights'. Notes that 'resetLights' also sets every light
     /// parameters to Zero in the shader program. By default , it begins with value '-1'.
     mutable int iCurrentLight ;
+
+    /// @brief A Technique is 'Self-Rendered' if the RenderPass should not bind any of Camera, Scene,
+    /// lights and nodes. Notes in order to binds textures from framebuffers to those kind of techniques ,
+    /// the user can use the 'RenderPass::addSelfUsed()' function to add objects using the technique.
+    /// Notes a user can use subpass'es to add more customization to the rendering pipeline.
+    bool iSelfRendered ;
+
+    /// @brief Holds the texture currently bound to the technique's program. When binding a texture
+    /// for this technique, the texture unit activated with this texture will corresponds to the size
+    /// of this stack. The maximum size of this stack is held by 'TextureManager::getMaxTextureUnits()'.
+    /// When resetting the technique, every textures is unbinded with the correct texture unit. Notes the
+    /// textures are managed as a stack (First In Last Out).
+    mutable std::stack < TextureHolder > iTextureUnits ;
 };
 
 /// @brief

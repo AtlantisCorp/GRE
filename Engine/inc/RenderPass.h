@@ -34,9 +34,8 @@
 #define GRE_RENDERPASS_H
 
 #include "Pools.h"
-#include "Resource.h"
+#include "Renderable.h"
 
-#include "TechniqueParamBinder.h"
 #include "RenderTarget.h"
 #include "Viewport.h"
 #include "Scene.h"
@@ -57,8 +56,32 @@ class Renderer ;
 /// bound to the used Technique before drawing. Those values can be
 /// changed separately from the rendering loop.
 ///
+/// A RenderPass should be used by a User to define a step in the
+/// rendering process. For example , take the case one wants to draw the
+/// entire scene but one object has a post processing technique. The
+/// main renderpass will render pre processing technique using the whole
+/// scene , then the main technique with the whole scene. Then for post
+/// processing technique , for each node , it will draw the post processing
+/// techniques of the node . Then it will use the post processing techniques
+/// of the pass for the whole scene.
+///
+/// use technique -> if self rendered -> bind / draw
+///               -> else -> bind objects -> for each node -> pre processing
+///                                                        -> draw
+///                                                        -> post processing
+/// preprocessing -> use prerender techniques.
+/// postprocessing -> use postrender techniques.
+///
+/// main render pass
+///             -> bind viewport/clarbuffers
+///             -> use preprocessing techniques
+///             -> use main technique
+///             -> use postprocessing techniques
+///
+///
+///
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC RenderPass : public Resource , public TechniqueParamBinder
+class DLL_PUBLIC RenderPass : public Renderable
 {
 public:
 
@@ -147,31 +170,67 @@ public:
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     virtual const CameraHolder & getCamera () const ;
-    
+
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     virtual void setClearViewport ( bool value ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     virtual bool isClearViewport () const ;
 
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Adds a Self-Rendered Renderable.
+    //////////////////////////////////////////////////////////////////////
+    virtual void addSelfUsedRenderable ( const RenderableHolder & renderable ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns 'iSelfUsedParams'.
+    //////////////////////////////////////////////////////////////////////
+    virtual const std::vector < RenderableHolder > & getSelfUsedRenderables () const ;
+
 protected:
-
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Prerenders the pass using technique's prerender.
-    //////////////////////////////////////////////////////////////////////
-    virtual void prerender ( const Renderer * renderer , const TechniqueHolder & technique ) const ;
-
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Postrenders the pass using technique's postrender.
-    //////////////////////////////////////////////////////////////////////
-    virtual void postrender ( const Renderer * renderer , const TechniqueHolder & technique ) const ;
 
     //////////////////////////////////////////////////////////////////////
     /// @brief Renders once using the given technique.
     //////////////////////////////////////////////////////////////////////
     virtual void renderTechnique ( const Renderer * renderer , const TechniqueHolder & technique ) const ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Binds node , lights and material and render the node.
+    //////////////////////////////////////////////////////////////////////
+    virtual void renderTechniqueWithNodeAndLights (const Renderer* renderer ,
+                                                   const TechniqueHolder & technique ,
+                                                   const RenderNodeHolder & node ,
+                                                   const std::list < LightRenderNodeHolder > & lights) const ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Binds lights and render the technique. Notes the technique
+    /// should inform the renderer on how to render it if node is invalid.
+    //////////////////////////////////////////////////////////////////////
+    virtual void renderTechniqueWithLights (const Renderer* renderer ,
+                                            const TechniqueHolder & technique ,
+                                            const RenderNodeHolder & node ,
+                                            const std::list < LightRenderNodeHolder > & lights ) const ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Renders a technique only for given node. The previous technique
+    /// should have been unbinded. Every components may be used in this function,
+    /// except the scene as only one node is drew.
+    //////////////////////////////////////////////////////////////////////
+    virtual void renderTechniqueWithNode (const Renderer* renderer ,
+                                          const TechniqueHolder & technique ,
+                                          const RenderNodeHolder & node ,
+                                          const std::list < LightRenderNodeHolder > & lights) const ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Binds this renderable , and use the renderer to draw the
+    /// node. If node is invalid , the technique should inform the renderer
+    /// how to draw it.
+    //////////////////////////////////////////////////////////////////////
+    virtual void renderTechniqueWithNode (const Renderer* renderer ,
+                                          const TechniqueHolder & technique ,
+                                          const RenderNodeHolder & node) const ;
 
     //////////////////////////////////////////////////////////////////////
     /// @brief Changes the viewport values when the rendertarget changes
@@ -208,11 +267,17 @@ protected:
 
     /// @brief Camera's used to draw everything.
     CameraHolder iCamera ;
-    
+
     /// @brief Sets this option to 'true' if you want that the Viewport acts as a Scissor
     /// test for clearing buffers. This lets the user clears only regions of a framebuffer
     /// using scissor commands.
     bool iClearViewport ;
+
+    /// @brief Self Used Parameters are TechniqueParamBinders that will be called when a
+    /// Self-Rendered technique is bound. Notes this applies to the current technique ,
+    /// applying to its pre and post processing techniques. In order to set Self Used Params
+    /// to a sub-technique only , creates a RenderSubPass.
+    std::vector < RenderableHolder > iSelfUsedParams ;
 };
 
 /// @brief

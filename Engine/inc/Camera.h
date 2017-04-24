@@ -33,15 +33,14 @@
 #ifndef GRE_Camera_h
 #define GRE_Camera_h
 
+#include "Renderable.h"
 #include "Variant.h"
-#include "Resource.h"
 #include "Frustrum.h"
 #include "BoundingBox.h"
 
 #include "ResourceLoader.h"
 #include "SpecializedResourceManager.h"
 #include "Property.h"
-#include "TechniqueParamBinder.h"
 
 GreBeginNamespace
 
@@ -56,7 +55,7 @@ typedef Dictionnary CameraOptions ;
 /// positions, look' position or any other properties.
 ///
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC Camera : public Resource , public TechniqueParamBinder
+class DLL_PUBLIC Camera : public Renderable
 {
 public:
 

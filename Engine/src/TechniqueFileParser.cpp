@@ -229,7 +229,7 @@ uint32_t TechniqueFileParser::findNextDefinition ( const std::string & source , 
     {
         if ( source.at(idx) == '[' )
         return idx ;
-        
+
         idx ++ ;
     }
 
@@ -244,7 +244,7 @@ uint32_t TechniqueFileParser::findDefinitionEnd ( const std::string & source , u
     {
         if ( source.at(idx) == ']' )
         return idx ;
-        
+
         idx ++ ;
     }
 
@@ -276,7 +276,7 @@ std::vector < std::string > TechniqueFileParser::computeDefinitionWords ( const 
             while ( pos < length )
             {
                 c = source.at(pos) ;
-                
+
                 if ( std::isspace(c) || c == ']' || c == '[' || c == '{' || c == '}' || std::iscntrl(c) )
                 break ;
 
@@ -343,7 +343,7 @@ uint32_t TechniqueFileParser::findNextCharacter ( const std::string & source , u
             if ( nextc ) *nextc = source.at(npos) ;
             return npos ;
         }
-        
+
         npos ++ ;
     }
 
@@ -413,7 +413,7 @@ internal::TechniqueFileContext* TechniqueFileParser::convertTree ( const interna
                 else if ( deftype == "Technique" ) {
                     convertTechnique ( context , node ) ;
                 }
-                
+
                 else if ( deftype == "Framebuffer" ) {
                     convertFramebuffer ( context , node ) ;
                 }
@@ -496,6 +496,7 @@ void TechniqueFileParser::convertTechnique ( internal::TechniqueFileContext* con
     internal::TechniqueFileTechnique technique ;
     technique.type = internal::TechniqueFileElementType::Technique ;
     technique.name = name ;
+    technique.selfrendered = false ;
 
     //////////////////////////////////////////////////////////////////////
     // Iterates through the children nodes.
@@ -546,10 +547,10 @@ void TechniqueFileParser::convertTechnique ( internal::TechniqueFileContext* con
             std::string prog = subnode -> definition.words.at(1) ;
             technique.program = prog ;
         }
-        
+
         //////////////////////////////////////////////////////////////////////
         // Framebuffer reference.
-        
+
         else if (subnode -> definition.words.at(0) == "Framebuffer" &&
                  subnode -> definition.words.size() >= 2)
         {
@@ -558,14 +559,17 @@ void TechniqueFileParser::convertTechnique ( internal::TechniqueFileContext* con
         }
 
         //////////////////////////////////////////////////////////////////////
+        // If the sequence 'Self-Rendered' is encountered , this means the
+        // technique should be Self-Rendered.
+
+        else if (subnode -> definition.words.at(0) == "Self-Rendered")
+        technique.selfrendered = true ;
+
+        //////////////////////////////////////////////////////////////////////
         // Unknown sequence.
 
-#ifdef GreIsDebugMode
         else
-        {
-            GreDebug ( "[WARN] Unknown declaration '" ) << subnode -> definition.words.at(0) << gendl ;
-        }
-#endif
+        GreDebug ( "[WARN] Unknown declaration '" ) << subnode -> definition.words.at(0) << gendl ;
 
     }
 
@@ -579,27 +583,27 @@ void TechniqueFileParser::convertFramebuffer ( internal::TechniqueFileContext* c
 {
     //////////////////////////////////////////////////////////////////////
     // Framebuffer has a name in the definition.
-    
+
     std::string name = node -> definition.words.size() >= 2 ? node -> definition.words.at(1) : "" ;
     internal::TechniqueFileFramebuffer framebuffer ;
     framebuffer.name = name ;
     framebuffer.readbuffer = RenderColorBuffer::None ;
     framebuffer.writebuffer = RenderColorBuffer::None ;
     framebuffer.type = internal::TechniqueFileElementType::Framebuffer ;
-    
+
     //////////////////////////////////////////////////////////////////////
     // Iterates through children nodes. Normally a framebuffer take three
     // types of definition : Attachement , Drawbuffer , Readbuffer .
-    
+
     for ( auto subnode : node -> children )
     {
         if ( subnode->definition.words.empty() )
         continue ;
-        
+
         //////////////////////////////////////////////////////////////////////
         // Attachement definition : Attachement and Technique Parameter we have
         // to bind it to.
-        
+
         if (subnode -> definition.words.at(0) == "Attachement" &&
             subnode -> definition.words.size() >= 3)
         {
@@ -607,30 +611,30 @@ void TechniqueFileParser::convertFramebuffer ( internal::TechniqueFileContext* c
             std::string param = subnode -> definition.words.at(2) ;
             framebuffer.attachements [TechniqueParamFromString(param)] = RenderFramebufferAttachementFromString(attach) ;
         }
-        
+
         //////////////////////////////////////////////////////////////////////
         // Drawbuffer definition : Color buffer.
-        
+
         else if (subnode -> definition.words.at(0) == "Drawbuffer" &&
                  subnode -> definition.words.size() >= 2)
         {
             std::string buffer = subnode -> definition.words.at(1) ;
             framebuffer.writebuffer = RenderColorBufferFromString(buffer) ;
         }
-        
+
         //////////////////////////////////////////////////////////////////////
         // Readbuffer definition.
-        
+
         else if (subnode -> definition.words.at(0) == "Readbuffer" &&
                  subnode -> definition.words.size() >= 2)
         {
             std::string buffer = subnode -> definition.words.at(1) ;
             framebuffer.readbuffer = RenderColorBufferFromString(buffer) ;
         }
-        
+
         //////////////////////////////////////////////////////////////////////
         // Viewport definition.
-        
+
         else if (subnode -> definition.words.at(0) == "Viewport" &&
                  subnode -> definition.words.size() >= 5)
         {
@@ -641,13 +645,13 @@ void TechniqueFileParser::convertFramebuffer ( internal::TechniqueFileContext* c
                 static_cast<int>(strtol(subnode -> definition.words.at(4).c_str(), nullptr, 10))
             });
         }
-        
+
 #ifdef GreIsDebugMode
         else
         GreDebug ( "[WARN] Invalid framebuffer definition : " ) << subnode -> definition.words.at(0) << gendl ;
 #endif
     }
-    
+
     context -> framebuffers [name] = framebuffer ;
 }
 
@@ -703,25 +707,25 @@ TechniqueHolderList TechniqueFileParser::createTechniques ( const internal::Tech
         GreDebug ( "[WARN] Program '" ) << program -> getName () << "' could not be finalized." << gendl ;
 #endif
     }
-    
+
     //////////////////////////////////////////////////////////////////////
     // Creates the framebuffer objects.
-    
+
     for ( auto it : context -> framebuffers )
     {
         //////////////////////////////////////////////////////////////////////
         // Creates a new framebuffer.
-        
+
         RenderFramebufferHolder framebuffer = ResourceManager::Get() -> getFramebufferManager() -> loadBlank ( it.first ) ;
         if ( framebuffer.isInvalid() ) continue ;
-        
+
         //////////////////////////////////////////////////////////////////////
         // Draw / Read buffers.
-        
+
         framebuffer -> setWriteBuffer ( it.second.writebuffer ) ;
         framebuffer -> setReadBuffer ( it.second.readbuffer ) ;
         framebuffer -> setViewport ( it.second.viewport ) ;
-        
+
         //////////////////////////////////////////////////////////////////////
         // We can't do anything more for now. The technique has to bind the correct
         // textures when rendering. For example , it has to check the framebuffer
@@ -748,6 +752,11 @@ TechniqueHolderList TechniqueFileParser::createTechniques ( const internal::Tech
         technique -> setLightingMode ( it.second.lightingmode ) ;
 
         //////////////////////////////////////////////////////////////////////
+        // Self-Rendered flag.
+
+        technique -> setSelfRendered ( it.second.selfrendered ) ;
+
+        //////////////////////////////////////////////////////////////////////
         // Computes aliases.
 
         for ( auto it2 : it.second.aliases )
@@ -758,18 +767,18 @@ TechniqueHolderList TechniqueFileParser::createTechniques ( const internal::Tech
 
         for ( auto it2 : it.second.attributes )
         technique -> setAttribName ( it2.first , it2.second ) ;
-        
+
         //////////////////////////////////////////////////////////////////////
         // Register the framebuffer to the technique.
-        
+
         RenderFramebufferHolder framebuffer = ResourceManager::Get() -> getFramebufferManager() -> get ( it.second.framebuffer ) ;
         if ( !framebuffer.isInvalid() ) technique -> setFramebuffer(framebuffer) ;
-        
+
         //////////////////////////////////////////////////////////////////////
         // Registers the framebuffer attachements.
-        
+
         auto framebufit = context -> framebuffers.find(it.second.framebuffer) ;
-        
+
         if ( framebufit != context -> framebuffers.end() )
         technique -> setFramebufferAttachements ( framebufit->second.attachements ) ;
 

@@ -16,10 +16,10 @@
  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  copies of the Software, and to permit persons to whom the Software is
  furnished to do so, subject to the following conditions:
- 
+
  The above copyright notice and this permission notice shall be included in
  all copies or substantial portions of the Software.
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -70,144 +70,138 @@ RenderFramebufferAttachement RenderFramebufferAttachementFromString ( const std:
     if ( str == "Color6" ) return RenderFramebufferAttachement::Color6 ;
     if ( str == "Color7" ) return RenderFramebufferAttachement::Color7 ;
     if ( str == "Color8" ) return RenderFramebufferAttachement::Color8 ;
+
     if ( str == "Depth" ) return RenderFramebufferAttachement::Depth ;
     if ( str == "Stencil" ) return RenderFramebufferAttachement::Stencil ;
+    if ( str == "DepthStencil" ) return RenderFramebufferAttachement::DepthStencil ;
+
     return RenderFramebufferAttachement::Null ;
 }
 
-// ---------------------------------------------------------------------------------------------------
-  
-RenderFramebuffer::Attachement::Attachement()
-  : texture(nullptr)
+std::string RenderFramebufferAttachementToString ( const RenderFramebufferAttachement & layer )
 {
-  
+    if ( layer == RenderFramebufferAttachement::Color0 ) return "Color0" ;
+    if ( layer == RenderFramebufferAttachement::Color1 ) return "Color1" ;
+    if ( layer == RenderFramebufferAttachement::Color2 ) return "Color2" ;
+    if ( layer == RenderFramebufferAttachement::Color3 ) return "Color3" ;
+    if ( layer == RenderFramebufferAttachement::Color4 ) return "Color4" ;
+    if ( layer == RenderFramebufferAttachement::Color5 ) return "Color5" ;
+    if ( layer == RenderFramebufferAttachement::Color6 ) return "Color6" ;
+    if ( layer == RenderFramebufferAttachement::Color7 ) return "Color7" ;
+    if ( layer == RenderFramebufferAttachement::Color8 ) return "Color8" ;
+
+    if ( layer == RenderFramebufferAttachement::Depth ) return "Depth" ;
+    if ( layer == RenderFramebufferAttachement::Stencil ) return "Stencil" ;
+    if ( layer == RenderFramebufferAttachement::DepthStencil ) return "DepthStencil" ;
+
+    return "Null" ;
 }
 
-void RenderFramebuffer::Attachement::reset()
+// ---------------------------------------------------------------------------------------------------
+
+FramebufferAttachment::FramebufferAttachment()
 {
-    attachement = RenderFramebufferAttachement::Null;
-    attachType = RenderFramebufferAttachementType::Texture;
-    surface = Surface ({0, 0, 0, 0});
+    layer = RenderFramebufferAttachement::Null;
+    type = RenderFramebufferAttachementType::Texture;
     texture = TextureHolder(nullptr);
+    renderbuffer.size = { 0 , 0 } ;
+    renderbuffer.format = InternalPixelFormat::None ;
 }
 
-bool RenderFramebuffer::Attachement::isValid() const
+void FramebufferAttachment::reset()
 {
-    if( attachType == RenderFramebufferAttachementType::Texture )
-    {
-        return ! texture.isInvalid();
-    }
-  
-    return false;
+    layer = RenderFramebufferAttachement::Null;
+    type = RenderFramebufferAttachementType::Texture;
+    texture = TextureHolder(nullptr);
+    renderbuffer.size = { 0 , 0 } ;
+    renderbuffer.format = InternalPixelFormat::None ;
 }
-  
+
 // ---------------------------------------------------------------------------------------------------
 
-RenderFramebuffer::RenderFramebuffer(const std::string& name)
-: Resource(ResourceIdentifier::New() , name)
+RenderFramebuffer::RenderFramebuffer(const std::string& name) : Resource ( name )
 {
     iWriteBuffer = RenderColorBuffer::None ;
     iReadBuffer = RenderColorBuffer::None ;
+    iDefaultSize.first = 0 ;
+    iDefaultSize.second = 0 ;
+    iAttachments [RenderFramebufferAttachement::Null] = FramebufferAttachment () ;
 }
 
 RenderFramebuffer::~RenderFramebuffer()
 {
-    
+
 }
 
-TextureUser RenderFramebuffer::getTextureAttachement(const RenderFramebufferAttachement& attachement)
+FramebufferAttachment & RenderFramebuffer::getAttachment ( const RenderFramebufferAttachement & value )
 {
     GreAutolock ;
-    
-    auto it = iAttachements.find(attachement);
-    if(it != iAttachements.end())
-    {
-#ifdef GreIsDebugMode
-        if(it->second.attachType != RenderFramebufferAttachementType::Texture)
-        {
-            GreDebugPretty() << "Looking for texture attachement '" << (int) attachement << "' but is not Texture." << Gre::gendl;
-        }
-#endif
-        return TextureUser(it->second.texture);
-    }
-  
-#ifdef GreIsDebugMode
-    GreDebugPretty() << "Can't found attachement '" << (int) attachement << "'." << Gre::gendl;
-#endif
-    return nullptr;
+
+    auto it = iAttachments.find ( value ) ;
+
+    if ( it != iAttachments.end() )
+    return it->second ;
+
+    return iAttachments.at ( RenderFramebufferAttachement::Null ) ;
 }
 
-const TextureUser RenderFramebuffer::getTextureAttachement(const RenderFramebufferAttachement& attachement) const
+const FramebufferAttachment & RenderFramebuffer::getAttachment ( const RenderFramebufferAttachement & value ) const
 {
     GreAutolock ;
-    
-    auto it = iAttachements.find(attachement);
-    if(it != iAttachements.end())
-    {
-#ifdef GreIsDebugMode
-        if(it->second.attachType != RenderFramebufferAttachementType::Texture)
-        {
-            GreDebugPretty() << "Looking for texture attachement '" << (int) attachement << "' but is not Texture." << Gre::gendl;
-        }
-#endif
-        return TextureUser(it->second.texture);
-    }
-  
-#ifdef GreIsDebugMode
-    GreDebugPretty() << "Can't found attachement '" << (int) attachement << "'." << Gre::gendl;
-#endif
-    return nullptr;
+
+    auto it = iAttachments.find ( value ) ;
+
+    if ( it != iAttachments.end() )
+    return it->second ;
+
+    return iAttachments.at ( RenderFramebufferAttachement::Null ) ;
 }
 
-Surface RenderFramebuffer::getAttachementSurface(const RenderFramebufferAttachement& attachement) const
+void RenderFramebuffer::setAttachment ( const RenderFramebufferAttachement & value , const TextureHolder & texture ) const
 {
     GreAutolock ;
-    
-    auto it = iAttachements.find(attachement);
-    if(it != iAttachements.end())
-	 {
-        return it->second.surface;
-    }
-  
-#ifdef GreIsDebugMode
-    GreDebugPretty() << "Can't found attachement '" << (int) attachement << "'." << Gre::gendl;
-#endif
-  return { 0, 0, 0, 0 };
+
+    FramebufferAttachment attachment ;
+    attachment.layer = value ;
+    attachment.type = RenderFramebufferAttachementType::Texture ;
+    attachment.texture = texture ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Tries to attach the texture to the framebuffer using the implementation
+    // function. On success , sets the attachment property.
+
+    bool success = _bindAttachment ( attachment ) ;
+
+    if ( !success )
+    GreDebug ( "[WARN] Attachment '" ) << RenderFramebufferAttachementToString(value) << "' failed for Framebuffer '" << getName() << "'." << gendl ;
+
+    else
+    iAttachments [value] = attachment ;
 }
 
-void RenderFramebuffer::setAttachement(const RenderFramebufferAttachement& attachement, TextureHolder& holder)
+void RenderFramebuffer::setAttachmentBuffer (const RenderFramebufferAttachement & value ,
+                                             const std::pair < int , int > & size ,
+                                             const InternalPixelFormat & format ) const
 {
     GreAutolock ;
-    
-    auto attach = iAttachements[attachement];
-  
-    if(attach.isValid())
-    {
-        // We should reset the Attachement before to set it.
-        attach.reset();
-    }
-  
-    attach.attachement = attachement;
-    attach.attachType = RenderFramebufferAttachementType::Texture;
-    attach.texture = holder;
-    attach.surface = holder->getSurface();
-  
-    iAttachements[attachement] = attach;
-}
 
-int RenderFramebuffer::getMaximumWidth() const
-{
-    return 0; 
-}
+    FramebufferAttachment attachment ;
+    attachment.layer = value ;
+    attachment.type = RenderFramebufferAttachementType::Renderbuffer ;
+    attachment.renderbuffer.size = size ;
+    attachment.renderbuffer.format = format ;
 
-int RenderFramebuffer::getMaximumHeight() const
-{
-    return 0;
-}
+    //////////////////////////////////////////////////////////////////////
+    // Tries to attach the renderbuffer to the framebuffer using the implementation
+    // function. On success , sets the attachment property.
 
-int RenderFramebuffer::getMaximumColorAttachementCount() const
-{
-    return 0;
+    bool success = _bindAttachment ( attachment ) ;
+
+    if ( !success )
+    GreDebug ( "[WARN] Attachment '" ) << RenderFramebufferAttachementToString(value) << "' failed for Framebuffer '" << getName() << "'." << gendl ;
+
+    else
+    iAttachments [value] = attachment ;
 }
 
 void RenderFramebuffer::setWriteBuffer(const Gre::RenderColorBuffer &buffer)
@@ -230,16 +224,51 @@ const Viewport & RenderFramebuffer::getViewport() const
     GreAutolock ; return iViewport ;
 }
 
+const std::pair < int , int > & RenderFramebuffer::getDefaultSize () const
+{
+    GreAutolock ; return iDefaultSize ;
+}
+
+void RenderFramebuffer::clear ( const RenderFramebufferAttachement & attachment )
+{
+    GreAutolock ;
+
+    auto it = iAttachments.find ( attachment ) ;
+
+    if ( it == iAttachments.end() )
+    return ;
+
+    _unbindAttachment ( it->second ) ;
+    iAttachments.erase ( it ) ;
+}
+
+void RenderFramebuffer::clear ()
+{
+    GreAutolock ;
+
+    while ( !iAttachments.empty() )
+    {
+        auto it = iAttachments.begin() ;
+        _unbindAttachment ( it->second ) ;
+        iAttachments.erase ( it ) ;
+    }
+
+    iDefaultSize = { 0 , 0 } ;
+    iWriteBuffer = RenderColorBuffer::None ;
+    iReadBuffer = RenderColorBuffer::None ;
+    iViewport = { 0 , 0 , 0 , 0 } ;
+}
+
 // ---------------------------------------------------------------------------------------------------
 
 RenderFramebufferInternalCreator::RenderFramebufferInternalCreator ()
 {
-    
+
 }
 
 RenderFramebufferInternalCreator::~RenderFramebufferInternalCreator()
 {
-    
+
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -248,7 +277,7 @@ RenderFramebufferManager::RenderFramebufferManager ( const std::string & name )
 : ResourceManagerBase<Gre::RenderFramebuffer>(name)
 , iCreator ( nullptr )
 {
-    
+
 }
 
 RenderFramebufferManager::~RenderFramebufferManager() noexcept ( false )
@@ -266,7 +295,7 @@ RenderFramebufferHolder RenderFramebufferManager::loadBlank(const std::string &n
 RenderFramebufferHolder RenderFramebufferManager::load(const std::string &name, const ResourceLoaderOptions &options)
 {
     GreAutolock ;
-    
+
     if ( iCreator )
     {
         RenderFramebufferHolder framebuffer ( iCreator->load(name, options) ) ;
@@ -276,15 +305,15 @@ RenderFramebufferHolder RenderFramebufferManager::load(const std::string &name, 
 #endif
             return RenderFramebufferHolder ( nullptr ) ;
         }
-        
+
 #ifdef GreIsDebugMode
         GreDebug("[INFO] Loaded new RenderFramebuffer '") << name << "'." << gendl ;
 #endif
-        
+
         iHolders.add(framebuffer) ;
         return framebuffer ;
     }
-    
+
     else
     {
 #ifdef GreIsDebugMode

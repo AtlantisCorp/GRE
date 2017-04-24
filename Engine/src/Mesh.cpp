@@ -41,13 +41,13 @@ GreBeginNamespace
 
 MeshBinder::~MeshBinder()
 {
-    
+
 }
 
 // ---------------------------------------------------------------------------------------------------
 
 Mesh::Mesh ( )
-: Gre::Resource( )
+: Gre::Renderable( )
 , iIndexBuffer ( nullptr ) , iBoundingBox ( )
 , iOriginalFile ( "" ) , iDefaultMaterial(nullptr)
 {
@@ -55,7 +55,7 @@ Mesh::Mesh ( )
 }
 
 Mesh::Mesh ( const std::string & name )
-: Gre::Resource( ResourceIdentifier::New() , name )
+: Gre::Renderable( name )
 , iIndexBuffer( nullptr ) , iBoundingBox ( )
 , iOriginalFile( "" ) , iDefaultMaterial(nullptr)
 {
@@ -147,13 +147,13 @@ void Mesh::setDefaultMaterial(const MaterialHolder &material)
 void Mesh::use ( const TechniqueHolder& technique ) const
 {
     GreAutolock ;
-    
+
     //////////////////////////////////////////////////////////////////////
     // The mesh'es default material is already bound by the node's use
     // function. In fact , the node use the mesh material if no other material
     // has been given to the node. More , if this mesh does not contain any
     // material , the node will keep a blank material.
-    
+
     //////////////////////////////////////////////////////////////////////
     // Binds Custom parameters.
 
@@ -163,33 +163,33 @@ void Mesh::use ( const TechniqueHolder& technique ) const
 void Mesh::bind ( const TechniqueHolder & technique ) const
 {
     GreAutolock ;
-    
+
     if ( !iBinder )
     return ;
-    
+
     //////////////////////////////////////////////////////////////////////
     // Uses the binder implementation to make some driver - specific adjusts.
-    
+
     iBinder -> bind ( this , technique ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     // Notes that as in OpenGl , and maybe other APIs , we don't need to
     // updates the bound values in , for example , a VAO if the datas did not
     // changed , we use that specific function to know if we have to update the
     // VAO's values.
-    
+
     if ( !iBinder->needUpdate() && !isAnyBufferDirty() )
     return ;
-    
+
     //////////////////////////////////////////////////////////////////////
     // Binds Vertex Descriptors Attributes to the technique. This step is
     // fundamental before rendering the object through the shader program.
     // Notes that a HardwareProgram must be valid in the technique.
-    
+
     if ( !technique->getHardwareProgram().isInvalid() )
     {
         const HardwareProgramHolder & program = technique -> getHardwareProgram() ;
-        
+
         for ( auto buffer : iVertexBuffers )
         {
             if ( !buffer.isInvalid() )
@@ -198,7 +198,7 @@ void Mesh::bind ( const TechniqueHolder & technique ) const
                 {
                     const VertexDescriptor & vdesc = buffer -> getVertexDescriptor() ;
                     buffer -> bind() ;
-                    
+
                     for ( auto component : vdesc.getComponents() )
                     {
                         program -> setVertexAttrib (technique -> getAttribName ( component.alias ) ,
@@ -208,18 +208,18 @@ void Mesh::bind ( const TechniqueHolder & technique ) const
                                                     vdesc.getStride(component) ,
                                                     (void*) (buffer -> getData() + vdesc.getOffset(component)) ) ;
                     }
-                    
+
                     buffer -> unbind () ;
                 }
             }
         }
-        
+
         //////////////////////////////////////////////////////////////////////
         // Reset the buffers dirty flag.
-        
+
         if ( !iIndexBuffer.isInvalid() )
         iIndexBuffer -> clean () ;
-        
+
         for ( auto buffer : iVertexBuffers )
             if ( !buffer.isInvalid() )
             buffer -> clean () ;
@@ -229,13 +229,13 @@ void Mesh::bind ( const TechniqueHolder & technique ) const
 void Mesh::unbind ( const TechniqueHolder & technique ) const
 {
     GreAutolock ;
-    
+
     if ( !iBinder )
         return ;
-    
+
     //////////////////////////////////////////////////////////////////////
     // Uses the binder implementation to make some driver - specific adjusts.
-    
+
     iBinder -> unbind ( this , technique ) ;
 }
 
@@ -247,18 +247,18 @@ void Mesh::setBinder(Gre::MeshBinder *binder)
 bool Mesh::isAnyBufferDirty () const
 {
     GreAutolock ;
-    
+
     if ( !iIndexBuffer.isInvalid() )
     if ( iIndexBuffer -> isDirty() )
     return true ;
-    
+
     for ( auto buffer : iVertexBuffers )
     {
         if ( !buffer.isInvalid() )
         if ( buffer -> isDirty() )
         return true ;
     }
-    
+
     return false ;
 }
 
@@ -288,12 +288,12 @@ MeshUser MeshManager::Triangle(float sz)
     } ;
 
     unsigned int indices [] = { 0, 1, 2 } ;
-    
+
     //////////////////////////////////////////////////////////////////////
     // Vertex Descriptor.
 
     VertexDescriptor vdesc ;
-    
+
     VertexAttribComponent position ;
     position.alias = VertexAttribAlias::Position ;
     position.elements = 3 ;
@@ -301,34 +301,34 @@ MeshUser MeshManager::Triangle(float sz)
     position.size = 3 * sizeof ( float ) ;
     position.type = VertexAttribType::Float ;
     vdesc.addComponent(position) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     // Vertex Buffer.
-    
+
     HardwareVertexBufferHolder vbuf = holder -> createVertexBuffer(vertex, sizeof(vertex), vdesc) ;
     HardwareVertexBufferHolderList vbuflist ; vbuflist.add(vbuf) ;
     vbuf->setEnabled(true);
-    
+
     //////////////////////////////////////////////////////////////////////
     // Index Descriptor.
 
     IndexDescriptor idesc ;
     idesc.setMode(IndexDrawmode::Triangles) ;
     idesc.setType(IndexType::UnsignedInteger) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     // Index Buffer.
-    
+
     HardwareIndexBufferHolder ibuf = holder -> createIndexBuffer(indices, sizeof(indices), idesc) ;
     ibuf->setEnabled(true) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     // Resulting Mehs.
 
     MeshHolder mesh = MeshHolder ( new Mesh("Triangle") ) ;
     mesh -> setVertexBuffers(vbuflist) ;
     mesh -> setIndexBuffer(ibuf) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     // Registers the resulting mesh.
 
@@ -362,38 +362,38 @@ MeshUser MeshManager::findFirstFile(const std::string &filepath)
 int MeshManager::loadBundledFile(const std::string &path, const ResourceLoaderOptions &ops)
 {
     GreAutolock ;
-    
+
     //////////////////////////////////////////////////////////////////////
     // Checks input values.
-    
+
     if ( path.empty() )
     return 0 ;
-    
+
     //////////////////////////////////////////////////////////////////////
     // Tries to find a suitable loader for the given file.
-    
+
     MeshLoader * loader = iFindBestLoader(path) ;
-    
+
     if ( !loader )
     return 0 ;
-    
+
     //////////////////////////////////////////////////////////////////////
     // Tries to get the correct subdirectory and find the real file path.
-    
+
     std::string subdir = loader -> getDirectory () ;
     std::string bundlepath = subdir + Platform::GetSeparator() + path ;
-    
+
     if ( bundlepath.empty() )
     return 0 ;
-    
+
     std::string realpath = ResourceManager::Get() -> findBundledFile(ResourceType::Mesh, bundlepath) ;
-    
+
     if ( realpath.empty() )
     return 0 ;
-    
+
     //////////////////////////////////////////////////////////////////////
     // Now tries to load the file as a normal file.
-    
+
     return loadFile ( realpath , ops ) ;
 }
 
@@ -401,40 +401,40 @@ int MeshManager::loadFile(const std::string &path, const ResourceLoaderOptions &
 {
     //////////////////////////////////////////////////////////////////////
     // Check input values.
-    
+
     if ( path.empty() )
     return 0 ;
-    
+
     //////////////////////////////////////////////////////////////////////
     // Tries to find a suitable loader for the given file.
-    
+
     MeshLoader * loader = iFindBestLoader(path) ;
-    
+
     if ( !loader )
     return 0 ;
-    
+
     //////////////////////////////////////////////////////////////////////
     // Tries to load the file using the loader.
-    
+
     MeshHolderList meshes = loader -> load ( path , ops ) ;
-    
+
     if ( meshes.empty() )
     return 0 ;
-    
+
     //////////////////////////////////////////////////////////////////////
     // Registers and returns.
-    
+
     for ( auto mesh : meshes )
     {
         MeshBinder* binder = loadBinder() ;
-        
+
         if ( !binder )
         continue ;
-        
+
         mesh -> setBinder(binder) ;
         iHolders.add(mesh) ;
     }
-    
+
     return meshes.size() ;
 }
 

@@ -35,7 +35,7 @@
 
 GreBeginNamespace
 
-Camera::Camera(const std::string& name) : Gre::Resource(name)
+Camera::Camera(const std::string& name) : Gre::Renderable(name)
 {
     iPosition = { 0.0f , 0.0f , 0.0f } ;
     iTarget = { 0.0f , 0.0f , 0.0f } ;
@@ -49,7 +49,7 @@ Camera::Camera(const std::string& name) : Gre::Resource(name)
     iControllerFilters.push_back ( EventType::WindowSized ) ;
 }
 
-Camera::Camera(const std::string& name, const Vector3& position, const Vector3& to, const Vector3& up) : Gre::Resource(name)
+Camera::Camera(const std::string& name, const Vector3& position, const Vector3& to, const Vector3& up) : Gre::Renderable(name)
 {
     iPosition = position ;
     iTarget = to ;
@@ -138,7 +138,7 @@ void Camera::lookAt(const Vector3 &origin, const Vector3 &point, const Vector3& 
 
     EventHolder e2 ( new DirectionChangedEvent(this, point - origin) ) ;
     sendEvent(e2) ;
-    
+
     iMustCalcView = false ;
 }
 

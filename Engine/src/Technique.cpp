@@ -123,8 +123,8 @@ Technique::Technique ( const std::string & name )
 : Gre::Resource(name)
 {
     iLightingMode = TechniqueLightingMode::AllLights ;
-    iCurrentTextureUnit = 0 ;
     iCurrentLight = -1 ;
+    iSelfRendered = false ;
 }
 
 Technique::~Technique() noexcept ( false )
@@ -140,26 +140,6 @@ const HardwareProgramHolder & Technique::getHardwareProgram () const
 void Technique::setHardwareProgram ( const HardwareProgramHolder& program )
 {
     GreAutolock ; iProgram = program ;
-}
-
-bool Technique::hasPreTechniques () const
-{
-    GreAutolock ; return iPreTechniques.size() > 0 ;
-}
-
-const std::vector < TechniqueHolder > & Technique::getPreTechniques () const
-{
-    GreAutolock ; return iPreTechniques ;
-}
-
-bool Technique::hasPostTechniques () const
-{
-    GreAutolock ; return iPostTechniques.size() > 0 ;
-}
-
-const std::vector < TechniqueHolder > & Technique::getPostTechniques () const
-{
-    GreAutolock ; return iPostTechniques ;
 }
 
 TechniqueLightingMode Technique::getLightingMode () const
@@ -180,11 +160,6 @@ const RenderFramebufferHolder & Technique::getFramebuffer() const
 void Technique::setFramebuffer(const RenderFramebufferHolder &framebuffer)
 {
     GreAutolock ; iFramebuffer = framebuffer ;
-}
-
-void Technique::addPreTechnique(const TechniqueHolder &tech)
-{
-    GreAutolock ; iPreTechniques.push_back(tech) ;
 }
 
 void Technique::setAlias ( const TechniqueParam & param , const std::string & alias )
@@ -216,7 +191,7 @@ void Technique::setAliasedParameterStructValue (const TechniqueParam & alias1 ,
 
     std::string name1 = getAlias ( alias1 ) ;
     std::string name2 = getAlias ( alias2 ) ;
-    
+
     if ( name1.empty() )
     {
         setAliasedParameterValue(alias2, type, value) ;
@@ -268,8 +243,11 @@ void Technique::bind () const
 {
     GreAutolock ;
 
+    if ( !iFramebuffer.isInvalid() )
+    iFramebuffer -> bind () ;
+
     if ( !iProgram.isInvalid() )
-        iProgram -> use () ;
+    iProgram -> use () ;
 }
 
 void Technique::unbind () const
@@ -277,7 +255,10 @@ void Technique::unbind () const
     GreAutolock ;
 
     if ( !iProgram.isInvalid() )
-        iProgram -> unuse () ;
+    iProgram -> unuse () ;
+
+    if ( !iFramebuffer.isInvalid() )
+    iFramebuffer -> unbind () ;
 }
 
 TechniqueParam Technique::getNextLightAlias () const
@@ -325,7 +306,7 @@ void Technique::setAliasedTextureStruct (const TechniqueParam & alias1 ,
 
     std::string name1 = getAlias ( alias1 ) ;
     std::string name2 = getAlias ( alias2 ) ;
-    
+
     if ( name1.empty() ) {
         setAliasedTexture(alias2, tex);
         return ;
@@ -337,29 +318,26 @@ void Technique::setAliasedTextureStruct (const TechniqueParam & alias1 ,
     if ( !iProgram->isBound() )
     return ;
 
-    iProgram -> bindTextureUnit ( iCurrentTextureUnit ) ;
-    tex -> bind () ;
-
-    iProgram -> setUniform ( name1 + "." + name2 , HdwProgVarType::Int1 , iCurrentTextureUnit ) ;
-    iCurrentTextureUnit ++ ;
+    int unit = bindTexture ( tex ) ;
+    iProgram -> setUniform ( name1 + "." + name2 , HdwProgVarType::Int1 , unit ) ;
 }
 
 void Technique::setAliasedTexture(const Gre::TechniqueParam &param, const TextureHolder &tex) const
 {
     GreAutolock ;
-    
+
     if ( iProgram.isInvalid() || tex.isInvalid() )
     return ;
-    
+
     //////////////////////////////////////////////////////////////////////
     // If this parameter is set in the framebuffer attachements aliases , we
     // prefer to set the framebuffer attachement instead.
-    
+
     auto it = iAliasAttachements.find(param) ;
-    
+
     if ( it != iAliasAttachements.end() && !iFramebuffer.isInvalid() )
-    iFramebuffer -> setAttachementNoCache(it->second, tex) ;
-    
+    iFramebuffer -> setAttachment (it->second, tex) ;
+
     //////////////////////////////////////////////////////////////////////
     // If not , bind the alias to the program.
 
@@ -368,10 +346,8 @@ void Technique::setAliasedTexture(const Gre::TechniqueParam &param, const Textur
         auto alias = getAlias ( param ) ;
         if ( alias.empty() ) return ;
 
-        iProgram -> bindTextureUnit ( iCurrentTextureUnit ) ;
-        tex -> bind() ;
-        iProgram -> setUniform(alias, HdwProgVarType::Int1, iCurrentTextureUnit);
-        iCurrentTextureUnit ++ ;
+        int unit = bindTexture ( tex ) ;
+        iProgram -> setUniform(alias, HdwProgVarType::Int1, unit);
     }
 }
 
@@ -391,12 +367,67 @@ const std::string Technique::getAttribName ( const VertexAttribAlias & alias ) c
 
 void Technique::resetTextures() const
 {
-    GreAutolock ; iCurrentTextureUnit = 0 ;
+    GreAutolock ;
+
+    //////////////////////////////////////////////////////////////////////
+    // When resetting texture , we unbind every textures , activating their
+    // texture unit. Notes the technique should be unbinded after using this
+    // function , not before or the program will never be unbinded.
+
+    if ( iProgram.isInvalid() )
+    return ;
+
+    iProgram -> use () ;
+
+    while ( !iTextureUnits.empty() )
+    {
+        if ( !iTextureUnits.top().isInvalid() )
+        {
+            iProgram -> bindTextureUnit ( iTextureUnits.size() - 1 ) ;
+            iTextureUnits.top() -> unbind () ;
+            iTextureUnits.pop() ;
+        }
+    }
 }
 
 void Technique::setFramebufferAttachements ( const std::map < TechniqueParam , RenderFramebufferAttachement > & attachements )
 {
     GreAutolock ; iAliasAttachements = attachements ;
+}
+
+bool Technique::isSelfRendered () const
+{
+    GreAutolock ; return iSelfRendered ;
+}
+
+void Technique::setSelfRendered ( bool value )
+{
+    GreAutolock ; iSelfRendered = value ;
+}
+
+void Technique::reset () const
+{
+    resetLights () ;
+    resetTextures () ;
+}
+
+int Technique::bindTexture ( const TextureHolder & texture ) const
+{
+    GreAutolock ;
+
+    if ( iProgram.isInvalid() || texture.isInvalid() )
+    return 0 ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Binds the next texture unit , and bind the texture to it.
+
+    int unit = iTextureUnits.size() ;
+
+    iProgram -> bindTextureUnit ( unit ) ;
+    texture -> bind () ;
+
+    iTextureUnits.push ( texture ) ;
+    return unit ;
 }
 
 void Technique::onUpdateEvent(const Gre::UpdateEvent &e)
