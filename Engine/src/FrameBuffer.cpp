@@ -170,7 +170,7 @@ void RenderFramebuffer::setAttachment ( const RenderFramebufferAttachement & val
     // Tries to attach the texture to the framebuffer using the implementation
     // function. On success , sets the attachment property.
 
-    bool success = _bindAttachment ( attachment ) ;
+    bool success = bindAttachment ( attachment ) ;
 
     if ( !success )
     GreDebug ( "[WARN] Attachment '" ) << RenderFramebufferAttachementToString(value) << "' failed for Framebuffer '" << getName() << "'." << gendl ;
@@ -195,7 +195,7 @@ void RenderFramebuffer::setAttachmentBuffer (const RenderFramebufferAttachement 
     // Tries to attach the renderbuffer to the framebuffer using the implementation
     // function. On success , sets the attachment property.
 
-    bool success = _bindAttachment ( attachment ) ;
+    bool success = bindAttachment ( attachment ) ;
 
     if ( !success )
     GreDebug ( "[WARN] Attachment '" ) << RenderFramebufferAttachementToString(value) << "' failed for Framebuffer '" << getName() << "'." << gendl ;
@@ -238,7 +238,7 @@ void RenderFramebuffer::clear ( const RenderFramebufferAttachement & attachment 
     if ( it == iAttachments.end() )
     return ;
 
-    _unbindAttachment ( it->second ) ;
+    unbindAttachment ( it->second ) ;
     iAttachments.erase ( it ) ;
 }
 
@@ -249,7 +249,7 @@ void RenderFramebuffer::clear ()
     while ( !iAttachments.empty() )
     {
         auto it = iAttachments.begin() ;
-        _unbindAttachment ( it->second ) ;
+        unbindAttachment ( it->second ) ;
         iAttachments.erase ( it ) ;
     }
 
@@ -300,15 +300,11 @@ RenderFramebufferHolder RenderFramebufferManager::load(const std::string &name, 
     {
         RenderFramebufferHolder framebuffer ( iCreator->load(name, options) ) ;
         if ( framebuffer.isInvalid() ) {
-#ifdef GreIsDebugMode
             GreDebug("[WARN] RenderFramebufferInternalCreator failed creating RenderFramebuffer '") << name << "'." << gendl ;
-#endif
             return RenderFramebufferHolder ( nullptr ) ;
         }
 
-#ifdef GreIsDebugMode
         GreDebug("[INFO] Loaded new RenderFramebuffer '") << name << "'." << gendl ;
-#endif
 
         iHolders.add(framebuffer) ;
         return framebuffer ;
@@ -316,9 +312,7 @@ RenderFramebufferHolder RenderFramebufferManager::load(const std::string &name, 
 
     else
     {
-#ifdef GreIsDebugMode
         GreDebug("[WARN] No RenderFramebufferInternalCreator registered.") << Gre::gendl ;
-#endif
         return RenderFramebufferHolder ( nullptr ) ;
     }
 }

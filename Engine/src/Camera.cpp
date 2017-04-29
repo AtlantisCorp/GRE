@@ -39,7 +39,7 @@ Camera::Camera(const std::string& name) : Gre::Renderable(name)
 {
     iPosition = { 0.0f , 0.0f , 0.0f } ;
     iTarget = { 0.0f , 0.0f , 0.0f } ;
-    iUpwardDirection = Vector3 ( 0.0f, 1.0f, 0.0f ) ;
+    iUpwardDirection = Transformation::Up ;
     iMustCalcView = true ;
 
     iMaxVerticalAngle = 89.0f ;
@@ -214,7 +214,7 @@ void Camera::use ( const TechniqueHolder & technique ) const
     if ( !technique.isInvalid() )
     {
         technique -> setAliasedParameterValue ( TechniqueParam::CameraPosition , HdwProgVarType::Float3 , iPosition ) ;
-        technique -> setAliasedParameterValue ( TechniqueParam::CameraDirection , HdwProgVarType::Float3 , iTarget - iPosition ) ;
+        technique -> setAliasedParameterValue ( TechniqueParam::CameraDirection , HdwProgVarType::Float3 , getDirection() ) ;
 
         technique -> setAliasedParameterValue ( TechniqueParam::ViewMatrix , HdwProgVarType::Matrix4 , getViewMatrix() ) ;
         technique -> setAliasedParameterValue ( TechniqueParam::ProjectionMatrix , HdwProgVarType::Matrix4 , getProjectionMatrix() ) ;

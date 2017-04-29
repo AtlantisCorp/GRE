@@ -552,10 +552,6 @@ TechniqueHolder TechniqueManager::loadFromHolder ( const TechniqueHolder & techn
     {
         iHolders.add ( technique ) ;
         addFilteredListener ( EventProceederUser(technique) , { EventType::Update } ) ;
-
-#ifdef GreIsDebugMode
-        GreDebug ( "[INFO] Loaded Technique '" ) << technique -> getName() << "'." << gendl ;
-#endif
     }
 
     return technique ;

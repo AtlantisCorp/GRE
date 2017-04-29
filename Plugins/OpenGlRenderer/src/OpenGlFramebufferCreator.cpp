@@ -89,6 +89,10 @@ std::string translateGlFramebufferError ( GLenum error )
 OpenGlFramebuffer::OpenGlFramebuffer ( const std::string & name )
 : Gre::RenderFramebuffer(name) , iGlFramebuffer(0)
 {
+    iWriteBuffer = Gre::RenderColorBuffer::None ;
+    iReadBuffer = Gre::RenderColorBuffer::None ;
+    iBinded = false ;
+
     glGenFramebuffers(1, &iGlFramebuffer) ;
 
 #ifdef GreIsDebugMode
@@ -96,18 +100,24 @@ OpenGlFramebuffer::OpenGlFramebuffer ( const std::string & name )
         GreDebug("[WARN] Can't create OpenGl Framebuffer.") << Gre::gendl ;
     }
 #endif
-
+/*
     if ( iGlFramebuffer )
     {
         // Creates an hypothetic renderbuffer for framebuffer.
         setAttachmentBuffer (Gre::RenderFramebufferAttachement::Color0 ,
                              { 1024 , 1024 } ,
-                             Gre::InternalPixelFormat::RGB ) ;
+                             Gre::InternalPixelFormat::RGBA ) ;
 
         iWriteBuffer = Gre::RenderColorBuffer::Color0 ;
         iReadBuffer = Gre::RenderColorBuffer::Color0 ;
     }
+*/
+}
 
+OpenGlFramebuffer::OpenGlFramebuffer ( const std::string & name , GLuint glframebuffer )
+: Gre::RenderFramebuffer ( name )
+{
+    iGlFramebuffer = glframebuffer ;
 }
 
 OpenGlFramebuffer::~OpenGlFramebuffer() noexcept ( false )
@@ -123,17 +133,22 @@ void OpenGlFramebuffer::bind() const
     if ( iGlFramebuffer )
     {
         glBindFramebuffer(GL_FRAMEBUFFER, iGlFramebuffer);
-        glDrawBuffer(translateGlDrawBuffer(iWriteBuffer));
-        glReadBuffer(translateGlDrawBuffer(iReadBuffer));
         iBinded = true ;
 
-        if ( iViewport.getArea() )
+        if ( glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE )
         {
-            //////////////////////////////////////////////////////////////////////
-            // We use the set Viewport to change it.
+            glClear ( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT ) ;
+            glDrawBuffer(translateGlDrawBuffer(iWriteBuffer));
+            glReadBuffer(translateGlDrawBuffer(iReadBuffer));
 
-            glGetIntegerv ( GL_VIEWPORT , &iGlViewport[0] ) ;
-            glViewport(iViewport.left, iViewport.top, iViewport.width, iViewport.height);
+            if ( iViewport.getArea() )
+            {
+                //////////////////////////////////////////////////////////////////////
+                // We use the set Viewport to change it.
+
+                glGetIntegerv ( GL_VIEWPORT , &iGlViewport[0] ) ;
+                glViewport(iViewport.left, iViewport.top, iViewport.width, iViewport.height);
+            }
         }
     }
 }
@@ -144,14 +159,17 @@ void OpenGlFramebuffer::unbind() const
 
     if ( iGlFramebuffer )
     {
-        //////////////////////////////////////////////////////////////////////
-        // Restores the viewport if we changed it.
-
-        if ( iViewport.getArea() )
-        glViewport(iGlViewport[0], iGlViewport[1], iGlViewport[2], iGlViewport[3]);
-
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         iBinded = false ;
+
+        if ( glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE )
+        {
+            //////////////////////////////////////////////////////////////////////
+            // Restores the viewport if we changed it.
+
+            if ( iViewport.getArea() )
+            glViewport(iGlViewport[0], iGlViewport[1], iGlViewport[2], iGlViewport[3]);
+        }
     }
 }
 
@@ -160,7 +178,17 @@ bool OpenGlFramebuffer::binded () const
     GreAutolock ; return iBinded ;
 }
 
-bool OpenGlFramebuffer::_bindAttachment ( const Gre::FramebufferAttachment & attachment ) const
+bool OpenGlFramebuffer::isComplete () const
+{
+    GreAutolock ;
+
+    if ( !binded() )
+    return false ;
+
+    return glCheckFramebufferStatus ( GL_FRAMEBUFFER ) ;
+}
+
+bool OpenGlFramebuffer::bindAttachment ( const Gre::FramebufferAttachment & attachment ) const
 {
     if ( !iGlFramebuffer )
     return false ;
@@ -218,7 +246,13 @@ bool OpenGlFramebuffer::_bindglTexture ( const Gre::FramebufferAttachment & atta
                                target, texture, 0, 0);
     }
 
-    glBindTexture ( target , 0 ) ;
+    GLenum error = glGetError () ;
+    if ( error != GL_NO_ERROR )
+    {
+
+    }
+
+    //glBindTexture ( target , 0 ) ;
     return true ;
 }
 
@@ -245,13 +279,13 @@ bool OpenGlFramebuffer::_bindglRenderbuffer ( const Gre::FramebufferAttachment &
     //////////////////////////////////////////////////////////////////////
     // Unbinds the renderbuffer and registers it.
 
-    glBindRenderbuffer ( GL_RENDERBUFFER , 0 ) ;
+    //glBindRenderbuffer ( GL_RENDERBUFFER , 0 ) ;
     iRenderbuffers [attachment.layer] = renderbuffer ;
 
     return true ;
 }
 
-void OpenGlFramebuffer::_unbindAttachment ( const Gre::FramebufferAttachment & attachment ) const
+void OpenGlFramebuffer::unbindAttachment ( const Gre::FramebufferAttachment & attachment ) const
 {
     if ( attachment.type != Gre::RenderFramebufferAttachementType::Renderbuffer )
     return ;
@@ -299,5 +333,29 @@ OpenGlFramebufferCreator::~OpenGlFramebufferCreator()
 
 Gre::RenderFramebuffer* OpenGlFramebufferCreator::load(const std::string &name, const Gre::ResourceLoaderOptions &options) const
 {
-    return new OpenGlFramebuffer (name) ;
+    if ( !iRenderer )
+    return nullptr ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Be sure the renderer context is binded.
+
+    iRenderer -> getRenderContext() -> bind () ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Creates a gl handle for a new framebuffer.
+
+    GLuint glframebuffer ; glGenFramebuffers ( 1 , &glframebuffer ) ;
+
+    if ( !glframebuffer )
+    {
+        GreDebug ( "[WARN] 'glGenFramebuffers()' failed." ) << Gre::gendl ;
+        return nullptr ;
+    }
+
+    //////////////////////////////////////////////////////////////////////
+    // Creates the framebuffer object and returns it. Notes this object is
+    // not configured to be rendered. One should at least attach a Color0
+    // target to complete the framebuffer.
+
+    return new OpenGlFramebuffer ( name , glframebuffer ) ;
 }

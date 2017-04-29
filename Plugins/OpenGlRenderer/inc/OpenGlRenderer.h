@@ -73,6 +73,11 @@ public:
     OpenGlFramebuffer ( const std::string & name ) ;
 
     //////////////////////////////////////////////////////////////////////
+    /// @brief Creates a framebuffer from given OpenGl Handle.
+    //////////////////////////////////////////////////////////////////////
+    OpenGlFramebuffer ( const std::string & name , GLuint glframebuffer ) ;
+
+    //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     virtual ~OpenGlFramebuffer () noexcept ( false ) ;
 
@@ -91,6 +96,12 @@ public:
     //////////////////////////////////////////////////////////////////////
     virtual bool binded () const ;
 
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns true if the framebuffer is complete, i.e. it can be
+    /// used to render on it, or read from it.
+    //////////////////////////////////////////////////////////////////////
+    virtual bool isComplete () const ;
+
 protected:
 
     //////////////////////////////////////////////////////////////////////
@@ -102,7 +113,7 @@ protected:
     /// set appropriate settings to create and manage it.
     ///
     //////////////////////////////////////////////////////////////////////
-    virtual bool _bindAttachment ( const Gre::FramebufferAttachment & attachment ) const ;
+    virtual bool bindAttachment ( const Gre::FramebufferAttachment & attachment ) const ;
 
     //////////////////////////////////////////////////////////////////////
     /// @brief Subfunction to attach a texture to the framebuffer.
@@ -118,7 +129,7 @@ protected:
     /// @brief Unbinds the given attchament. If the attachment is a renderbuffer,
     /// destruction of this buffer should be done by the framebuffer implementation.
     //////////////////////////////////////////////////////////////////////
-    virtual void _unbindAttachment ( const Gre::FramebufferAttachment & attachment ) const ;
+    virtual void unbindAttachment ( const Gre::FramebufferAttachment & attachment ) const ;
 
 protected:
 

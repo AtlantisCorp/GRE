@@ -210,7 +210,7 @@ GreBeginNamespace
 
 #define GreVersionMajor 0             ///< @brief GRE Major version.
 #define GreVersionMinor 0             ///< @brief GRE Minor version.
-#define GreVersionBuild 25            ///< @brief GRE Build number.
+#define GreVersionBuild 26            ///< @brief GRE Build number.
 
 /// @brief Defines the Version structure.
 typedef struct Version

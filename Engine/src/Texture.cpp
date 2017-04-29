@@ -58,6 +58,16 @@ std::string TextureTypeToString(const TextureType& type)
     return "TextureType::Null";
 }
 
+TextureType TextureTypeFromString ( const std::string & type )
+{
+    if ( type == "Texture1D" ) return TextureType::Texture1D ;
+    else if ( type == "Texture2D" ) return TextureType::Texture2D ;
+    else if ( type == "Texture3D" ) return TextureType::Texture3D ;
+    else if ( type == "CubeMap" ) return TextureType::CubeMap ;
+
+    return TextureType::Null ;
+}
+
 // ---------------------------------------------------------------------------------------------------
 
 Texture::Texture (const std::string& name , const TextureType & type ,
@@ -360,24 +370,24 @@ TextureHolder TextureManager::loadFromNewPixelBuffer(const std::string &name, in
 {
     if ( width <= 0 || height <= 0 || depth < 0 )
     return TextureHolder ( nullptr ) ;
-    
+
     SoftwarePixelBufferHolder pb = new SoftwarePixelBuffer () ;
-    
+
     if ( pb.isInvalid() )
     return TextureHolder ( nullptr ) ;
-    
+
     pb -> setSurface({ 0, 0, width, height }) ;
     pb -> setDepth(depth) ;
     pb -> setPixelFormat(pf) ;
     pb -> setInternalPixelFormat(ipf) ;
     pb -> setPixelType(pt) ;
-    
+
     if ( depth )
     pb -> setData(nullptr, width * height * depth * psize) ;
-    
+
     else
     pb -> setData(nullptr, width * height * psize) ;
-    
+
     return loadPixelBuffer(name, pb, tt, ResourceLoaderOptions()) ;
 }
 

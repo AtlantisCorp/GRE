@@ -47,6 +47,12 @@ enum class PixelFormat : int
     Luminance , LuminanceAlpha
 };
 
+/// @brief Translates string to pixel format. Default is None.
+PixelFormat PixelFormatFromString ( const std::string & format ) ;
+
+/// @brief Returns the number of element in a given format.
+size_t PixelFormatGetCount ( const PixelFormat & format ) ;
+
 //////////////////////////////////////////////////////////////////////
 /// @brief InternalPixelFormat possibilities.
 enum class InternalPixelFormat : int
@@ -61,6 +67,9 @@ enum class InternalPixelFormat : int
     None
 };
 
+/// @brief Translates string to InternalPixelFormat.
+InternalPixelFormat InternalPixelFormatFromString ( const std::string & format ) ;
+
 //////////////////////////////////////////////////////////////////////
 /// @brief PixelType Possibilities.
 enum class PixelType : int
@@ -68,8 +77,16 @@ enum class PixelType : int
     UnsignedByte, Byte,
     UnsignedShort, Short,
     UnsignedInt, Int,
-    Float
+    Float,
+
+    None
 };
+
+/// @brief Translates string to PixelType.
+PixelType PixelTypeFromString ( const std::string & type ) ;
+
+/// @brief Returns the size of a given pixel's type.
+size_t PixelTypeGetSize ( const PixelType & type ) ;
 
 //////////////////////////////////////////////////////////////////////
 /// @brief Represents a static buffer filled with pixels.

@@ -418,6 +418,10 @@ internal::TechniqueFileContext* TechniqueFileParser::convertTree ( const interna
                     convertFramebuffer ( context , node ) ;
                 }
 
+                else if ( deftype == "Texture" ) {
+                    convertTexture ( context , node ) ;
+                }
+
 #ifdef GreIsDebugMode
                 else
                 {
@@ -601,11 +605,23 @@ void TechniqueFileParser::convertFramebuffer ( internal::TechniqueFileContext* c
         continue ;
 
         //////////////////////////////////////////////////////////////////////
+        // Texture attachement. The texture should be loaded before the
+        // framebuffer , either in ::createTechniques or by the texture manager.
+
+        if (subnode -> definition.words.at(0) == "Texture" &&
+            subnode -> definition.words.size() >= 3)
+        {
+            std::string attachment = subnode -> definition.words.at(1) ;
+            std::string texture = subnode -> definition.words.at(2) ;
+            framebuffer.staticattachments [RenderFramebufferAttachementFromString(attachment)] = texture ;
+        }
+
+        //////////////////////////////////////////////////////////////////////
         // Attachement definition : Attachement and Technique Parameter we have
         // to bind it to.
 
-        if (subnode -> definition.words.at(0) == "Attachement" &&
-            subnode -> definition.words.size() >= 3)
+        else if (subnode -> definition.words.at(0) == "Attachement" &&
+                 subnode -> definition.words.size() >= 3)
         {
             std::string attach = subnode -> definition.words.at(1) ;
             std::string param = subnode -> definition.words.at(2) ;
@@ -655,6 +671,93 @@ void TechniqueFileParser::convertFramebuffer ( internal::TechniqueFileContext* c
     context -> framebuffers [name] = framebuffer ;
 }
 
+void TechniqueFileParser::convertTexture ( internal::TechniqueFileContext* context , const internal::TechniqueFileNode* node )
+{
+    //////////////////////////////////////////////////////////////////////
+    // Texture definition is [Texture $TYPE $NAME] .
+
+    std::string type = node -> definition.words.size() >= 2 ? node -> definition.words.at(1) : std::string() ;
+    std::string name = node -> definition.words.size() >= 3 ? node -> definition.words.at(2) : std::string() ;
+
+    if ( type.empty() || name.empty() )
+    return ;
+
+    internal::TechniqueFileTexture texture ;
+    texture.ttype = TextureTypeFromString ( type ) ;
+    texture.name = name ;
+    texture.type = internal::TechniqueFileElementType::Texture ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Sets default values.
+
+    texture.pf = PixelFormat::RGBA ;
+    texture.ipf = InternalPixelFormat::RGBA ;
+    texture.pt = PixelType::Float ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Iterates through children nodes.
+
+    for ( auto subnode : node -> children )
+    {
+        if ( subnode -> definition.words.empty() )
+        continue ;
+
+        //////////////////////////////////////////////////////////////////////
+        // File definition. If this setting is used, it will overwrite any other
+        // settings used in the block.
+
+        if (subnode -> definition.words.at(0) == "File" &&
+            subnode -> definition.words.size() >= 2)
+        {
+            std::string file = subnode -> definition.words.at(1) ;
+            texture.file = file ;
+        }
+
+        //////////////////////////////////////////////////////////////////////
+        // Size definition.
+
+        else if (subnode -> definition.words.at(0) == "Size" &&
+                 subnode -> definition.words.size() >= 3)
+        {
+            int width  = static_cast<int>(strtol(subnode -> definition.words.at(1).c_str(), nullptr, 10)) ;
+            int height = static_cast<int>(strtol(subnode -> definition.words.at(2).c_str(), nullptr, 10)) ;
+            texture.size = std::make_pair(width, height) ;
+        }
+
+        //////////////////////////////////////////////////////////////////////
+        // PixelFormat definition.
+
+        else if (subnode -> definition.words.at(0) == "PixelFormat" &&
+                 subnode -> definition.words.size() >= 2)
+        {
+            std::string pf = subnode -> definition.words.at(1) ;
+            texture.pf = PixelFormatFromString ( pf ) ;
+        }
+
+        //////////////////////////////////////////////////////////////////////
+        // InternalPixelFormat definition.
+
+        else if (subnode -> definition.words.at(0) == "InternalPixelFormat" &&
+                 subnode -> definition.words.size() >= 2)
+        {
+            std::string ipf = subnode -> definition.words.at(1) ;
+            texture.ipf = InternalPixelFormatFromString ( ipf ) ;
+        }
+
+        //////////////////////////////////////////////////////////////////////
+        // PixelType definition.
+
+        else if (subnode -> definition.words.at(0) == "PixelType" &&
+                 subnode -> definition.words.size() >= 2)
+        {
+            std::string pt = subnode -> definition.words.at(1) ;
+            texture.pt = PixelTypeFromString ( pt ) ;
+        }
+    }
+
+    context -> textures [name] = texture ;
+}
+
 TechniqueHolderList TechniqueFileParser::createTechniques ( const internal::TechniqueFileContext* context )
 {
     //////////////////////////////////////////////////////////////////////
@@ -664,6 +767,7 @@ TechniqueHolderList TechniqueFileParser::createTechniques ( const internal::Tech
     return TechniqueHolderList () ;
 
     TechniqueHolderList techniques ;
+    GreDebug ( "[INFO] Scanning Context Tree..." ) << gendl ;
 
     //////////////////////////////////////////////////////////////////////
     // Here we will first try to load every programs.
@@ -699,13 +803,54 @@ TechniqueHolderList TechniqueFileParser::createTechniques ( const internal::Tech
         program -> attachShaders ( loaded ) ;
         program -> finalize () ;
 
-#ifdef GreIsDebugMode
         //////////////////////////////////////////////////////////////////////
         // Check finalize status in debugging mode.
 
+#ifdef GreIsDebugMode
         if ( !program -> isFinalized() )
         GreDebug ( "[WARN] Program '" ) << program -> getName () << "' could not be finalized." << gendl ;
+
+        else
+        GreDebug ( "[INFO] Found Program '" ) << program -> getName() << "'." << gendl ;
 #endif
+    }
+
+    //////////////////////////////////////////////////////////////////////
+    // Creates Textures objects before framebuffers.
+
+    for ( auto it : context -> textures )
+    {
+        //////////////////////////////////////////////////////////////////////
+        // See if we need to load a bundled file or a custom blank pixel buffer.
+
+        if ( !it.second.file.empty() )
+        {
+            //////////////////////////////////////////////////////////////////////
+            // Load from the file given.
+            TextureHolder texture = ResourceManager::Get() -> getTextureManager() -> loadBundledFile (it.second.name ,
+                it.second.file , it.second.ttype ,
+                ResourceLoaderOptions()) ;
+
+            if ( !texture.isInvalid() )
+            GreDebug ( "[INFO] Found Texture '" ) << texture -> getName() << "'." << gendl ;
+        }
+
+        else
+        {
+            //////////////////////////////////////////////////////////////////////
+            // Configure a new texture.
+
+            size_t psize = PixelFormatGetCount ( it.second.pf ) * PixelTypeGetSize ( it.second.pt ) ;
+            if ( psize == 0 ) continue ;
+
+            TextureHolder texture = ResourceManager::Get() -> getTextureManager() -> loadFromNewPixelBuffer (it.second.name ,
+                it.second.size.first , it.second.size.second , it.second.depth ,
+                it.second.pf , it.second.ipf , it.second.pt ,
+                it.second.ttype , psize) ;
+
+            if ( !texture.isInvalid() )
+            GreDebug ( "[INFO] Found Texture '" ) << texture -> getName() << "'." << gendl ;
+        }
     }
 
     //////////////////////////////////////////////////////////////////////
@@ -719,6 +864,8 @@ TechniqueHolderList TechniqueFileParser::createTechniques ( const internal::Tech
         RenderFramebufferHolder framebuffer = ResourceManager::Get() -> getFramebufferManager() -> loadBlank ( it.first ) ;
         if ( framebuffer.isInvalid() ) continue ;
 
+        framebuffer -> bind () ;
+
         //////////////////////////////////////////////////////////////////////
         // Draw / Read buffers.
 
@@ -727,9 +874,28 @@ TechniqueHolderList TechniqueFileParser::createTechniques ( const internal::Tech
         framebuffer -> setViewport ( it.second.viewport ) ;
 
         //////////////////////////////////////////////////////////////////////
-        // We can't do anything more for now. The technique has to bind the correct
-        // textures when rendering. For example , it has to check the framebuffer
-        // binding when setting an alias for the light shadow texture.
+        // Attaches textures to the framebuffer.
+
+        for ( auto it2 : it.second.staticattachments )
+        {
+            TextureHolder texture = ResourceManager::Get() -> getTextureManager() -> findFirstHolder ( it2.second ) ;
+            if ( texture.isInvalid() ) continue ;
+
+            framebuffer -> setAttachment ( it2.first , texture ) ;
+        }
+
+        //////////////////////////////////////////////////////////////////////
+        // Check the framebuffer completness. Normally , after creating the
+        // framebuffer , it should be complete.
+
+        if ( !framebuffer -> isComplete() )
+        GreDebug ( "[WARN] Framebuffer '" ) << framebuffer -> getName() << "' is incomplete." << gendl ;
+
+        //////////////////////////////////////////////////////////////////////
+        // We don't have to do anything more.
+
+        framebuffer -> unbind () ;
+        GreDebug ( "[INFO] Found Framebuffer '" ) << framebuffer -> getName() << "'." << gendl ;
     }
 
     //////////////////////////////////////////////////////////////////////
@@ -743,11 +909,15 @@ TechniqueHolderList TechniqueFileParser::createTechniques ( const internal::Tech
         TechniqueHolder technique = ResourceManager::Get() -> getTechniqueManager () -> loadBlank ( it.first ) ;
         if ( technique.isInvalid() ) continue ;
 
+        GreDebug ( "[INFO] Found Technique '" ) << technique -> getName() << "'." << gendl ;
+
         //////////////////////////////////////////////////////////////////////
         // Lets make the technique usable.
 
         HardwareProgramHolder program = ResourceManager::Get() -> getHardwareProgramManager () -> getProgram ( it.second.program ) ;
         if ( !program.isInvalid() ) technique -> setHardwareProgram ( program ) ;
+
+        GreDebug ( "[INFO] Added Program '" ) << program -> getName() << "'." << gendl ;
 
         technique -> setLightingMode ( it.second.lightingmode ) ;
 

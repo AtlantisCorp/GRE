@@ -46,7 +46,7 @@ namespace internal
     /// @brief Defines an element.
     enum class TechniqueFileElementType : int
     {
-        Shader , Program , Technique , Context , Framebuffer
+        Shader , Program , Technique , Context , Framebuffer , Texture
     };
 
     struct TechniqueFileElement
@@ -58,6 +58,7 @@ namespace internal
     /// @brief Technique File's Framebuffer definition.
     struct TechniqueFileFramebuffer : TechniqueFileElement
     {
+        std::map < RenderFramebufferAttachement , std::string > staticattachments ;
         std::map < TechniqueParam , RenderFramebufferAttachement > attachements ;
         RenderColorBuffer writebuffer ;
         RenderColorBuffer readbuffer ;
@@ -95,12 +96,29 @@ namespace internal
     };
 
     //////////////////////////////////////////////////////////////////////
+    /// @brief Technique File's Texture definition.
+    struct TechniqueFileTexture : TechniqueFileElement
+    {
+        TextureType ttype ;
+        std::string name ;
+        std::string file ;
+
+        PixelFormat pf ;
+        InternalPixelFormat ipf ;
+        PixelType pt ;
+
+        std::pair < int , int > size ;
+        int depth ;
+    };
+
+    //////////////////////////////////////////////////////////////////////
     /// @brief Technique File's Context.
     struct TechniqueFileContext : TechniqueFileElement
     {
         std::map < std::string , TechniqueFileProgram > programs ;
         std::map < std::string , TechniqueFileFramebuffer > framebuffers ;
         std::map < std::string , TechniqueFileTechnique > techniques ;
+        std::map < std::string , TechniqueFileTexture > textures ;
     };
 
     //////////////////////////////////////////////////////////////////////
@@ -264,6 +282,11 @@ protected:
     /// @brief Interprets the given node as a Framebuffer.
     //////////////////////////////////////////////////////////////////////
     virtual void convertFramebuffer ( internal::TechniqueFileContext* context , const internal::TechniqueFileNode* node ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Interprets the given node as a Texture.
+    //////////////////////////////////////////////////////////////////////
+    virtual void convertTexture ( internal::TechniqueFileContext* context , const internal::TechniqueFileNode* node ) ;
 
     //////////////////////////////////////////////////////////////////////
     /// @brief Creates techniques using the context object.

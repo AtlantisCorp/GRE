@@ -319,7 +319,7 @@ void RenderPass::renderTechniqueWithNodeAndLights (const Renderer* renderer ,
 {
     if ( node.isInvalid() || technique.isInvalid() )
     return ;
-    
+
     if ( !node->isRenderable() )
     return ;
 
@@ -355,9 +355,6 @@ void RenderPass::renderTechniqueWithNodeAndLights (const Renderer* renderer ,
     //////////////////////////////////////////////////////////////////////
     // Binds the node. Notes that if the node does not contains any renderable,
     // we do not render it.
-    
-    if ( node -> isRenderable() )
-    node -> getMesh() -> bind ( technique ) ;
 
     node -> use ( technique ) ;
 
@@ -365,9 +362,6 @@ void RenderPass::renderTechniqueWithNodeAndLights (const Renderer* renderer ,
     // Binds every lights and render the node.
 
     renderTechniqueWithLights ( renderer , technique , node , lights ) ;
-    
-    if ( node -> isRenderable() )
-    node -> getMesh() -> unbind ( technique ) ;
 
     //////////////////////////////////////////////////////////////////////
     // After using lights and textures , we should always reset the
@@ -408,7 +402,7 @@ void RenderPass::renderTechniqueWithLights (const Renderer* renderer ,
     {
         for ( auto light : lights )
         if ( !light.isInvalid() )
-        light -> use ( technique , false ) ;
+        light -> bindLight ( technique ) ;
 
         renderTechniqueWithNode ( renderer , technique , node ) ;
     }
@@ -420,7 +414,7 @@ void RenderPass::renderTechniqueWithLights (const Renderer* renderer ,
             if ( light.isInvalid() )
             continue ;
 
-            light -> use ( technique , false ) ;
+            light -> bindLight ( technique ) ;
 
             renderTechniqueWithNode ( renderer , technique , node ) ;
 
@@ -492,7 +486,15 @@ void RenderPass::renderTechniqueWithNode (const Renderer* renderer ,
     renderer -> draw ( technique ) ;
 
     else
-    renderer -> draw ( node ) ;
+    {
+        if ( node -> isRenderable() )
+        node -> getMesh() -> bind ( technique ) ;
+
+        renderer -> draw ( node ) ;
+
+        if ( node -> isRenderable() )
+        node -> getMesh() -> unbind ( technique ) ;
+    }
 }
 
 void RenderPass::onWindowSizedEvent ( const WindowSizedEvent & e )

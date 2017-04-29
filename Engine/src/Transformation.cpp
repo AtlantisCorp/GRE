@@ -16,10 +16,10 @@
  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  copies of the Software, and to permit persons to whom the Software is
  furnished to do so, subject to the following conditions:
- 
+
  The above copyright notice and this permission notice shall be included in
  all copies or substantial portions of the Software.
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -37,36 +37,36 @@ GreBeginNamespace
 Transformation::Transformation()
 : iTranslation(0,0,0), iRotation(), iScale(1,1,1)
 {
-    
+
 }
 
 Transformation::Transformation(const Vector3& translation)
 : iTranslation(translation), iRotation(), iScale(1,1,1)
 {
-    
+
 }
 
 Transformation::Transformation(const Vector3& translation, const Matrix4& rotation)
 : iTranslation(translation), iRotation(rotation), iScale(1,1,1)
 {
-    
+
 }
 
 Transformation::Transformation(const Vector3& translation, const Matrix4& rotation, const Vector3& scale)
 : iTranslation(translation), iRotation(rotation), iScale(scale)
 {
-    
+
 }
 
 Transformation::Transformation(const Transformation& other)
 : iTranslation(other.iTranslation), iRotation(other.iRotation), iScale(other.iScale)
 {
-    
+
 }
 
 Transformation::~Transformation()
 {
-    
+
 }
 
 void Transformation::translate(const Vector3 &translation)
@@ -87,26 +87,25 @@ const Vector3& Transformation::getTranslation() const
 void Transformation::setDirection(const Vector3 &direction)
 {
 	//////////////////////////////////////////////////////////////////////
-	// [04.14.2017] On ubuntu 14.04 , glm has a 'bug' where the rotation 
+	// [04.14.2017] On ubuntu 14.04 , glm has a 'bug' where the rotation
 	// function is broken : 'glm::lenght2' is used with a vec3 but needs a
 	// quat so it does not compile. So , we use here a manual computing
 	// method from internet.
-	
+
 #ifndef GrePlatformUnix
 
 	Vector3 orig = glm::normalize(Vector3(0.0f, 1.0f, 0.0f)) ;
 	Vector3 dest = glm::normalize(direction) ;
-	
     iRotation = glm::rotation( orig , dest ) ;
-    
-#else 
+
+#else
 
 	Vector3 up = Vector3 ( 0.0f , 1.0f , 0.0f ) ;
 	Vector3 xaxis = glm::normalize ( glm::cross( up , direction ) ) ;
 	Vector3 yaxis = glm::normalize( glm::cross( direction , xaxis ) ) ;
-	
+
 	Matrix3 result = glm::mat3(0.0f) ;
-	
+
 	result[0][0] = xaxis.x ;
 	result[0][1] = yaxis.x ;
 	result[0][2] = direction.x ;
@@ -114,13 +113,13 @@ void Transformation::setDirection(const Vector3 &direction)
 	result[1][0] = xaxis.y ;
 	result[1][1] = yaxis.y ;
 	result[1][2] = direction.y ;
-	
+
 	result[2][0] = xaxis.z ;
 	result[2][1] = yaxis.z ;
 	result[2][2] = direction.z ;
-	
+
 	iRotation = glm::toQuat(result) ;
-	
+
 #endif
 }
 
@@ -158,15 +157,15 @@ Matrix4 Transformation::get() const
 {
     //Matrix4 rotation = glm::toMat4(iRotation) ;
     //Matrix4 identity = glm::mat4 (1.0f) ;
-    
+
     Matrix4 result = glm::mat4 ( 1.0f ) ;
-    
-    //result = glm::scale(result, iScale) ;
+
+    result = glm::scale(result, iScale) ;
     result = glm::translate(result, iTranslation) ;
     result = result * glm::toMat4(iRotation) ;
-    
+
     return result ;
-    
+
     //return glm::translate(glm::scale(rotation * identity, iScale), iTranslation);
 }
 
@@ -179,6 +178,8 @@ void Transformation::apply(const Gre::Transformation &transformation)
 
 Transformation Transformation::Default = Transformation();
 
+Vector3 Transformation::Right = Vector3 ( 1.0f , 0.0f , 0.0f ) ;
+Vector3 Transformation::Up = Vector3 ( 0.0f,  1.0f , 0.0f ) ;
+Vector3 Transformation::Forward = Vector3 ( 0.0f , 0.0f , 1.0f ) ;
+
 GreEndNamespace
-
-

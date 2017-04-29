@@ -165,6 +165,12 @@ public:
     virtual bool binded () const = 0 ;
 
     //////////////////////////////////////////////////////////////////////
+    /// @brief Returns true if the framebuffer is complete, i.e. it can be
+    /// used to render on it, or read from it.
+    //////////////////////////////////////////////////////////////////////
+    virtual bool isComplete () const = 0 ;
+
+    //////////////////////////////////////////////////////////////////////
     /// @brief Returns the attachment.
     //////////////////////////////////////////////////////////////////////
     virtual FramebufferAttachment & getAttachment ( const RenderFramebufferAttachement & value ) ;
@@ -233,13 +239,13 @@ protected:
     /// set appropriate settings to create and manage it.
     ///
     //////////////////////////////////////////////////////////////////////
-    virtual bool _bindAttachment ( const FramebufferAttachment & attachment ) const = 0 ;
+    virtual bool bindAttachment ( const FramebufferAttachment & attachment ) const = 0 ;
 
     //////////////////////////////////////////////////////////////////////
     /// @brief Unbinds the given attchament. If the attachment is a renderbuffer,
     /// destruction of this buffer should be done by the framebuffer implementation.
     //////////////////////////////////////////////////////////////////////
-    virtual void _unbindAttachment ( const FramebufferAttachment & attachment ) const = 0 ;
+    virtual void unbindAttachment ( const FramebufferAttachment & attachment ) const = 0 ;
 
 protected:
 

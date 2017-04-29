@@ -48,7 +48,7 @@ FreeMovingCamera::FreeMovingCamera(const std::string &name)
     iArrowDownState = KeyState::Released ;
     iArrowLeftState = KeyState::Released ;
     iArrowRightState = KeyState::Released ;
-    
+
     iSensibility = 3.0f ;
     iSensitivity = 0.2f ;
 }
@@ -94,7 +94,7 @@ void FreeMovingCamera::onCursorMovedEvent(const Gre::CursorMovedEvent &e)
     forward.x = cosf(glm::radians(iAnglePhi)) * cosf(glm::radians(iAngleTheta)) ;
     forward.z = cosf(glm::radians(iAnglePhi)) * sinf(glm::radians(iAngleTheta)) ;
     forward.y = sinf(glm::radians(iAnglePhi)) ;
-    setTarget ( iPosition + forward ) ;
+    setTarget ( iPosition + glm::normalize(forward) ) ;
 }
 
 void FreeMovingCamera::onKeyDownEvent(const KeyDownEvent &e)
@@ -131,7 +131,7 @@ void FreeMovingCamera::onUpdateEvent(const UpdateEvent &e)
 
     if ( iArrowUpState == KeyState::Pressed )
     {
-        Vector3 direction = iTarget - iPosition ;
+        Vector3 direction = getDirection() ;
         Vector3 step = direction * iSensibility * e.elapsedTime.count() ;
 
         setPosition ( iPosition + step ) ;
@@ -140,7 +140,7 @@ void FreeMovingCamera::onUpdateEvent(const UpdateEvent &e)
 
     if ( iArrowDownState == KeyState::Pressed )
     {
-        Vector3 direction = iTarget - iPosition ;
+        Vector3 direction = getDirection() ;
         Vector3 step = direction * iSensibility * e.elapsedTime.count() ;
 
         setPosition ( iPosition - step ) ;
@@ -149,7 +149,7 @@ void FreeMovingCamera::onUpdateEvent(const UpdateEvent &e)
 
     if ( iArrowLeftState == KeyState::Pressed )
     {
-        Vector3 direction = iTarget - iPosition ;
+        Vector3 direction = getDirection() ;
         Vector3 directionRight = glm::cross(direction, iUpwardDirection) ;
         Vector3 stepRight = directionRight * iSensibility * e.elapsedTime.count() ;
 
@@ -159,7 +159,7 @@ void FreeMovingCamera::onUpdateEvent(const UpdateEvent &e)
 
     if ( iArrowRightState == KeyState::Pressed )
     {
-        Vector3 direction = iTarget - iPosition ;
+        Vector3 direction = getDirection() ;
         Vector3 directionRight = glm::cross(direction, iUpwardDirection) ;
         Vector3 stepRight = directionRight * iSensibility * e.elapsedTime.count() ;
 

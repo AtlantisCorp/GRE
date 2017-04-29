@@ -109,7 +109,14 @@ void TechniqueFilePreprocessor::processLine ( const std::string & line )
             else
                 iSourceResult += line ;
         }
-        
+
+        else if ( words.at(0) == "#" )
+        {
+            //////////////////////////////////////////////////////////////////////
+            // If we encounter a comment , we just skip the line.
+            return ;
+        }
+
         else
         {
             iSourceResult += line ;

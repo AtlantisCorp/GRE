@@ -81,7 +81,7 @@ CameraHolder & LightRenderNode::getLightCamera ()
     GreAutolock ; return iLightCamera ;
 }
 
-void LightRenderNode::use ( const TechniqueHolder & technique , bool prepareforrender ) const
+void LightRenderNode::bindLight ( const TechniqueHolder & technique ) const
 {
     GreAutolock ;
 
@@ -131,12 +131,6 @@ void LightRenderNode::use ( const TechniqueHolder & technique , bool prepareforr
     if ( !iLightCamera.isInvalid() )
     technique -> setAliasedParameterStructValue ( lightalias , TechniqueParam::LightShadowMatrix ,
             HdwProgVarType::Matrix4 , iLightCamera -> getProjectionViewMatrix() ) ;
-
-    //////////////////////////////////////////////////////////////////////
-    // Don't forget to call the parent's use.
-
-    if ( prepareforrender )
-    RenderNode::use ( technique ) ;
 }
 
 void LightRenderNode::loadLightCamera ()
@@ -190,15 +184,15 @@ void LightRenderNode::loadShadowTexture ( uint32_t width , uint32_t height )
 
     //////////////////////////////////////////////////////////////////////
     // Tries to create a shadow texture for the light.
-    
+
     TextureManagerHolder tm = ResourceManager::Get() -> getTextureManager() ;
-    
+
     if ( tm.isInvalid() )
     {
         GreDebug( "[WARN] Trying to create Shadow Texture but TextureManager is not loaded." ) << gendl ;
         return ;
     }
-    
+
     iShadowTexture = tm -> loadFromNewPixelBuffer (getName() + ".shadowtex" ,
                                                    width , height , 0 ,
                                                    PixelFormat::DepthComponent ,
@@ -206,7 +200,7 @@ void LightRenderNode::loadShadowTexture ( uint32_t width , uint32_t height )
                                                    PixelType::Float ,
                                                    TextureType::Texture2D ,
                                                    sizeof(float) ) ;
-    
+
     if ( iShadowTexture.isInvalid() )
     GreDebug( "[WARN] Error creating Shadow Texture '" ) << getName() + ".shadowtex" << "'." << gendl ;
 }
@@ -227,6 +221,16 @@ bool LightRenderNode::isLightVisibleFrom ( const CameraHolder & camera ) const
         value = iLight -> intersectFrustrum ( camera -> getFrustrum() ) != IntersectionResult::Outside ;
 
     return value ;
+}
+
+const TextureHolder & LightRenderNode::getShadowTexture () const
+{
+    GreAutolock ; return iShadowTexture ;
+}
+
+void LightRenderNode::setShadowTexture ( const TextureHolder & texture )
+{
+    GreAutolock ; iShadowTexture = texture ;
 }
 
 void LightRenderNode::onPositionChangedEvent(const Gre::PositionChangedEvent &e)

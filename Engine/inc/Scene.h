@@ -90,9 +90,12 @@ public:
 
     //////////////////////////////////////////////////////////////////////
     /// @brief Binds the actual light , with its camera projection-view
-    /// matrix , and use the RenderNode::use() function.
+    /// matrix.
+    /// Used by the renderpass when binding the light. Notes that when
+    /// binding the node as a normal rendernode, the use() function is used
+    /// and so the light parameters will be discarded.
     //////////////////////////////////////////////////////////////////////
-    virtual void use ( const TechniqueHolder & technique , bool prepareforrender = true ) const ;
+    virtual void bindLight ( const TechniqueHolder & technique ) const ;
 
     //////////////////////////////////////////////////////////////////////
     /// @brief Loads a Camera bound to the active light position and direction's
@@ -110,6 +113,16 @@ public:
     /// @brief Returns true if the light is visible from the camera.
     //////////////////////////////////////////////////////////////////////
     virtual bool isLightVisibleFrom ( const CameraHolder & camera ) const ;
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    virtual const TextureHolder & getShadowTexture () const ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Changes the texture bound to 'LightShadowTex' parameter when
+    /// calling '::bindLight()'.
+    //////////////////////////////////////////////////////////////////////
+    virtual void setShadowTexture ( const TextureHolder & texture ) ;
 
 protected:
 

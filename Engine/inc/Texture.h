@@ -141,6 +141,9 @@ enum class TextureDepthStencilMode : int
 /// @brief Translates the TextureType value to a String.
 std::string TextureTypeToString(const TextureType& type);
 
+/// @brief Translates a string to a TextureType.
+TextureType TextureTypeFromString ( const std::string & type ) ;
+
 //////////////////////////////////////////////////////////////////////
 /// @brief Represents a Texture Resource object.
 ///
@@ -420,7 +423,7 @@ public:
     /// @brief Sets the default texture.
     //////////////////////////////////////////////////////////////////////
     virtual void setDefaultTexture ( const TextureHolder & texture ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Creates a new pixel buffer and loads it to a texture object.
     //////////////////////////////////////////////////////////////////////
@@ -439,7 +442,7 @@ protected:
 
     /// @brief Default's texture if set. By default, this texture is null. A user
     /// should set a default texture to whatever he wants. Every Materials will load
-    /// their textures using this one. 
+    /// their textures using this one.
     TextureHolder iDefaultTexture ;
 };
 

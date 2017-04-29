@@ -16,7 +16,7 @@
     {
         [GLSL "learnopengl.lightingmaps.vert"]
     }
-    
+
     [Fragment]
     {
         [GLSL "learnopengl.lightingmaps.frag"]
@@ -28,23 +28,23 @@
     [Attribute Position position]
     [Attribute Normal normal]
     [Attribute Texture texCoords]
-    
+
     [Alias ModelMatrix model]
     [Alias ViewMatrix view]
     [Alias ProjectionMatrix projection]
-    
+
     [Alias CameraPosition viewPos]
-    
+
     [Alias MaterialTexDiffuse "material.diffuse"]
     [Alias MaterialTexSpecular "material.specular"]
     [Alias MaterialShininess "material.shininess"]
-    
+
     [Alias Light0 light]
     [Alias LightPosition position]
     [Alias LightAmbient ambient]
     [Alias LightDiffuse diffuse]
     [Alias LightSpecular specular]
-    
+
     [LightingMode AllLights]
     [Program learnopengl.lightingmaps.program]
 }
@@ -63,23 +63,23 @@
     [Attribute Position position]
     [Attribute Normal normal]
     [Attribute Texture texCoords]
-    
+
     [Alias ModelMatrix model]
     [Alias ViewMatrix view]
     [Alias ProjectionMatrix projection]
-    
+
     [Alias CameraPosition viewPos]
-    
+
     [Alias MaterialTexDiffuse "material.diffuse"]
     [Alias MaterialTexSpecular "material.specular"]
     [Alias MaterialShininess "material.shininess"]
-    
+
     [Alias Light0 light]
     [Alias LightDirection direction]
     [Alias LightAmbient ambient]
     [Alias LightDiffuse diffuse]
     [Alias LightSpecular specular]
-    
+
     [LightingMode AllLights]
     [Program learnopengl.lightcasters.directionnal.program]
 }
@@ -99,10 +99,19 @@
     [Fragment] { [GLSL learnopengl.shadowmapping.phase2.frag] }
 }
 
+[Texture Texture2D learnopengl.shadowmapping.depthtexture]
+{
+    [Size "1024" "1024"]
+    [PixelFormat DepthComponent]
+    [InternalPixelFormat DepthComponent]
+    [PixelType Float]
+}
+
 [Framebuffer learnopengl.shadowmapping.depthbuffer]
 {
-    [Attachement Depth LightTexShadow]
     [Viewport "0" "0" "1024" "1024"]
+    [DrawBuffer None]
+    [Texture Depth learnopengl.shadowmapping.depthtexture]
 }
 
 [Technique learnopengl.shadowmapping.phase1.technique]
@@ -110,7 +119,7 @@
     [Attribute Position position]
     [Alias LightShadowMatrix lightSpaceMatrix]
     [Alias ModelMatrix model]
-    
+
     [LightingMode PerLight]
     [Program learnopengl.shadowmapping.phase1.program]
     [Framebuffer learnopengl.shadowmapping.depthbuffer]
@@ -121,18 +130,17 @@
     [Attribute Position position]
     [Attribute Normal normal]
     [Attribute Texture texCoords]
-    
+
     [Alias ModelMatrix model]
     [Alias ViewMatrix view]
     [Alias ProjectionMatrix projection]
     [Alias LightShadowMatrix lightSpaceMatrix]
-    
+
     [Alias MaterialTexDiffuse diffuseTexture]
     [Alias LightTexShadow shadowMap]
     [Alias LightPosition lightPos]
     [Alias CameraPosition viewPos]
-    
+
     [LightingMode AllLights]
     [Program learnopengl.shadowmapping.phase2.program]
 }
-

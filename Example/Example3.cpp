@@ -211,19 +211,19 @@ void MyApplicationExample::createScene()
     WinOptions ["Window.Styles"] = styles ;
 
     WindowContextAttributes attr ({
-        
+
         WCAAccelerated ,
         WCADoubleBuffer ,
-        
+
         WCADepthSize , (WindowContextAttribute) 32 ,
-        
+
         WCAMultiSample ,
         WCASampleBuffers , (WindowContextAttribute) 1 ,
         WCASamples , (WindowContextAttribute) 4 ,
-        
+
         WCAMajorVersion , (WindowContextAttribute) 3 ,
         WCAMinorVersion , (WindowContextAttribute) 2
-        
+
     }) ;
 
     WinOptions ["Window.ContextAttributes"] = attr ;
@@ -257,6 +257,8 @@ void MyApplicationExample::createScene()
     auto scene = smanager -> load ( "Default Scene" , SceneOptions ) .lock() ;
     if ( scene.isInvalid() ) exit( -5 ) ;
 
+    RenderFramebufferHolder shadowframebuffer ( nullptr ) ;
+
     {
         // Rendering in GRE in the viewport at the left. We need to create a 'RenderPass' which is an object
         // that hols everything for the renderer to render the 'pass'. Notes that a pass can be a multi-framebuffer
@@ -271,7 +273,8 @@ void MyApplicationExample::createScene()
         renderpass -> setClearViewport ( true ) ;
 
         //////////////////////////////////////////////////////////////////////
-        // Tries to get the 'learnopengl.shadowmapping.technique' technique.
+        // Tries to get the 'learnopengl.shadowmapping.technique' technique. The
+        // tech1 framebuffer is used by the light to bind the shadows.
 
         auto tech1 = tmanager -> get ( "learnopengl.shadowmapping.phase1.technique" ) ;
         if ( tech1.isInvalid() ) exit( -6 ) ;
@@ -279,10 +282,13 @@ void MyApplicationExample::createScene()
         auto tech2 = tmanager -> get ( "learnopengl.shadowmapping.phase2.technique" ) ;
         if ( tech2.isInvalid() ) exit ( -6 ) ;
 
+        shadowframebuffer = tech1 -> getFramebuffer () ;
+        if ( shadowframebuffer.isInvalid() ) exit ( -21 ) ;
+
         renderpass -> addPreProcessTechnique ( tech1 ) ;
         renderpass -> setTechnique ( tech2 ) ;
 
-        renderpass -> addNamedParameter("shadows", HdwProgVarType::Int1, (int) 1) ;
+        renderpass -> addNamedParameter("shadows", HdwProgVarType::Int1, (int) 0) ;
 
         //////////////////////////////////////////////////////////////////////
         // Tries to create an FPS-like Camera.
@@ -309,10 +315,10 @@ void MyApplicationExample::createScene()
     {
         auto mmanager = ResourceManager::Get() -> getMeshManager() ;
         auto textures = ResourceManager::Get() -> getTextureManager() ;
-        
+
         //////////////////////////////////////////////////////////////////////
         // Loads a default blank texture of 256x256 to fill null textures.
-        
+
         TextureHolder defaulttexture = textures -> loadFromArea("Default", TextureType::Texture2D, 256, 256) ;
         if ( defaulttexture.isInvalid() ) exit ( -20 ) ;
         textures -> setDefaultTexture(defaulttexture) ;
@@ -322,22 +328,30 @@ void MyApplicationExample::createScene()
         root -> setBoundingBox ( BoundingBox({-1000.0f, -1000.0f, -1000.0f} , {1000.0f, 1000.0f, 1000.0f}) ) ;
 
         //////////////////////////////////////////////////////////////////////
-        // Adds a directionnal light to the scene.
+        // Adds a directionnal light to the scene. Links the shadow texture to
+        // the framebuffer from the first technique.
 
         LightRenderNodeHolder lightnode = scene -> createLightNode ( "Directionnal Light" ) ;
         if ( lightnode.isInvalid() ) exit ( -7 ) ;
 
         lightnode -> loadLightCamera () ;
-        lightnode -> loadShadowTexture ( 1024 , 1024 ) ;
 
         LightHolder & light = lightnode -> getLight () ;
         light -> setAmbient ({ 0.5f , 0.5f , 0.5f }) ;
         light -> setDiffuse ({ 0.8f , 0.8f , 0.8f }) ;
         light -> setSpecular ({ 1.0f , 1.0f , 1.0f }) ;
-        light -> setPosition ({ 0.0f , 0.0f , 2.0f }) ;
-        light -> setDirection ({ 0.0f , 0.0f , -1.0f }) ;
+        light -> setPosition ({ 0.0f , 5.0f , -1.0f }) ;
+        light -> setDirection ({ 0.0f , -1.1f , 0.0f }) ;
 
         scene -> addLightNode ( lightnode ) ;
+
+        const FramebufferAttachment & depthbuffer = shadowframebuffer -> getAttachment ( RenderFramebufferAttachement::Depth ) ;
+        if ( depthbuffer.type != RenderFramebufferAttachementType::Texture ) exit ( -23 ) ;
+
+        const TextureHolder & depthtexture = depthbuffer.texture ;
+        if ( depthtexture.isInvalid() ) exit ( -24 ) ;
+
+        lightnode -> setShadowTexture ( depthtexture ) ;
 
         //////////////////////////////////////////////////////////////////////
         // Loads 'Cube.obj' and creates a node to render the 'Cube' mesh.
@@ -353,6 +367,13 @@ void MyApplicationExample::createScene()
         if ( cubenode.isInvalid() ) exit ( -10 ) ;
 
         cubenode -> setMesh ( cubemesh ) ;
+
+        //////////////////////////////////////////////////////////////////////
+        // Configure the node's position and scale.
+
+        cubenode -> setPosition ({ 0.0f , 2.0f , -1.0f }) ;
+        cubenode -> setScale ( 4.0f ) ;
+
         scene -> addNode ( cubenode ) ;
 
         //////////////////////////////////////////////////////////////////////
@@ -371,19 +392,13 @@ void MyApplicationExample::createScene()
         cubenode -> getMaterial () -> setSpecularTexture ( cubespectex ) ;
 
         //////////////////////////////////////////////////////////////////////
-        // Configure the node's position and scale.
-
-        cubenode -> setPosition ({ 0.0f , 2.0f , -1.0f }) ;
-        cubenode -> setScale ( 4.0f ) ;
-
-        //////////////////////////////////////////////////////////////////////
         // Make a plane.
 
         RenderNodeHolder planenode = scene -> createNode( "node.plane" ) ;
         if ( planenode.isInvalid() ) exit ( -13 ) ;
 
         planenode -> setMesh ( cubemesh ) ;
-        planenode -> setPosition ({ 0.0f , 0.0f , -1.5f }) ;
+        planenode -> setPosition ({ 0.0f , 0.0f , -1.0f }) ;
 
         planenode -> getMaterial () -> setUseTextures ( true ) ;
         planenode -> getMaterial () -> setDiffuseTexture ( cubetex ) ;

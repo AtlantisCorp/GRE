@@ -178,8 +178,8 @@ void Mesh::bind ( const TechniqueHolder & technique ) const
     // changed , we use that specific function to know if we have to update the
     // VAO's values.
 
-    if ( !iBinder->needUpdate() && !isAnyBufferDirty() )
-    return ;
+    //if ( !iBinder->needUpdate() && !isAnyBufferDirty() )
+    //return ;
 
     //////////////////////////////////////////////////////////////////////
     // Binds Vertex Descriptors Attributes to the technique. This step is

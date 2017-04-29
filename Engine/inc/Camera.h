@@ -51,8 +51,8 @@ typedef Dictionnary CameraOptions ;
 /// @brief Base Class to every Camera.
 ///
 /// You can define your own Camera behaviour by subclassing the event's
-/// routines. Dont' forget to update the iFrustrum property when changing
-/// positions, look' position or any other properties.
+/// routines. The Camera updates its matrix when position, direction
+///
 ///
 //////////////////////////////////////////////////////////////////////
 class DLL_PUBLIC Camera : public Renderable
@@ -67,7 +67,10 @@ public:
 
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    Camera( const std::string& name, const Vector3& position, const Vector3& to, const Vector3& up = Vector3(.0f,1.0f,.0f) );
+    Camera(const std::string& name,
+           const Vector3& position,
+           const Vector3& to,
+           const Vector3& up = Transformation::Up );
 
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
@@ -77,7 +80,9 @@ public:
     /// @brief Looks to the given position, from given position, and with
     /// given up vector.
     //////////////////////////////////////////////////////////////////////
-    virtual void lookAt ( const Vector3& origin, const Vector3& point, const Vector3& up = Vector3(.0f,1.0f,.0f) ) ;
+    virtual void lookAt (const Vector3& origin,
+                         const Vector3& point,
+                         const Vector3& up = Transformation::Up ) ;
 
     ////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////
