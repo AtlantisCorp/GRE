@@ -93,8 +93,8 @@ protected:
     std::map < ResourceType , std::vector <std::string> > iDirectories ;
 };
 
-/// @brief SpecializedCountedObjectHolder for ResourceBundle.
-typedef SpecializedCountedObjectHolder<ResourceBundle> ResourceBundleHolder ;
+/// @brief Holder for ResourceBundle.
+typedef Holder<ResourceBundle> ResourceBundleHolder ;
 
 GreEndNamespace
 

@@ -158,14 +158,11 @@ protected:
     mutable bool iCompiled;
 };
 
-/// @brief SpecializedCountedObjectHolder for HardwareShaderPrivate.
-typedef SpecializedCountedObjectHolder<HardwareShader> HardwareShaderHolder;
+/// @brief Holder for HardwareShaderPrivate.
+typedef Holder<HardwareShader> HardwareShaderHolder;
 
 /// @brief SpecializedResourceHolderList for HardwareShaderPrivate.
 typedef SpecializedResourceHolderList<HardwareShader> HardwareShaderHolderList;
-
-/// @brief SpecializedCountedObjectUser for HardwareShader.
-typedef SpecializedCountedObjectUser<HardwareShader> HardwareShaderUser;
 
 GreEndNamespace
 

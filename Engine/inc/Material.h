@@ -184,6 +184,14 @@ public:
     //////////////////////////////////////////////////////////////////////
     virtual void clearTextures () ;
 
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    virtual bool emissive () const ;
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    virtual void setEmissive ( bool value ) ;
+
 private:
 
     /// @brief Emission color.
@@ -211,19 +219,17 @@ private:
     /// every possible Technique Parameters. Notes that the default blank texture is used if no texture is
     /// provided for the given parameter. By default, this parameter is false.
     bool iUseTextures ;
+
+    /// @brief True if this material should use lights technique parameters instead of materials parameters. This
+    /// should be the case when the material is an emissive one , used mainly for lights.
+    bool iEmissive ;
 };
 
-/// @brief SpecializedCountedObjectHolder for MaterialPrivate.
-typedef SpecializedCountedObjectHolder<Material> MaterialHolder;
+/// @brief Holder for MaterialPrivate.
+typedef Holder<Material> MaterialHolder;
 
 /// @brief SpecializedResourceHolderList for MaterialPrivate.
 typedef SpecializedResourceHolderList<Material> MaterialHolderList;
-
-/// @brief SpecializedCountedObjectUser.
-typedef SpecializedCountedObjectUser<Material> MaterialUser;
-
-/// @brief std::vector for Material.
-typedef std::vector<MaterialUser> MaterialVector;
 
 //////////////////////////////////////////////////////////////////////
 /// @brief ResourceLoader for MaterialPrivate.
@@ -286,8 +292,8 @@ public:
     virtual MaterialHolder loadHolder ( const MaterialHolder & material ) ;
 };
 
-/// @brief SpecializedCountedObjectHolder for MaterialManager.
-typedef SpecializedCountedObjectHolder < MaterialManager > MaterialManagerHolder ;
+/// @brief Holder for MaterialManager.
+typedef Holder < MaterialManager > MaterialManagerHolder ;
 
 GreEndNamespace
 

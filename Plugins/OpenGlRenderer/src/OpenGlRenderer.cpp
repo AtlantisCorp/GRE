@@ -118,8 +118,38 @@ void OpenGlRenderer::setClearRegion(const Gre::Surface &box) const
 
 void OpenGlRenderer::setViewport(const Gre::Viewport &viewport) const
 {
-    glDisable(GL_SCISSOR_TEST);
+    if ( iContext.isInvalid() )
+    return ;
+
+    // Notes the framebuffer should update the viewport values. Here we disable
+    // the scissor test to be sure no external scissor will destroy our render.
+
+    glDisable ( GL_SCISSOR_TEST ) ;
     glViewport(viewport.left, viewport.top, viewport.width, viewport.height);
+
+    // Now we should enable scissor test if the viewport has a special region.
+
+    if ( viewport.regioned() )
+    {
+        Gre::Surface region = viewport.region () ;
+
+        glEnable ( GL_SCISSOR_TEST ) ;
+        glScissor ( region.left , region.top , region.width , region.height ) ;
+    }
+
+    // Now set clear depth and clear colors.
+
+    glClearColor ( viewport.clearcolor().getRed() , viewport.clearcolor().getGreen() ,
+                   viewport.clearcolor().getBlue() , viewport.clearcolor().getAlpha() ) ;
+
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
+
+    glClearDepth ( viewport.cleardepth() ) ;
+
+    // Now compute clear buffers.
+
+    clearBuffers ( viewport.clearbuffers() ) ;
 }
 
 void OpenGlRenderer::setClearDepth(float value) const
@@ -150,17 +180,17 @@ void OpenGlRenderer::clearBuffers ( const Gre::ClearBuffers & buffers ) const
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
-void OpenGlRenderer::drawMesh(const Gre::MeshHolder &mesh) const
+void OpenGlRenderer::drawSubMesh(const Gre::SubMeshHolder & submesh) const
 {
     GreAutolock ;
 
-    if ( mesh.isInvalid() )
+    if ( submesh.isInvalid() )
         return ;
 
     //////////////////////////////////////////////////////////////////////
     // Binds the index buffer and send elements to OpenGl.
 
-    const Gre::HardwareIndexBufferHolder& index = mesh->getIndexBuffer();
+    const Gre::HardwareIndexBufferHolder& index = submesh->getIndexBuffer();
     index->bind() ;
 
     glDrawElements(translateGlMode(index->getIndexDescriptor().getMode()),

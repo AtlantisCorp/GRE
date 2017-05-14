@@ -60,14 +60,14 @@ HardwareProgramManager::~HardwareProgramManager() noexcept ( false )
 
 }
 
-HardwareShaderUser HardwareProgramManager::getShaderByName(const std::string &name)
+HardwareShaderHolder HardwareProgramManager::getShaderByName(const std::string &name)
 {
     GreAutolock ;
 
     auto it = iShaders.find(name);
     if(it == iShaders.end())
     {
-        return HardwareShaderUser (nullptr);
+        return HardwareShaderHolder (nullptr);
     }
 
     else
@@ -76,14 +76,14 @@ HardwareShaderUser HardwareProgramManager::getShaderByName(const std::string &na
     }
 }
 
-const HardwareShaderUser HardwareProgramManager::getShaderByName(const std::string &name) const
+const HardwareShaderHolder HardwareProgramManager::getShaderByName(const std::string &name) const
 {
     GreAutolock ;
 
     auto it = iShaders.find(name);
     if(it == iShaders.end())
     {
-        return HardwareShaderUser (nullptr);
+        return HardwareShaderHolder (nullptr);
     }
 
     else
@@ -152,7 +152,7 @@ void HardwareProgramManager::unloadProgram(const HardwareProgramHolder &program)
 
         if ( it != iPrograms.end() ) {
 
-            removeListener ( EventProceederUser(program) ) ;
+            removeListener ( EventProceederHolder(program) ) ;
             iPrograms.erase(it) ;
 
         }

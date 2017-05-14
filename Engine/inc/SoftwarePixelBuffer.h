@@ -201,14 +201,11 @@ protected:
     int iDepth ;
 };
 
-/// @brief SpecializedCountedObjectHolder for SoftwarePixelBufferPrivate.
-typedef SpecializedCountedObjectHolder<SoftwarePixelBuffer> SoftwarePixelBufferHolder;
+/// @brief Holder for SoftwarePixelBufferPrivate.
+typedef Holder<SoftwarePixelBuffer> SoftwarePixelBufferHolder;
 
 /// @brief SpecializedResourceHolderList for SoftwarePixelBufferPrivate.
 typedef SpecializedResourceHolderList<SoftwarePixelBuffer> SoftwarePixelBufferHolderList;
-
-/// @brief SpecializedCountedObjectUser for SoftwarePixelBuffer .
-typedef SpecializedCountedObjectUser<SoftwarePixelBuffer> SoftwarePixelBufferUser ;
 
 GreEndNamespace
 

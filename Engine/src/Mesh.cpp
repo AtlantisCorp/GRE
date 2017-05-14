@@ -39,84 +39,168 @@ GreBeginNamespace
 
 // ---------------------------------------------------------------------------------------------------
 
-MeshBinder::~MeshBinder()
+SubMesh::SubMesh ( const std::string & name )
+: Gre::Renderable ( name )
 {
 
+}
+
+SubMesh::~SubMesh () noexcept ( false )
+{
+
+}
+
+void SubMesh::setIndexBuffer ( const HardwareIndexBufferHolder & buffer )
+{
+    GreAutolock ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Check if index buffer is different from our.
+
+    if ( buffer == iIndexBuffer )
+    return ;
+
+    //////////////////////////////////////////////////////////////////////
+    // The index buffer should always receive updates events. So , clear
+    // the current index buffer and adds the new buffer to the listeners.
+
+    removeListener (iIndexBuffer ) ;
+    iIndexBuffer = buffer ;
+    addFilteredListener ( buffer , { EventType::Update } ) ;
+}
+
+const HardwareIndexBufferHolder & SubMesh::getIndexBuffer () const
+{
+    GreAutolock ; return iIndexBuffer ;
+}
+
+void SubMesh::addVertexBuffer ( const HardwareVertexBufferHolder & buffer )
+{
+    GreAutolock ;
+
+    //////////////////////////////////////////////////////////////////////
+    // If buffer is invalid , we don't add it.
+
+    if ( buffer.isInvalid() )
+    return ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Checks if the vertex buffer is not already in the list.
+
+    auto check = std::find ( iVertexBuffers.begin() , iVertexBuffers.end() , buffer ) ;
+    if ( check != iVertexBuffers.end() ) return ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Adds the buffer also to the listeners.
+
+    iVertexBuffers.push_back ( buffer ) ;
+    addFilteredListener ( buffer , { EventType::Update } ) ;
+}
+
+const HardwareVertexBufferHolderList & SubMesh::getVertexBuffers () const
+{
+    GreAutolock ; return iVertexBuffers ;
+}
+
+void SubMesh::clearVertexBuffers ()
+{
+    GreAutolock ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Remove each vertex buffers from listeners.
+
+    for ( auto buffer : iVertexBuffers )
+    removeListener ( buffer ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Clears the list.
+
+    iVertexBuffers.clear () ;
+}
+
+void SubMesh::addSharedVertexBuffer (const HardwareVertexBufferHolder & buffer ,
+                                     uintptr_t first ,
+                                     size_t elements)
+{
+    GreAutolock ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Check if buffer is not already present.
+
+    for ( auto check : iSharedBindings )
+    if ( check.buffer == buffer )
+    return ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Adds the binding to the shared list but not to the listeners list.
+    // The updates events to this buffer will come from the mesh.
+
+    HardwareBufferBinding binding ;
+    binding.buffer = buffer ;
+    binding.first = first ;
+    binding.elements = elements ;
+    iSharedBindings.push_back ( binding ) ;
+}
+
+const std::list < HardwareBufferBinding > & SubMesh::getSharedVertexBuffers () const
+{
+    GreAutolock ; return iSharedBindings ;
+}
+
+void SubMesh::clearSharedVertexBuffers ()
+{
+    GreAutolock ; iSharedBindings.clear () ;
+}
+
+void SubMesh::setDefaultMaterial ( const MaterialHolder & material )
+{
+    GreAutolock ; iDefaultMaterial = material ;
+}
+
+const MaterialHolder & SubMesh::getDefaultMaterial () const
+{
+    GreAutolock ; return iDefaultMaterial ;
+}
+
+void SubMesh::clear ()
+{
+    GreAutolock ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Destroys the index buffer and remove it from listeners.
+
+    if ( !iIndexBuffer.isInvalid() )
+    removeListener ( iIndexBuffer ) ;
+    iIndexBuffer.clear () ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Destroys local and shared vertex buffers.
+
+    clearVertexBuffers () ;
+    clearSharedVertexBuffers () ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Destroys material.
+
+    iDefaultMaterial.clear () ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Finish with renderable.
+
+    Renderable::clear () ;
 }
 
 // ---------------------------------------------------------------------------------------------------
 
-Mesh::Mesh ( )
-: Gre::Renderable( )
-, iIndexBuffer ( nullptr ) , iBoundingBox ( )
-, iOriginalFile ( "" ) , iDefaultMaterial(nullptr)
-{
-    iBinder = nullptr ;
-}
-
 Mesh::Mesh ( const std::string & name )
-: Gre::Renderable( name )
-, iIndexBuffer( nullptr ) , iBoundingBox ( )
-, iOriginalFile( "" ) , iDefaultMaterial(nullptr)
+: Gre::Renderable ( name )
 {
-
+    iBoundingBoxUpdate = true ;
 }
 
 Mesh::~Mesh() noexcept ( false )
 {
 
-}
-
-void Mesh::setVertexBuffers(const HardwareVertexBufferHolderList &attributes)
-{
-    GreAutolock ; iVertexBuffers = attributes ;
-}
-
-const HardwareVertexBufferHolderList & Mesh::getVertexBuffers() const
-{
-    GreAutolock ; return iVertexBuffers ;
-}
-
-void Mesh::setIndexBuffer(const HardwareIndexBufferHolder &buffer)
-{
-    GreAutolock ; iIndexBuffer = buffer ;
-}
-
-const HardwareIndexBufferHolder & Mesh::getIndexBuffer() const
-{
-    GreAutolock ; return iIndexBuffer ;
-}
-
-void Mesh::unload ()
-{
-    GreAutolock ;
-
-    iVertexBuffers.clear() ;
-    iIndexBuffer.clear() ;
-    iBoundingBox.clear() ;
-    iDefaultMaterial.clear() ;
-
-    Resource::unload() ;
-}
-
-void Mesh::clearVertexBuffers()
-{
-    GreAutolock ; iVertexBuffers.clear() ;
-}
-
-void Mesh::clearIndexBuffer()
-{
-    GreAutolock ; iIndexBuffer.clear() ;
-}
-
-void Mesh::setBoundingBox ( const BoundingBox & bbox )
-{
-    GreAutolock ; iBoundingBox = bbox ;
-}
-
-const BoundingBox & Mesh::getBoundingBox ( ) const
-{
-    GreAutolock ; return iBoundingBox ;
 }
 
 const std::string & Mesh::getOriginalFilepath () const
@@ -129,137 +213,393 @@ void Mesh::setOriginalFilepath ( const std::string & filepath )
     GreAutolock ; iOriginalFile = filepath ;
 }
 
-const MaterialHolder & Mesh::getDefaultMaterial() const
-{
-    GreAutolock ; return iDefaultMaterial ;
-}
-
-MaterialHolder & Mesh::getDefaultMaterial()
-{
-    GreAutolock ; return iDefaultMaterial ;
-}
-
-void Mesh::setDefaultMaterial(const MaterialHolder &material)
-{
-    GreAutolock ; iDefaultMaterial = material ;
-}
-
-void Mesh::use ( const TechniqueHolder& technique ) const
+void Mesh::addSharedVertexBuffer ( const HardwareVertexBufferHolder & buffer )
 {
     GreAutolock ;
 
     //////////////////////////////////////////////////////////////////////
-    // The mesh'es default material is already bound by the node's use
-    // function. In fact , the node use the mesh material if no other material
-    // has been given to the node. More , if this mesh does not contain any
-    // material , the node will keep a blank material.
+    // Skip this buffer if invalid.
+
+    if ( buffer.isInvalid() )
+    return ;
 
     //////////////////////////////////////////////////////////////////////
-    // Binds Custom parameters.
+    // Check this buffer is not already in the list.
 
-    TechniqueParamBinder::use ( technique ) ;
+    auto check = std::find ( iSharedVertexBuffers.begin() , iSharedVertexBuffers.end() , buffer ) ;
+    if ( check != iSharedVertexBuffers.end() ) return ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Adds this buffer to the list. Notes this buffer is updated by this
+    // mesh , so adds it to the listeners.
+
+    iSharedVertexBuffers.push_back ( buffer ) ;
+    addFilteredListener ( buffer , { EventType::Update } ) ;
+}
+
+const HardwareVertexBufferHolder Mesh::getSharedVertexBuffer ( size_t idx ) const
+{
+    GreAutolock ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Check index validity.
+
+    if ( idx >= iSharedVertexBuffers.size() )
+    return HardwareVertexBufferHolder ( nullptr ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Returns the indexed shared vertex buffer.
+
+    auto it = iSharedVertexBuffers.begin() ;
+    std::advance ( it , idx ) ;
+
+    return *it ;
+}
+
+const HardwareVertexBufferHolderList & Mesh::getSharedVertexBuffers () const
+{
+    GreAutolock ; return iSharedVertexBuffers ;
+}
+
+void Mesh::clearSharedVertexBuffers ()
+{
+    GreAutolock ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Removes all buffers from listeners.
+
+    for ( auto buffer : iSharedVertexBuffers )
+    removeListener ( buffer ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Clears the buffers.
+
+    iSharedVertexBuffers.clear () ;
+}
+
+void Mesh::addSubMesh ( const SubMeshHolder & submesh )
+{
+    GreAutolock ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Check submesh validity.
+
+    if ( submesh.isInvalid() )
+    return ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Check this submesh is not already in the mesh.
+
+    auto check = std::find ( iSubMeshes.begin() , iSubMeshes.end() , submesh ) ;
+    if ( check != iSubMeshes.end() ) return ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Adds this submesh , and makes him listens this mesh for updates.
+
+    iSubMeshes.push_back ( submesh ) ;
+    addFilteredListener ( submesh , { EventType::Update } ) ;
+}
+
+void Mesh::removeSubMesh ( size_t idx )
+{
+    GreAutolock ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Check index validity.
+
+    if ( idx >= iSubMeshes.size() )
+    return ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Erases the submesh. Also removes it from listeners.
+
+    auto it = iSubMeshes.begin() ;
+    std::advance ( it , idx ) ;
+
+    removeListener ( *it ) ;
+    iSubMeshes.erase ( it ) ;
+}
+
+const std::list < SubMeshHolder > & Mesh::getSubMeshes () const
+{
+    GreAutolock ; return iSubMeshes ;
+}
+
+void Mesh::clearSubMeshes ()
+{
+    GreAutolock ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Removes every submeshes from listening.
+
+    for ( auto submesh : iSubMeshes )
+    removeListener ( submesh ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Clears the submeshes.
+
+    iSubMeshes.clear () ;
+}
+
+void Mesh::setBoundingBox ( const BoundingBox & bbox )
+{
+    GreAutolock ; iBoundingBox = bbox ;
+}
+
+const BoundingBox & Mesh::getBoundingBox ( ) const
+{
+    GreAutolock ; return iBoundingBox ;
+}
+
+void Mesh::setBoundingBoxUpdate ( bool value )
+{
+    GreAutolock ; iBoundingBoxUpdate = value ;
+}
+
+bool Mesh::getBoundingBoxUpdate () const
+{
+    GreAutolock ; return iBoundingBoxUpdate ;
 }
 
 void Mesh::bind ( const TechniqueHolder & technique ) const
 {
     GreAutolock ;
 
-    if ( !iBinder )
+    //////////////////////////////////////////////////////////////////////
+    // Uses implementation specific binding.
+
+    iBind ( technique ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Copies the submeshes list in order to use them.
+
+    iCurrentSubMeshList = iSubMeshes ;
+    iCurrentSubMesh = iCurrentSubMeshList.begin () ;
+}
+
+bool Mesh::bindNextSubMesh ( const TechniqueHolder & technique ) const
+{
+    GreAutolock ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Check the submesh iterator validity. If iterator is end() , this means
+    // either the submesh list is empty either the list has been passed through ,
+    // so we should returns false.
+
+    if ( iCurrentSubMesh == iCurrentSubMeshList.end() )
+    return false ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Tries to bind the submesh pointed by the iterator.
+
+    iBindSubMesh ( *iCurrentSubMesh , technique ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Returns success.
+
+    return true ;
+}
+
+void Mesh::unbindCurrentSubMesh ( const TechniqueHolder & technique ) const
+{
+    GreAutolock ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Check iterator validity.
+
+    if ( iCurrentSubMesh == iCurrentSubMeshList.end() )
     return ;
 
     //////////////////////////////////////////////////////////////////////
-    // Uses the binder implementation to make some driver - specific adjusts.
+    // Tries to unbind the submesh.
 
-    iBinder -> bind ( this , technique ) ;
-
-    //////////////////////////////////////////////////////////////////////
-    // Notes that as in OpenGl , and maybe other APIs , we don't need to
-    // updates the bound values in , for example , a VAO if the datas did not
-    // changed , we use that specific function to know if we have to update the
-    // VAO's values.
-
-    //if ( !iBinder->needUpdate() && !isAnyBufferDirty() )
-    //return ;
+    iUnbindSubMesh ( *iCurrentSubMesh , technique ) ;
 
     //////////////////////////////////////////////////////////////////////
-    // Binds Vertex Descriptors Attributes to the technique. This step is
-    // fundamental before rendering the object through the shader program.
-    // Notes that a HardwareProgram must be valid in the technique.
+    // Sets the next iterator.
 
-    if ( !technique->getHardwareProgram().isInvalid() )
-    {
-        const HardwareProgramHolder & program = technique -> getHardwareProgram() ;
-
-        for ( auto buffer : iVertexBuffers )
-        {
-            if ( !buffer.isInvalid() )
-            {
-                if ( buffer->isEnabled() && buffer->getSize() )
-                {
-                    const VertexDescriptor & vdesc = buffer -> getVertexDescriptor() ;
-                    buffer -> bind() ;
-
-                    for ( auto component : vdesc.getComponents() )
-                    {
-                        program -> setVertexAttrib (technique -> getAttribName ( component.alias ) ,
-                                                    component.elements ,
-                                                    component.type ,
-                                                    component.normalize ,
-                                                    vdesc.getStride(component) ,
-                                                    (void*) (buffer -> getData() + vdesc.getOffset(component)) ) ;
-                    }
-
-                    buffer -> unbind () ;
-                }
-            }
-        }
-
-        //////////////////////////////////////////////////////////////////////
-        // Reset the buffers dirty flag.
-
-        if ( !iIndexBuffer.isInvalid() )
-        iIndexBuffer -> clean () ;
-
-        for ( auto buffer : iVertexBuffers )
-            if ( !buffer.isInvalid() )
-            buffer -> clean () ;
-    }
+    std::advance ( iCurrentSubMesh , 1 ) ;
 }
 
 void Mesh::unbind ( const TechniqueHolder & technique ) const
 {
     GreAutolock ;
 
-    if ( !iBinder )
-        return ;
+    //////////////////////////////////////////////////////////////////////
+    // Calls implementation specific unbinding.
+
+    iUnbind ( technique ) ;
 
     //////////////////////////////////////////////////////////////////////
-    // Uses the binder implementation to make some driver - specific adjusts.
+    // Reset the submesh list.
 
-    iBinder -> unbind ( this , technique ) ;
+    iCurrentSubMeshList.clear () ;
+    iCurrentSubMesh = iCurrentSubMeshList.end () ;
 }
 
-void Mesh::setBinder(Gre::MeshBinder *binder)
-{
-    GreAutolock ; iBinder = binder ;
-}
-
-bool Mesh::isAnyBufferDirty () const
+void Mesh::clear ()
 {
     GreAutolock ;
 
-    if ( !iIndexBuffer.isInvalid() )
-    if ( iIndexBuffer -> isDirty() )
-    return true ;
+    //////////////////////////////////////////////////////////////////////
+    // Clear vertex buffers and submeshes.
 
-    for ( auto buffer : iVertexBuffers )
+    clearSharedVertexBuffers () ;
+    clearSubMeshes () ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Clear properties.
+
+    iOriginalFile = std::string () ;
+    iBoundingBox.clear () ;
+    iBoundingBoxUpdate = true ;
+    iCurrentSubMeshList.clear () ;
+    iCurrentSubMesh = iCurrentSubMeshList.end () ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Calls parent clear.
+
+    Renderable::clear () ;
+}
+
+const SubMeshHolder Mesh::getCurrentSubMesh () const
+{
+    GreAutolock ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Check iterator validity.
+
+    if ( iCurrentSubMesh == iCurrentSubMeshList.end () )
+    return SubMeshHolder ( nullptr ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Returns the submesh.
+
+    return *iCurrentSubMesh ;
+}
+
+void Mesh::setDefaultMaterial ( const MaterialHolder & material )
+{
+    GreAutolock ;
+
+    if ( material.isInvalid() )
+    return ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Loop through submeshes to set the material.
+
+    for ( auto submesh : iSubMeshes )
+    submesh -> setDefaultMaterial ( material ) ;
+}
+
+void Mesh::iBindSubMesh ( const SubMeshHolder & submesh , const TechniqueHolder & technique ) const
+{
+    GreAutolock ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Checks submesh and technique validity.
+
+    if ( submesh.isInvalid() || technique.isInvalid() )
+    return ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Gets the program bound to the technique and checks it is binded.
+
+    auto program = technique -> getHardwareProgram () ;
+    if ( program.isInvalid() ) return ;
+
+    if ( !program -> binded () )
+    return ;
+
+    //////////////////////////////////////////////////////////////////////
+    // For each vertex buffer , binds them to the program.
+
+    for ( auto buffer : submesh -> getVertexBuffers () )
     {
-        if ( !buffer.isInvalid() )
-        if ( buffer -> isDirty() )
-        return true ;
+        if ( buffer.isInvalid() )
+        continue ;
+
+        if ( !buffer->isEnabled() || !buffer->getSize() )
+        continue ;
+
+        //////////////////////////////////////////////////////////////////////
+        // Binds the buffer in order to set attributes to the program.
+
+        buffer -> bind () ;
+        auto descriptor = buffer -> getVertexDescriptor () ;
+
+        //////////////////////////////////////////////////////////////////////
+        // Binds the attributes to the program.
+
+        for ( auto component : descriptor.getComponents () )
+        {
+            program -> setVertexAttrib (technique -> getAttribName ( component.alias ) ,
+                                        component.elements ,
+                                        component.type ,
+                                        component.normalize ,
+                                        descriptor.getStride(component) ,
+                                        (void*) (buffer -> getData() + descriptor.getOffset(component)) ) ;
+        }
+
+        //////////////////////////////////////////////////////////////////////
+        // Unbinds the buffer.
+
+        buffer -> unbind () ;
     }
 
-    return false ;
+    //////////////////////////////////////////////////////////////////////
+    // Do the same thing , but for shared vertex buffers.
+
+    for ( auto binding : submesh -> getSharedVertexBuffers () )
+    {
+        auto buffer = binding.buffer ;
+
+        if ( buffer.isInvalid() )
+        continue ;
+
+        if ( !buffer->isEnabled() || !buffer->getSize() )
+        continue ;
+
+        //////////////////////////////////////////////////////////////////////
+        // Binds the buffer in order to set attributes to the program.
+
+        buffer -> bind () ;
+        auto descriptor = buffer -> getVertexDescriptor () ;
+
+        //////////////////////////////////////////////////////////////////////
+        // Binds the attributes to the program.
+
+        for ( auto component : descriptor.getComponents () )
+        {
+            program -> setVertexAttrib (technique -> getAttribName ( component.alias ) ,
+                                        binding.elements ,
+                                        component.type ,
+                                        component.normalize ,
+                                        descriptor.getStride(component) ,
+                                        (void*) (buffer -> getData() + descriptor.getOffset(component) + binding.first) ) ;
+        }
+
+        //////////////////////////////////////////////////////////////////////
+        // Unbinds the buffer.
+
+        buffer -> unbind () ;
+    }
+}
+
+void Mesh::iUnbindSubMesh ( const SubMeshHolder & submesh , const TechniqueHolder & technique ) const
+{
+    GreAutolock ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Checks program validity and disable every Vertex Attributes.
+
+    auto program = technique -> getHardwareProgram () ;
+    if ( program.isInvalid() ) return ;
+
+    if ( !program -> binded () )
+    return ;
+
+    program -> disableVertexAttribs () ;
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -276,10 +616,10 @@ MeshLoader::~MeshLoader () noexcept ( false )
 
 // ---------------------------------------------------------------------------------------------------
 
-MeshUser MeshManager::Triangle(float sz)
+MeshHolder MeshManager::Triangle(float sz)
 {
     MeshManagerHolder holder = ResourceManager::Get()->getMeshManager() ;
-    if ( holder.isInvalid() ) return MeshUser ( nullptr ) ;
+    if ( holder.isInvalid() ) return MeshHolder ( nullptr ) ;
 
     float vertex [] = {
         - sz , 0.0f , 0.0f ,
@@ -287,7 +627,7 @@ MeshUser MeshManager::Triangle(float sz)
         0.0f ,   sz , 0.0f
     } ;
 
-    unsigned int indices [] = { 0, 1, 2 } ;
+    unsigned int indices [] = { 0, 2, 1 } ;
 
     //////////////////////////////////////////////////////////////////////
     // Vertex Descriptor.
@@ -323,17 +663,23 @@ MeshUser MeshManager::Triangle(float sz)
     ibuf->setEnabled(true) ;
 
     //////////////////////////////////////////////////////////////////////
-    // Resulting Mehs.
+    // Resulting Mesh.
 
-    MeshHolder mesh = MeshHolder ( new Mesh("Triangle") ) ;
-    mesh -> setVertexBuffers(vbuflist) ;
-    mesh -> setIndexBuffer(ibuf) ;
+    MeshHolder mesh = holder -> loadBlank ( "mesh.triangle" ) ;
+
+    SubMeshHolder submesh = new SubMesh ( "mesh.triangle.submesh" ) ;
+    submesh -> addVertexBuffer ( vbuf ) ;
+    submesh -> setIndexBuffer ( ibuf ) ;
+    mesh -> addSubMesh ( submesh ) ;
+
+    BoundingBox bbox ( { -sz , 0.0 , 0.0 } , { sz , sz , 0.0 } ) ;
+    mesh -> setBoundingBox ( bbox ) ;
 
     //////////////////////////////////////////////////////////////////////
     // Registers the resulting mesh.
 
     holder -> iHolders.add(mesh) ;
-    return MeshUser ( mesh ) ;
+    return mesh ;
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -341,7 +687,7 @@ MeshUser MeshManager::Triangle(float sz)
 MeshManager::MeshManager ( )
 : SpecializedResourceManager ( )
 {
-    getFactory().registers("OBJ File Loader", new ObjMeshLoader ()) ;
+    getFactory().registers( "mesh.loader.obj" , new ObjMeshLoader () ) ;
 }
 
 MeshManager::~MeshManager ( ) noexcept ( false )
@@ -349,17 +695,17 @@ MeshManager::~MeshManager ( ) noexcept ( false )
 
 }
 
-MeshUser MeshManager::findFirstFile(const std::string &filepath)
+MeshHolder MeshManager::findFirstFile(const std::string &filepath)
 {
     for ( auto mesh : iHolders ) {
         if ( !mesh.isInvalid() && mesh->getOriginalFilepath() == filepath )
-            return mesh ;
+        return mesh ;
     }
 
-    return MeshUser ( nullptr ) ;
+    return MeshHolder ( nullptr ) ;
 }
 
-int MeshManager::loadBundledFile(const std::string &path, const ResourceLoaderOptions &ops)
+MeshHolder MeshManager::loadBundledFile(const std::string &path, const ResourceLoaderOptions &ops)
 {
     GreAutolock ;
 
@@ -367,7 +713,7 @@ int MeshManager::loadBundledFile(const std::string &path, const ResourceLoaderOp
     // Checks input values.
 
     if ( path.empty() )
-    return 0 ;
+    return MeshHolder ( nullptr ) ;
 
     //////////////////////////////////////////////////////////////////////
     // Tries to find a suitable loader for the given file.
@@ -384,12 +730,12 @@ int MeshManager::loadBundledFile(const std::string &path, const ResourceLoaderOp
     std::string bundlepath = subdir + Platform::GetSeparator() + path ;
 
     if ( bundlepath.empty() )
-    return 0 ;
+    return MeshHolder ( nullptr ) ;
 
     std::string realpath = ResourceManager::Get() -> findBundledFile(ResourceType::Mesh, bundlepath) ;
 
     if ( realpath.empty() )
-    return 0 ;
+    return MeshHolder ( nullptr ) ;
 
     //////////////////////////////////////////////////////////////////////
     // Now tries to load the file as a normal file.
@@ -397,13 +743,13 @@ int MeshManager::loadBundledFile(const std::string &path, const ResourceLoaderOp
     return loadFile ( realpath , ops ) ;
 }
 
-int MeshManager::loadFile(const std::string &path, const ResourceLoaderOptions &ops)
+MeshHolder MeshManager::loadFile(const std::string &path, const ResourceLoaderOptions &ops)
 {
     //////////////////////////////////////////////////////////////////////
     // Check input values.
 
     if ( path.empty() )
-    return 0 ;
+    return MeshHolder ( nullptr ) ;
 
     //////////////////////////////////////////////////////////////////////
     // Tries to find a suitable loader for the given file.
@@ -411,31 +757,44 @@ int MeshManager::loadFile(const std::string &path, const ResourceLoaderOptions &
     MeshLoader * loader = iFindBestLoader(path) ;
 
     if ( !loader )
-    return 0 ;
+    return MeshHolder ( nullptr ) ;
 
     //////////////////////////////////////////////////////////////////////
     // Tries to load the file using the loader.
 
-    MeshHolderList meshes = loader -> load ( path , ops ) ;
+    MeshHolder mesh = loader -> load ( path , ops ) ;
 
-    if ( meshes.empty() )
-    return 0 ;
+    if ( mesh.isInvalid() )
+    return MeshHolder ( nullptr ) ;
 
     //////////////////////////////////////////////////////////////////////
     // Registers and returns.
 
-    for ( auto mesh : meshes )
-    {
-        MeshBinder* binder = loadBinder() ;
+    iHolders.push_back ( mesh ) ;
+    addFilteredListener ( mesh , { EventType::Update } ) ;
 
-        if ( !binder )
-        continue ;
+    return mesh ;
+}
 
-        mesh -> setBinder(binder) ;
-        iHolders.add(mesh) ;
-    }
+MeshHolder MeshManager::loadBlank ( const std::string & name )
+{
+    GreAutolock ;
 
-    return meshes.size() ;
+    //////////////////////////////////////////////////////////////////////
+    // Checks name is not empty.
+
+    if ( name.empty() )
+    return MeshHolder ( nullptr ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Creates the new mesh , registers it to listeners and returns it.
+
+    MeshHolder mesh = create ( name ) ;
+
+    iHolders.push_back ( mesh ) ;
+    addFilteredListener ( mesh , { EventType::Update } ) ;
+
+    return mesh ;
 }
 
 MeshHolder MeshManager::get(const std::string &name)

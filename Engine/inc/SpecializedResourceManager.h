@@ -49,8 +49,7 @@ public:
 
     POOLED ( Pools::Referenced )
 
-    typedef SpecializedCountedObjectHolder<Class> ClassHolder ;
-    typedef SpecializedCountedObjectUser<Class> ClassUser ;
+    typedef Holder<Class> ClassHolder ;
     typedef SpecializedResourceHolderList<Class> ClassHolderList ;
 
     ////////////////////////////////////////////////////////////////////////
@@ -84,7 +83,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
     /// @brief Returns a Resource from given identifier.
     ////////////////////////////////////////////////////////////////////////
-    virtual ClassUser find ( const ResourceIdentifier & identifier )
+    virtual ClassHolder find ( const ResourceIdentifier & identifier )
     {
         GreAutolock ;
 
@@ -94,18 +93,18 @@ public:
             {
                 if ( holder->getIdentifier() == identifier )
                 {
-                    return ClassUser ( holder ) ;
+                    return ClassHolder ( holder ) ;
                 }
             }
         }
 
-        return ClassUser ( nullptr ) ;
+        return ClassHolder ( nullptr ) ;
     }
 
     ////////////////////////////////////////////////////////////////////////
     /// @brief Returns a Resource from given identifier.
     ////////////////////////////////////////////////////////////////////////
-    virtual const ClassUser find ( const ResourceIdentifier & identifier ) const
+    virtual const ClassHolder find ( const ResourceIdentifier & identifier ) const
     {
         GreAutolock ;
 
@@ -115,12 +114,12 @@ public:
             {
                 if ( holder->getIdentifier() == identifier )
                 {
-                    return ClassUser ( holder ) ;
+                    return ClassHolder ( holder ) ;
                 }
             }
         }
 
-        return ClassUser ( nullptr ) ;
+        return ClassHolder ( nullptr ) ;
     }
 
     ////////////////////////////////////////////////////////////////////////
@@ -147,7 +146,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
     /// @brief Returns the first Resource with given name.
     ////////////////////////////////////////////////////////////////////////
-    virtual ClassUser findFirst ( const std::string & name )
+    virtual ClassHolder findFirst ( const std::string & name )
     {
         GreAutolock ;
 
@@ -157,18 +156,18 @@ public:
             {
                 if ( holder->getName() == name )
                 {
-                    return ClassUser ( holder ) ;
+                    return ClassHolder ( holder ) ;
                 }
             }
         }
 
-        return ClassUser ( nullptr ) ;
+        return ClassHolder ( nullptr ) ;
     }
 
     ////////////////////////////////////////////////////////////////////////
     /// @brief Returns the first Resource with given name.
     ////////////////////////////////////////////////////////////////////////
-    virtual const ClassUser findFirst ( const std::string & name ) const
+    virtual const ClassHolder findFirst ( const std::string & name ) const
     {
         GreAutolock ;
 
@@ -178,12 +177,12 @@ public:
             {
                 if ( holder->getName() == name )
                 {
-                    return ClassUser ( holder ) ;
+                    return ClassHolder ( holder ) ;
                 }
             }
         }
 
-        return ClassUser ( nullptr ) ;
+        return ClassHolder ( nullptr ) ;
     }
 
     ////////////////////////////////////////////////////////////////////////
@@ -254,7 +253,7 @@ public:
             {
                 if ( (*it)->getIdentifier() == identifier )
                 {
-                    removeListener( EventProceederUser( (*it) ) ) ;
+                    removeListener( EventProceederHolder( (*it) ) ) ;
                     iHolders.erase(it);
                     return ;
                 }
@@ -311,7 +310,7 @@ protected:
 /// Resource.
 ///
 /// A subclass should follow the following pattern to create a new manager :
-///   - To create a new Resource , the function 'virtual ClassUser load ( ... )'
+///   - To create a new Resource , the function 'virtual ClassHolder load ( ... )'
 /// should always be implemented.
 ///   - You can also add any function of your choice.
 ///

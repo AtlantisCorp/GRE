@@ -68,7 +68,7 @@ ResourceManagerHolder ResourceManager::Get()
 ResourceManager::ResourceManager() : Resource ( )
 , iRendererManager( nullptr ) , iWindowManager( nullptr ) , iRenderSceneManager( nullptr )
 , iMaterialManager ( nullptr ) , iPluginManager ( nullptr ) , iMeshManager ( nullptr )
-, iAnimatorManager ( nullptr ) , iCameraManager ( nullptr ) , iTextureManager( nullptr )
+, iTextureManager( nullptr )
 , iRenderContextManager( nullptr ) , iProgramManager( nullptr )
 , iApplicationFactory ()
 {
@@ -137,34 +137,6 @@ void ResourceManager::initialize ()
 	GreDebug("[INFO] Created MaterialManager.") << gendl;
 #endif
 
-    iAnimatorManager = new AnimatorManager () ;
-
-	if ( iAnimatorManager.isInvalid() ) {
-#ifdef GreIsDebugMode
-		GreDebug("[ERRO] Can't create AnimatorManager.") << gendl;
-#endif
-		iInitialized = false ;
-		return ;
-	}
-
-#ifdef GreIsDebugMode
-	GreDebug("[INFO] Created AnimatorManager.") << gendl;
-#endif
-
-    iCameraManager = new CameraManager () ;
-
-	if ( iCameraManager.isInvalid() ) {
-#ifdef GreIsDebugMode
-		GreDebug("[ERRO] Can't create CameraManager.") << gendl;
-#endif
-		iInitialized = false ;
-		return ;
-	}
-
-#ifdef GreIsDebugMode
-	GreDebug("[INFO] Created CameraManager.") << gendl;
-#endif
-
     iTextureManager = new TextureManager () ;
 
     if ( iTextureManager.isInvalid() ) {
@@ -221,6 +193,17 @@ void ResourceManager::initialize ()
     GreDebug("[INFO] Created HardwareProgramManager.") << gendl ;
 #endif
 
+    iControllers = new ControllerManager () ;
+
+    if ( iControllers.isInvalid() )
+    {
+        GreDebug ( "[ERRO] Can't create 'ControllerManager'." ) << gendl ;
+        iInitialized = false ;
+        return ;
+    }
+
+    GreDebug ( "[INFO] Created 'ControllerManager'." ) << gendl ;
+
 	iInitialized = true ;
 
 #ifdef GreIsDebugMode
@@ -247,6 +230,9 @@ void ResourceManager::unload ()
         iPluginManager -> callStops() ;
     }
 
+    if ( !iControllers.isInvalid() )
+    iControllers.clear () ;
+
     if ( !iFramebufferManager.isInvalid() ) {
         iFramebufferManager -> unload () ;
         iFramebufferManager.clear () ;
@@ -260,15 +246,6 @@ void ResourceManager::unload ()
     if ( !iWindowManager.isInvalid() ) {
         iWindowManager->unload();
         iWindowManager.clear() ;
-    }
-
-    if ( !iCameraManager.isInvalid() ) {
-		iCameraManager->unload();
-        iCameraManager.clear() ;
-    }
-    if ( !iAnimatorManager.isInvalid() ) {
-		iAnimatorManager->unload() ;
-        iAnimatorManager.clear() ;
     }
 
     if ( !iMaterialManager.isInvalid() ) {
@@ -363,26 +340,6 @@ MeshManagerHolder ResourceManager::getMeshManager()
     GreAutolock ; return iMeshManager ;
 }
 
-void ResourceManager::setAnimatorManager(const AnimatorManagerHolder &animholder)
-{
-    GreAutolock ; iAnimatorManager = animholder ;
-}
-
-AnimatorManagerHolder ResourceManager::getAnimatorManager()
-{
-    GreAutolock ; return iAnimatorManager ;
-}
-
-void ResourceManager::setCameraManager(const CameraManagerHolder &camholder)
-{
-    GreAutolock ; iCameraManager = camholder ;
-}
-
-CameraManagerHolder ResourceManager::getCameraManager()
-{
-    GreAutolock ; return iCameraManager ;
-}
-
 void ResourceManager::setTextureManager ( const TextureManagerHolder & manager )
 {
     GreAutolock ; iTextureManager = manager ;
@@ -451,6 +408,16 @@ void ResourceManager::setFramebufferManager(const RenderFramebufferManagerHolder
 RenderFramebufferManagerHolder ResourceManager::getFramebufferManager()
 {
     GreAutolock ; return iFramebufferManager ;
+}
+
+void ResourceManager::setControllerManager ( const ControllerManagerHolder & holder )
+{
+    GreAutolock ; iControllers = holder ;
+}
+
+ControllerManagerHolder ResourceManager::getControllerManager ()
+{
+    GreAutolock ; return iControllers ;
 }
 
 ResourceBundleHolder ResourceManager::addBundle ( const std::string & name )

@@ -108,6 +108,11 @@ public:
     Variant ( const Variant & rhs ) ;
 
     //////////////////////////////////////////////////////////////////////
+    /// @brief Converts a const char [] C style string to std::string.
+    //////////////////////////////////////////////////////////////////////
+    Variant ( const char* cstr ) ;
+
+    //////////////////////////////////////////////////////////////////////
     /// @brief Copies the given object.
     //////////////////////////////////////////////////////////////////////
     template < typename Class > Variant ( const Class & object )
@@ -213,7 +218,7 @@ public:
 };
 
 /// @brief Associates a Variant to a string for key , also named a dictionnary.
-typedef std::map < std::string , Variant > Dictionnary ; 
+typedef std::map < std::string , Variant > Dictionnary ;
 
 GreEndNamespace
 

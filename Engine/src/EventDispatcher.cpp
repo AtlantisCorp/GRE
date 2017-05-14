@@ -16,10 +16,10 @@
  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  copies of the Software, and to permit persons to whom the Software is
  furnished to do so, subject to the following conditions:
- 
+
  The above copyright notice and this permission notice shall be included in
  all copies or substantial portions of the Software.
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -41,7 +41,7 @@ EventDispatcher::EventDispatcher(const std::string& name)
 , iStarted(false)
 , iShouldTerminate(false)
 {
-    
+
 }
 
 EventDispatcher::~EventDispatcher() noexcept ( false )
@@ -58,13 +58,13 @@ void EventDispatcher::start()
 #endif
         return ;
     }
-    
+
     GreAutolock ;
-    
+
     iDispatchThread = std::thread ( & EventDispatcher::iDispatchThreadFunction , this ) ;
     iStarted = true ;
     iShouldTerminate = false ;
-    
+
 #ifdef GreIsDebugMode
     GreDebugPretty() << "EventDispatcher '" << getName() << "' started." << Gre::gendl;
 #endif
@@ -74,14 +74,14 @@ void EventDispatcher::terminate()
 {
     // In order to terminate the thread properly, we set the 'iShouldTerminate' flag to true and
     // wait for the dispatch thread to join.
-    
+
     if ( iDispatchThread.joinable() )
     {
         {
             GreAutolock ;
             iShouldTerminate = true ;
         }
-        
+
         iDispatchThread.join() ;
         iStarted = false ;
         iShouldTerminate = false ;
@@ -99,7 +99,7 @@ void EventDispatcher::onEvent(Gre::EventHolder &e)
 {
     GreAutolock ;
     assert(!e.isInvalid() && "Argument 'e' is invalid.");
-    
+
     Event* nextevent = e->clone() ;
     iEventQueue.push(nextevent) ;
 }
@@ -108,7 +108,7 @@ void EventDispatcher::sendEvent(Gre::EventHolder &e)
 {
     GreAutolock ;
     assert(!e.isInvalid() && "Argument 'e' is invalid.");
-    
+
     Event* nextevent = e->clone () ;
     iEventQueue.push(nextevent) ;
 }
@@ -116,7 +116,7 @@ void EventDispatcher::sendEvent(Gre::EventHolder &e)
 void EventDispatcher::sendEventCommand(const Gre::EventSendingCommand &cmd)
 {
     GreAutolock ;
-    
+
     if ( !cmd.iEvent.isInvalid() && !cmd.iListeners.empty() )
     {
         EventSendingCommand nextcmd ;
@@ -141,7 +141,7 @@ void EventDispatcher::iDispatchThreadFunction(Gre::EventDispatcher *dispatcher)
 {
     if ( !dispatcher )
         return;
-    
+
     dispatcher->run();
 }
 
@@ -154,42 +154,42 @@ void EventDispatcher::iClearEvents()
 void EventDispatcher::run()
 {
     bool shouldterminate = false ;
-    
+
     while ( !shouldterminate )
     {
         GreAutolock ;
-        
+
         if ( !iEventQueue.empty() )
         {
             EventHolder & nextevent = iEventQueue.front() ;
-            
+
             if ( !nextevent.isInvalid() )
             {
                 EventProceeder::sendEvent( nextevent ) ;
             }
-            
+
             iEventQueue.pop() ;
         }
-        
+
         if ( !iEventCommandsQueue.empty() )
         {
             EventSendingCommand & nextcmd = iEventCommandsQueue.front() ;
             EventHolder & nextevent = nextcmd.iEvent ;
-            
+
             if ( !nextevent.isInvalid() )
             {
                 for ( auto it : nextcmd.iListeners )
                 {
                     if ( !it.second.isInvalid() )
                     {
-                        it.second.lock() -> onEvent(nextevent) ;
+                        it.second -> onEvent(nextevent) ;
                     }
                 }
             }
-            
+
             iEventCommandsQueue.pop() ;
         }
-        
+
         shouldterminate = iShouldTerminate ;
     }
 }

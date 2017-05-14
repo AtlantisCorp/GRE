@@ -161,12 +161,12 @@ void RenderPass::use ( const TechniqueHolder & technique ) const
     TechniqueParamBinder::use(technique);
 }
 
-void RenderPass::setCamera(const CameraHolder &camera)
+void RenderPass::setCamera(const RenderNodeHolder &camera)
 {
     GreAutolock ; iCamera = camera ;
 }
 
-const CameraHolder & RenderPass::getCamera() const
+const RenderNodeHolder & RenderPass::getCamera() const
 {
     GreAutolock ; return iCamera ;
 }
@@ -182,6 +182,7 @@ void RenderPass::render ( const Renderer * renderer ) const
         // Checks the viewport area : If it is null , we don't need to render
         // the pass.
 
+/*
         if ( !iViewport.getArea() )
         return ;
 
@@ -193,6 +194,7 @@ void RenderPass::render ( const Renderer * renderer ) const
         renderer -> setClearColor ( iClearColor ) ;
         renderer -> setClearDepth ( iClearDepth ) ;
         renderer -> clearBuffers ( iClearBuffers ) ;
+*/
 
         //////////////////////////////////////////////////////////////////////
         // Uses preprocessing techniques here. Those techniques will use adequate
@@ -243,9 +245,17 @@ void RenderPass::renderTechnique(const Gre::Renderer *renderer, const TechniqueH
 
     //////////////////////////////////////////////////////////////////////
     // First binds the technique. Binding the technique should also binds
-    // the framebuffer if it has one.
+    // the framebuffer. Notes a technique should always have a framebuffer
+    // object to bind. In fact , even the null framebuffer should be the
+    // default framebuffer.
+
+    auto framebuffer = technique -> getFramebuffer () ;
+
+    if ( framebuffer.isInvalid() )
+    return ;
 
     technique -> bind () ;
+    renderer -> setViewport ( framebuffer->getViewport() ) ;
 
     //////////////////////////////////////////////////////////////////////
     // If technique is Self-Rendered , use it and use the renderer to draw
@@ -259,43 +269,53 @@ void RenderPass::renderTechnique(const Gre::Renderer *renderer, const TechniqueH
 
     else
     {
-        RenderNodeHolderList nodes ;
-
         //////////////////////////////////////////////////////////////////////
         // When the Scene is invalid , we choose to use an empty node list and
         // so call the renderer draw function with the technique as argument. This
         // let the renderer choose if it should draw the technique as a Self-Rendered
         // or just left blank screen.
 
-        if ( !iScene.isInvalid() && !iCamera.isInvalid() )
-        nodes = iScene -> getNodesForCamera ( iCamera ) ;
+        if ( iCamera.isInvalid() )
+        {
+            technique -> reset () ;
+            technique -> unbind () ;
+            return ;
+        }
 
-        if ( !iCamera.isInvalid() )
-        iCamera -> use ( technique ) ;
+        const Matrix4 & view = iCamera -> getViewMatrix () ;
+        const Matrix4 & projection = technique -> getProjectionMatrix () ;
+        const Matrix4 viewprojection = projection * view ;
+
+        technique -> setAliasedParameterValue ( TechniqueParam::CameraPosition , HdwProgVarType::Float3 , iCamera -> getPosition() ) ;
+        technique -> setAliasedParameterValue ( TechniqueParam::CameraDirection , HdwProgVarType::Float3 , iCamera -> getDirection() ) ;
+        technique -> setAliasedParameterValue ( TechniqueParam::ProjectionMatrix , HdwProgVarType::Matrix4 , projection ) ;
+        technique -> setAliasedParameterValue ( TechniqueParam::ViewMatrix , HdwProgVarType::Matrix4 , view ) ;
+        technique -> setAliasedParameterValue ( TechniqueParam::ProjectionViewMatrix , HdwProgVarType::Matrix4 , viewprojection ) ;
+
+        RenderNodeHolderList nodes ;
+        RenderNodeHolderList lights ;
 
         if ( !iScene.isInvalid() )
-        iScene -> use ( technique ) ;
+        {
+            if ( technique->getLightingMode() != TechniqueLightingMode::None )
+            lights = iScene -> lights ( viewprojection ) ;
 
-        //////////////////////////////////////////////////////////////////////
-        // Computes lights depending on scene , camera and technique informations.
-
-        std::list<LightRenderNodeHolder> lights ;
-
-        if (technique -> getLightingMode() != TechniqueLightingMode::None &&
-            !iScene.isInvalid() && !iCamera.isInvalid() )
-        lights = iScene -> getActivatedLightsForCamera ( iCamera ) ;
+            nodes = iScene -> sort ( viewprojection ) ;
+            iScene -> use ( technique ) ;
+        }
 
         if ( !nodes.empty() )
         {
             //////////////////////////////////////////////////////////////////////
             // For each nodes , bind lights , bind material , draw it with renderer.
-
+            //GreDebug ( "[WARN] :: SIZE = " ) << nodes.size () << gendl ;
             for ( auto node : nodes )
             renderTechniqueWithNodeAndLights ( renderer , technique , node , lights ) ;
         }
 
         else
         {
+            GreDebug ( "[WARN] :: NODES_EMPTY" ) << gendl ;
             //////////////////////////////////////////////////////////////////////
             // Depending on lighting mode , bind lights and call technique.
 
@@ -315,12 +335,12 @@ void RenderPass::renderTechnique(const Gre::Renderer *renderer, const TechniqueH
 void RenderPass::renderTechniqueWithNodeAndLights (const Renderer* renderer ,
                                                    const TechniqueHolder & technique ,
                                                    const RenderNodeHolder & node ,
-                                                   const std::list < LightRenderNodeHolder > & lights) const
+                                                   const RenderNodeHolderList & lights) const
 {
     if ( node.isInvalid() || technique.isInvalid() )
     return ;
 
-    if ( !node->isRenderable() )
+    if ( node->getMesh().isInvalid() )
     return ;
 
     //////////////////////////////////////////////////////////////////////
@@ -338,7 +358,10 @@ void RenderPass::renderTechniqueWithNodeAndLights (const Renderer* renderer ,
     renderTechniqueWithNode ( renderer , tech , node , lights ) ;
 
     if ( !preprocess.empty() )
-    technique -> bind () ;
+    {
+        technique -> bind () ;
+        renderer -> setViewport ( technique->getFramebuffer()->getViewport() ) ;
+    }
 
     //////////////////////////////////////////////////////////////////////
     // As we also need to make the 'NormalMatrix' parameter , we should calculate
@@ -346,10 +369,13 @@ void RenderPass::renderTechniqueWithNodeAndLights (const Renderer* renderer ,
 
     if ( !iCamera.isInvalid() )
     {
-        Matrix3 modelViewMat = Matrix3 ( node->getModelMatrix() * iCamera->getViewMatrix() ) ;
-        Matrix3 normalMat = glm::transpose(glm::inverse(modelViewMat)) ;
+        const Matrix4 & view = iCamera -> getViewMatrix () ;
+        const Matrix4 & model = node -> getModelMatrix () ;
+        const Matrix4 modelview = model * view ;
+        const Matrix3 normal = glm::transpose(glm::inverse( Matrix3(modelview) )) ;
 
-        technique -> setAliasedParameterValue ( TechniqueParam::NormalMatrix3 , HdwProgVarType::Matrix3 , normalMat ) ;
+        technique -> setAliasedParameterValue ( TechniqueParam::ModelMatrix , HdwProgVarType::Matrix4 , model ) ;
+        technique -> setAliasedParameterValue ( TechniqueParam::NormalMatrix3 , HdwProgVarType::Matrix3 , normal ) ;
     }
 
     //////////////////////////////////////////////////////////////////////
@@ -390,7 +416,7 @@ void RenderPass::renderTechniqueWithNodeAndLights (const Renderer* renderer ,
 void RenderPass::renderTechniqueWithLights (const Renderer* renderer ,
                                             const TechniqueHolder & technique ,
                                             const RenderNodeHolder & node ,
-                                            const std::list < LightRenderNodeHolder > & lights ) const
+                                            const RenderNodeHolderList & lights ) const
 {
     if ( technique.isInvalid() )
     return ;
@@ -402,7 +428,7 @@ void RenderPass::renderTechniqueWithLights (const Renderer* renderer ,
     {
         for ( auto light : lights )
         if ( !light.isInvalid() )
-        light -> bindLight ( technique ) ;
+        light -> bindEmissiveMaterial ( technique ) ;
 
         renderTechniqueWithNode ( renderer , technique , node ) ;
     }
@@ -414,7 +440,7 @@ void RenderPass::renderTechniqueWithLights (const Renderer* renderer ,
             if ( light.isInvalid() )
             continue ;
 
-            light -> bindLight ( technique ) ;
+            light -> bindEmissiveMaterial ( technique ) ;
 
             renderTechniqueWithNode ( renderer , technique , node ) ;
 
@@ -431,7 +457,7 @@ void RenderPass::renderTechniqueWithLights (const Renderer* renderer ,
 void RenderPass::renderTechniqueWithNode (const Renderer* renderer ,
                                           const TechniqueHolder & technique ,
                                           const RenderNodeHolder & node ,
-                                          const std::list < LightRenderNodeHolder > & lights) const
+                                          const RenderNodeHolderList & lights) const
 {
     if ( technique.isInvalid() )
     return ;
@@ -457,7 +483,17 @@ void RenderPass::renderTechniqueWithNode (const Renderer* renderer ,
     else
     {
         if ( !iCamera.isInvalid() )
-        iCamera -> use ( technique ) ;
+        {
+            const Matrix4 & view = iCamera -> getViewMatrix () ;
+            const Matrix4 & projection = technique -> getProjectionMatrix () ;
+            const Matrix4 viewprojection = projection * view ;
+
+            technique -> setAliasedParameterValue ( TechniqueParam::CameraPosition , HdwProgVarType::Float3 , iCamera -> getPosition() ) ;
+            technique -> setAliasedParameterValue ( TechniqueParam::CameraDirection , HdwProgVarType::Float3 , iCamera -> getDirection() ) ;
+            technique -> setAliasedParameterValue ( TechniqueParam::ProjectionMatrix , HdwProgVarType::Matrix4 , projection ) ;
+            technique -> setAliasedParameterValue ( TechniqueParam::ViewMatrix , HdwProgVarType::Matrix4 , view ) ;
+            technique -> setAliasedParameterValue ( TechniqueParam::ProjectionViewMatrix , HdwProgVarType::Matrix4 , viewprojection ) ;
+        }
 
         if ( !iScene.isInvalid() )
         iScene -> use ( technique ) ;
@@ -487,20 +523,32 @@ void RenderPass::renderTechniqueWithNode (const Renderer* renderer ,
 
     else
     {
-        if ( node -> isRenderable() )
-        node -> getMesh() -> bind ( technique ) ;
+        if ( node->getMesh().isInvalid() )
+        return ;
 
-        renderer -> draw ( node ) ;
+        auto mesh = node -> getMesh () ;
+        mesh -> bind ( technique ) ;
 
-        if ( node -> isRenderable() )
-        node -> getMesh() -> unbind ( technique ) ;
+        while ( mesh -> bindNextSubMesh ( technique ) )
+        {
+            auto submesh = mesh -> getCurrentSubMesh () ;
+            auto material = submesh -> getDefaultMaterial () ;
+
+            if ( node -> getMaterial().isInvalid() && !material.isInvalid() )
+            material -> use ( technique ) ;
+
+            renderer -> drawSubMesh ( submesh ) ;
+
+            mesh -> unbindCurrentSubMesh ( technique ) ;
+        }
+
+        mesh -> unbind ( technique ) ;
     }
 }
 
 void RenderPass::onWindowSizedEvent ( const WindowSizedEvent & e )
 {
-    iViewport.adaptRealArea(e.Width, e.Height);
-    iViewport.adaptRealCorner(e.Width, e.Height) ;
+    iViewport.update ({ 0 , 0 , e.Width , e.Height }) ;
 }
 
 GreEndNamespace

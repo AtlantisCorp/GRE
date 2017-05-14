@@ -116,7 +116,7 @@ protected:
 };
 
 /// @brief
-typedef SpecializedCountedObjectHolder < Renderable > RenderableHolder ;
+typedef Holder < Renderable > RenderableHolder ;
 
 /// @Brief
 typedef SpecializedResourceHolderList < Renderable > RenderableHolderList ;

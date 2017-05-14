@@ -273,6 +273,11 @@ void OpenGlProgram::_deleteProgram()
     iBinded = false ;
 }
 
+bool OpenGlProgram::binded () const
+{
+    return iBinded ;
+}
+
 void OpenGlProgram::setVertexAttrib(const std::string &attrib, size_t elements, Gre::VertexAttribType type, bool normalize, size_t stride, void *pointer) const
 {
     //////////////////////////////////////////////////////////////////////
@@ -308,6 +313,20 @@ void OpenGlProgram::setVertexAttrib(const std::string &attrib, size_t elements, 
             }
         }
     }
+}
+
+void OpenGlProgram::disableVertexAttribs () const
+{
+    GreAutolock ;
+
+    if ( !iGlProgram || !binded() )
+    return ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Loop through each attributes to disable it.
+
+    for ( auto it : iAttribsLocation )
+    glDisableVertexAttribArray ( it.second ) ;
 }
 
 void OpenGlProgram::bindTextureUnit(int unit) const

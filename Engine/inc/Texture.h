@@ -223,12 +223,12 @@ public:
     //////////////////////////////////////////////////////////////////////
     /// @brief Change the first PixelBuffer used by this Texture.
     //////////////////////////////////////////////////////////////////////
-    virtual void setPixelBuffer ( const SoftwarePixelBufferUser& pixelbuffer ) ;
+    virtual void setPixelBuffer ( const SoftwarePixelBufferHolder& pixelbuffer ) ;
 
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the first PixelBuffer for this Texture, if has one.
     //////////////////////////////////////////////////////////////////////
-    virtual const SoftwarePixelBufferUser getPixelBuffer () const;
+    virtual const SoftwarePixelBufferHolder getPixelBuffer () const;
 
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the Surface representing this Texture.
@@ -285,17 +285,11 @@ protected:
     std::map < TextureParameter , Variant > iParameters ;
 };
 
-/// @brief SpecializedCountedObjectHolder for TexturePrivate.
-typedef SpecializedCountedObjectHolder<Texture> TextureHolder;
+/// @brief Holder for TexturePrivate.
+typedef Holder<Texture> TextureHolder;
 
 /// @brief SpecializedResourceHolderList for TexturePrivate.
 typedef SpecializedResourceHolderList<Texture> TextureHolderList;
-
-/// @brief SpecializedResourceUser for TexturePrivate.
-typedef SpecializedCountedObjectUser<Texture> TextureUser ;
-
-/// @brief std::vector for Texture.
-typedef std::list<TextureUser> TextureUserList;
 
 //////////////////////////////////////////////////////////////////////
 /// @brief Should loads an Image to a SoftwarePixelBuffer.
@@ -446,8 +440,8 @@ protected:
     TextureHolder iDefaultTexture ;
 };
 
-/// @brief SpecializedCountedObjectHolder for TextureManager .
-typedef SpecializedCountedObjectHolder < TextureManager > TextureManagerHolder ;
+/// @brief Holder for TextureManager .
+typedef Holder < TextureManager > TextureManagerHolder ;
 
 GreEndNamespace
 

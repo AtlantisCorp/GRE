@@ -16,10 +16,10 @@
  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  copies of the Software, and to permit persons to whom the Software is
  furnished to do so, subject to the following conditions:
- 
+
  The above copyright notice and this permission notice shall be included in
  all copies or substantial portions of the Software.
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -62,83 +62,83 @@ GreBeginNamespace
 class DLL_PUBLIC SoftwareVertexBuffer : public HardwareVertexBuffer
 {
 public:
-    
+
     POOLED(Pools::Resource)
-    
+
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     SoftwareVertexBuffer(const std::string& name);
-    
+
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     virtual ~SoftwareVertexBuffer();
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Bind the Hardware Buffer in order to use it.
     //////////////////////////////////////////////////////////////////////
     virtual void bind() const;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Unbind the Hardware Buffer after it has been used.
     //////////////////////////////////////////////////////////////////////
     virtual void unbind() const;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Update the buffer if dirty.
     //////////////////////////////////////////////////////////////////////
     virtual void update();
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns true if Buffer is invalid.
     //////////////////////////////////////////////////////////////////////
     virtual bool isDataInvalid() const;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Adds some data to this Buffer. Size is the total size in
     /// bytes, not the number of Vertex.
     //////////////////////////////////////////////////////////////////////
     virtual void addData(const char* vdata, size_t sz);
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the data in this SoftwareVertexBuffer.
     //////////////////////////////////////////////////////////////////////
     virtual const char* getData() const;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Clears the data in the buffer.
     //////////////////////////////////////////////////////////////////////
     virtual void clearData();
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the size of the buffer, in bytes.
     //////////////////////////////////////////////////////////////////////
     virtual size_t getSize() const;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the number of elements in the buffer.
     //////////////////////////////////////////////////////////////////////
     virtual size_t count() const;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the BoundingBox computed for this Software Buffer.
     //////////////////////////////////////////////////////////////////////
     virtual const BoundingBox& getBoundingBox() const;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Computes the BoundingBox from this Software Buffer's data.
     /// Uses this function if you modify the HardwareBuffer from a pointer,
     /// after setting new data.
     //////////////////////////////////////////////////////////////////////
     virtual void makeBoundingBox();
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Sets data from another HardwareVertexBuffer object, erasing
     /// prior data and updating new one.
     //////////////////////////////////////////////////////////////////////
     virtual void setData ( const HardwareVertexBufferHolder& holder );
-    
+
 protected:
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Called when receiving Update Event.
     ///
@@ -147,30 +147,27 @@ protected:
     ///
     //////////////////////////////////////////////////////////////////////
     virtual void onUpdateEvent(const UpdateEvent& e);
-    
+
 protected:
-    
+
     /// @brief Holds the raw Vertex data.
     char* iVertexData;
-    
+
     /// @brief Size of the buffer.
     size_t iSize;
-    
+
     /// @brief BoundingBox computed for this VertexBuffer.
     BoundingBox iBoundingBox;
-    
+
     /// @brief True if the BoundingBox must be computed.
     mutable bool iBoundingBoxInvalid;
 };
 
-/// @brief SpecializedCountedObjectHolder for SoftwareVertexBufferPrivate.
-typedef SpecializedCountedObjectHolder<SoftwareVertexBuffer> SoftwareVertexBufferHolder;
+/// @brief Holder for SoftwareVertexBufferPrivate.
+typedef Holder<SoftwareVertexBuffer> SoftwareVertexBufferHolder;
 
 /// @brief SpecializedResourceHolderList for SoftwareVertexBufferPrivate.
 typedef SpecializedResourceHolderList<SoftwareVertexBuffer> SoftwareVertexBufferHolderList;
-
-/// @brief SpecializedCountedObjectUser.
-typedef SpecializedCountedObjectUser<SoftwareVertexBuffer> SoftwareVertexBufferUser;
 
 GreEndNamespace
 

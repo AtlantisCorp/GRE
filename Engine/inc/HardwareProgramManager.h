@@ -111,12 +111,12 @@ public:
     //////////////////////////////////////////////////////////////////////
     /// @brief Retrieves a HardwareShader by its name.
     //////////////////////////////////////////////////////////////////////
-    virtual HardwareShaderUser getShaderByName(const std::string& name);
+    virtual HardwareShaderHolder getShaderByName(const std::string& name);
 
     //////////////////////////////////////////////////////////////////////
     /// @brief Retrieves a HardwareShader by its name.
     //////////////////////////////////////////////////////////////////////
-    virtual const HardwareShaderUser getShaderByName(const std::string& name) const;
+    virtual const HardwareShaderHolder getShaderByName(const std::string& name) const;
 
     //////////////////////////////////////////////////////////////////////
     /// @brief Unload the given HardwareShader, retrieving it from its
@@ -217,14 +217,11 @@ protected:
     HardwareProgramManagerInternalCreator * iInternalCreator ;
 };
 
-/// @brief SpecializedCountedObjectHolder for HardwareProgramManagerPrivate.
-typedef SpecializedCountedObjectHolder<HardwareProgramManager> HardwareProgramManagerHolder;
+/// @brief Holder for HardwareProgramManagerPrivate.
+typedef Holder<HardwareProgramManager> HardwareProgramManagerHolder;
 
 /// @brief SpecializedResourceHolderList for HardwareProgramManagerPrivate list.
 typedef SpecializedResourceHolderList<HardwareProgramManager> HardwareProgramManagerHolderList;
-
-/// @brief SpecializedCountedObjectUser for HardwareProgramManager.
-typedef SpecializedCountedObjectUser<HardwareProgramManager> HardwareProgramManagerUser;
 
 GreEndNamespace
 

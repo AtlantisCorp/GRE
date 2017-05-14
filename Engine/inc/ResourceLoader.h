@@ -16,10 +16,10 @@
  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  copies of the Software, and to permit persons to whom the Software is
  furnished to do so, subject to the following conditions:
- 
+
  The above copyright notice and this permission notice shall be included in
  all copies or substantial portions of the Software.
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -57,29 +57,29 @@ GreBeginNamespace
 class DLL_PUBLIC ResourceLoader : public Clonable<ResourceLoader>
 {
 public:
-    
+
     POOLED(Pools::Loader)
-    
+
     ////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////
     ResourceLoader();
-    
+
     ////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////
     virtual ~ResourceLoader() noexcept(false);
-    
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Returns a clone of this object.
     /// Typically, this function is implemented as 'return new MyLoaderClass();',
     /// but you are free to do whatever you want.
     ////////////////////////////////////////////////////////////////////////
     virtual ResourceLoader* clone() const = 0;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns true if the file given is loadable by this loader.
     //////////////////////////////////////////////////////////////////////
     virtual bool isLoadable( const std::string& filepath ) const = 0;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the subdirectory a bundle should look for the file
     /// when getting a bundled file. By default , this subdirectory is
@@ -115,23 +115,23 @@ template <typename T>
 class ResourceLoaderFactory
 {
 public:
-    
+
     POOLED(Pools::Factory)
-    
+
     ////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////
     ResourceLoaderFactory () : _loaders() { }
-    
+
     ////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////
     virtual ~ResourceLoaderFactory () { }
-    
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Registers a new Loader in this Factory.
     ////////////////////////////////////////////////////////////////////////
     void registers(const std::string& name, T* loader)
     { _loaders[name].reset(loader); }
-    
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Return Loader identified by given name.
     ////////////////////////////////////////////////////////////////////////
@@ -143,7 +143,7 @@ public:
         else
             return nullptr;
     }
-    
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Returns first Loader in this Factory.
     ////////////////////////////////////////////////////////////////////////
@@ -153,13 +153,13 @@ public:
             return reinterpret_cast<T*>(_loaders.begin()->second->clone());
         return nullptr;
     }
-    
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Reset the Loader's list.
     ////////////////////////////////////////////////////////////////////////
     void clear()
     { _loaders.clear(); }
-    
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Returns a list with the name of every Loader.
     ////////////////////////////////////////////////////////////////////////
@@ -169,10 +169,10 @@ public:
         for(auto it = _loaders.begin(); it != _loaders.end(); it++) {
             ret.push_back(it->first);
         }
-        
+
         return ret;
     }
-    
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Returns the Loader's list.
     ////////////////////////////////////////////////////////////////////////
@@ -180,7 +180,7 @@ public:
     {
         return _loaders;
     }
-    
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Removes the found instance by name.
     ////////////////////////////////////////////////////////////////////////
@@ -194,9 +194,9 @@ public:
             }
         }
     }
-    
+
 protected:
-    
+
     /// @brief Loader's list, by name.
     std::map<std::string, std::shared_ptr<T> > _loaders;
 };

@@ -33,7 +33,4 @@ std::ostream& GreDebugBase(const std::string& func)
     return std::cout;
 }
 
-Matrix4 MatrixUtils::Zero4 = Matrix4();
-Matrix4 MatrixUtils::Identity = glm::mat4();
-
 GreEndNamespace

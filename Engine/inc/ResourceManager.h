@@ -4,7 +4,7 @@
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
-//  Copyright (c) 2015 - 2016 Luk2010
+//  Copyright (c) 2015 - 2017 Luk2010
 //  Created on 28/10/2015.
 //
 //////////////////////////////////////////////////////////////////////
@@ -39,16 +39,14 @@
 #include "Plugin.h"
 #include "Window.h"
 #include "Renderer.h"
-#include "Scene.h"
+#include "RenderScene.h"
 #include "FrameBuffer.h"
-#include "LoopBehaviours.h"
 #include "Keyboard.h"
-#include "ResourcePath.h"
 #include "Material.h"
 #include "Application.h"
 #include "EventDispatcher.h"
-#include "Animator.h"
 #include "Technique.h"
+#include "Controller.h"
 
 GreBeginNamespace
 
@@ -138,12 +136,6 @@ protected:
     /// @brief Mesh Manager.
     MeshManagerHolder iMeshManager;
 
-    /// @brief Animator Manager.
-    AnimatorManagerHolder iAnimatorManager ;
-
-    /// @brief Camera Manager.
-    CameraManagerHolder iCameraManager ;
-
     /// @brief Texture Manager.
     TextureManagerHolder iTextureManager ;
 
@@ -159,6 +151,9 @@ protected:
     /// @brief RenderFramebuffer Manager.
     RenderFramebufferManagerHolder iFramebufferManager ;
 
+    /// @brief Controllers manager.
+    ControllerManagerHolder iControllers ;
+
     /// @brief Application Loaders. As there can be only one Application by process, there is no need to have
     /// an ApplicationManager.
     ApplicationLoaderFactory iApplicationFactory ;
@@ -172,8 +167,8 @@ protected:
 
 public:
 
-    /// @brief SpecializedCountedObjectHolder for ResourceManager.
-    typedef SpecializedCountedObjectHolder<ResourceManager> ResourceManagerHolder ;
+    /// @brief Holder for ResourceManager.
+    typedef Holder<ResourceManager> ResourceManagerHolder ;
 
     ////////////////////////////////////////////////////////////////////////
     /// @brief Creates a ResourceManager object. If 'setdefault' is true ,
@@ -181,7 +176,7 @@ public:
     /// to the allocated object. Notes this object should be initialized.
     ////////////////////////////////////////////////////////////////////////
     static ResourceManagerHolder Create ( bool setdefault = true ) ;
-    
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Clears the global holder managing the resource manager
     /// singleton.
@@ -288,26 +283,6 @@ public:
     MeshManagerHolder getMeshManager () ;
 
     //////////////////////////////////////////////////////////////////////
-    /// @brief Changes 'iAnimatorManager'.
-    //////////////////////////////////////////////////////////////////////
-    void setAnimatorManager ( const AnimatorManagerHolder & animholder ) ;
-
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns 'iAnimatorManager'.
-    //////////////////////////////////////////////////////////////////////
-    AnimatorManagerHolder getAnimatorManager () ;
-
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Changes 'iCameraManager'.
-    //////////////////////////////////////////////////////////////////////
-    void setCameraManager ( const CameraManagerHolder & camholder ) ;
-
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns 'iCameraManager'.
-    //////////////////////////////////////////////////////////////////////
-    CameraManagerHolder getCameraManager () ;
-
-    //////////////////////////////////////////////////////////////////////
     /// @brief Changes 'iTextureManager'.
     //////////////////////////////////////////////////////////////////////
     void setTextureManager ( const TextureManagerHolder & manager ) ;
@@ -378,6 +353,14 @@ public:
     RenderFramebufferManagerHolder getFramebufferManager () ;
 
     //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    void setControllerManager ( const ControllerManagerHolder & holder ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    ControllerManagerHolder getControllerManager () ;
+
+    //////////////////////////////////////////////////////////////////////
     /// @brief Creates a new bundle with given name.
     //////////////////////////////////////////////////////////////////////
     ResourceBundleHolder addBundle ( const std::string & name ) ;
@@ -404,8 +387,8 @@ public:
     const std::vector < ResourceBundleHolder > & getBundles () const ;
 };
 
-/// @brief SpecializedCountedObjectHolder for ResourceManager.
-typedef SpecializedCountedObjectHolder<ResourceManager> ResourceManagerHolder ;
+/// @brief Holder for ResourceManager.
+typedef Holder<ResourceManager> ResourceManagerHolder ;
 
 GreEndNamespace
 #endif

@@ -16,10 +16,10 @@
  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  copies of the Software, and to permit persons to whom the Software is
  furnished to do so, subject to the following conditions:
- 
+
  The above copyright notice and this permission notice shall be included in
  all copies or substantial portions of the Software.
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -45,13 +45,13 @@ GreBeginNamespace
 class DLL_PUBLIC ObjMeshLoader : public MeshLoader
 {
 public:
-    
+
     POOLED ( Pools::Loader )
-    
+
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     ObjMeshLoader () ;
-    
+
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     virtual ~ObjMeshLoader () noexcept ( false ) ;
@@ -61,20 +61,20 @@ public:
     /// As some files can store more than one mesh (OBJ file for example),
     /// a MeshLoader should be able to return more than one resource.
     //////////////////////////////////////////////////////////////////////
-    virtual MeshHolderList load ( const std::string& filepath , const ResourceLoaderOptions & ops ) const ;
-    
+    virtual MeshHolder load ( const std::string& filepath , const ResourceLoaderOptions & ops ) const ;
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Returns a clone of this object.
     /// Typically, this function is implemented as 'return new MyLoaderClass();',
     /// but you are free to do whatever you want.
     ////////////////////////////////////////////////////////////////////////
     virtual ResourceLoader* clone() const ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns true if the file given is loadable by this loader.
     //////////////////////////////////////////////////////////////////////
     virtual bool isLoadable( const std::string& filepath ) const ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the subdirectory associated with this loader
     /// loadable contents. For bundled files , every files loadable by this

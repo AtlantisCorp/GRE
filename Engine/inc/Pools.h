@@ -16,10 +16,10 @@
  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  copies of the Software, and to permit persons to whom the Software is
  furnished to do so, subject to the following conditions:
- 
+
  The above copyright notice and this permission notice shall be included in
  all copies or substantial portions of the Software.
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -53,7 +53,8 @@ enum class Pools
     Scene      = 0x8,    ///< @brief Reserved to Scene's related objects.
     Render     = 0x9,    ///< @brief Reserved to Render's related objects.
     Referenced = 0xA,    ///< @brief Every ReferencedCountedObject can have this Pool.
-    Bundle     = 0xB     ///< @brief Reserved for ResourceBundle's objects.
+    Bundle     = 0xB,    ///< @brief Reserved for ResourceBundle's objects.
+    Controller = 0xC     ///< @brief Controller's derived objects.
 };
 
 #ifdef GreIsDebugMode
@@ -72,7 +73,8 @@ enum class Pools
 /// the Pool system is available only on debug mode.
 ///
 ////////////////////////////////////////////////////////////////////////
-#define POOLED(pooltype)                                                                    \
+#define POOLED(pooltype) \
+                                                                                            \
     void* operator new (size_t sz) {                                                        \
         Gre:: Pool < pooltype > :: Lock () ;                                                \
         if( Gre:: Pool< pooltype > ::Get().canAttach(sz) == false) throw std::bad_alloc();  \
@@ -82,7 +84,7 @@ enum class Pools
     return ptr; }                                                                           \
                                                                                             \
     void  operator delete (void* p) noexcept {                                              \
-        if(p) free (p);                                                                     \
+        if(p) free(p) ;                                                                     \
         Gre:: Pool < pooltype > :: Lock () ;                                                \
         Gre:: Pool< pooltype > :: Get().detach(p);                                          \
         Gre:: Pool < pooltype > :: Unlock () ; }
@@ -94,22 +96,22 @@ template < Pools pooltype >
 class DLL_PUBLIC Pool
 {
 public:
-    
+
     /// @brief Pool's internal mutex.
     static std::recursive_mutex Mutex ;
-    
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Locks the generic Pool mutex.
     static void Lock () {
         Mutex .lock () ;
     }
-    
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Unlocks the generic Pool mutex.
     static void Unlock () {
         Mutex .unlock () ;
     }
-    
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Return the Pool corresponding to the template argument.
     ////////////////////////////////////////////////////////////////////////
@@ -117,7 +119,7 @@ public:
         static Pool pool;
         return pool;
     }
-    
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Add memory to this pool.
     ///
@@ -134,11 +136,11 @@ public:
         if(_ptrs.find(p) != _ptrs.end()) {
             _totalsz -= _ptrs[p];
         }
-        
+
         _ptrs[p] = sz;
         _totalsz += sz;
     }
-    
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Remove memory from this pool.
     ////////////////////////////////////////////////////////////////////////
@@ -150,7 +152,7 @@ public:
             _ptrs.erase(it);
         }
     }
-    
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Returns true if allocating an object to this pool
     /// is possible, giving its size.
@@ -159,7 +161,7 @@ public:
     {
         return _totalsz + sz <= _maxsz;
     }
-    
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Returns the size actually taken by objects in this pool.
     ////////////////////////////////////////////////////////////////////////
@@ -167,7 +169,7 @@ public:
     {
         return _totalsz;
     }
-    
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Set the maximum size of this pool.
     ////////////////////////////////////////////////////////////////////////
@@ -175,7 +177,7 @@ public:
     {
         _maxsz = szinbytes;
     }
-    
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Returns the maximum size this pool can reach.
     ////////////////////////////////////////////////////////////////////////
@@ -183,11 +185,11 @@ public:
     {
         return _maxsz;
     }
-    
+
 private:
-    
+
     Pool () : _totalsz(0), _maxsz(1000000) { }
-    
+
     std::map<void*, size_t> _ptrs;
     unsigned                _totalsz;
     unsigned                _maxsz;

@@ -37,7 +37,6 @@
 #include "Resource.h"
 #include "SpecializedResourceManager.h"
 #include "FrameBuffer.h"
-#include "Light.h"
 #include "HardwareProgram.h"
 #include "ResourceBundle.h"
 
@@ -66,50 +65,30 @@ TechniqueLightingMode TechniqueLightingModeFromString ( const std::string & mode
 /// @brief Defines every alias used by the engine.
 enum class TechniqueParam : int
 {
-    ModelMatrix ,
-    ViewMatrix ,
-    ProjectionMatrix ,
-    ProjectionViewMatrix ,
-    NormalMatrix ,
-    NormalMatrix3 ,
+    None ,
 
-    CameraPosition ,
-    CameraDirection ,
+    ModelMatrix , ViewMatrix , ProjectionMatrix , ProjectionViewMatrix ,
+    NormalMatrix , NormalMatrix3 ,
 
-    ViewportWidth ,
-    ViewportHeight ,
-    ViewportLeft ,
-    ViewportTop ,
+    CameraPosition , CameraDirection ,
 
-    ClearColor ,
-    ClearDepth ,
+    ViewportWidth , ViewportHeight , ViewportLeft , ViewportTop ,
+
+    ClearColor , ClearDepth ,
 
     Light0 , Light1 , Light2 , Light3 , Light4 , Light5 , Light6 , Light7 ,
     Light8 , Light9 ,
 
-    LightAmbient ,
-    LightDiffuse ,
-    LightSpecular ,
-    LightPosition ,
-    LightDirection ,
-    LightAttCst ,
-    LightAttLine ,
-    LightAttQuad ,
-    LightSpotAngle ,
-    LightSpotExposition ,
-    LightTexShadow ,
-    LightShadowMatrix ,
+    LightAmbient , LightDiffuse , LightSpecular , LightPosition , LightDirection ,
+    LightAttCst , LightAttLine , LightAttQuad ,
+    LightSpotAngle , LightSpotExposition ,
+    LightShadowMatrix , LightTexture0 , LightTexture1 , LightTexture2 , LightTexture3 ,
 
     Texture0 , Texture1 , Texture2 , Texture3 , Texture4 , Texture5 , Texture6 ,
     Texture7 , Texture8 , Texture9 ,
 
-    MaterialAmbient ,
-    MaterialDiffuse ,
-    MaterialSpecular ,
-    MaterialTexAmbient ,
-    MaterialTexDiffuse ,
-    MaterialTexSpecular ,
-    MaterialTexNormal ,
+    MaterialAmbient , MaterialDiffuse , MaterialSpecular ,
+    MaterialTexAmbient , MaterialTexDiffuse , MaterialTexSpecular , MaterialTexNormal ,
     MaterialShininess
 };
 
@@ -161,13 +140,10 @@ public:
     POOLED ( Pools::Render )
 
     /// @brief
-    typedef SpecializedCountedObjectHolder < Technique > TechniqueHolder ;
+    typedef Holder < Technique > TechniqueHolder ;
 
     /// @brief
     typedef SpecializedResourceHolderList < Technique > TechniqueHolderList ;
-
-    /// @brief
-    typedef SpecializedCountedObjectUser < Technique > TechniqueUser ;
 
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
@@ -315,6 +291,11 @@ public:
     //////////////////////////////////////////////////////////////////////
     virtual void reset () const ;
 
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the projection from the framebuffer's viewport.
+    //////////////////////////////////////////////////////////////////////
+    virtual const Matrix4 getProjectionMatrix () const ;
+
 protected:
 
     //////////////////////////////////////////////////////////////////////
@@ -379,13 +360,10 @@ protected:
 };
 
 /// @brief
-typedef SpecializedCountedObjectHolder < Technique > TechniqueHolder ;
+typedef Holder < Technique > TechniqueHolder ;
 
 /// @brief
 typedef SpecializedResourceHolderList < Technique > TechniqueHolderList ;
-
-/// @brief
-typedef SpecializedCountedObjectUser < Technique > TechniqueUser ;
 
 //////////////////////////////////////////////////////////////////////
 /// @brief Loads a specific Technique.
@@ -470,7 +448,7 @@ public:
 };
 
 /// @brief
-typedef SpecializedCountedObjectHolder < TechniqueManager > TechniqueManagerHolder ;
+typedef Holder < TechniqueManager > TechniqueManagerHolder ;
 
 GreEndNamespace
 

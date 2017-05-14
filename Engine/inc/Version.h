@@ -151,37 +151,7 @@
 #   include <sys/time.h>
 #endif
 
-// The glm library should always be present when compiling GRE. On linux distributions, we could note that
-// 'glm::tvec3' classes where 'glm::details::tvec3' and so on for every templated classes.
-
-#define GLM_FORCE_RADIANS
-#include <glm/glm.hpp>
-#include <glm/ext.hpp>
-
 GreBeginNamespace
-
-#ifdef GrePlatformUnix
-    template<typename T> using TVector2 = glm::detail::tvec2<T, glm::highp>;
-    template<typename T> using TVector3 = glm::detail::tvec3<T, glm::highp>;
-    template<typename T> using TVector4 = glm::detail::tvec4<T, glm::highp>;
-#else
-    template<typename T> using TVector2 = glm::tvec2<T, glm::highp>;
-    template<typename T> using TVector3 = glm::tvec3<T, glm::highp>;
-    template<typename T> using TVector4 = glm::tvec4<T, glm::highp>;
-#endif
-
-typedef TVector2<float> Vector2;
-typedef TVector3<float> Vector3;
-typedef TVector4<float> Vector4;
-
-typedef TVector2 < int > IVector2 ;
-typedef TVector3 < int > IVector3 ;
-typedef TVector4 < int > IVector4 ;
-
-typedef glm::mat2 Matrix2 ;
-typedef glm::mat3 Matrix3 ;
-typedef glm::mat4 Matrix4 ;
-typedef glm::quat Quaternion;
 
 // Times definition .
 
@@ -199,10 +169,10 @@ typedef std::chrono::milliseconds DurationMilli ;
 
 GreEndNamespace
 
-// This file is here to includes some third-party code help.
 #include "ThirdParty.h"
 #include "Exceptions.h"
 #include "Debug.h"
+#include "Maths.h"
 
 GreBeginNamespace
 
@@ -210,7 +180,7 @@ GreBeginNamespace
 
 #define GreVersionMajor 0             ///< @brief GRE Major version.
 #define GreVersionMinor 0             ///< @brief GRE Minor version.
-#define GreVersionBuild 26            ///< @brief GRE Build number.
+#define GreVersionBuild 27            ///< @brief GRE Build number.
 
 /// @brief Defines the Version structure.
 typedef struct Version
@@ -423,47 +393,11 @@ public:
 
 typedef std::vector<std::string> StringList;
 
-class MatrixUtils
-{
-public:
-    static Matrix4 Zero4;
-    static Matrix4 Identity;
-};
-
 /// @brief Prints a numeroted list in a string.
 std::string DebugListNumeroted(const StringList& list);
 
 /// @brief Gets a number inserted by the user using std::cin.
 int DebugGetNumber();
-
-/// @brief Holds a volume in 3D.
-struct Volume
-{
-    union
-    {
-        struct
-        {
-            float width;
-            float height;
-            float depth;
-        };
-
-        struct
-        {
-            float x;
-            float y;
-            float z;
-        };
-
-        Vector3 vec3;
-    };
-};
-
-/// @brief Types that define a Radian angle.
-typedef float Radian;
-
-/// @brief Simply, a plane is a Vector4 component.
-typedef Vector4 Plane;
 
 //////////////////////////////////////////////////////////////////////
 /// @brief Flags to clear buffers.

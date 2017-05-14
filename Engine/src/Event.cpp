@@ -16,10 +16,10 @@
  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  copies of the Software, and to permit persons to whom the Software is
  furnished to do so, subject to the following conditions:
- 
+
  The above copyright notice and this permission notice shall be included in
  all copies or substantial portions of the Software.
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -39,10 +39,10 @@ Event::Event(const EventProceeder * emitter , const EventType & etype)
 : iEmitter ( nullptr ) , iType ( etype ) , iShouldStopPropagating( false )
 {
     GreAutolock ;
-    
-    iEmitter = new EventProceederUser ( emitter ) ;
+
+    iEmitter = new Holder < EventProceeder > ( emitter ) ;
     iNoSublisteners = false ;
-    
+
     if ( !iEmitter )
         throw GreExceptionWithText("'iEmitter' couldn't be allocated.") ;
 }
@@ -53,21 +53,21 @@ Event::~Event() noexcept(false)
         delete iEmitter ;
 }
 
-const SpecializedCountedObjectUser<EventProceeder> & Event::getEmitter() const
+const Holder<EventProceeder> & Event::getEmitter() const
 {
     GreAutolock ;
-    
+
     if ( !iEmitter )
     {
         throw GreExceptionWithText ( "Bad 'Event::iEmitter' property." ) ;
     }
-    
+
     return * iEmitter ;
 }
 
 const EventProceeder* Event::getEmitterPointer() const
 {
-    GreAutolock ; return iEmitter->lock().getObject() ;
+    GreAutolock ; return iEmitter->getObject() ;
 }
 
 const EventType& Event::getType() const
@@ -104,12 +104,12 @@ KeyDownEvent::KeyDownEvent ( const EventProceeder * emitter , Key key , int mods
 : Gre::Event( emitter , EventType::KeyDown )
 , iKey(key) , iModifiers(mods)
 {
-    
+
 }
 
 Event* KeyDownEvent::clone() const
 {
-    return new KeyDownEvent ( iEmitter->lock().getObject() , iKey , iModifiers ) ;
+    return new KeyDownEvent ( iEmitter->getObject() , iKey , iModifiers ) ;
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -118,12 +118,12 @@ KeyUpEvent::KeyUpEvent ( const EventProceeder * emitter , Key key , int mods )
 : Gre::Event( emitter , EventType::KeyUp )
 , iKey(key) , iModifiers(mods)
 {
-    
+
 }
 
 Event* KeyUpEvent::clone() const
 {
-    return new KeyUpEvent ( iEmitter->lock().getObject() , iKey , iModifiers ) ;
+    return new KeyUpEvent ( iEmitter->getObject() , iKey , iModifiers ) ;
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -131,12 +131,12 @@ Event* KeyUpEvent::clone() const
 CursorMovedEvent::CursorMovedEvent ( const EventProceeder* emitter , const float deltax , const float deltay )
 : Gre::Event ( emitter , EventType::CursorMoved ) , DeltaX ( deltax ) , DeltaY ( deltay )
 {
-    
+
 }
 
 Event* CursorMovedEvent::clone() const
 {
-    return new CursorMovedEvent ( iEmitter->lock().getObject() , DeltaX , DeltaY ) ;
+    return new CursorMovedEvent ( iEmitter->getObject() , DeltaX , DeltaY ) ;
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -145,12 +145,12 @@ WindowMovedEvent::WindowMovedEvent ( const EventProceeder * emitter , int left ,
 : Gre::Event( emitter , EventType::WindowMoved )
 , Left(left) , Top(top)
 {
-    
+
 }
 
 Event* WindowMovedEvent::clone() const
 {
-    return new WindowMovedEvent ( iEmitter->lock().getObject() , Left , Top ) ;
+    return new WindowMovedEvent ( iEmitter->getObject() , Left , Top ) ;
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -159,12 +159,12 @@ WindowSizedEvent::WindowSizedEvent ( const EventProceeder * emitter , int width 
 : Gre::Event( emitter , EventType::WindowSized )
 , Width(width) , Height(height)
 {
-    
+
 }
 
 Event* WindowSizedEvent::clone() const
 {
-    return new WindowSizedEvent ( iEmitter->lock().getObject() , Width , Height ) ;
+    return new WindowSizedEvent ( iEmitter->getObject() , Width , Height ) ;
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -173,12 +173,12 @@ WindowExposedEvent::WindowExposedEvent ( const EventProceeder * emitter , const 
 : Gre::Event( emitter , EventType::WindowExposed )
 , iSurface(surface)
 {
-    
+
 }
 
 Event* WindowExposedEvent::clone() const
 {
-    return new WindowExposedEvent ( iEmitter->lock().getObject() , iSurface ) ;
+    return new WindowExposedEvent ( iEmitter->getObject() , iSurface ) ;
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -186,12 +186,12 @@ Event* WindowExposedEvent::clone() const
 WindowHiddenEvent::WindowHiddenEvent ( const EventProceeder * emitter )
 : Gre::Event( emitter , EventType::WindowExposed )
 {
-    
+
 }
 
 Event* WindowHiddenEvent::clone() const
 {
-    return new WindowHiddenEvent ( iEmitter->lock().getObject() ) ;
+    return new WindowHiddenEvent ( iEmitter->getObject() ) ;
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -199,12 +199,12 @@ Event* WindowHiddenEvent::clone() const
 WindowWillCloseEvent::WindowWillCloseEvent ( const EventProceeder * emitter )
 : Gre::Event( emitter , EventType::WindowWillClose )
 {
-    
+
 }
 
 Event* WindowWillCloseEvent::clone() const
 {
-    return new WindowWillCloseEvent ( iEmitter->lock().getObject() ) ;
+    return new WindowWillCloseEvent ( iEmitter->getObject() ) ;
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -213,12 +213,12 @@ WindowTitleChangedEvent::WindowTitleChangedEvent ( const EventProceeder * emitte
 : Gre::Event( emitter , EventType::WindowTitleChanged )
 , iTitle(title)
 {
-    
+
 }
 
 Event* WindowTitleChangedEvent::clone() const
 {
-    return new WindowTitleChangedEvent ( iEmitter->lock().getObject() , iTitle ) ;
+    return new WindowTitleChangedEvent ( iEmitter->getObject() , iTitle ) ;
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -226,12 +226,12 @@ Event* WindowTitleChangedEvent::clone() const
 WindowAttachContextEvent::WindowAttachContextEvent ( const EventProceeder * emitter )
 : Gre::Event( emitter , EventType::WindowAttachContext )
 {
-    
+
 }
 
 Event* WindowAttachContextEvent::clone() const
 {
-    return new WindowAttachContextEvent ( iEmitter->lock().getObject() ) ;
+    return new WindowAttachContextEvent ( iEmitter->getObject() ) ;
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -239,12 +239,12 @@ Event* WindowAttachContextEvent::clone() const
 WindowDetachContextEvent::WindowDetachContextEvent ( const EventProceeder * emitter )
 : Gre::Event( emitter , EventType::WindowDetachContext )
 {
-    
+
 }
 
 Event* WindowDetachContextEvent::clone() const
 {
-    return new WindowDetachContextEvent ( iEmitter->lock().getObject() ) ;
+    return new WindowDetachContextEvent ( iEmitter->getObject() ) ;
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -252,12 +252,12 @@ Event* WindowDetachContextEvent::clone() const
 WindowFocusedEvent::WindowFocusedEvent ( const EventProceeder * emitter )
 : Gre::Event( emitter , EventType::WindowFocused )
 {
-    
+
 }
 
 Event* WindowFocusedEvent::clone() const
 {
-    return new WindowFocusedEvent ( iEmitter->lock().getObject() ) ;
+    return new WindowFocusedEvent ( iEmitter->getObject() ) ;
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -265,12 +265,12 @@ Event* WindowFocusedEvent::clone() const
 WindowUnfocusedEvent::WindowUnfocusedEvent ( const EventProceeder * emitter )
 : Gre::Event( emitter , EventType::WindowUnfocused )
 {
-    
+
 }
 
 Event* WindowUnfocusedEvent::clone() const
 {
-    return new WindowUnfocusedEvent ( iEmitter->lock().getObject() ) ;
+    return new WindowUnfocusedEvent ( iEmitter->getObject() ) ;
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -278,12 +278,12 @@ Event* WindowUnfocusedEvent::clone() const
 WindowClosedEvent::WindowClosedEvent ( const EventProceeder * emitter )
 : Gre::Event( emitter , EventType::WindowClosed )
 {
-    
+
 }
 
 Event* WindowClosedEvent::clone() const
 {
-    return new WindowClosedEvent ( iEmitter->lock().getObject() ) ;
+    return new WindowClosedEvent ( iEmitter->getObject() ) ;
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -291,12 +291,12 @@ Event* WindowClosedEvent::clone() const
 LastWindowClosedEvent::LastWindowClosedEvent ( const EventProceeder * emitter )
 : Gre::Event( emitter , EventType::LastWindowClosed )
 {
-    
+
 }
 
 Event* LastWindowClosedEvent::clone() const
 {
-    return new LastWindowClosedEvent ( iEmitter->lock().getObject() ) ;
+    return new LastWindowClosedEvent ( iEmitter->getObject() ) ;
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -304,12 +304,12 @@ Event* LastWindowClosedEvent::clone() const
 RenderTargetWillCloseEvent::RenderTargetWillCloseEvent ( const EventProceeder * emitter )
 : Gre::Event( emitter , EventType::RenderTargetWillClose )
 {
-    
+
 }
 
 Event* RenderTargetWillCloseEvent::clone() const
 {
-    return new RenderTargetWillCloseEvent ( iEmitter->lock().getObject() ) ;
+    return new RenderTargetWillCloseEvent ( iEmitter->getObject() ) ;
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -317,12 +317,12 @@ Event* RenderTargetWillCloseEvent::clone() const
 RenderTargetClosedEvent::RenderTargetClosedEvent ( const EventProceeder * emitter )
 : Gre::Event( emitter , EventType::RenderTargetClosed )
 {
-    
+
 }
 
 Event* RenderTargetClosedEvent::clone() const
 {
-    return new RenderTargetClosedEvent ( iEmitter->lock().getObject() ) ;
+    return new RenderTargetClosedEvent ( iEmitter->getObject() ) ;
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -330,12 +330,12 @@ Event* RenderTargetClosedEvent::clone() const
 RenderTargetChangedRenderContextEvent::RenderTargetChangedRenderContextEvent ( const EventProceeder * emitter )
 : Gre::Event( emitter , EventType::RenderTargetChangedRenderContext )
 {
-    
+
 }
 
 Event* RenderTargetChangedRenderContextEvent::clone() const
 {
-    return new RenderTargetChangedRenderContextEvent ( iEmitter->lock().getObject() ) ;
+    return new RenderTargetChangedRenderContextEvent ( iEmitter->getObject() ) ;
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -343,21 +343,21 @@ Event* RenderTargetChangedRenderContextEvent::clone() const
 RenderTargetChangedFramebufferEvent::RenderTargetChangedFramebufferEvent ( const EventProceeder * emitter )
 : Gre::Event( emitter , EventType::RenderTargetChangedFramebuffer )
 {
-    
+
 }
 
 Event* RenderTargetChangedFramebufferEvent::clone() const
 {
-    return new RenderTargetChangedFramebufferEvent ( iEmitter->lock().getObject() ) ;
+    return new RenderTargetChangedFramebufferEvent ( iEmitter->getObject() ) ;
 }
 
 // ---------------------------------------------------------------------------------------------------
 
-RendererRegisteredTargetEvent::RendererRegisteredTargetEvent ( const EventProceeder * emitter , SpecializedCountedObjectUser < EventProceeder > * target )
+RendererRegisteredTargetEvent::RendererRegisteredTargetEvent ( const EventProceeder * emitter , Holder < EventProceeder > * target )
 : Gre::Event( emitter , EventType::RendererRegisteredTarget )
 , Target(target)
 {
-    
+
 }
 
 RendererRegisteredTargetEvent::~RendererRegisteredTargetEvent() noexcept ( false )
@@ -371,19 +371,19 @@ RendererRegisteredTargetEvent::~RendererRegisteredTargetEvent() noexcept ( false
 Event* RendererRegisteredTargetEvent::clone() const
 {
     if ( Target ) {
-        return new RendererRegisteredTargetEvent ( iEmitter->lock().getObject() , new EventProceederUser(*Target) ) ;
+        return new RendererRegisteredTargetEvent ( iEmitter->getObject() , new Holder < EventProceeder > (*Target) ) ;
     } else {
-        return new RendererRegisteredTargetEvent ( iEmitter->lock().getObject() , nullptr ) ;
+        return new RendererRegisteredTargetEvent ( iEmitter->getObject() , nullptr ) ;
     }
 }
 
 // ---------------------------------------------------------------------------------------------------
 
-RendererUnregisteredTargetEvent::RendererUnregisteredTargetEvent ( const EventProceeder * emitter , SpecializedCountedObjectUser < EventProceeder > * target )
+RendererUnregisteredTargetEvent::RendererUnregisteredTargetEvent ( const EventProceeder * emitter , Holder < EventProceeder > * target )
 : Gre::Event( emitter , EventType::RendererUnregisteredTarget )
 , Target(target)
 {
-    
+
 }
 
 RendererUnregisteredTargetEvent::~RendererUnregisteredTargetEvent() noexcept ( false )
@@ -397,9 +397,9 @@ RendererUnregisteredTargetEvent::~RendererUnregisteredTargetEvent() noexcept ( f
 Event* RendererUnregisteredTargetEvent::clone() const
 {
     if ( Target ) {
-        return new RendererUnregisteredTargetEvent ( iEmitter->lock().getObject() , new EventProceederUser(*Target) ) ;
+        return new RendererUnregisteredTargetEvent ( iEmitter->getObject() , new Holder < EventProceeder > (*Target) ) ;
     } else {
-        return new RendererUnregisteredTargetEvent ( iEmitter->lock().getObject() , nullptr ) ;
+        return new RendererUnregisteredTargetEvent ( iEmitter->getObject() , nullptr ) ;
     }
 }
 
@@ -408,12 +408,12 @@ Event* RendererUnregisteredTargetEvent::clone() const
 RenderScenePreRenderEvent::RenderScenePreRenderEvent ( const EventProceeder * emitter )
 : Gre::Event( emitter , EventType::RenderScenePreRender )
 {
-    
+
 }
 
 Event* RenderScenePreRenderEvent::clone() const
 {
-    return new RenderScenePreRenderEvent ( iEmitter->lock().getObject() ) ;
+    return new RenderScenePreRenderEvent ( iEmitter->getObject() ) ;
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -421,12 +421,12 @@ Event* RenderScenePreRenderEvent::clone() const
 RenderScenePostRenderEvent::RenderScenePostRenderEvent ( const EventProceeder * emitter )
 : Gre::Event( emitter , EventType::RenderScenePostRender )
 {
-    
+
 }
 
 Event* RenderScenePostRenderEvent::clone() const
 {
-    return new RenderScenePostRenderEvent ( iEmitter->lock().getObject() ) ;
+    return new RenderScenePostRenderEvent ( iEmitter->getObject() ) ;
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -435,12 +435,12 @@ UpdateEvent::UpdateEvent( const EventProceeder * emitter , const Duration& t )
 : Event( emitter , EventType::Update )
 , elapsedTime(t)
 {
-    
+
 }
 
 Event* UpdateEvent::clone() const
 {
-    return new UpdateEvent ( iEmitter->lock().getObject() , elapsedTime ) ;
+    return new UpdateEvent ( iEmitter->getObject() , elapsedTime ) ;
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -448,17 +448,17 @@ Event* UpdateEvent::clone() const
 ResourceUnloadedEvent::ResourceUnloadedEvent( const EventProceeder * emitter )
 : Event( emitter , EventType::ResourceUnloaded )
 {
-    
+
 }
 
 ResourceUnloadedEvent::~ResourceUnloadedEvent() noexcept ( false )
 {
-    
+
 }
 
 Event* ResourceUnloadedEvent::clone() const
 {
-    return new ResourceUnloadedEvent ( iEmitter->lock().getObject() ) ;
+    return new ResourceUnloadedEvent ( iEmitter->getObject() ) ;
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -466,12 +466,12 @@ Event* ResourceUnloadedEvent::clone() const
 PositionChangedEvent::PositionChangedEvent ( const EventProceeder* emitter , const Vector3& pos )
 : Gre::Event(emitter, EventType::PositionChanged) , Position(pos)
 {
-    
+
 }
 
 Event* PositionChangedEvent::clone() const
 {
-    return new PositionChangedEvent ( iEmitter->lock().getObject() , Position ) ;
+    return new PositionChangedEvent ( iEmitter->getObject() , Position ) ;
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -479,12 +479,12 @@ Event* PositionChangedEvent::clone() const
 DirectionChangedEvent::DirectionChangedEvent ( const EventProceeder* emitter , const Vector3& dir )
 : Gre::Event(emitter, EventType::DirectionChanged) , Direction(dir)
 {
-    
+
 }
 
 Event* DirectionChangedEvent::clone() const
 {
-    return new DirectionChangedEvent ( iEmitter->lock().getObject() , Direction ) ;
+    return new DirectionChangedEvent ( iEmitter->getObject() , Direction ) ;
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -493,12 +493,12 @@ CustomEvent::CustomEvent ( const EventProceeder * emitter , const std::map < std
 : Gre::Event( emitter , EventType::Custom )
 , Properties(properties)
 {
-    
+
 }
 
 Event* CustomEvent::clone() const
 {
-    return new CustomEvent ( iEmitter->lock().getObject() , Properties ) ;
+    return new CustomEvent ( iEmitter->getObject() , Properties ) ;
 }
 
 GreEndNamespace

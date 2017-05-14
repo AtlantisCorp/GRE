@@ -16,10 +16,10 @@
  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  copies of the Software, and to permit persons to whom the Software is
  furnished to do so, subject to the following conditions:
- 
+
  The above copyright notice and this permission notice shall be included in
  all copies or substantial portions of the Software.
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -39,12 +39,12 @@ GreBeginNamespace
 Keyboard::Keyboard(const std::string& name)
 : Resource(ResourceIdentifier::New() , name)
 {
-    
+
 }
 
 Keyboard::~Keyboard() noexcept ( false )
 {
-    
+
 }
 
 bool Keyboard::isKeyDown(Key k) const
@@ -73,12 +73,12 @@ void Keyboard::unload()
 
 KeyboardLoader::KeyboardLoader()
 {
-    
+
 }
 
 KeyboardLoader::~KeyboardLoader() noexcept(false)
 {
-    
+
 }
 
 KeyboardHolder KeyboardLoader::load(const std::string &name) const
@@ -102,47 +102,47 @@ KeyboardManager::KeyboardManager ()
 : Gre::SpecializedResourceManager < Keyboard , KeyboardLoader > ()
 , iKeyboardListener(new KeyboardListener(this))
 {
-    
+
 }
 
 KeyboardManager::KeyboardManager ( const std::string & name )
 : Gre::SpecializedResourceManager < Keyboard , KeyboardLoader > ( name )
 , iKeyboardListener ( new KeyboardListener(this) )
 {
-    
+
 }
 
 KeyboardManager::~KeyboardManager () noexcept ( false )
 {
-    
+
 }
 
-KeyboardUser KeyboardManager::load(const std::string &kbdname)
+KeyboardHolder KeyboardManager::load(const std::string &kbdname)
 {
     GreAutolock ;
-    
+
     KeyboardHolder kbd ( new Keyboard ( kbdname ) ) ;
-    
+
     if ( !kbd.isInvalid() )
     {
         iHolders.add(kbd);
-        addListener( KeyboardUser(kbd) ) ;
-        
+        addListener( KeyboardHolder(kbd) ) ;
+
         if ( !iKeyboardListener.isInvalid() )
         {
-            kbd->addListener( SpecializedCountedObjectUser<EventProceeder>(iKeyboardListener) ) ;
+            kbd->addListener( iKeyboardListener ) ;
         }
-        
-        return KeyboardUser ( kbd ) ;
+
+        return kbd ;
     }
-    
+
     else
     {
-        return KeyboardUser ( nullptr ) ;
+        return KeyboardHolder ( nullptr ) ;
     }
 }
 
-void KeyboardManager::addGlobalKeyListener(const SpecializedCountedObjectUser<Gre::EventProceeder> &listener)
+void KeyboardManager::addGlobalKeyListener(const Holder<Gre::EventProceeder> &listener)
 {
     GreAutolock ; iGlobalKeyListeners.push_back(listener) ;
 }
@@ -155,13 +155,12 @@ void KeyboardManager::clearGlobalKeyListeners()
 void KeyboardManager::iSendGlobalKeyEvent(EventHolder &e)
 {
     GreAutolock ;
-    
-    for ( EventProceederUser & proceeder : iGlobalKeyListeners )
+
+    for ( EventProceederHolder & proceeder : iGlobalKeyListeners )
     {
         if ( !proceeder.isInvalid() )
         {
-            EventProceederHolder pholder = proceeder.lock() ;
-            pholder->onEvent( e ) ;
+            proceeder->onEvent( e ) ;
         }
     }
 }
@@ -180,9 +179,9 @@ KeyboardManager::KeyboardListener::KeyboardListener ( KeyboardManager * creator 
     }
 }
 
-KeyboardManager::KeyboardListener::~KeyboardListener() noexcept ( false ) 
+KeyboardManager::KeyboardListener::~KeyboardListener() noexcept ( false )
 {
-    
+
 }
 
 void KeyboardManager::KeyboardListener::onEvent(EventHolder &e)

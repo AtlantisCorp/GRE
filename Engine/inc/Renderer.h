@@ -39,7 +39,6 @@
 
 #include "Color.h"
 #include "Mesh.h"
-#include "Camera.h"
 #include "HardwareProgram.h"
 #include "HardwareProgramManager.h"
 #include "FrameBuffer.h"
@@ -148,35 +147,6 @@ public:
     virtual void clearBuffers ( const ClearBuffers & buffers ) const = 0 ;
 
     //////////////////////////////////////////////////////////////////////
-    /// @brief Draw the given mesh to the framebuffer currently used.
-    ///
-    /// @note
-    /// This function should not bind vertex shader attributes , as this should
-    /// be done in the 'Mesh::use()' function. The node calls the Mesh if it
-    /// is considered visible and the mesh sends the attributes data to the
-    /// program used by the technique. This allows us to customize easily the
-    /// process by making the user able to overwrite 'Mesh::use()' and so
-    /// change what is sent to the program.
-    ///
-    /// @note
-    /// Also , this function should check if the mesh is indexed , or if it
-    /// has some custom drawing capabilities we can use to draw the mesh
-    /// quicker. Use the right function in the right situation.
-    ///
-    //////////////////////////////////////////////////////////////////////
-    virtual void drawMesh ( const MeshHolder & mesh ) const = 0 ;
-
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Draw the mesh hold by the given node.
-    ///
-    /// @note
-    /// This function should not bind anything , but only call 'drawMesh()'.
-    /// Binding to the shader's program is done by the renderpass object.
-    ///
-    //////////////////////////////////////////////////////////////////////
-    virtual void draw ( const Gre::RenderNodeHolder & node ) const ;
-
-    //////////////////////////////////////////////////////////////////////
     /// @brief Draw generally a quad to the screen using the given technique.
     ///
     /// @note
@@ -187,6 +157,17 @@ public:
     ///
     //////////////////////////////////////////////////////////////////////
     virtual void draw ( const Gre::TechniqueHolder & technique ) const = 0 ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Draw the designated submesh. Notes that this submesh should
+    /// already be binded by RenderPass , and the renderer only has to call
+    /// the draw command directly from its API ( for example glDrawElements ).
+    ///
+    /// This function can also bind an index buffer , and judge how to draw
+    /// the submesh.
+    ///
+    //////////////////////////////////////////////////////////////////////
+    virtual void drawSubMesh ( const SubMeshHolder & submesh ) const = 0 ;
 
 public:
 
@@ -224,7 +205,7 @@ public:
     //////////////////////////////////////////////////////////////////////
     /// @brief Changes 'iContext'.
     //////////////////////////////////////////////////////////////////////
-    virtual void setRenderContext ( const RenderContextUser& context ) ;
+    virtual void setRenderContext ( const RenderContextHolder& context ) ;
 
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns 'iContext'.
@@ -267,14 +248,11 @@ protected:
     bool iEnabled ;
 };
 
-/// @brief SpecializedCountedObjectHolder for RendererPrivate.
-typedef SpecializedCountedObjectHolder<Renderer> RendererHolder;
+/// @brief Holder for RendererPrivate.
+typedef Holder<Renderer> RendererHolder;
 
 /// @brief SpecializedResourceHolderList for RendererPrivate.
 typedef SpecializedResourceHolderList<Renderer> RendererHolderList;
-
-/// @brief SpecializedResourceUser.
-typedef SpecializedCountedObjectUser<Renderer> RendererUser;
 
 //////////////////////////////////////////////////////////////////////
 /// @brief ResourceLoader for Renderer.
@@ -339,7 +317,7 @@ public:
     //////////////////////////////////////////////////////////////////////
     /// @brief Creates a new Renderer , following given rules.
     //////////////////////////////////////////////////////////////////////
-    virtual RendererUser load ( const std::string & name , const RendererOptions & options ) ;
+    virtual RendererHolder load ( const std::string & name , const RendererOptions & options ) ;
 
     //////////////////////////////////////////////////////////////////////
     /// @brief Call's 'Renderer::render()' for every activated Renderer's.
@@ -349,8 +327,8 @@ public:
     virtual void render () const ;
 };
 
-/// @brief SpecializedCountedObjectHolder for RendererManager.
-typedef SpecializedCountedObjectHolder < RendererManager > RendererManagerHolder ;
+/// @brief Holder for RendererManager.
+typedef Holder < RendererManager > RendererManagerHolder ;
 
 GreEndNamespace
 #endif

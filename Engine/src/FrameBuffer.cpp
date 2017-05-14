@@ -224,6 +224,11 @@ const Viewport & RenderFramebuffer::getViewport() const
     GreAutolock ; return iViewport ;
 }
 
+Viewport & RenderFramebuffer::getViewport ()
+{
+    GreAutolock ; return iViewport ;
+}
+
 const std::pair < int , int > & RenderFramebuffer::getDefaultSize () const
 {
     GreAutolock ; return iDefaultSize ;
@@ -259,6 +264,16 @@ void RenderFramebuffer::clear ()
     iViewport = { 0 , 0 , 0 , 0 } ;
 }
 
+const Projection & RenderFramebuffer::getProjection () const
+{
+    GreAutolock ; return iViewport.getProjection () ;
+}
+
+void RenderFramebuffer::onWindowSizedEvent(const Gre::WindowSizedEvent &e)
+{
+    GreAutolock ; iViewport.update({ e.Width , e.Height , e.Width , e.Height }) ;
+}
+
 // ---------------------------------------------------------------------------------------------------
 
 RenderFramebufferInternalCreator::RenderFramebufferInternalCreator ()
@@ -285,6 +300,11 @@ RenderFramebufferManager::~RenderFramebufferManager() noexcept ( false )
     if ( iCreator ) {
         delete iCreator ;
     }
+}
+
+RenderFramebufferHolder RenderFramebufferManager::getNull ()
+{
+    GreAutolock ; return findFirstHolder ( "framebuffers.default" ) ;
 }
 
 RenderFramebufferHolder RenderFramebufferManager::loadBlank(const std::string &name)
@@ -319,7 +339,17 @@ RenderFramebufferHolder RenderFramebufferManager::load(const std::string &name, 
 
 void RenderFramebufferManager::setInternalCreator(Gre::RenderFramebufferInternalCreator *creator)
 {
-    GreAutolock ; iCreator = creator ;
+    GreAutolock ;
+
+    if ( iCreator )
+    return ;
+
+    iCreator = creator ;
+
+    RenderFramebufferHolder null = iCreator -> loadNull() ;
+    null -> setName( "framebuffers.default" ) ;
+
+    iHolders.add(null) ;
 }
 
 const RenderFramebufferInternalCreator* RenderFramebufferManager::getInternalCreator() const

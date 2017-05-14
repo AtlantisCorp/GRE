@@ -16,10 +16,10 @@
  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  copies of the Software, and to permit persons to whom the Software is
  furnished to do so, subject to the following conditions:
- 
+
  The above copyright notice and this permission notice shall be included in
  all copies or substantial portions of the Software.
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -45,53 +45,50 @@ GreBeginNamespace
 class DLL_PUBLIC HardwarePixelBuffer : public HardwareBuffer
 {
 public:
-    
+
     POOLED(Pools::HdwBuffer)
-    
+
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     HardwarePixelBuffer(const std::string& name);
-    
+
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     virtual ~HardwarePixelBuffer();
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Changes the HardwarePixelFormat.
     //////////////////////////////////////////////////////////////////////
     virtual void setPixelFormat(const HardwarePixelFormat& pixformat);
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the HardwarePixelFormat used by this buffer.
     //////////////////////////////////////////////////////////////////////
     virtual HardwarePixelFormat getPixelFormat() const;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Should return a pointer to the data stored by the
     /// HardwarePixelBuffer.
     //////////////////////////////////////////////////////////////////////
     virtual char* getData();
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Should return a pointer to the data stored by the
     /// HardwarePixelBuffer.
     //////////////////////////////////////////////////////////////////////
     virtual const char* getData() const;
-    
+
 protected:
-    
+
     /// @brief Holds the HardwarePixelFormat used to store data.
     HardwarePixelFormat iPixFormat;
 };
 
-/// @brief SpecializedCountedObjectHolder for HardwarePixelBufferPrivate.
-typedef SpecializedCountedObjectHolder<HardwarePixelBuffer> HardwarePixelBufferHolder;
+/// @brief Holder for HardwarePixelBufferPrivate.
+typedef Holder<HardwarePixelBuffer> HardwarePixelBufferHolder;
 
 /// @brief SpecializedResourceHolderList for HardwarePixelBufferPrivate.
 typedef SpecializedResourceHolderList<HardwarePixelBuffer> HardwarePixelBufferHolderList;
-
-/// @brief SpecializedCountedObjectUser for HardwarePixelBuffer.
-typedef SpecializedCountedObjectUser<HardwarePixelBuffer> HardwarePixelBufferUser;
 
 GreEndNamespace
 

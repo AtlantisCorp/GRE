@@ -130,6 +130,11 @@ public:
     virtual void unuse() const ;
 
     //////////////////////////////////////////////////////////////////////
+    /// @brief True if program is binded.
+    //////////////////////////////////////////////////////////////////////
+    virtual bool binded () const = 0 ;
+
+    //////////////////////////////////////////////////////////////////////
     /// @brief Returns 'iLinked' .
     //////////////////////////////////////////////////////////////////////
     virtual bool isFinalized () const ;
@@ -145,14 +150,9 @@ public:
     //////////////////////////////////////////////////////////////////////
     virtual void reset();
 
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns true if this program is currently bound.
-    //////////////////////////////////////////////////////////////////////
-    virtual bool isBound () const ;
-
 public:
 
-    // Those functions may be used only when 'isLinked()' returns true, i.e. when the
+    // Those functions may be used only when 'binded()' returns true, i.e. when the
     // program has been successfully linked. When a program is not linked , those functions
     // shoud do nothing or emit a warning message.
 
@@ -169,6 +169,11 @@ public:
                                   bool normalize ,
                                   size_t stride ,
                                   void * pointer) const = 0 ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Disables every vertex attributes present in the program .
+    //////////////////////////////////////////////////////////////////////
+    virtual void disableVertexAttribs () const = 0 ;
 
     // ---------------------------------------------------------------------------------------------------
     // Uniform setting / checking functions.
@@ -239,14 +244,11 @@ protected:
     std::map < std::string , HardwareProgramVariable > iUniforms ;
 };
 
-/// @brief SpecializedCountedObjectHolder for HardwareProgramPrivate.
-typedef SpecializedCountedObjectHolder<HardwareProgram> HardwareProgramHolder;
+/// @brief Holder for HardwareProgramPrivate.
+typedef Holder<HardwareProgram> HardwareProgramHolder;
 
 /// @brief SpecializedResourceHolderList for HardwareProgramPrivate.
 typedef SpecializedResourceHolderList<HardwareProgram> HardwareProgramHolderList;
-
-/// @brief SpecializedCountedObjectUser for HardwareProgram.
-typedef SpecializedCountedObjectUser<HardwareProgram> HardwareProgramUser;
 
 GreEndNamespace
 

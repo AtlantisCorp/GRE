@@ -4,7 +4,7 @@
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
-//  Copyright (c) 2015 - 2016 Luk2010
+//  Copyright (c) 2015 - 2017 Luk2010
 //  Created on 12/02/2016.
 //
 //////////////////////////////////////////////////////////////////////
@@ -16,10 +16,10 @@
  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  copies of the Software, and to permit persons to whom the Software is
  furnished to do so, subject to the following conditions:
- 
+
  The above copyright notice and this permission notice shall be included in
  all copies or substantial portions of the Software.
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -40,23 +40,6 @@
 #include "Color.h"
 
 GreBeginNamespace
-
-//////////////////////////////////////////////////////////////////////
-/// @brief List the Buffer's bits the RenderContext can clear between
-/// each render.
-/// @see https://www.opengl.org/sdk/docs/man2/xhtml/glClear.xml for
-/// meaning of those values. Notes those values are from OpenGl.
-//////////////////////////////////////////////////////////////////////
-enum class RenderContextClearBuffer
-{
-    ColorBufferBit ,
-    DepthBufferBit ,
-    AccumBufferBit ,
-    StencilBufferBit
-};
-
-/// @brief Array of RenderContextClearBuffer.
-typedef std::vector < RenderContextClearBuffer > RenderContextClearBuffers;
 
 //////////////////////////////////////////////////////////////////////
 /// @brief Defines a Context which, when binded, enables the Renderer
@@ -80,56 +63,53 @@ typedef std::vector < RenderContextClearBuffer > RenderContextClearBuffers;
 class DLL_PUBLIC RenderContext : public Resource
 {
 public:
-    
+
     POOLED(Pools::Resource)
-    
+
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     RenderContext ( const std::string& name ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     RenderContext ( const std::string& name , const RenderContextInfo& ctxtInfo ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     virtual ~RenderContext() noexcept ( false ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns true if this object is binded.
     //////////////////////////////////////////////////////////////////////
     virtual bool isBinded() const;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Bind the RenderContext.
     //////////////////////////////////////////////////////////////////////
     virtual void bind() const = 0;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Unbind this Object (make it unusable).
     //////////////////////////////////////////////////////////////////////
     virtual void unbind() const = 0;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Send every operations remaining to Hardware, and generally
     /// swap buffers.
     //////////////////////////////////////////////////////////////////////
     virtual void flush() const = 0;
-    
+
 protected:
-    
+
     /// @brief True if this Context is currently binded.
     mutable bool iIsBinded;
 };
 
-/// @brief SpecializedCountedObjectHolder for RenderContext.
-typedef SpecializedCountedObjectHolder<RenderContext> RenderContextHolder;
+/// @brief Holder for RenderContext.
+typedef Holder<RenderContext> RenderContextHolder;
 
 /// @brief SpecializedResourceHolderList for RenderContext.
 typedef SpecializedResourceHolderList<RenderContext> RenderContextHolderList;
-
-/// @brief SpecializedCountedObjectUser.
-typedef SpecializedCountedObjectUser<RenderContext> RenderContextUser;
 
 ////////////////////////////////////////////////////////////////////////
 /// @brief Manages RenderContext objects.
@@ -139,29 +119,29 @@ typedef SpecializedCountedObjectUser<RenderContext> RenderContextUser;
 class DLL_PUBLIC RenderContextManager : public ResourceManagerBase < RenderContext >
 {
 public:
-    
+
     POOLED ( Pools::Manager )
-    
+
     ////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////
     RenderContextManager ( ) ;
-    
+
     ////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////
     RenderContextManager ( const std::string & name ) ;
-    
+
     ////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////
     virtual ~RenderContextManager ( ) ;
-    
+
     ////////////////////////////////////////////////////////////////////////
     /// @brief Loads a new RenderContext with given name.
     ////////////////////////////////////////////////////////////////////////
-    virtual RenderContextUser load ( const std::string & name , const RenderContextInfo & info ) = 0 ;
+    virtual RenderContextHolder load ( const std::string & name , const RenderContextInfo & info ) = 0 ;
 } ;
 
-/// @brief SpecializedCountedObjectHolder for RenderContextManager .
-typedef SpecializedCountedObjectHolder< RenderContextManager > RenderContextManagerHolder ;
+/// @brief Holder for RenderContextManager .
+typedef Holder< RenderContextManager > RenderContextManagerHolder ;
 
 GreEndNamespace
 

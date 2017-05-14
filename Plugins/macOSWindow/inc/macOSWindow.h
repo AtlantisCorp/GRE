@@ -45,6 +45,8 @@ using namespace Gre ;
 class macWindow : public Window
 {
 public:
+    
+    POOLED ( Pools::Resource ) 
 
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
@@ -89,13 +91,13 @@ public:
     /// @brief Returns an holder to the RenderContext associated to this
     /// RenderTarget, or null.
     //////////////////////////////////////////////////////////////////////
-    virtual RenderContextUser getRenderContext();
+    virtual RenderContextHolder getRenderContext();
 
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns an holder to the RenderContext associated to this
     /// RenderTarget, or null.
     //////////////////////////////////////////////////////////////////////
-    virtual const RenderContextUser getRenderContext() const;
+    virtual const RenderContextHolder getRenderContext() const;
 
     //////////////////////////////////////////////////////////////////////
     /// @brief Hides/Unhides the cursor if the window is focused.

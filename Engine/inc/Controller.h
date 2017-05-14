@@ -1,11 +1,11 @@
 //////////////////////////////////////////////////////////////////////
 //
-//  Transformation.h
+//  Controller.h
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
-//  Copyright (c) 2015 - 2016 Luk2010
-//  Created on 15/06/2016.
+//  Copyright (c) 2015 - 2017 Luk2010
+//  Created on 11/05/2017.
 //
 //////////////////////////////////////////////////////////////////////
 /*
@@ -30,143 +30,150 @@
  -----------------------------------------------------------------------------
  */
 
-#ifndef GRE_Transformation_h
-#define GRE_Transformation_h
+#ifndef GRE_CONTROLLER_H
+#define GRE_CONTROLLER_H
 
-#include "Pools.h"
+#include "RenderNode.h"
 
 GreBeginNamespace
 
 //////////////////////////////////////////////////////////////////////
-/// @class Transformation
-/// @brief Stores Transformation's components like 'translation',
-/// 'rotation' and 'scale'.
+/// @brief Defines a basic controller object.
 ///
-/// This class also retains default values for Right/Up/Front
-/// vectors. Those values can be changed by the user, but only before
-/// creating any Camera, Lights, or other position-related objects.
+/// A Controller is a Resource able to manage one or more nodes, responding
+/// to events listened by this controller. For example, a controller can
+/// listen to a Window's keys events, and control a camera node in order
+/// to make it move. But it can also control other nodes, thus the
+/// controller is able to do almost any desired action on a node.
+///
+/// Basic controllers are cloned from a base. When a user wants to create
+/// a totally new controller, it should be implemented either as a
+/// plugin or directly in the program, as a new class.
 ///
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC Transformation
+class DLL_PUBLIC Controller : public Resource
 {
 public:
 
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Creates a non-transforming Transformation.
-    //////////////////////////////////////////////////////////////////////
-    Transformation();
+    POOLED ( Pools::Referenced )
 
     //////////////////////////////////////////////////////////////////////
-    /// @brief Creates a Transformation.
     //////////////////////////////////////////////////////////////////////
-    Transformation(const Vector3& translation);
+    Controller ( const std::string & name ) ;
 
     //////////////////////////////////////////////////////////////////////
-    /// @brief Creates a Transformation.
     //////////////////////////////////////////////////////////////////////
-    Transformation(const Vector3& translation, const Matrix4& rotation);
+    virtual ~Controller () noexcept ( false ) ;
 
     //////////////////////////////////////////////////////////////////////
-    /// @brief Creates a Transformation.
+    /// @brief Creates a Controller of the same type of this one. This function
+    /// should always be overwritten by the user or the derived type. Notes
+    /// it may or may not copy the informations held by this controller to
+    /// the cloned one.
     //////////////////////////////////////////////////////////////////////
-    Transformation(const Vector3& translation, const Matrix4& rotation, const Vector3& scale);
+    virtual Holder < Controller > clone ( const std::string & name ) const = 0 ;
 
     //////////////////////////////////////////////////////////////////////
-    /// @brief Copies a Transformation.
+    /// @brief Adds a rendernode to control.
     //////////////////////////////////////////////////////////////////////
-    Transformation(const Transformation& other);
+    virtual void control ( const Holder < RenderNode > & rendernode ) ;
 
     //////////////////////////////////////////////////////////////////////
-    /// @brief Destructs the Transformation.
+    /// @brief Removes a rendernode from the control.
     //////////////////////////////////////////////////////////////////////
-    ~Transformation();
+    virtual void neglect ( const Holder < RenderNode > & rendernode ) ;
 
     //////////////////////////////////////////////////////////////////////
-    /// @brief Translate the component.
+    /// @brief Removes every rendernode from the controller.
     //////////////////////////////////////////////////////////////////////
-    void translate(const Vector3& translation);
+    virtual void neglectAll () ;
 
     //////////////////////////////////////////////////////////////////////
-    /// @brief Set the iTranslation property.
+    /// @brief Returns every controlled rendernodes.
     //////////////////////////////////////////////////////////////////////
-    void setTranslation(const Vector3& translation);
+    virtual const RenderNodeHolderList & getControlled () const ;
 
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Translation component.
+    /// @brief Calls 'neglectAll()' and the base's clear.
     //////////////////////////////////////////////////////////////////////
-    const Vector3& getTranslation() const;
+    virtual void clear () ;
 
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Rotates the component.
-    //////////////////////////////////////////////////////////////////////
-    void rotate(float angle, const Vector3& axis);
+protected:
 
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Changes the Quaternion based on direction vector.
-    //////////////////////////////////////////////////////////////////////
-    void setDirection ( const Vector3& direction ) ;
-
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Set the iRotation property.
-    //////////////////////////////////////////////////////////////////////
-    void setRotation(const Quaternion& rotation);
-
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Rotation component.
-    //////////////////////////////////////////////////////////////////////
-    const Quaternion& getRotation() const;
-
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Scales the component.
-    //////////////////////////////////////////////////////////////////////
-    void scale(const Vector3& scalev);
-
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Sets the iScale property.
-    //////////////////////////////////////////////////////////////////////
-    void setScale(const Vector3& scalev);
-
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the Scale.
-    //////////////////////////////////////////////////////////////////////
-    const Vector3& getScale() const;
-
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Returns a Matrix4 identity, translated, rotated and scaled
-    /// by the components of this class.
-    //////////////////////////////////////////////////////////////////////
-    Matrix4 get() const;
-
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Applies the Transformation on this one, using translate(),
-    /// rotate() and scale().
-    //////////////////////////////////////////////////////////////////////
-    void apply(const Transformation& transformation);
-
-    /// @brief Default Transformation.
-    static Transformation Default;
-
-    /// @brief Default Right value. ( 1.0 , 0.0 , 0.0 )
-    static Vector3 Right ;
-
-    /// @brief Default Up value. ( 0.0 , 1.0 , 0.0 )
-    static Vector3 Up ;
-
-    /// @brief Default Forward value. ( 0.0 , 0.0 , 1.0 )
-    static Vector3 Forward ;
-
-private:
-
-    /// @brief Translation component.
-    Vector3 iTranslation;
-
-    /// @brief Rotation component.
-    Quaternion iRotation;
-
-    /// @brief Scale component.
-    Vector3 iScale;
+    /// @brief Controlled rendernodes.
+    RenderNodeHolderList iControlled ;
 };
+
+GRE_MAKE_HOLDER( Controller ) ;
+
+//////////////////////////////////////////////////////////////////////
+/// @brief Manages Controllers loaded by the user, or provided by any
+/// controller provider.
+//////////////////////////////////////////////////////////////////////
+class DLL_PUBLIC ControllerManager : public Resource
+{
+public:
+
+    POOLED ( Pools::Manager )
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    ControllerManager ( const std::string & name = std::string("controllers.managers.default") ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    virtual ~ControllerManager () noexcept ( false ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Creates a new controller, cloning the given one. This method
+    /// should be used to register a Controller.
+    //////////////////////////////////////////////////////////////////////
+    virtual void create ( const std::string & createdname , const ControllerHolder & controller ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Creates a new controller with given name and from given base
+    /// controller.
+    //////////////////////////////////////////////////////////////////////
+    virtual ControllerHolder create ( const std::string & createdname , const std::string & creatorname ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the controller specified by given name.
+    //////////////////////////////////////////////////////////////////////
+    virtual const ControllerHolder get ( const std::string & name ) const ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the controller specified by given name.
+    //////////////////////////////////////////////////////////////////////
+    virtual ControllerHolder get ( const std::string & name ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Removes the controller specified by name.
+    //////////////////////////////////////////////////////////////////////
+    virtual void remove ( const std::string & name ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Removes the controller specified by holder.
+    //////////////////////////////////////////////////////////////////////
+    virtual void remove ( const ControllerHolder & controller ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Remove every controllers in this manager.
+    //////////////////////////////////////////////////////////////////////
+    virtual void removeAll () ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Calls 'removeAll()' and base's clear.
+    //////////////////////////////////////////////////////////////////////
+    virtual void clear () ;
+
+protected:
+
+    /// @brief Controllers created by this manager.
+    ControllerHolderList iControllers ;
+};
+
+GRE_MAKE_HOLDER( ControllerManager ) ;
 
 GreEndNamespace
 
-#endif
+#endif // GRE_CONTROLLER_H

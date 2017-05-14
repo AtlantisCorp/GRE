@@ -217,22 +217,19 @@ protected:
     bool iLoadStatus ;
 };
 
-/// @brief SpecializedCountedObjectHolder for Resource .
-typedef SpecializedCountedObjectHolder<Resource> ResourceHolder ;
-
-/// @brief SpecializedCountedObjectUser for Resource .
-typedef SpecializedCountedObjectUser<Resource> ResourceUser ;
+/// @brief Holder for Resource .
+typedef Holder<Resource> ResourceHolder ;
 
 ////////////////////////////////////////////////////////////////////////
 /// @brief A Specialized List for Resource objects .
 ////////////////////////////////////////////////////////////////////////
 template < typename Class >
-class SpecializedResourceHolderList : public std::list < SpecializedCountedObjectHolder < Class > > , public Lockable
+class SpecializedResourceHolderList : public std::list < Holder < Class > > , public Lockable
 {
 public:
 
     /// @brief Common typedef to avoid typename use.
-    typedef SpecializedCountedObjectHolder< Class > ClassHolder ;
+    typedef Holder< Class > ClassHolder ;
     typedef typename std::list< ClassHolder > list_t ;
 
     ////////////////////////////////////////////////////////////////////////
@@ -428,6 +425,12 @@ public:
     ////////////////////////////////////////////////////////////////////////
     virtual bool reloadResource ( const std::string & arguments = std::string () ) ;
 };
+
+//////////////////////////////////////////////////////////////////////
+/// @brief Creates typedef for holder and holder list.
+#define GRE_MAKE_HOLDER( classname ) \
+    typedef Holder < classname > classname ## Holder ; \
+    typedef SpecializedResourceHolderList < classname > classname ## HolderList
 
 GreEndNamespace
 

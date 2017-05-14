@@ -136,13 +136,6 @@ void Renderer::clearPasses ()
     GreAutolock ; iPasses.clear() ;
 }
 
-void Renderer::draw ( const RenderNodeHolder & node ) const
-{
-    if ( !node.isInvalid() )
-    if ( node -> isRenderable() )
-    drawMesh ( node -> getMesh() ) ;
-}
-
 bool Renderer::installManagers ()
 {
     GreAutolock ;
@@ -259,12 +252,6 @@ bool Renderer::installManagers ()
         }
     }
 
-	if ( iInstalled && !ResourceManager::Get()->getRenderSceneManager().isInvalid() )
-	{
-		// Remember we must also initialize the RenderSceneManager.
-		ResourceManager::Get()->getRenderSceneManager()->initialize() ;
-	}
-
     return iInstalled ;
 }
 
@@ -299,9 +286,9 @@ void Renderer::setEnabled ( bool b )
     GreAutolock ; iEnabled = b ;
 }
 
-void Renderer::setRenderContext(const RenderContextUser &context)
+void Renderer::setRenderContext(const RenderContextHolder &context)
 {
-    GreAutolock ; iContext = context.lock() ;
+    GreAutolock ; iContext = context ;
 }
 
 const RenderContextHolder& Renderer::getRenderContext() const
@@ -334,20 +321,20 @@ RendererManager::~RendererManager() noexcept ( false )
 
 }
 
-RendererUser RendererManager::load(const std::string &name, const Gre::RendererOptions &options)
+RendererHolder RendererManager::load(const std::string &name, const Gre::RendererOptions &options)
 {
     GreAutolock ;
 
     if ( !name.empty() )
     {
-        RendererUser tmp = findFirst(name);
+        RendererHolder tmp = findFirst(name);
 
         if ( !tmp.isInvalid() )
         {
 #ifdef GreIsDebugMode
             GreDebugPretty() << "Renderer Resource '" << name << "' already loaded." << Gre::gendl;
 #endif
-            return RendererUser ( nullptr );
+            return RendererHolder ( nullptr );
         }
 
         for ( auto it = iLoaders.getLoaders().begin(); it != iLoaders.getLoaders().end(); it++ )
@@ -379,10 +366,10 @@ RendererUser RendererManager::load(const std::string &name, const Gre::RendererO
                         // Adds the renderer only for update events , and registers it to the
                         // manager.
 
-                        addFilteredListener( EventProceederUser(rholder) , { EventType::Update } ) ;
+                        addFilteredListener( EventProceederHolder(rholder) , { EventType::Update } ) ;
                         iHolders.push_back(rholder);
 
-                        return RendererUser ( rholder );
+                        return RendererHolder ( rholder );
                     }
                 }
             }
@@ -391,7 +378,7 @@ RendererUser RendererManager::load(const std::string &name, const Gre::RendererO
 #ifdef GreIsDebugMode
         GreDebugPretty() << "Renderer Resource '" << name << "' could not be loaded by any installed Loader." << Gre::gendl;
 #endif
-        return RendererUser ( nullptr );
+        return RendererHolder ( nullptr );
     }
 
     else
@@ -399,7 +386,7 @@ RendererUser RendererManager::load(const std::string &name, const Gre::RendererO
 #ifdef GreIsDebugMode
         GreDebugPretty() << "'name' is empty." << Gre::gendl;
 #endif
-        return RendererUser ( nullptr );
+        return RendererHolder ( nullptr );
     }
 }
 

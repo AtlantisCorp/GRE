@@ -137,7 +137,7 @@
     [Alias LightShadowMatrix lightSpaceMatrix]
 
     [Alias MaterialTexDiffuse diffuseTexture]
-    [Alias LightTexShadow shadowMap]
+    [Alias LightTexture0 shadowMap]
     [Alias LightPosition lightPos]
     [Alias CameraPosition viewPos]
 

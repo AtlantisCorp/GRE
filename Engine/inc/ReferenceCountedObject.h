@@ -40,7 +40,6 @@
 GreBeginNamespace
 
 class ReferenceCountedObjectHolder ;
-class ReferenceCountedObjectUser ;
 
 ////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////
@@ -140,30 +139,30 @@ protected:
 ////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////
 template < typename Class >
-class SpecializedCountedObjectHolder : public ReferenceCountedObjectHolder
+class Holder : public ReferenceCountedObjectHolder
 {
 public:
 
     ////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////
-    SpecializedCountedObjectHolder () :
-    Gre::ReferenceCountedObjectHolder() , iClass ( nullptr )
+    Holder () : Gre::ReferenceCountedObjectHolder()
+    , iClass ( nullptr )
     {
 
     }
 
     ////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////
-    SpecializedCountedObjectHolder ( const Class * object ) :
-    Gre::ReferenceCountedObjectHolder(object) , iClass ( nullptr )
+    Holder ( const Class * object ) : Gre::ReferenceCountedObjectHolder(object)
+    , iClass ( nullptr )
     {
         iClass = reinterpret_cast<Class*>(iObject) ;
     }
 
     ////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////
-    SpecializedCountedObjectHolder ( const SpecializedCountedObjectHolder<Class> & holder ) :
-    Gre::ReferenceCountedObjectHolder(holder) , iClass ( nullptr )
+    Holder ( const Holder<Class> & holder ) : Gre::ReferenceCountedObjectHolder(holder)
+    , iClass ( nullptr )
     {
         iClass = reinterpret_cast<Class*>(iObject) ;
     }
@@ -171,44 +170,45 @@ public:
     ////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////
     template < typename Subclass >
-    SpecializedCountedObjectHolder ( const SpecializedCountedObjectHolder<Subclass> & holder ) :
-    Gre::ReferenceCountedObjectHolder(holder) , iClass ( nullptr )
+    Holder ( const Holder<Subclass> & holder ) : Gre::ReferenceCountedObjectHolder(holder)
+    , iClass ( nullptr )
     {
         if ( std::is_base_of<Class, Subclass>::value )
-            iClass = reinterpret_cast<Class*>(iObject) ;
+        iClass = reinterpret_cast<Class*>(iObject) ;
+
         else if ( std::is_base_of<Subclass, Class>::value )
-            iClass = reinterpret_cast<Class*>(iObject) ;
+        iClass = reinterpret_cast<Class*>(iObject) ;
     }
 
     ////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////
-    SpecializedCountedObjectHolder<Class> & operator = ( const SpecializedCountedObjectHolder<Class> & rhs )
+    Holder < Class > & operator = ( const Holder < Class > & rhs )
     {
         GreAutolock ;
-        
+
         ReferenceCountedObjectHolder::operator=(rhs);
         iClass = reinterpret_cast<Class*>(iObject);
-        
+
         return *this ;
     }
 
     ////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////
-    bool operator == ( const SpecializedCountedObjectHolder<Class> & rhs ) const
+    bool operator == ( const Holder<Class> & rhs ) const
     {
         GreAutolock ; return iClass == rhs.iClass ;
     }
 
     ////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////
-    bool operator < ( const SpecializedCountedObjectHolder < Class > & rhs ) const
+    bool operator < ( const Holder < Class > & rhs ) const
     {
         GreAutolock ; return iClass < rhs.iClass ;
     }
 
     ////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////
-    virtual ~SpecializedCountedObjectHolder () noexcept ( false )
+    virtual ~Holder () noexcept ( false )
     {
 
     }
@@ -254,194 +254,6 @@ protected:
 
     /// @brief Templated issue.
     Class * iClass ;
-};
-
-////////////////////////////////////////////////////////////////////////
-/// @brief An ObjectUser is an object that will hold a pointer to the
-/// original object adress , and to its counter.
-///
-/// In order to access the original object, the 'lock()' method creates
-/// an ObjectHolder from the object adress and counter informations. If
-/// the counter is invalid, or if the holder's count is null, the user
-/// will return a null holder.
-///
-/// Notes that if the user takes a counter and this counter is invalidated
-/// during its utilisation, behaviour is undefined. Also notes that the
-/// user should use the counter mutex to accessit through multiple threads.
-///
-/// Also notes that the constructor by pointer bypass the const parameter.
-/// This system may be used to bypass any const property and should not
-/// be used for this purpose.
-///
-////////////////////////////////////////////////////////////////////////
-class ReferenceCountedObjectUser : public Lockable
-{
-public:
-
-    ////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////
-    ReferenceCountedObjectUser () ;
-
-    ////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////
-    ReferenceCountedObjectUser ( const ReferenceCountedObject* object ) ;
-
-    ////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////
-    ReferenceCountedObjectUser ( const ReferenceCountedObjectHolder & holder ) ;
-
-    ////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////
-    ReferenceCountedObjectUser ( const ReferenceCountedObjectUser & user ) ;
-
-    ////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////
-    virtual ~ReferenceCountedObjectUser () noexcept ( false ) ;
-
-    ////////////////////////////////////////////////////////////////////////
-    /// @brief Locks the current object.
-    ////////////////////////////////////////////////////////////////////////
-    ReferenceCountedObjectHolder lock () ;
-
-    ////////////////////////////////////////////////////////////////////////
-    /// @brief Locks the current object.
-    ////////////////////////////////////////////////////////////////////////
-    const ReferenceCountedObjectHolder lock () const ;
-
-    ////////////////////////////////////////////////////////////////////////
-    /// @brief Returns true if this user contains no object.
-    ////////////////////////////////////////////////////////////////////////
-    virtual bool isInvalid () const ;
-
-    ////////////////////////////////////////////////////////////////////////
-    /// @brief Resets the user.
-    ////////////////////////////////////////////////////////////////////////
-    virtual void clear () ;
-
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    bool operator == ( const ReferenceCountedObjectUser & rhs ) const ;
-
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    ReferenceCountedObjectUser & operator = ( const ReferenceCountedObjectUser & rhs ) ;
-
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    bool operator < ( const ReferenceCountedObjectUser & rhs ) const ;
-
-protected:
-
-    ////////////////////////////////////////////////////////////////////////
-    /// @brief Check if the Counter Holder count is valid to update the
-    /// 'iObject' property.
-    ////////////////////////////////////////////////////////////////////////
-    void iCheckCounterValidity () const ;
-
-protected:
-
-    /// @brief Class holded.
-    mutable ReferenceCountedObject* iObject ;
-
-    /// @brief Pointer to the Counter.
-    mutable ReferenceCounter* iCounter ;
-};
-
-////////////////////////////////////////////////////////////////////////
-/// @brief Specialized Class to use any ReferenceCounted object as a
-/// ReferenceCountedObjectUser.
-////////////////////////////////////////////////////////////////////////
-template < typename Class >
-class SpecializedCountedObjectUser : public ReferenceCountedObjectUser
-{
-public:
-
-    ////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////
-    SpecializedCountedObjectUser () :
-    Gre::ReferenceCountedObjectUser()
-    {
-
-    }
-
-    ////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////
-    SpecializedCountedObjectUser ( const Class * object ) :
-    ReferenceCountedObjectUser(object)
-    {
-
-    }
-
-    ////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////
-    SpecializedCountedObjectUser ( const SpecializedCountedObjectHolder<Class> & holder ) :
-    ReferenceCountedObjectUser(holder)
-    {
-
-    }
-
-    ////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////
-    SpecializedCountedObjectUser ( const SpecializedCountedObjectUser<Class> & user ) :
-    ReferenceCountedObjectUser(user)
-    {
-
-    }
-
-    ////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////
-    template < typename Subclass >
-    SpecializedCountedObjectUser ( const SpecializedCountedObjectUser<Subclass> & user ) :
-    Gre::ReferenceCountedObjectUser(user)
-    {
-
-    }
-
-    ////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////
-    virtual ~SpecializedCountedObjectUser () noexcept ( false )
-    {
-
-    }
-
-    ////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////
-    SpecializedCountedObjectHolder<Class> lock ()
-    {
-        GreAutolock ;
-        
-        iCheckCounterValidity();
-        
-        // We create the holder depending on the object. The fallback here is , if the
-        // iObject was initialized without initializing the counter , thus this object
-        // is destroyed and we then try to lock the user , the holder will be initialized
-        // with invalid memory pointer and will lead to unexpected behaviour.
-        
-        return SpecializedCountedObjectHolder < Class > ( reinterpret_cast < Class* > (iObject) ) ;
-    }
-
-    ////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////
-    const SpecializedCountedObjectHolder<Class> lock () const
-    {
-        GreAutolock ;
-        
-        iCheckCounterValidity();
-        
-        // We create the holder depending on the object. The fallback here is , if the
-        // iObject was initialized without initializing the counter , thus this object
-        // is destroyed and we then try to lock the user , the holder will be initialized
-        // with invalid memory pointer and will lead to unexpected behaviour.
-        
-        return SpecializedCountedObjectHolder < Class > ( reinterpret_cast < Class* > (iObject) ) ;
-    }
-
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    bool operator == ( const SpecializedCountedObjectUser<Class> & rhs ) const
-    {
-        GreAutolock ; return ReferenceCountedObjectUser::operator==(rhs) ;
-    }
 };
 
 GreEndNamespace

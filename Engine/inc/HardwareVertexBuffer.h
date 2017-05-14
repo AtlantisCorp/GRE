@@ -16,10 +16,10 @@
  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  copies of the Software, and to permit persons to whom the Software is
  furnished to do so, subject to the following conditions:
- 
+
  The above copyright notice and this permission notice shall be included in
  all copies or substantial portions of the Software.
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -45,47 +45,44 @@ GreBeginNamespace
 class DLL_PUBLIC HardwareVertexBuffer : public HardwareBuffer
 {
 public:
-    
+
     POOLED(Pools::HdwBuffer)
-    
-    /// @brief SpecializedCountedObjectHolder for HardwareVertexBufferPrivate.
-    typedef SpecializedCountedObjectHolder<HardwareVertexBuffer> HardwareVertexBufferHolder;
-    
+
+    /// @brief Holder for HardwareVertexBufferPrivate.
+    typedef Holder<HardwareVertexBuffer> HardwareVertexBufferHolder;
+
     /// @brief SpecializedResourceHolderList for HardwareVertexBufferPrivate.
     typedef SpecializedResourceHolderList<HardwareVertexBuffer> HardwareVertexBufferHolderList;
-    
+
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     HardwareVertexBuffer(const std::string& name);
-    
+
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     virtual ~HardwareVertexBuffer();
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the VertexDescriptor.
     //////////////////////////////////////////////////////////////////////
     virtual const VertexDescriptor& getVertexDescriptor() const;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Changes the VertexDescriptor.
     //////////////////////////////////////////////////////////////////////
     virtual void setVertexDescriptor(const VertexDescriptor& vdesc);
-    
+
 protected:
-    
+
     /// @brief Vertex's Descriptor map.
     VertexDescriptor iComponents;
 };
 
-/// @brief SpecializedCountedObjectHolder for HardwareVertexBufferPrivate.
-typedef SpecializedCountedObjectHolder<HardwareVertexBuffer> HardwareVertexBufferHolder;
+/// @brief Holder for HardwareVertexBufferPrivate.
+typedef Holder<HardwareVertexBuffer> HardwareVertexBufferHolder;
 
 /// @brief SpecializedResourceHolderList for HardwareVertexBufferPrivate.
 typedef SpecializedResourceHolderList<HardwareVertexBuffer> HardwareVertexBufferHolderList;
-
-/// @brief SpecializedCountedObjectUser.
-typedef SpecializedCountedObjectUser<HardwareVertexBuffer> HardwareVertexBufferUser;
 
 GreEndNamespace
 

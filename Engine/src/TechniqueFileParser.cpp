@@ -422,6 +422,10 @@ internal::TechniqueFileContext* TechniqueFileParser::convertTree ( const interna
                     convertTexture ( context , node ) ;
                 }
 
+                else if ( deftype == "Mesh" ) {
+                    convertMesh ( context , node ) ;
+                }
+
 #ifdef GreIsDebugMode
                 else
                 {
@@ -758,6 +762,52 @@ void TechniqueFileParser::convertTexture ( internal::TechniqueFileContext* conte
     context -> textures [name] = texture ;
 }
 
+void TechniqueFileParser::convertMesh ( internal::TechniqueFileContext* context , const internal::TechniqueFileNode* node )
+{
+    //////////////////////////////////////////////////////////////////////
+    // Mesh definition is [Mesh $name]
+
+    std::string name = node -> definition.words.size() >= 2 ? node -> definition.words.at(1) : std::string () ;
+
+    if ( name.empty() )
+    return ;
+
+    internal::TechniqueFileMesh mesh ;
+    mesh.name = name ;
+    mesh.type = internal::TechniqueFileElementType::Mesh ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Loop through attributes.
+
+    for ( auto subnode : node -> children )
+    {
+        if ( subnode -> definition.words.empty() )
+        continue ;
+
+        //////////////////////////////////////////////////////////////////////
+        // File Definition.
+
+        if (subnode -> definition.words.at(0) == "File" &&
+            subnode -> definition.words.size() >= 2)
+        {
+            std::string path = subnode -> definition.words.at(1) ;
+            mesh.file = path ;
+        }
+
+        //////////////////////////////////////////////////////////////////////
+        // Bundled file definition.
+
+        else if (subnode -> definition.words.at(0) == "BundledFile" &&
+                 subnode -> definition.words.size() >= 2 )
+        {
+            std::string path = subnode -> definition.words.at(1) ;
+            mesh.bundledfile = path ;
+        }
+    }
+
+    context -> meshes [name] = mesh ;
+}
+
 TechniqueHolderList TechniqueFileParser::createTechniques ( const internal::TechniqueFileContext* context )
 {
     //////////////////////////////////////////////////////////////////////
@@ -768,6 +818,32 @@ TechniqueHolderList TechniqueFileParser::createTechniques ( const internal::Tech
 
     TechniqueHolderList techniques ;
     GreDebug ( "[INFO] Scanning Context Tree..." ) << gendl ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Tries to load meshes.
+
+    for ( auto it : context -> meshes )
+    {
+        //////////////////////////////////////////////////////////////////////
+        // Depending on bundledfile and file , we see first if the bundled file
+        // is not empty , and in second case we see the file.
+
+        MeshHolder mesh ( nullptr ) ;
+
+        ResourceLoaderOptions ops ;
+
+        if ( !it.second.name.empty() )
+        ops ["mesh.name"] = it.second.name ;
+
+        if ( !it.second.bundledfile.empty() )
+        mesh = ResourceManager::Get() -> getMeshManager () -> loadBundledFile ( it.second.bundledfile , ops ) ;
+
+        else if ( !it.second.file.empty() )
+        mesh = ResourceManager::Get() -> getMeshManager () -> loadFile ( it.second.file , ops ) ;
+
+        if ( !mesh.isInvalid() )
+        GreDebug ( "[INFO] Found Mesh '" ) << mesh -> getName() << "' ( " << mesh->getSubMeshes().size() << " submesh(es) )." << gendl ;
+    }
 
     //////////////////////////////////////////////////////////////////////
     // Here we will first try to load every programs.

@@ -35,7 +35,6 @@
 
 #include "Resource.h"
 #include "RenderContext.h"
-#include "LoopBehaviours.h"
 #include "RenderTarget.h"
 #include "Variant.h"
 
@@ -125,7 +124,7 @@ typedef std::vector < WindowContextAttribute > WindowContextAttributes ;
 //////////////////////////////////////////////////////////////////////
 /// @brief A Window Object.
 ///
-/// A Window is a specific RenderTarget normally visible by the User on
+/// A Window is a specific RenderTarget normally visible by the Holder on
 /// the Screen .
 ///
 /// ### Subclassing 'Gre::Window'
@@ -215,12 +214,12 @@ public: // RenderFramebuffer Functions .
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns 'RenderFramebuffer ( nullptr )' .
     //////////////////////////////////////////////////////////////////////
-    virtual RenderFramebufferUser getFramebuffer();
+    virtual RenderFramebufferHolder getFramebuffer();
 
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns 'RenderFramebuffer ( nullptr )' .
     //////////////////////////////////////////////////////////////////////
-    virtual const RenderFramebufferUser getFramebuffer() const;
+    virtual const RenderFramebufferHolder getFramebuffer() const;
 
     //////////////////////////////////////////////////////////////////////
     /// @brief Do nothing.
@@ -271,14 +270,11 @@ protected:
     bool iCenterCursor ;
 };
 
-/// @brief SpecializedCountedObjectHolder for WindowPrivate.
-typedef SpecializedCountedObjectHolder < Window > WindowHolder ;
+/// @brief Holder for WindowPrivate.
+typedef Holder < Window > WindowHolder ;
 
 /// @brief SpecializedResourceHolderList for WindowPrivate.
 typedef SpecializedResourceHolderList < Window > WindowHolderList ;
-
-/// @brief SpecializedResourceUser for WindowPrivate.
-typedef SpecializedCountedObjectUser < Window > WindowUser ;
 
 //////////////////////////////////////////////////////////////////////
 /// @brief ResourceLoader for WindowPrivate.
@@ -335,12 +331,12 @@ public:
     //////////////////////////////////////////////////////////////////////
     /// @brief Loads a new Window given its parameters.
     //////////////////////////////////////////////////////////////////////
-    virtual WindowUser load ( const std::string & name , const ResourceLoaderOptions & info ) ;
+    virtual WindowHolder load ( const std::string & name , const ResourceLoaderOptions & info ) ;
 
     //////////////////////////////////////////////////////////////////////
     /// @brief Adds a Listener to the Global Key Listener.
     //////////////////////////////////////////////////////////////////////
-    virtual void addGlobalKeyListener ( const EventProceederUser & proceeder ) ;
+    virtual void addGlobalKeyListener ( const EventProceederHolder & proceeder ) ;
 
     //////////////////////////////////////////////////////////////////////
     /// @brief Polls Event and returns when an event has been treated.
@@ -390,7 +386,7 @@ protected:
 };
 
 /// @brief Holder for WindowManager Resource .
-typedef SpecializedCountedObjectHolder < WindowManager > WindowManagerHolder ;
+typedef Holder < WindowManager > WindowManagerHolder ;
 
 GreEndNamespace
 #endif /* defined(__GResource__Window__) */

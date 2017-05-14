@@ -62,6 +62,20 @@ Variant::Variant ( const Variant & rhs )
     operator = ( rhs ) ;
 }
 
+Variant::Variant ( const char* cstr )
+{
+    iHelper = new internal::VariantHelper < std::string > () ;
+
+    if ( !iHelper )
+    throw AllocationBadMemory ( "internal::VariantHelper" , sizeof(internal::VariantHelper<std::string>) ) ;
+
+    std::string tmp (cstr) ;
+    iObject = iHelper -> copy ( &tmp ) ;
+
+    if ( !iObject )
+    throw AllocationBadMemory ( typeid(std::string).name() , sizeof(std::string) ) ;
+}
+
 Variant::~Variant ()
 {
     clear () ;

@@ -36,6 +36,7 @@
 #include "Resource.h"
 #include "Texture.h"
 #include "Viewport.h"
+#include "Projection.h"
 
 GreBeginNamespace
 
@@ -214,6 +215,10 @@ public:
     virtual const Viewport & getViewport () const ;
 
     //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    virtual Viewport & getViewport () ;
+
+    //////////////////////////////////////////////////////////////////////
     /// @brief Returns the default size.
     //////////////////////////////////////////////////////////////////////
     virtual const std::pair < int , int > & getDefaultSize () const ;
@@ -227,6 +232,11 @@ public:
     /// @brief Resets the framebuffer. Also unbinds it if binded.
     //////////////////////////////////////////////////////////////////////
     virtual void clear () ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the viewport's projection.
+    //////////////////////////////////////////////////////////////////////
+    virtual const Projection & getProjection () const ;
 
 protected:
 
@@ -246,6 +256,11 @@ protected:
     /// destruction of this buffer should be done by the framebuffer implementation.
     //////////////////////////////////////////////////////////////////////
     virtual void unbindAttachment ( const FramebufferAttachment & attachment ) const = 0 ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Called when a Window Object has sized its surface .
+    //////////////////////////////////////////////////////////////////////
+    virtual void onWindowSizedEvent ( const WindowSizedEvent& e ) ;
 
 protected:
 
@@ -270,14 +285,11 @@ protected:
     Viewport iViewport ;
 };
 
-/// @brief SpecializedCountedObjectHolder for RenderFramebuffer.
-typedef SpecializedCountedObjectHolder<RenderFramebuffer> RenderFramebufferHolder;
+/// @brief Holder for RenderFramebuffer.
+typedef Holder<RenderFramebuffer> RenderFramebufferHolder;
 
 /// @brief SpecializedResourceHolderList for RenderFramebuffer.
 typedef SpecializedResourceHolderList<RenderFramebuffer> RenderFramebufferHolderList;
-
-/// @brief SpecializedCountedObjectUser for RenderFramebuffer.
-typedef SpecializedCountedObjectUser<RenderFramebuffer> RenderFramebufferUser;
 
 //////////////////////////////////////////////////////////////////////
 /// @brief Creates a RenderFramebuffer Object.
@@ -297,6 +309,10 @@ public:
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     virtual RenderFramebuffer* load ( const std::string & name , const ResourceLoaderOptions& options ) const = 0 ;
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    virtual RenderFramebuffer* loadNull () const = 0 ;
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -321,6 +337,11 @@ public:
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     virtual ~RenderFramebufferManager () noexcept ( false ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the screen's framebuffer.
+    //////////////////////////////////////////////////////////////////////
+    virtual RenderFramebufferHolder getNull () ;
 
     //////////////////////////////////////////////////////////////////////
     /// @brief Creates a blank framebuffer.
@@ -359,7 +380,7 @@ protected:
 };
 
 /// @brief
-typedef SpecializedCountedObjectHolder<RenderFramebufferManager> RenderFramebufferManagerHolder ;
+typedef Holder<RenderFramebufferManager> RenderFramebufferManagerHolder ;
 
 GreEndNamespace
 

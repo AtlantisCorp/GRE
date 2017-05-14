@@ -89,14 +89,14 @@ void Window::setCursorCentered(bool value)
     GreAutolock ; iCenterCursor = value ;
 }
 
-RenderFramebufferUser Window::getFramebuffer()
+RenderFramebufferHolder Window::getFramebuffer()
 {
-    return RenderFramebufferUser ( nullptr ) ;
+    return RenderFramebufferHolder ( nullptr ) ;
 }
 
-const RenderFramebufferUser Window::getFramebuffer() const
+const RenderFramebufferHolder Window::getFramebuffer() const
 {
-    return RenderFramebufferUser ( nullptr ) ;
+    return RenderFramebufferHolder ( nullptr ) ;
 }
 
 void Window::bindFramebuffer() const
@@ -152,7 +152,7 @@ WindowManager::WindowManager( const std::string& name )
     EventProceeder::setTransmitBehaviour(EventProceederTransmitBehaviour::SendsBefore);
 
     if ( !iGlobalListener.isInvalid() )
-    iGlobalListener -> addListener(EventProceederUser(this));
+    iGlobalListener -> addListener(this);
 
     else
     {
@@ -168,7 +168,7 @@ WindowManager::~WindowManager() noexcept ( false )
 
 }
 
-WindowUser WindowManager::load ( const std::string & name , const ResourceLoaderOptions & info )
+WindowHolder WindowManager::load ( const std::string & name , const ResourceLoaderOptions & info )
 {
     GreAutolock ;
 
@@ -187,7 +187,7 @@ WindowUser WindowManager::load ( const std::string & name , const ResourceLoader
     if ( !bestloader )
     {
         GreDebug ( "[WARN] No loader found to load Window '" ) << name << "'." << gendl ;
-        return WindowUser ( nullptr ) ;
+        return WindowHolder ( nullptr ) ;
     }
 
     //////////////////////////////////////////////////////////////////////
@@ -198,22 +198,22 @@ WindowUser WindowManager::load ( const std::string & name , const ResourceLoader
     if ( holder.isInvalid() )
     {
         GreDebug ( "[WARN] Window '" ) << name << "' could not be loaded." << gendl ;
-        return WindowUser ( nullptr ) ;
+        return WindowHolder ( nullptr ) ;
     }
 
     //////////////////////////////////////////////////////////////////////
     // Registers the Window.
 
     iHolders.add ( holder ) ;
-    addListener ( WindowUser(holder) ) ;
-    holder->addListener(EventProceederUser(iGlobalListener));
+    addListener ( holder ) ;
+    holder->addListener( iGlobalListener );
 
     GreDebug ( "[INFO] Loaded Window '" ) << name << "'." << gendl ;
 
     return holder ;
 }
 
-void WindowManager::addGlobalKeyListener ( const EventProceederUser & proceeder )
+void WindowManager::addGlobalKeyListener ( const EventProceederHolder & proceeder )
 {
     GreAutolock ;
     assert ( !proceeder.isInvalid() && "'proceeder' is invalid." ) ;
@@ -245,7 +245,7 @@ void WindowManager::onUpdateEvent(const Gre::UpdateEvent &e)
             if ( win->isClosed() )
             {
                 // Unregister the window from Listener's list and destroy it.
-                removeListener(EventProceederUser(win));
+                removeListener(EventProceederHolder(win));
                 remove ( win ) ;
 
                 onUpdateEvent ( e ) ;
@@ -279,7 +279,7 @@ void WindowManager::onEvent(EventHolder &holder)
     // WindowWillClose event which we listen in order to do proper cleaning. Being the global listener
     // means the emitter is one of the registered windows.
 
-    if ( _findWindow ( holder->getEmitter().lock().getObject() ) )
+    if ( _findWindow ( holder->getEmitter().getObject() ) )
     {
         if ( holder->getType() == EventType::WindowWillClose )
         {
@@ -319,7 +319,7 @@ void WindowManager::onWindowWillCloseEvent(const Gre::WindowWillCloseEvent &e)
         WindowHolder & win = (*it) ;
 
         if ( !e.getEmitter().isInvalid() ) {
-            if ( (EventProceeder*) win.getObject() == e.getEmitter().lock().getObject() ) {
+            if ( (EventProceeder*) win.getObject() == e.getEmitter().getObject() ) {
                 iHolders.erase(it) ;
                 break ;
             }

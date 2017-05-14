@@ -16,10 +16,10 @@
  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  copies of the Software, and to permit persons to whom the Software is
  furnished to do so, subject to the following conditions:
- 
+
  The above copyright notice and this permission notice shall be included in
  all copies or substantial portions of the Software.
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -50,7 +50,7 @@ enum class ApplicationCloseBehaviour
     AllWindowClosed ,
     TerminateCalled ,
     EscapeKey ,
-    
+
     Invalid
 };
 
@@ -60,20 +60,20 @@ enum class ApplicationCloseBehaviour
 class DLL_PUBLIC Application : public Resource
 {
 public:
-    
+
     POOLED(Pools::Resource)
-    
-    /// @brief SpecializedCountedObjectHolder for Application.
-    typedef SpecializedCountedObjectHolder < Application > ApplicationHolder ;
-    
+
+    /// @brief Holder for Application.
+    typedef Holder < Application > ApplicationHolder ;
+
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     Application ( const std::string& name , const std::string& author = std::string() , const std::string& description = std::string() ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     virtual ~Application () noexcept ( false ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Basically runs the Application.
     /// By default , this functions send an update event to every Window
@@ -82,155 +82,152 @@ public:
     /// on macOS )
     //////////////////////////////////////////////////////////////////////
     virtual void run () ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Spawns a 'Worker Thread' to updates the given event proceeder.
     //////////////////////////////////////////////////////////////////////
-    virtual void addWorkerThread ( SpecializedCountedObjectUser<EventProceeder> eventproceeder ) ;
-    
+    virtual void addWorkerThread ( Holder < EventProceeder > eventproceeder ) ;
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Adds the given EventProceeder (generally a Manager) to update
     /// in the Main Thread.
     //////////////////////////////////////////////////////////////////////
     virtual void addMainThread ( EventProceederHolder holder ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Should terminate the run loop.
     //////////////////////////////////////////////////////////////////////
     virtual void terminate () ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Adds a CloseBehaviour to the current behaviours.
     //////////////////////////////////////////////////////////////////////
     virtual void addCloseBehaviour ( const ApplicationCloseBehaviour & behaviour ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns 'iShouldTerminate'.
     //////////////////////////////////////////////////////////////////////
     bool shouldTerminate () const ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Initializes the Application using the given command line
     /// arguments.
     //////////////////////////////////////////////////////////////////////
     virtual void initialize ( int argc , char ** argv ) ;
-    
+
 protected:
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Main function for every Worker Thread.
     //////////////////////////////////////////////////////////////////////
     static void WorkerThreadMain ( Application * app ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Main function for the Main Thread.
     //////////////////////////////////////////////////////////////////////
     void iMainThreadLoop () ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Function called by 'terminate()' , AllWindowClosedListener
     /// and EscapeKeyListener to notifiate terminate request .
     //////////////////////////////////////////////////////////////////////
     void iTerminatePrivate ( ApplicationCloseBehaviour why ) ;
-    
+
 protected:
-    
+
     // Basic Listener to wait for every Window to be closed .
-    
+
     class AllWindowClosedListener : public EventProceeder
     {
     public:
-        
+
         POOLED ( Pools::Referenced ) ;
-        
+
         AllWindowClosedListener ( Application* app ) ;
         ~AllWindowClosedListener ( ) noexcept ( false ) ;
-        
+
     protected:
-        
+
         // As soon as we get this Event , call the application 'terminate' function .
         void onLastWindowClosed ( const LastWindowClosedEvent & e ) ;
-        
+
     protected:
-        
+
         Application* appuser ;
     };
-    
-    typedef SpecializedCountedObjectHolder < AllWindowClosedListener > AllWindowClosedListenerHolder ;
-    
+
+    typedef Holder < AllWindowClosedListener > AllWindowClosedListenerHolder ;
+
     // Basic Listener to wait for an escape key to be sent .
-    
+
     class EscapeKeyListener : public EventProceeder
     {
     public:
-        
+
         POOLED ( Pools::Referenced ) ;
-        
+
         EscapeKeyListener ( Application* appli ) ;
         ~EscapeKeyListener ( ) noexcept ( false ) ;
-        
+
     protected:
-        
+
         void onKeyDownEvent ( const KeyDownEvent & e ) ;
-        
+
     protected:
-        
+
         Application * app ;
     };
-    
-    typedef SpecializedCountedObjectHolder < EscapeKeyListener > EscapeKeyListenerHolder ;
-    
+
+    typedef Holder < EscapeKeyListener > EscapeKeyListenerHolder ;
+
 protected:
-    
+
     /// @brief Author string.
     std::string iAuthor ;
-    
+
     /// @brief Description string.
     std::string iDescription ;
-    
+
     /// @brief Flag to indicate the loop must stop.
     bool iShouldTerminate ;
-    
+
     /// @brief bitset to use ApplicationCloseBehaviour as flags.
     std::bitset < (size_t) ApplicationCloseBehaviour::Invalid > iCloseBehaviours ;
-    
+
     /// @brief List of Worker Threads executed by this Application.
     std::vector < EventProceederHolder > iWorkers ;
-    
+
     /// @brief Workers' thread.
     std::thread iWorkerThread ;
-    
+
     /// @brief List of Event Proceeder to update in Main Thread.
     std::vector < EventProceederHolder > iMainProceeders ;
-    
+
     /// @brief Main Thread start time point.
     TimePoint iMainStart ;
-    
+
     /// @brief Listens to AllWindowClosed behaviour .
     AllWindowClosedListenerHolder iAllWindowClosedListener ;
-    
+
     /// @brief Listens to Escape Key from KeyboardManager.
     EscapeKeyListenerHolder iEscapeListener ;
-    
+
     /// @brief Application::run() should be called only once in the program. This
     /// boolean records wheither Application::run() has been already called.
     bool iRunAlreadyCalled ;
-    
+
     /// @brief Once launched, this variable holds the current WindowManager.
     WindowManagerHolder iWindowManager ;
-    
+
     /// @brief Once launched, this variable holds the current RendererManager.
     RendererManagerHolder iRendererManager ;
 };
 
-/// @brief SpecializedCountedObjectHolder for Application.
-typedef SpecializedCountedObjectHolder < Application > ApplicationHolder ;
+/// @brief Holder for Application.
+typedef Holder < Application > ApplicationHolder ;
 
 /// @brief SpecializedResourceHolderList for Application.
 typedef SpecializedResourceHolderList < Application > ApplicationHolderList ;
-
-/// @brief SpecializedCountedObjectUser for Application.
-typedef SpecializedCountedObjectUser < Application > ApplicationUser ;
 
 //////////////////////////////////////////////////////////////////////
 /// @brief ResourceLoader for ApplicationPrivate.
@@ -238,17 +235,17 @@ typedef SpecializedCountedObjectUser < Application > ApplicationUser ;
 class DLL_PUBLIC ApplicationLoader : public ResourceLoader
 {
 public:
-    
+
     POOLED(Pools::Loader)
-    
+
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     ApplicationLoader() ;
-    
+
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     virtual ~ApplicationLoader() noexcept ( false ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Loads an Application an returns its Holder.
     //////////////////////////////////////////////////////////////////////

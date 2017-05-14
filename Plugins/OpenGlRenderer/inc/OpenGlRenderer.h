@@ -69,10 +69,6 @@ public:
     POOLED ( Gre::Pools::Render )
 
     //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    OpenGlFramebuffer ( const std::string & name ) ;
-
-    //////////////////////////////////////////////////////////////////////
     /// @brief Creates a framebuffer from given OpenGl Handle.
     //////////////////////////////////////////////////////////////////////
     OpenGlFramebuffer ( const std::string & name , GLuint glframebuffer ) ;
@@ -164,6 +160,10 @@ public:
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     virtual Gre::RenderFramebuffer* load ( const std::string & name , const Gre::ResourceLoaderOptions& options ) const ;
+    
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    virtual Gre::RenderFramebuffer* loadNull () const ;
 
 protected:
 
@@ -330,6 +330,16 @@ public:
     //////////////////////////////////////////////////////////////////////
     virtual void _deleteProgram () ;
 
+    //////////////////////////////////////////////////////////////////////
+    /// @brief True if program is binded.
+    //////////////////////////////////////////////////////////////////////
+    virtual bool binded () const ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Disables every vertex attributes present in the program .
+    //////////////////////////////////////////////////////////////////////
+    virtual void disableVertexAttribs () const ;
+
 public:
 
     //////////////////////////////////////////////////////////////////////
@@ -364,6 +374,9 @@ protected:
     /// @brief Holds the OpenGl ID for the program created. If invalid, this
     /// number is 0 .
     GLuint iGlProgram ;
+
+    /// @brief true if this program is binded. False otherwise.
+    mutable bool iBinded ;
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -568,9 +581,9 @@ public:
 protected:
 
     //////////////////////////////////////////////////////////////////////
-    /// @brief Creates a MeshBinder to use with every newly created mesh.
+    /// @brief Implementation to create a new mesh.
     //////////////////////////////////////////////////////////////////////
-    virtual Gre::MeshBinder * loadBinder () const ;
+    virtual Gre::Mesh* create ( const std::string & name ) const ;
 
 protected:
 
@@ -626,25 +639,6 @@ public:
     virtual void clearBuffers ( const Gre::ClearBuffers & buffers ) const ;
 
     //////////////////////////////////////////////////////////////////////
-    /// @brief Draw the given mesh to the framebuffer currently used.
-    ///
-    /// @note
-    /// This function should not bind vertex shader attributes , as this should
-    /// be done in the 'Mesh::use()' function. The node calls the Mesh if it
-    /// is considered visible and the mesh sends the attributes data to the
-    /// program used by the technique. This allows us to customize easily the
-    /// process by making the user able to overwrite 'Mesh::use()' and so
-    /// change what is sent to the program.
-    ///
-    /// @note
-    /// Also , this function should check if the mesh is indexed , or if it
-    /// has some custom drawing capabilities we can use to draw the mesh
-    /// quicker. Use the right function in the right situation.
-    ///
-    //////////////////////////////////////////////////////////////////////
-    virtual void drawMesh ( const Gre::MeshHolder & mesh ) const ;
-
-    //////////////////////////////////////////////////////////////////////
     /// @brief Draw generally a quad to the screen using the given technique.
     ///
     /// @note
@@ -655,6 +649,17 @@ public:
     ///
     //////////////////////////////////////////////////////////////////////
     virtual void draw ( const Gre::TechniqueHolder & technique ) const ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Draw the designated submesh. Notes that this submesh should
+    /// already be binded by RenderPass , and the renderer only has to call
+    /// the draw command directly from its API ( for example glDrawElements ).
+    ///
+    /// This function can also bind an index buffer , and judge how to draw
+    /// the submesh.
+    ///
+    //////////////////////////////////////////////////////////////////////
+    virtual void drawSubMesh ( const Gre::SubMeshHolder & submesh ) const ;
 
 public:
 

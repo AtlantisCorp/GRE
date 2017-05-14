@@ -1,11 +1,11 @@
 //////////////////////////////////////////////////////////////////////
 //
-//  RenderingApiDescriptor.cpp
+//  main.cpp
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
-//  Copyright (c) 2015 - 2016 Luk2010
-//  Created on 21/08/2016.
+//  Copyright (c) 2015 - 2017 Luk2010
+//  Created on 13/05/2017.
 //
 //////////////////////////////////////////////////////////////////////
 /*
@@ -16,10 +16,10 @@
  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  copies of the Software, and to permit persons to whom the Software is
  furnished to do so, subject to the following conditions:
- 
+
  The above copyright notice and this permission notice shall be included in
  all copies or substantial portions of the Software.
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -30,50 +30,39 @@
  -----------------------------------------------------------------------------
  */
 
-#include "RenderingApiDescriptor.h"
+#include <ResourceManager.h>
+#include "DefaultKeys.h"
 
-GreBeginNamespace
+Gre::PluginInfo info ;
 
-RenderingApiDescriptor::RenderingApiDescriptor()
+extern "C" Gre::PluginInfo * GetPluginInfo ( void )
 {
-    
+    info.name = "DefaultControllersPlugin" ;
+    info.desc = "Defines some usually used controllers." ;
+    info.author = "Luk2010" ;
+    info.version = GRE_PLUGIN_VERSION ;
+
+    uuid_parse ( "fab63fb6-c10c-463d-b414-8aee6f3868f4" , info.uuid ) ;
+    return &info ;
 }
 
-RenderingApiDescriptor::~RenderingApiDescriptor()
+extern "C" void StartPlugin ( void )
 {
-    
+    auto controllers = ResourceManager::Get() -> getControllerManager () ;
+
+    if ( controllers.isInvalid() )
+    return ;
+
+    controllers -> create ("gre.controllers.defaultkeys" ,
+                           ControllerHolder(new DefaultKeysController("gre.controllers.defaultkeys")) ) ;
 }
 
-void RenderingApiDescriptor::setApiName(const std::string &name)
+extern "C" void StopPlugin ( void )
 {
-    iApiName = name;
+    auto controllers = ResourceManager::Get() -> getControllerManager () ;
+
+    if ( controllers.isInvalid() )
+    return ;
+
+    controllers -> remove ( "gre.controllers.defaultkeys" ) ;
 }
-
-const std::string& RenderingApiDescriptor::getApiName() const
-{
-    return iApiName;
-}
-
-void RenderingApiDescriptor::setMinVersion(const std::string &minversion)
-{
-    iMinVersion = minversion;
-}
-
-const std::string& RenderingApiDescriptor::getMinVersion() const
-{
-    return iMinVersion;
-}
-
-void RenderingApiDescriptor::setMaxVersion(const std::string &maxversion)
-{
-    iMaxVersion = maxversion;
-}
-
-const std::string& RenderingApiDescriptor::getMaxVersion() const
-{
-    return iMaxVersion;
-}
-
-GreEndNamespace
-
-#include <stdio.h>

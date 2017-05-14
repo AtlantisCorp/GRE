@@ -31,7 +31,6 @@
  */
 
 #include "Technique.h"
-#include "ShadowMapping.h"
 #include "Renderer.h"
 #include "ResourceManager.h"
 
@@ -90,8 +89,11 @@ TechniqueParam TechniqueParamFromString ( const std::string & p )
     if ( p == "LightAttQuad" ) return TechniqueParam::LightAttQuad ;
     if ( p == "LightSpotAngle" ) return TechniqueParam::LightSpotAngle ;
     if ( p == "LightSpotExposition" ) return TechniqueParam::LightSpotExposition ;
-    if ( p == "LightTexShadow" ) return TechniqueParam::LightTexShadow ;
     if ( p == "LightShadowMatrix" ) return TechniqueParam::LightShadowMatrix ;
+    if ( p == "LightTexture0" ) return TechniqueParam::LightTexture0 ;
+    if ( p == "LightTexture1" ) return TechniqueParam::LightTexture1 ;
+    if ( p == "LightTexture2" ) return TechniqueParam::LightTexture2 ;
+    if ( p == "LightTexture3" ) return TechniqueParam::LightTexture3 ;
 
     if ( p == "Texture0" ) return TechniqueParam::Texture0 ;
     if ( p == "Texture1" ) return TechniqueParam::Texture1 ;
@@ -125,6 +127,13 @@ Technique::Technique ( const std::string & name )
     iLightingMode = TechniqueLightingMode::AllLights ;
     iCurrentLight = -1 ;
     iSelfRendered = false ;
+
+    // Loads always the null framebuffer.
+
+    auto framebuffers = ResourceManager::Get () -> getFramebufferManager () ;
+
+    if ( !framebuffers.isInvalid() )
+    iFramebuffer = framebuffers -> getNull() ;
 }
 
 Technique::~Technique() noexcept ( false )
@@ -201,7 +210,7 @@ void Technique::setAliasedParameterStructValue (const TechniqueParam & alias1 ,
     //////////////////////////////////////////////////////////////////////
     // If program is bound , sends the value to the shader object.
 
-    if ( !iProgram->isBound() )
+    if ( !iProgram->binded() )
     return ;
 
     iProgram -> setUniform ( name1 + "." + name2 , type , value ) ;
@@ -216,7 +225,7 @@ void Technique::setAliasedParameterValue (const TechniqueParam & name ,
     if ( iProgram.isInvalid() )
         return ;
 
-    if ( iProgram->isBound() )
+    if ( iProgram->binded() )
     {
         auto alias = getAlias (name) ;
         if ( alias.empty() ) return ;
@@ -234,7 +243,7 @@ void Technique::setNamedParameterValue (const std::string & name ,
     if ( iProgram.isInvalid() )
         return ;
 
-    if ( iProgram->isBound() && !name.empty() ) {
+    if ( iProgram->binded() && !name.empty() ) {
         iProgram -> setUniform ( name , type , value ) ;
     }
 }
@@ -315,7 +324,7 @@ void Technique::setAliasedTextureStruct (const TechniqueParam & alias1 ,
     //////////////////////////////////////////////////////////////////////
     // If program is bound , sends the value to the shader object.
 
-    if ( !iProgram->isBound() )
+    if ( !iProgram->binded() )
     return ;
 
     int unit = bindTexture ( tex ) ;
@@ -341,7 +350,7 @@ void Technique::setAliasedTexture(const Gre::TechniqueParam &param, const Textur
     //////////////////////////////////////////////////////////////////////
     // If not , bind the alias to the program.
 
-    else if ( iProgram->isBound() )
+    else if ( iProgram->binded() )
     {
         auto alias = getAlias ( param ) ;
         if ( alias.empty() ) return ;
@@ -409,6 +418,16 @@ void Technique::reset () const
 {
     resetLights () ;
     resetTextures () ;
+}
+
+const Matrix4 Technique::getProjectionMatrix () const
+{
+    GreAutolock ;
+
+    if ( iFramebuffer.isInvalid() )
+    return Matrix4 ( 1.0f ) ;
+
+    return iFramebuffer -> getProjection().get () ;
 }
 
 int Technique::bindTexture ( const TextureHolder & texture ) const
@@ -551,7 +570,7 @@ TechniqueHolder TechniqueManager::loadFromHolder ( const TechniqueHolder & techn
     if ( iHolders.find(technique->getIdentifier()) == iHolders.end() && !technique.isInvalid() )
     {
         iHolders.add ( technique ) ;
-        addFilteredListener ( EventProceederUser(technique) , { EventType::Update } ) ;
+        addFilteredListener ( technique , { EventType::Update } ) ;
     }
 
     return technique ;

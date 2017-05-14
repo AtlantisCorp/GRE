@@ -58,8 +58,13 @@ Material::Material(const std::string& name) : Gre::Renderable(name)
     iTextures [TechniqueParam::MaterialTexDiffuse] = nullptr ;
     iTextures [TechniqueParam::MaterialTexSpecular] = nullptr ;
     iTextures [TechniqueParam::MaterialTexNormal] = nullptr ;
+    iTextures [TechniqueParam::LightTexture0] = nullptr ;
+    iTextures [TechniqueParam::LightTexture1] = nullptr ;
+    iTextures [TechniqueParam::LightTexture2] = nullptr ;
+    iTextures [TechniqueParam::LightTexture3] = nullptr ;
 
     iUseTextures = false ;
+    iEmissive = false ;
 }
 
 Material::~Material() noexcept ( false )
@@ -178,15 +183,38 @@ void Material::use(const TechniqueHolder &technique) const
 
     if ( !technique.isInvalid() )
     {
-        technique -> setAliasedParameterValue(TechniqueParam::MaterialAmbient, HdwProgVarType::Float3, iAmbient.toFloat3());
-        technique -> setAliasedParameterValue(TechniqueParam::MaterialDiffuse, HdwProgVarType::Float3, iDiffuse.toFloat3());
-        technique -> setAliasedParameterValue(TechniqueParam::MaterialSpecular, HdwProgVarType::Float3, iSpecular.toFloat3());
-        technique -> setAliasedParameterValue(TechniqueParam::MaterialShininess, HdwProgVarType::Float1, iShininess);
+        TechniqueParam alias ;
+        
+        //////////////////////////////////////////////////////////////////////
+        // Binds the parameters differently if this material is an emissive
+        // or normal one. (Emissive is for light use)
+        
+        if ( emissive() )
+        {
+            alias = technique -> getNextLightAlias() ;
+            technique -> setAliasedParameterStructValue(alias, TechniqueParam::LightAmbient, HdwProgVarType::Float3, iAmbient.toFloat3());
+            technique -> setAliasedParameterStructValue(alias, TechniqueParam::LightDiffuse, HdwProgVarType::Float3, iDiffuse.toFloat3());
+            technique -> setAliasedParameterStructValue(alias, TechniqueParam::LightSpecular, HdwProgVarType::Float3, iSpecular.toFloat3());
+        }
+        else
+        {
+            alias = TechniqueParam::None ;
+            technique -> setAliasedParameterStructValue(alias, TechniqueParam::MaterialAmbient, HdwProgVarType::Float3, iAmbient.toFloat3());
+            technique -> setAliasedParameterStructValue(alias, TechniqueParam::MaterialDiffuse, HdwProgVarType::Float3, iDiffuse.toFloat3());
+            technique -> setAliasedParameterStructValue(alias, TechniqueParam::MaterialSpecular, HdwProgVarType::Float3, iSpecular.toFloat3());
+            technique -> setAliasedParameterStructValue(alias, TechniqueParam::MaterialShininess, HdwProgVarType::Float1, iShininess);
+        }
 
+        //////////////////////////////////////////////////////////////////////
+        // As textures can be directly bound to LightTexturei by the user ,
+        // we don't need to check for emissive or not material. However , we should
+        // use the two alias functions to bind those textures.
+        
         if ( iUseTextures )
         {
             for ( auto it : iTextures )
-            technique -> setAliasedTexture(it.first, it.second) ;
+            if ( !it.second.isInvalid() )
+            technique -> setAliasedTextureStruct(alias, it.first, it.second) ;
         }
     }
 }
@@ -232,6 +260,16 @@ void Material::clearTextures ()
 
     for ( auto & it : iTextures )
     it.second = blanktext ;
+}
+
+bool Material::emissive () const
+{
+    GreAutolock ; return iEmissive ;
+}
+
+void Material::setEmissive ( bool value )
+{
+    GreAutolock ; iEmissive = value ;
 }
 
 // ---------------------------------------------------------------------------------------------------

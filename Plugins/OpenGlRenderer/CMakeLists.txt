@@ -13,10 +13,10 @@ include_directories( PUBLIC
 	"${GRE_ROOT_DIRECTORY}/Engine/inc"
 	"${GRE_ROOT_DIRECTORY}/Plugins/OpenGlRenderer/inc"
 	"$<INSTALL_INTERFACE:include>"
-	PRIVATE src 
+	PRIVATE src
 )
 
-# Adds OpenGl depending on platform. 
+# Adds OpenGl depending on platform.
 
 # =========================================================================
 # Enables only on Darwin platform.
@@ -34,7 +34,7 @@ endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 # =========================================================================
 
 # =========================================================================
-# Enables only on Linux platform. On Linux , we use GLEW to manage OpenGl 
+# Enables only on Linux platform. On Linux , we use GLEW to manage OpenGl
 # Extensions , so link against it.
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 # =========================================================================
@@ -83,4 +83,4 @@ else()
     set_property(TARGET OpenGlRenderer PROPERTY CXX_STANDARD 11)
     set_property(TARGET OpenGlRenderer PROPERTY CXX_STANDARD_REQUIRED ON)
 
-endif(${CMAKE_GENERATOR} MATCHES "Xcode") 
+endif(${CMAKE_GENERATOR} MATCHES "Xcode")

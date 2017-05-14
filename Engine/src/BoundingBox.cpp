@@ -4,7 +4,7 @@
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
-//  Copyright (c) 2015 - 2016 Luk2010
+//  Copyright (c) 2015 - 2017 Luk2010
 //  Created on 26/08/2016.
 //
 //////////////////////////////////////////////////////////////////////
@@ -16,10 +16,10 @@
  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  copies of the Software, and to permit persons to whom the Software is
  furnished to do so, subject to the following conditions:
- 
+
  The above copyright notice and this permission notice shall be included in
  all copies or substantial portions of the Software.
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -39,7 +39,22 @@ BoundingBox::BoundingBox()
 , iMax(0.0f, 0.0f, 0.0f)
 , iIsSet(false)
 {
-    
+
+}
+
+BoundingBox::BoundingBox ( const Vector3 & volume )
+{
+    Vector3 absvol = glm::abs ( volume ) ;
+
+    iMin.x = - (absvol.x / 2.0f) ;
+    iMin.y = - (absvol.y / 2.0f) ;
+    iMin.z = - (absvol.z / 2.0f) ;
+
+    iMax.x = absvol.x / 2.0f ;
+    iMax.y = absvol.y / 2.0f ;
+    iMax.z = absvol.z / 2.0f ;
+
+    iIsSet = true ;
 }
 
 BoundingBox::BoundingBox(const Vector3& minpoint, const Vector3& maxpoint)
@@ -50,11 +65,11 @@ BoundingBox::BoundingBox(const Vector3& minpoint, const Vector3& maxpoint)
     iMin.x = glm::min(minpoint.x, maxpoint.x);
     iMin.y = glm::min(minpoint.y, maxpoint.y);
     iMin.z = glm::min(minpoint.z, maxpoint.z);
-    
+
     iMax.x = glm::max(minpoint.x, maxpoint.x);
     iMax.y = glm::max(minpoint.y, maxpoint.y);
     iMax.z = glm::max(minpoint.z, maxpoint.z);
-    
+
     iIsSet = true;
 }
 
@@ -63,12 +78,12 @@ BoundingBox::BoundingBox(const BoundingBox& rhs)
 , iMax(rhs.iMax)
 , iIsSet(rhs.iIsSet)
 {
-    
+
 }
 
 BoundingBox::~BoundingBox()
 {
-    
+
 }
 
 const Vector3& BoundingBox::getMax() const
@@ -88,12 +103,12 @@ void BoundingBox::add(const Vector3 &point)
         iMin.x = glm::min(iMin.x, point.x);
         iMin.y = glm::min(iMin.y, point.y);
         iMin.z = glm::min(iMin.z, point.z);
-        
+
         iMax.x = glm::max(iMax.x, point.x);
         iMax.y = glm::max(iMax.y, point.y);
         iMax.z = glm::max(iMax.z, point.z);
     }
-    
+
     else
     {
         iMin = point;
@@ -117,13 +132,13 @@ bool BoundingBox::contains(const Vector3 &point) const
         {
             return true;
         }
-        
+
         else
         {
             return false;
         }
     }
-    
+
     else
     {
         return false;
@@ -142,28 +157,10 @@ void BoundingBox::clear()
     iIsSet = false;
 }
 
-void BoundingBox::apply(const Gre::Transformation &transf)
+void BoundingBox::translateTo ( const Vector3 & point )
 {
-    if ( iIsSet )
-    {
-        //////////////////////////////////////////////////////////////////////
-        // Apply scale.
-        
-        iMin = iMin * transf.getScale() ;
-        iMax = iMax * transf.getScale() ;
-        
-        //////////////////////////////////////////////////////////////////////
-        // Apply rotation.
-        
-        iMin = glm::rotate(transf.getRotation(), iMin) ;
-        iMax = glm::rotate(transf.getRotation(), iMax) ;
-        
-        //////////////////////////////////////////////////////////////////////
-        // Apply translation.
-        
-        iMin = iMin + transf.getTranslation() ;
-        iMax = iMax + transf.getTranslation() ; 
-    }
+    iMin = iMin + point ;
+    iMax = iMax + point ;
 }
 
 bool BoundingBox::isInvalid() const
@@ -182,18 +179,36 @@ BoundingBox& BoundingBox::operator=(const Gre::BoundingBox &rhs)
 IntersectionResult BoundingBox::intersect(const Gre::BoundingBox &rhs) const
 {
     //////////////////////////////////////////////////////////////////////
-    // Computes, for each axis , the result.
-    
+    // Computes, for each axis , the result. The result is : this bounding
+    // box intersect with rhs ? Yes , this bbox is inside , outside or between
+    // rhs.
+
     if (iMin.x > rhs.iMin.x && iMin.y > rhs.iMin.y && iMin.z > rhs.iMin.z &&
-        iMax.x < rhs.iMax.x && iMax.y < rhs.iMax.y && iMax.z < rhs.iMin.z)
+        iMax.x < rhs.iMax.x && iMax.y < rhs.iMax.y && iMax.z < rhs.iMax.z)
     return IntersectionResult::Inside ;
-    
+
     if (iMin.x < rhs.iMax.x && iMax.x > rhs.iMin.x &&
         iMin.y < rhs.iMax.y && iMax.y > rhs.iMin.y &&
         iMin.z < rhs.iMax.z && iMax.z > rhs.iMin.z)
     return IntersectionResult::Between ;
-    
+
     return IntersectionResult::Outside ;
+}
+
+float BoundingBox::diameterlen () const
+{
+    return glm::length ( diameter() ) ;
+}
+
+Vector3 BoundingBox::diameter () const
+{
+    return iMax - iMin ;
+}
+
+Vector3 BoundingBox::center () const
+{
+    Vector3 diam = diameter () ;
+    return iMin + Vector3 ( diam.x / 2.0f , diam.y / 2.0f , diam.z / 2.0f ) ;
 }
 
 GreEndNamespace

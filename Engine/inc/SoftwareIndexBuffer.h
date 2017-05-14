@@ -16,10 +16,10 @@
  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  copies of the Software, and to permit persons to whom the Software is
  furnished to do so, subject to the following conditions:
- 
+
  The above copyright notice and this permission notice shall be included in
  all copies or substantial portions of the Software.
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -50,19 +50,19 @@ GreBeginNamespace
 class DLL_PUBLIC SoftwareIndexBuffer : public HardwareIndexBuffer
 {
 public:
-    
+
     POOLED(Pools::HdwBuffer)
-    
+
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     SoftwareIndexBuffer(const std::string& name);
-    
+
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     virtual ~SoftwareIndexBuffer() noexcept(false);
-    
+
 protected:
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Called when receiving Update Event.
     /// In SoftwareIndexBuffer, this function is used to set 'iDataChanged'
@@ -71,17 +71,11 @@ protected:
     virtual void onUpdateEvent(const UpdateEvent& e);
 };
 
-/// @brief SpecializedCountedObjectHolder for SoftwareIndexBufferPrivate.
-typedef SpecializedCountedObjectHolder<SoftwareIndexBuffer> SoftwareIndexBufferHolder;
+/// @brief Holder for SoftwareIndexBufferPrivate.
+typedef Holder<SoftwareIndexBuffer> SoftwareIndexBufferHolder;
 
 /// @brief SpecializedResourceHolderList for SoftwareIndexBufferPrivate.
 typedef SpecializedResourceHolderList<SoftwareIndexBuffer> SoftwareIndexBufferHolderList;
-
-/// @brief SpecializedCountedObjectUser for SoftwareIndexBuffer.
-typedef SpecializedCountedObjectUser<SoftwareIndexBuffer> SoftwareIndexBufferUser;
-
-/// @brief std::list for SoftwareIndexBuffer.
-typedef std::list<SoftwareIndexBufferUser> SoftwareIndexBufferList;
 
 GreEndNamespace
 

@@ -7,92 +7,39 @@
 //
 
 #include "ResourceManager.h"
-//#include "ShadowMapping.h"
-
-//#include <unistd.h>
 
 using namespace Gre ;
 
-void DisplayMatrix(const Matrix4 &mat4)
-{
-    GreDebug("[") << mat4[0][0] << ", " << mat4[0][1] << ", " << mat4[0][2] << ", " << mat4[0][3] << gendl ;
-    GreDebug(" ") << mat4[1][0] << ", " << mat4[1][1] << ", " << mat4[1][2] << ", " << mat4[1][3] << gendl ;
-    GreDebug(" ") << mat4[2][0] << ", " << mat4[2][1] << ", " << mat4[2][2] << ", " << mat4[2][3] << gendl ;
-    GreDebug(" ") << mat4[3][0] << ", " << mat4[3][1] << ", " << mat4[3][2] << ", " << mat4[3][3] << "]" << gendl ;
-}
-
-// This is an example of a basic Key listener. Every times a key is pressed in any Window, this listener
-// will notifiate it. In order to make him listen to every active windows, we listen to the global window
-// manager listener.
-class BasicKeyListener : public EventProceeder
+class KeyListener : public Resource
 {
 public:
 
-    BasicKeyListener (const WindowHolder& win , const LightRenderNodeHolder & l ,
-                      const RenderNodeHolder & upcube )
-    : EventProceeder () , window(win) , lightnode(l) , uppercubenode(upcube)
-    { }
+    KeyListener ( const RenderNodeHolder & cam ) : Resource ( ) , camera(cam) { }
+    ~KeyListener () { }
 
-    ~BasicKeyListener () noexcept ( false ) { }
+    RenderNodeHolder camera ;
 
 protected:
 
-    void onLeftMousePressEvent ( const LeftMousePressEvent& event ) {
-        GreDebug("[INFO] Left Mouse button pressed.") << gendl ;
+    void onKeyDownEvent ( const KeyDownEvent & e )
+    {
+        const Vector3 & position  = camera -> getPosition () ;
+        const Vector3 & target    = camera -> getTarget () ;
+        const Vector3   direction = camera -> getDirection () ;
+        const Vector3   right     = camera -> getRightDirection () ;
+        const Vector3   up        = camera -> getUpwardDirection () ;
+
+        if ( e.iKey == Key::I ) {
+            GreDebug ( "[INFO] Camera Infos ----------" ) << gendl ;
+            GreDebug ( "[INFO] p ( " ) << position.x  << ", " << position.y  << ", " << position.z  << " )." << gendl ;
+            GreDebug ( "[INFO] t ( " ) << target.x    << ", " << target.y    << ", " << target.z    << " )." << gendl ;
+            GreDebug ( "[INFO] d ( " ) << direction.x << ", " << direction.y << ", " << direction.z << " )." << gendl ;
+            GreDebug ( "[INFO] r ( " ) << right.x     << ", " << right.y     << ", " << right.z     << " )." << gendl ;
+            GreDebug ( "[INFO] u ( " ) << up.x        << ", " << up.y        << ", " << up.z        << " )." << gendl ;
+
+            GreDebug ( "[INFO] v : " ) << std::endl << camera -> getViewMatrix () << gendl ;
+        }
     }
-
-    void onKeyDownEvent ( const KeyDownEvent& event ) {
-        GreDebug("[INFO] Key pressed : '") << (int) event.iKey << "' Modifiers : " << event.iModifiers << " ." << gendl ;
-
-        if ( event.iKey == Key::P ) {
-            window -> setCursorCentered(true) ;
-        }
-
-        if ( event.iKey == Key::O ) {
-            window -> setCursorCentered(false) ;
-        }
-
-        if ( event.iKey == Key::I ) {
-            window -> toggleCursor(true) ;
-        }
-
-        if ( event.iKey == Key::U ) {
-            window -> toggleCursor(false) ;
-        }
-
-        if ( event.iKey == Key::A )
-            lightnode -> getLight() -> setPosition({
-                lightnode->getLight()->getPosition().x - 0.1f ,
-                lightnode->getLight()->getPosition().y ,
-                lightnode->getLight()->getPosition().z}) ;
-
-        if ( event.iKey == Key::D )
-            lightnode -> getLight() -> setPosition({
-                lightnode->getLight()->getPosition().x + 0.1f ,
-                lightnode->getLight()->getPosition().y ,
-                lightnode->getLight()->getPosition().z}) ;
-
-        if ( event.iKey == Key::W )
-            lightnode -> getLight() -> setPosition({
-                lightnode->getLight()->getPosition().x ,
-                lightnode->getLight()->getPosition().y + 0.1f ,
-                lightnode->getLight()->getPosition().z}) ;
-
-        if ( event.iKey == Key::S )
-            lightnode -> getLight() -> setPosition({
-                lightnode->getLight()->getPosition().x ,
-                lightnode->getLight()->getPosition().y - 0.1f ,
-                lightnode->getLight()->getPosition().z}) ;
-
-        if ( event.iKey == Key::T )
-        uppercubenode -> setVisible ( !uppercubenode->isVisible() ) ;
-
-        DisplayMatrix(lightnode -> getLightCamera() -> getProjectionViewMatrix() ) ;
-    }
-
-    WindowHolder window ;
-    LightRenderNodeHolder lightnode ;
-    RenderNodeHolder uppercubenode ;
 };
 
 class MyApplicationExample
@@ -101,7 +48,7 @@ class MyApplicationExample
 public:
 
     MyApplicationExample ( )
-    : iApplication(nullptr) , iListener(nullptr)
+    : iApplication(nullptr)
     {
 
     }
@@ -109,8 +56,10 @@ public:
     ~MyApplicationExample ()
     {
         iApplication.clear();
-        iListener.clear();
         rmanager.clear();
+        window.clear () ;
+        renderpass.clear () ;
+        renderpass2.clear () ;
 
         Gre::ResourceManager::Destroy();
     }
@@ -121,12 +70,22 @@ public:
 
     void run () ;
 
+    //////////////////////////////////////////////////////////////////////
+    // Loads the Scene that will be rendered on the screen. This function
+    // first loads textures and meshes. Then , it will create a Scene using
+    // the 'scenes.loaders.default' loader. It will integrate a light node ,
+    // a cube node and a camera node.
+    void loadScene ( void ) ;
+
 protected:
 
     ApplicationHolder iApplication ;
-    EventProceederHolder iListener ;
+    ResourceManagerHolder rmanager ;
 
-    Gre::ResourceManagerHolder rmanager ;
+    WindowHolder window ;
+    RenderPassHolder renderpass ;
+    RenderPassHolder renderpass2 ;
+    Holder < KeyListener > keylistener ;
 };
 
 void MyApplicationExample::init ( int argc , char** argv )
@@ -197,14 +156,13 @@ void MyApplicationExample::createScene()
     auto smanager = ResourceManager::Get()->getRenderSceneManager() ;
     auto wmanager = ResourceManager::Get()->getWindowManager() ;
     auto tmanager = ResourceManager::Get()->getTechniqueManager() ;
-    auto cmanager = ResourceManager::Get()->getCameraManager() ;
 
     ResourceLoaderOptions WinOptions ;
     WinOptions ["Window.Title"] = std::string ( "Default Window" ) ;
     WinOptions ["Window.Size"]  = std::string ( "1024x768" ) ;
 
     WindowStyles styles = {
-        WindowStyle::Resizable ,
+        WindowStyle::Resizable , WindowStyle::Miniaturizable ,
         WindowStyle::Closable , WindowStyle::Titled
     };
 
@@ -228,7 +186,7 @@ void MyApplicationExample::createScene()
 
     WinOptions ["Window.ContextAttributes"] = attr ;
 
-    auto window = wmanager -> load ( "Default Window" , WinOptions ) ;
+    window = wmanager -> load ( "Default Window" , WinOptions ) ;
     if ( window.isInvalid() ) exit( -3 ) ;
 
     //////////////////////////////////////////////////////////////////////
@@ -237,10 +195,10 @@ void MyApplicationExample::createScene()
 
     ResourceLoaderOptions RendOptions ;
 
-    auto renderer = rmanager -> load ( "Default Renderer" , RendOptions ) .lock() ;
+    auto renderer = rmanager -> load ( "Default Renderer" , RendOptions ) ;
     if ( renderer.isInvalid() ) exit( -4 ) ;
 
-    renderer -> setRenderContext ( window.lock() -> getRenderContext () ) ;
+    renderer -> setRenderContext ( window -> getRenderContext () ) ;
     renderer -> installManagers() ;
 
     //////////////////////////////////////////////////////////////////////
@@ -249,27 +207,18 @@ void MyApplicationExample::createScene()
     int tec = tmanager -> loadFromBundles ( ResourceManager::Get() -> getBundles() ) ;
     GreDebug ( "[INFO] " ) << tec << " techniques loaded." << Gre::gendl ;
 
-    //////////////////////////////////////////////////////////////////////
-    // Loads a RenderScene.
-
-    ResourceLoaderOptions SceneOptions ;
-
-    auto scene = smanager -> load ( "Default Scene" , SceneOptions ) .lock() ;
-    if ( scene.isInvalid() ) exit( -5 ) ;
-
-    RenderFramebufferHolder shadowframebuffer ( nullptr ) ;
-
     {
         // Rendering in GRE in the viewport at the left. We need to create a 'RenderPass' which is an object
         // that hols everything for the renderer to render the 'pass'. Notes that a pass can be a multi-framebuffer
         // or a multi-technique drawing (the scene may be rendered more than once) , as the technique may have some
         // pre or post render techniques.
 
-        auto renderpass = renderer -> addPass ( "RenderPass1" ) ;
-        renderpass -> setRenderTarget ( window.lock() ) ;
+        renderpass2 = renderer -> addPass ( "renderer.renderpass.2" ) ;
+
+        renderpass = renderer -> addPass ( "RenderPass1" ) ;
+        renderpass -> setRenderTarget ( window ) ;
         renderpass -> setViewport ({ 0.0f , 0.0f , 1.0f , 1.0f });
         renderpass -> setClearColor ( Color(0.4f, 0.8f, 0.4f) ) ;
-        renderpass -> setScene ( scene ) ;
         renderpass -> setClearViewport ( true ) ;
 
         //////////////////////////////////////////////////////////////////////
@@ -279,158 +228,187 @@ void MyApplicationExample::createScene()
         auto tech1 = tmanager -> get ( "learnopengl.shadowmapping.phase1.technique" ) ;
         if ( tech1.isInvalid() ) exit( -6 ) ;
 
+        auto framebuffer = tech1 -> getFramebuffer () ;
+        Viewport & viewport = framebuffer -> getViewport() ;
+        viewport.setProjection ( Projection::Ortho(-10.0f , 10.0f, -10.0f, 10.0f) ) ;
+
         auto tech2 = tmanager -> get ( "learnopengl.shadowmapping.phase2.technique" ) ;
         if ( tech2.isInvalid() ) exit ( -6 ) ;
 
-        shadowframebuffer = tech1 -> getFramebuffer () ;
-        if ( shadowframebuffer.isInvalid() ) exit ( -21 ) ;
-
-        renderpass -> addPreProcessTechnique ( tech1 ) ;
+        renderpass2 -> setTechnique ( tech1 ) ;
         renderpass -> setTechnique ( tech2 ) ;
-
-        renderpass -> addNamedParameter("shadows", HdwProgVarType::Int1, (int) 0) ;
-
-        //////////////////////////////////////////////////////////////////////
-        // Tries to create an FPS-like Camera.
-
-        ResourceLoaderOptions options ;
-        options["Loader"] = std::string("FreeMovingCameraLoader") ;
-        options["Position"] = Vector3 ( 0.0f, 0.0f, 0.0f ) ;
-        options["Direction"] = Vector3 ( 0.0f, 0.0f, 1.0f ) ;
-
-        auto camera = cmanager -> load ( "Camera1" , options ) .lock() ;
-        camera -> setController ( window ) ;
-        scene -> addCamera ( camera ) ;
-        renderpass -> setCamera ( camera ) ;
+        renderpass -> addNamedParameter("shadows", HdwProgVarType::Int1, (int) 1) ;
 
         //////////////////////////////////////////////////////////////////////
-        // Adds a second pass where we draw from another camera , but with a different viewport. We simply copy the
-        // created pass and change the viewport to begin at 50% left.
+        // The default projection for the both techniques is correct. Now set
+        // the framebuffer to listen the window.
 
-        //auto renderpass2 = renderer -> copyPass ( renderpass ) ;
-        //renderpass2 -> setViewport ({ 0.5f , 0.0f , 0.5f , 1.0f });
-        //renderpass2 -> setClearColor ({ 0.4f , 0.4f , 0.8f }) ;
-    }
-
-    {
-        auto mmanager = ResourceManager::Get() -> getMeshManager() ;
-        auto textures = ResourceManager::Get() -> getTextureManager() ;
-
-        //////////////////////////////////////////////////////////////////////
-        // Loads a default blank texture of 256x256 to fill null textures.
-
-        TextureHolder defaulttexture = textures -> loadFromArea("Default", TextureType::Texture2D, 256, 256) ;
-        if ( defaulttexture.isInvalid() ) exit ( -20 ) ;
-        textures -> setDefaultTexture(defaulttexture) ;
-
-        // Create our Root node for the scene.
-        RenderNodeHolder root = scene -> setRootNode(scene->createNode()) ;
-        root -> setBoundingBox ( BoundingBox({-1000.0f, -1000.0f, -1000.0f} , {1000.0f, 1000.0f, 1000.0f}) ) ;
-
-        //////////////////////////////////////////////////////////////////////
-        // Adds a directionnal light to the scene. Links the shadow texture to
-        // the framebuffer from the first technique.
-
-        LightRenderNodeHolder lightnode = scene -> createLightNode ( "Directionnal Light" ) ;
-        if ( lightnode.isInvalid() ) exit ( -7 ) ;
-
-        lightnode -> loadLightCamera () ;
-
-        LightHolder & light = lightnode -> getLight () ;
-        light -> setAmbient ({ 0.5f , 0.5f , 0.5f }) ;
-        light -> setDiffuse ({ 0.8f , 0.8f , 0.8f }) ;
-        light -> setSpecular ({ 1.0f , 1.0f , 1.0f }) ;
-        light -> setPosition ({ 0.0f , 5.0f , -1.0f }) ;
-        light -> setDirection ({ 0.0f , -1.1f , 0.0f }) ;
-
-        scene -> addLightNode ( lightnode ) ;
-
-        const FramebufferAttachment & depthbuffer = shadowframebuffer -> getAttachment ( RenderFramebufferAttachement::Depth ) ;
-        if ( depthbuffer.type != RenderFramebufferAttachementType::Texture ) exit ( -23 ) ;
-
-        const TextureHolder & depthtexture = depthbuffer.texture ;
-        if ( depthtexture.isInvalid() ) exit ( -24 ) ;
-
-        lightnode -> setShadowTexture ( depthtexture ) ;
-
-        //////////////////////////////////////////////////////////////////////
-        // Loads 'Cube.obj' and creates a node to render the 'Cube' mesh.
-
-        ResourceLoaderOptions ops ;
-        int meshes = mmanager -> loadBundledFile ( "Cube.obj" , ops ) ;
-        if ( !meshes ) exit ( -8 ) ;
-
-        MeshHolder cubemesh = mmanager -> get ( "Cube" ) ;
-        if ( cubemesh.isInvalid() ) exit ( -9 ) ;
-
-        RenderNodeHolder cubenode = scene -> createNode ( "Cube Mesh Node" ) ;
-        if ( cubenode.isInvalid() ) exit ( -10 ) ;
-
-        cubenode -> setMesh ( cubemesh ) ;
-
-        //////////////////////////////////////////////////////////////////////
-        // Configure the node's position and scale.
-
-        cubenode -> setPosition ({ 0.0f , 2.0f , -1.0f }) ;
-        cubenode -> setScale ( 4.0f ) ;
-
-        scene -> addNode ( cubenode ) ;
-
-        //////////////////////////////////////////////////////////////////////
-        // Loads the textures 'Cube.png' for diffuse texture and 'CubeSpecular.png'
-        // for specular texture.
-
-        TextureHolder cubetex = textures -> loadBundledFile ( "Cube.tex" , "Cube.png" ,
-                                                              TextureType::Texture2D , ops ) ;
-        if ( cubetex.isInvalid() ) exit ( -11 ) ;
-        TextureHolder cubespectex = textures -> loadBundledFile ( "Cube.spectex" , "CubeSpecular.png" ,
-                                                                  TextureType::Texture2D , ops ) ;
-        if ( cubespectex.isInvalid() ) exit ( -12 ) ;
-
-        cubenode -> getMaterial () -> setUseTextures ( true ) ;
-        cubenode -> getMaterial () -> setDiffuseTexture ( cubetex ) ;
-        cubenode -> getMaterial () -> setSpecularTexture ( cubespectex ) ;
-
-        //////////////////////////////////////////////////////////////////////
-        // Make a plane.
-
-        RenderNodeHolder planenode = scene -> createNode( "node.plane" ) ;
-        if ( planenode.isInvalid() ) exit ( -13 ) ;
-
-        planenode -> setMesh ( cubemesh ) ;
-        planenode -> setPosition ({ 0.0f , 0.0f , -1.0f }) ;
-
-        planenode -> getMaterial () -> setUseTextures ( true ) ;
-        planenode -> getMaterial () -> setDiffuseTexture ( cubetex ) ;
-        planenode -> getMaterial () -> setSpecularTexture ( cubespectex ) ;
-
-        scene -> addNode(planenode) ;
-
-        //////////////////////////////////////////////////////////////////////
-        // Adds our 'Elexis.obj' file.
-/*
-        meshes = mmanager -> loadBundledFile("Elexis.obj", ops) ;
-        if ( !meshes ) exit ( -14 ) ;
-
-        MeshHolder elexismesh = mmanager -> get ( "Elexis" ) ;
-        if ( elexismesh.isInvalid() ) exit ( -15 ) ;
-
-        RenderNodeHolder elexisnode = scene -> createNode() ;
-        elexisnode -> setMesh(elexismesh) ;
-        elexisnode -> setPosition({ 0.0f , 0.0f , -5.0f }) ;
-        scene -> addNode(elexisnode) ;
-*/
-        //////////////////////////////////////////////////////////////////////
-        // Adds the key listener for our example.
-
-        iListener = new BasicKeyListener ( window.lock() , lightnode , cubenode ) ;
-        window.lock() -> addFilteredListener(iListener, {EventType::KeyDown}) ;
+        framebuffer = tech2 -> getFramebuffer () ;
+        framebuffer -> listen ( EventProceederHolder(window.getObject()) , { EventType::WindowSized } ) ;
     }
 }
 
 void MyApplicationExample::run()
 {
     iApplication -> run() ;
+}
+
+void MyApplicationExample::loadScene ( void )
+{
+    //////////////////////////////////////////////////////////////////////
+    // Checks managers.
+
+    auto textures = ResourceManager::Get () -> getTextureManager () ;
+    if ( textures.isInvalid() ) exit ( -25 ) ;
+
+    auto meshes = ResourceManager::Get () -> getMeshManager () ;
+    if ( meshes.isInvalid() ) exit ( -26 ) ;
+
+    auto scenes = ResourceManager::Get () -> getRenderSceneManager () ;
+    if ( scenes.isInvalid() ) exit ( -27 ) ;
+
+    auto materials = ResourceManager::Get () -> getMaterialManager () ;
+    if ( materials.isInvalid() ) exit ( -28 ) ;
+
+    auto framebuffers = ResourceManager::Get () -> getFramebufferManager () ;
+    if ( framebuffers.isInvalid() ) exit ( -38 ) ;
+
+    auto controllers = ResourceManager::Get () -> getControllerManager () ;
+    if ( controllers.isInvalid() ) return ;
+
+    ResourceLoaderOptions defops ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Creates textures and meshes.
+
+    auto diffuse = textures -> loadBundledFile ( "textures.cube.diff" , "cube.diff.png" , TextureType::Texture2D , defops ) ;
+    if ( diffuse.isInvalid() ) exit ( -29 ) ;
+
+    auto specular = textures -> loadBundledFile ( "textures.cube.spec" , "cube.spec.png" , TextureType::Texture2D , defops ) ;
+    if ( specular.isInvalid() ) exit ( -30 ) ;
+
+    auto cube = meshes -> loadBundledFile ( "cube.obj" , defops ) ;
+    if ( cube.isInvalid() ) exit ( -31 ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Creates the cube default material. This material will be applied to
+    // any node that change its mesh to the cube. The second material will
+    // be applied to the light node to emit light.
+
+    auto material = materials -> loadBlank ( "materials.cube" ) ;
+    if ( material.isInvalid() ) exit ( -32 ) ;
+
+    material -> setUseTextures ( true ) ;
+    material -> setDiffuseTexture ( diffuse ) ;
+    material -> setSpecularTexture ( specular ) ;
+    material -> setShininess ( 32.0f ) ;
+    cube -> setDefaultMaterial ( material ) ;
+
+    auto emissive = materials -> loadBlank ( "materials.light" ) ;
+    if ( emissive.isInvalid() ) exit ( -33 ) ;
+
+    emissive -> setUseTextures ( true ) ;
+    emissive -> setAmbient ({ 0.5f , 0.5f , 0.5f }) ;
+    emissive -> setDiffuse ({ 0.8f , 0.8f , 0.8f }) ;
+    emissive -> setSpecular ({ 1.0f , 1.0f , 1.0f }) ;
+
+    auto shadowtex = textures -> findFirstHolder ( "learnopengl.shadowmapping.depthtexture" ) ;
+    if ( shadowtex.isInvalid() ) exit ( -24 ) ;
+
+    emissive -> setTexture ( TechniqueParam::LightTexture0 , shadowtex ) ;
+    emissive -> setEmissive ( true ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Creates a new scene. The used root node will have a size of 1024 by
+    // 1024 by 1024 .
+
+    ResourceLoaderOptions sceneops ;
+    sceneops["scene.loader"] = std::string ( "scenes.loaders.default" ) ;
+    sceneops["scene.root.size"] = Vector3 ( 1024.0f , 1024.0f , 1024.0f ) ;
+
+    auto scene = scenes -> load ( "scene" , sceneops ) ;
+    if ( scene.isInvalid() ) exit ( -34 ) ;
+
+    renderpass -> setScene ( scene ) ;
+    renderpass2 -> setScene ( scene ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Creates the cube node.
+
+    auto cubenode = scene -> create ( "scene.cube" ) ;
+    if ( cubenode.isInvalid() ) exit ( -35 ) ;
+
+    cubenode -> translate ( 0.0f , 0.0f , -1.0f ) ;
+    cubenode -> setMesh ( cube ) ;
+    cubenode -> setMaterial ( material ) ;
+
+    scene -> add ( cubenode ) ;
+
+    auto cubenode2 = scene -> create ( "scene.cube2" ) ;
+    cubenode2 -> translate( 0.0f , -2.0f , -3.0f ) ;
+    cubenode2 -> scale ( 10.0f , 0.3f , 10.0f ) ;
+    cubenode2 -> setMesh( cube ) ;
+    cubenode2 -> setMaterial( material ) ;
+
+    scene -> add ( cubenode2 ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Creates the light node. In order to achieve our shadowing technique ,
+    // we must link the emissive material texture 0 to the framebuffer depth
+    // texture. We can recuperate the texture thanks to its name and the
+    // texture manager.
+
+    auto lightnode = scene -> create ( "scene.light" ) ;
+    if ( lightnode.isInvalid() ) exit ( -36 ) ;
+
+    lightnode -> look ( 0.0f , 0.0f , -1.0f ) ;
+    lightnode -> translate ( 0.0f , 0.0f , 5.0f ) ;
+    lightnode -> setEmissiveMaterial ( emissive ) ;
+    lightnode -> activeViewMatrix ( true ) ;
+
+    scene -> add ( lightnode ) ;
+    renderpass2 -> setCamera ( lightnode ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Creates the camera. The camera has position , direction , but also
+    // a projection matrix that will serve the scene. The ratio used for
+    // the projection will be set automatically by the controller. If we
+    // set a custom ratio , viewport will also be adapted to this ratio.
+
+    auto cameranode = scene -> create ( "scene.camera" ) ;
+    if ( cameranode.isInvalid() ) exit ( -37 ) ;
+
+    cameranode -> translate ( 0.0f , 2.0f , 2.0f ) ;
+    cameranode -> look ( 0.0f , 0.0f , -1.0f ) ;
+    cameranode -> activeViewMatrix ( true ) ;
+
+    scene -> add ( cameranode ) ;
+    renderpass -> setCamera ( cameranode ) ;
+
+    keylistener = new KeyListener ( cameranode ) ;
+    keylistener -> listen ( window , { EventType::KeyDown } ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Creates a controller to control the camera node when keys are pressed.
+    // The 'gre.controllers.defaultkeys' controller is a default controller
+    // where you can set keys to control the node. The controller updates the
+    // node on update event , launched by the controller manager.
+
+    auto controller = controllers -> create ( "scene.camera.controller" , "gre.controllers.defaultkeys" ) ;
+    if ( controller.isInvalid() ) return ;
+
+    controller -> control ( cameranode ) ;
+    controller -> listen ( window , { EventType::KeyDown , EventType::KeyUp } ) ;
+
+/*
+    tech1 -> getViewport () -> setProjection ( ... ) ;
+    tech2 -> getViewport () -> setProjection ( ... ) ;
+
+    node -> look ( ... ) ;
+
+    on render : renderpass -> tech1 -> projection () * cameranode -> getView () * node -> getModel () .
+                renderpass -> tech2 -> projection () * cameranode -> getView () * node -> getModel () .
+*/
 }
 
 int main ( int argc , char ** argv )
@@ -447,6 +425,7 @@ int main ( int argc , char ** argv )
 
         // Creates the RenderPass , RenderScene , ...
         app.createScene() ;
+        app.loadScene () ;
 
         // Runs the application.
         app.run() ;

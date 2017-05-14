@@ -103,14 +103,14 @@ void Texture::unbind() const
     GreAutolock ; _unbind () ;
 }
 
-void Texture::setPixelBuffer(const SoftwarePixelBufferUser& pixelbuffer)
+void Texture::setPixelBuffer(const SoftwarePixelBufferHolder& pixelbuffer)
 {
     GreAutolock ;
 
     if ( !iPixelBuffers.empty() ) {
-        (*iPixelBuffers.begin()) = pixelbuffer.lock() ;
+        (*iPixelBuffers.begin()) = pixelbuffer ;
     } else {
-        iPixelBuffers.add ( pixelbuffer.lock() ) ;
+        iPixelBuffers.add ( pixelbuffer ) ;
     }
 
     if ( !iPixelBuffers.empty() ) {
@@ -121,9 +121,9 @@ void Texture::setPixelBuffer(const SoftwarePixelBufferUser& pixelbuffer)
     }
 }
 
-const SoftwarePixelBufferUser Texture::getPixelBuffer() const
+const SoftwarePixelBufferHolder Texture::getPixelBuffer() const
 {
-    GreAutolock ; return SoftwarePixelBufferUser(iPixelBuffers.front());
+    GreAutolock ; return iPixelBuffers.front() ;
 }
 
 const Surface& Texture::getSurface() const

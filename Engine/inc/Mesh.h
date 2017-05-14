@@ -46,52 +46,125 @@
 
 GreBeginNamespace
 
-class Mesh ;
-
 //////////////////////////////////////////////////////////////////////
-/// @brief Interface object to help the mesh to bind its structure to
-/// an implemented driver.
-//////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC MeshBinder
+/// @brief Groups a holder to the shared vertex buffer and to a pointer
+/// to the first data in the buffer.
+struct HardwareBufferBinding
 {
-public:
+    /// @brief Vertex Buffer to use with the submesh. This buffer is updated
+    /// only by the parent mesh.
+    HardwareVertexBufferHolder buffer ;
 
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    virtual ~MeshBinder () ;
+    /// @brief Address of the first vertex data in the buffer.
+    uintptr_t first ;
 
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    virtual void bind ( const Mesh* mesh , const TechniqueHolder & technique ) const = 0 ;
-
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    virtual void unbind ( const Mesh* mesh , const TechniqueHolder & technique ) const = 0 ;
-
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Should returns true if the implemented mesh should update
-    /// its buffers locations at each frame ( for example it will return
-    /// false on OpenGl , because VAOs retains states ) .
-    //////////////////////////////////////////////////////////////////////
-    virtual bool needUpdate () const = 0 ;
+    /// @brief Number of elements to use from the shared buffer.
+    size_t elements ;
 };
 
 //////////////////////////////////////////////////////////////////////
-/// @brief Describes an object which can be draw on the screen.
+/// @brief Descripes a part of a group of meshes. This part has a default
+/// render material, that should be used by the node to render it if the
+/// node does not overwrite it.
+
+class DLL_PUBLIC SubMesh : public Renderable
+{
+public:
+
+    POOLED ( Pools::Resource )
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    SubMesh ( const std::string & name = std::string () ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    virtual ~SubMesh () noexcept ( false ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    void setIndexBuffer ( const HardwareIndexBufferHolder & buffer ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    const HardwareIndexBufferHolder & getIndexBuffer () const ;
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    void addVertexBuffer ( const HardwareVertexBufferHolder & buffer ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    const HardwareVertexBufferHolderList & getVertexBuffers () const ;
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    void clearVertexBuffers () ;
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    void addSharedVertexBuffer (const HardwareVertexBufferHolder & buffer ,
+                                uintptr_t first ,
+                                size_t elements ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    const std::list < HardwareBufferBinding > & getSharedVertexBuffers () const ;
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    void clearSharedVertexBuffers () ;
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    void setDefaultMaterial ( const MaterialHolder & material ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    const MaterialHolder & getDefaultMaterial () const ;
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    virtual void clear () ;
+
+protected:
+
+    /// @brief Holds the index buffer to render the sub-mesh.
+    HardwareIndexBufferHolder iIndexBuffer ;
+
+    /// @brief Holds local vertex buffers.
+    HardwareVertexBufferHolderList iVertexBuffers ;
+
+    /// @brief Holds shared vertex buffers binding informations. Those informations
+    /// are required as when the sub-mesh binds the shared vertex buffer , it has to
+    /// know how to bind it , more exactly the first data used by the buffer.
+    std::list < HardwareBufferBinding > iSharedBindings ;
+
+    /// @brief Default Material used by this submesh. This material should be bound to
+    /// the technique , only if the node's material is invalid. This let us customize
+    /// the node's material decision : a mesh with more than one submesh holding a
+    /// different material for every submesh. If the node's material is invalid, the
+    /// default material for the submesh will be used. Else, the node's material is
+    /// used. Notes when using the node material it should be bound only once for
+    /// every submeshes, but when using the default material binding goes each time
+    /// for each submesh.
+    MaterialHolder iDefaultMaterial ;
+};
+
+/// @brief
+typedef Holder < SubMesh > SubMeshHolder ;
+
+//////////////////////////////////////////////////////////////////////
+/// @brief Describes a group of submeshes that can be draw on the screen,
+/// using an index buffer and one or more shared or local vertex buffers.
 ///
-/// Mesh objects stores HardwareVertexBuffers, wich describes the raw
-/// vertex (points) data. Those buffers can be disabled if necessary.
-///
-/// This object also stores HardwareIndexBuffer, wich describes the link
-/// between the vertexs data.
-///
-/// You can configure every buffers in order to customize the drawing of
-/// your mesh ( enable/disable some buffers at some times ).
-///
-/// A Mesh is a static object loaded from a file, or from a MeshBuilder
-/// object. A Mesh has a preferred material that should be used by default
-/// by every Node that uses this Mesh. Also, the BoundingBox is calculated
-/// when loading the Mesh.
+/// When the mesh is rendered , it will render every submeshes enabled ,
+/// taking in account their shared and local bindings. Each submesh should
+/// be drawn by the renderer using the draw command . To draw each submeshes,
+/// the renderer should use the 'bindNextSubMesh()' to bind the next submesh
+/// present. Then , it should use 'unbind()' to unbind the whole group of submeshes.
+/// Taking in account a submesh may bind different vertex buffers as another
+/// submesh , the bound vertex buffers should unbind themself.
 ///
 //////////////////////////////////////////////////////////////////////
 class DLL_PUBLIC Mesh : public Renderable
@@ -102,143 +175,191 @@ public:
 
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    Mesh ( ) ;
+    Mesh ( const std::string & name = std::string () ) ;
 
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    Mesh ( const std::string & name ) ;
+    virtual ~Mesh () noexcept ( false ) ;
 
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    virtual ~Mesh ( ) noexcept ( false ) ;
+    const std::string & getOriginalFilepath () const ;
 
     //////////////////////////////////////////////////////////////////////
-    /// @brief Changes the 'iVertexBuffers' property.
     //////////////////////////////////////////////////////////////////////
-    virtual void setVertexBuffers ( const HardwareVertexBufferHolderList & attributes ) ;
+    void setOriginalFilepath ( const std::string & filepath ) ;
 
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the 'iVertexBuffers' property.
+    /// @brief Adds a shared vertex buffer. This buffer can be used with
+    /// any submesh.
     //////////////////////////////////////////////////////////////////////
-    virtual const HardwareVertexBufferHolderList & getVertexBuffers ( ) const ;
+    void addSharedVertexBuffer ( const HardwareVertexBufferHolder & buffer ) ;
 
     //////////////////////////////////////////////////////////////////////
-    /// @brief Changes the 'iIndexBuffer' property.
+    /// @brief Returns the shared vertex buffer at given index.
     //////////////////////////////////////////////////////////////////////
-    virtual void setIndexBuffer ( const HardwareIndexBufferHolder & buffer ) ;
+    const HardwareVertexBufferHolder getSharedVertexBuffer ( size_t idx ) const ;
 
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns 'iIndexBuffer' .
+    /// @brief Returns the list of shared vertex buffers.
     //////////////////////////////////////////////////////////////////////
-    virtual const HardwareIndexBufferHolder & getIndexBuffer ( ) const ;
+    const HardwareVertexBufferHolderList & getSharedVertexBuffers () const ;
 
     //////////////////////////////////////////////////////////////////////
-    /// @brief Clears only the Vertex Buffers .
+    /// @brief Clears every shared buffers in this Mesh. Notes that if submeshes
+    /// uses those buffers , they will be destroyed only when the submeshes are.
     //////////////////////////////////////////////////////////////////////
-    virtual void clearVertexBuffers ( ) ;
+    void clearSharedVertexBuffers () ;
 
     //////////////////////////////////////////////////////////////////////
-    /// @brief Clears only the index buffer .
+    /// @brief Adds a submesh to this mesh.
     //////////////////////////////////////////////////////////////////////
-    virtual void clearIndexBuffer ( ) ;
-
-    ////////////////////////////////////////////////////////////////////////
-    /// @brief Unloads the Resource.
-    ////////////////////////////////////////////////////////////////////////
-    virtual void unload () ;
+    void addSubMesh ( const SubMeshHolder & submesh ) ;
 
     //////////////////////////////////////////////////////////////////////
-    /// @brief Changes 'iBoundingBox' .
+    /// @brief Removes submesh at given index.
     //////////////////////////////////////////////////////////////////////
-    virtual void setBoundingBox ( const BoundingBox & bbox ) ;
+    void removeSubMesh ( size_t idx ) ;
 
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns 'iBoundingBox' .
+    /// @brief Returns every submeshes.
     //////////////////////////////////////////////////////////////////////
-    virtual const BoundingBox & getBoundingBox ( ) const ;
+    const std::list < SubMeshHolder > & getSubMeshes () const ;
 
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns 'iOriginalFile'.
+    /// @brief Clears every submeshes present in this mesh.
     //////////////////////////////////////////////////////////////////////
-    virtual const std::string & getOriginalFilepath () const ;
+    void clearSubMeshes () ;
 
     //////////////////////////////////////////////////////////////////////
-    /// @brief Changes 'iOriginalFile'.
+    /// @brief Changes the bounding box of this mesh. Notes that adding
+    /// and removing a submesh also changes the boundingbox. You can disable
+    /// this behaviour by using 'setBoundingBoxUpdate(false)'.
     //////////////////////////////////////////////////////////////////////
-    virtual void setOriginalFilepath ( const std::string & filepath ) ;
+    void setBoundingBox ( const BoundingBox & bbox ) ;
 
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns 'iDefaultMaterial'.
+    /// @brief Returns the mesh's bounding box.
     //////////////////////////////////////////////////////////////////////
-    virtual const MaterialHolder& getDefaultMaterial () const ;
+    const BoundingBox & getBoundingBox () const ;
 
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns 'iDefaultMaterial'.
     //////////////////////////////////////////////////////////////////////
-    virtual MaterialHolder& getDefaultMaterial () ;
+    void setBoundingBoxUpdate ( bool value ) ;
 
     //////////////////////////////////////////////////////////////////////
-    /// @brief Changes 'iDefaultMaterial'.
     //////////////////////////////////////////////////////////////////////
-    virtual void setDefaultMaterial ( const MaterialHolder& material ) ;
+    bool getBoundingBoxUpdate () const ;
 
     //////////////////////////////////////////////////////////////////////
-    /// @brief Binds the material parameters , if present.
-    //////////////////////////////////////////////////////////////////////
-    virtual void use ( const TechniqueHolder & technique ) const ;
-
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Binds the vertex attribute. OpenGl implementation should also
-    /// binds a Vertex Array Object here.
+    /// @brief Binds the mesh to the given technique.
     //////////////////////////////////////////////////////////////////////
     virtual void bind ( const TechniqueHolder & technique ) const ;
 
     //////////////////////////////////////////////////////////////////////
-    /// @brief Unbinds the vertex attributes. Obviously so call 'unbind()'
-    /// implementation. OpenGl implementation should unbind the VAO object .
+    /// @brief Returns the next submesh used by the renderer to draw this
+    /// mesh. When firstly used , creates a copy of the submesh list and
+    /// uses its iterator to iterate through the submeshes.
+    /// @return true if the next submesh has been bound , false if it
+    /// couldn't or if there are no more submeshes.
+    //////////////////////////////////////////////////////////////////////
+    virtual bool bindNextSubMesh ( const TechniqueHolder & technique ) const ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Unbinds the currently used submesh. This function also
+    /// binds the iterator to the next submesh. The iterator is so checked
+    /// by 'bindNextSubMesh'.
+    //////////////////////////////////////////////////////////////////////
+    virtual void unbindCurrentSubMesh ( const TechniqueHolder & technique ) const ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Unbinds the mesh. This has for effect to destroy the copied
+    /// submesh list , and also use implementation unbind function.
     //////////////////////////////////////////////////////////////////////
     virtual void unbind ( const TechniqueHolder & technique ) const ;
 
     //////////////////////////////////////////////////////////////////////
-    /// @brief Changes the mesh binder.
+    /// @brief Clears the mesh.
     //////////////////////////////////////////////////////////////////////
-    virtual void setBinder ( MeshBinder* binder ) ;
+    virtual void clear () ;
 
     //////////////////////////////////////////////////////////////////////
-    /// @brief Tells if at least one of the buffers has been changed.
+    /// @brief Returns the current submesh if there is one , or null.
     //////////////////////////////////////////////////////////////////////
-    virtual bool isAnyBufferDirty () const ;
+    virtual const SubMeshHolder getCurrentSubMesh () const ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Sets the material for every submeshes.
+    //////////////////////////////////////////////////////////////////////
+    virtual void setDefaultMaterial ( const MaterialHolder & material ) ;
 
 protected:
 
-    /// @brief List of HardwareVertexBuffers.
-    HardwareVertexBufferHolderList iVertexBuffers ;
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Implementation bind function. Should bind the mesh to the
+    /// given technique.
+    //////////////////////////////////////////////////////////////////////
+    virtual void iBind ( const TechniqueHolder & technique ) const = 0 ;
 
-    /// @brief The index buffer.
-    HardwareIndexBufferHolder iIndexBuffer ;
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Implementation unbind function. Should unbind the mesh from
+    /// the given technique.
+    //////////////////////////////////////////////////////////////////////
+    virtual void iUnbind ( const TechniqueHolder & technique ) const = 0 ;
 
-    /// @brief BoundingBox for this Mesh.
-    BoundingBox iBoundingBox ;
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Should bind the submesh vertex buffers.
+    //////////////////////////////////////////////////////////////////////
+    virtual void iBindSubMesh ( const SubMeshHolder & submesh , const TechniqueHolder & technique ) const ;
 
-    /// @brief The file this mesh comes from, empty if this mesh was created inside the Engine.
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Should unbind the submesh vertex buffers.
+    //////////////////////////////////////////////////////////////////////
+    virtual void iUnbindSubMesh ( const SubMeshHolder & submesh , const TechniqueHolder & technique ) const ;
+
+protected:
+
+    /// @brief Holds the original file from where this mesh is from , if
+    /// it has one , or empty. This property is only for information purpose.
     std::string iOriginalFile ;
 
-    /// @brief Preferred Material for this Mesh.
-    MaterialHolder iDefaultMaterial ;
+    /// @brief Holds Shared Vertex buffers between the submeshes. Notes only
+    /// shared vertex buffers are here. The submeshes are listed with a particular
+    /// index buffer , local vertex buffers and a material. Those shared buffers
+    /// won't be destroy if no submesh uses them in this mesh. This is done to
+    /// make addition of submeshes using those buffers easier.
+    HardwareVertexBufferHolderList iSharedVertexBuffers ;
 
-    /// @brief Binding implementation for the Mesh object. If null , the mesh can't be bound.
-    MeshBinder* iBinder ;
+    /// @brief Holds a list of sub-meshes. Those sub-meshes are rendered only if
+    /// they are enabled. They each have a material and an index buffer. Notes that
+    /// if no index buffer is present, they should render their vertex buffers.
+    std::list < SubMeshHolder > iSubMeshes ;
 
+    /// @brief Boundingbox for the Whole group of submeshes.
+    BoundingBox iBoundingBox ;
+
+    /// @brief True by default to updates the bounding box with the submeshes present
+    /// in the mesh. The bounding box is calculated adding submeshes boundingbox to the
+    /// current one. Notes that removing a submesh will recalculate the bounding box.
+    bool iBoundingBoxUpdate ;
+
+    /// @brief Holds the current submesh drawed by the renderer. When unbind is called,
+    /// this holder should be invalid and not holding any submesh. When 'bindNextSubMesh()'
+    /// is called , it returns the next submesh. Notes the submesh list is copied when using
+    /// first the 'bindNextSubMesh()' function and this copy is destroyed when using 'unbind()'.
+    /// Also notes that the submesh should be unbound using 'unbindCurrentSubMesh()'.
+    mutable std::list < SubMeshHolder > :: const_iterator iCurrentSubMesh ;
+
+    /// @brief Holds a copy of the submeshes list used by 'bindNextSubMesh()'. This copy is destroyed
+    /// when 'unbind()' is called.
+    mutable std::list < SubMeshHolder > iCurrentSubMeshList ;
 };
 
-/// @brief SpecializedCountedObjectHolder for Mesh .
-typedef SpecializedCountedObjectHolder < Mesh > MeshHolder ;
+/// @brief Holder for Mesh .
+typedef Holder < Mesh > MeshHolder ;
 
 /// @brief SpecializedResourceHolderList for Mesh .
 typedef SpecializedResourceHolderList < Mesh > MeshHolderList ;
-
-/// @brief SpecializedCountedObjectUser for Mesh .
-typedef SpecializedCountedObjectUser < Mesh > MeshUser ;
 
 ////////////////////////////////////////////////////////////////////////
 /// @brief Specialized ResourceLoader for Mesh .
@@ -258,11 +379,11 @@ public:
     virtual ~MeshLoader ( ) noexcept ( false ) ;
 
     //////////////////////////////////////////////////////////////////////
-    /// @brief Loads one or more Mesh from a file.
-    /// As some files can store more than one mesh (OBJ file for example),
-    /// a MeshLoader should be able to return more than one resource.
+    /// @brief Loads a Mesh from a file. A Mesh file should hold at least
+    /// one submesh to be loaded. A Mesh file should always be a group of
+    /// submeshes , that can share vertex buffers.
     //////////////////////////////////////////////////////////////////////
-    virtual MeshHolderList load ( const std::string& path , const ResourceLoaderOptions & ops ) const = 0;
+    virtual MeshHolder load ( const std::string& path , const ResourceLoaderOptions & ops ) const = 0;
 };
 
 /// @brief ResourceLoaderFactory for MeshLoader.
@@ -278,7 +399,7 @@ public:
     //////////////////////////////////////////////////////////////////////
     /// @brief Creates a triangle.
     //////////////////////////////////////////////////////////////////////
-    static MeshUser Triangle ( float sz ) ;
+    static MeshHolder Triangle ( float sz ) ;
 
 public:
 
@@ -296,7 +417,7 @@ public:
     /// @brief Finds the first mesh wich origin file corresponds to given
     /// one.
     //////////////////////////////////////////////////////////////////////
-    virtual MeshUser findFirstFile ( const std::string & filepath ) ;
+    virtual MeshHolder findFirstFile ( const std::string & filepath ) ;
 
     //////////////////////////////////////////////////////////////////////
     /// @brief Creates a HardwareVertexBuffer with given data.
@@ -313,15 +434,20 @@ public:
     /// object file extension. For example , an '.obj' file will be in subdir
     /// 'OBJ'. This subdir is given by the correct loader found for this
     /// file. This subdir is then looked for in every bundle to get final path.
-    /// Returns the number of meshes found in loaded file.
+    /// Returns the mesh computed from given file.
     //////////////////////////////////////////////////////////////////////
-    virtual int loadBundledFile ( const std::string & path , const ResourceLoaderOptions & ops ) ;
+    virtual MeshHolder loadBundledFile ( const std::string & path , const ResourceLoaderOptions & ops ) ;
 
     //////////////////////////////////////////////////////////////////////
     /// @brief Loads a File. The path is considered as relative from the
-    /// working directory. Returns the number of meshes found in the file.
+    /// working directory. Returns the mesh computed from given file.
     //////////////////////////////////////////////////////////////////////
-    virtual int loadFile ( const std::string & path , const ResourceLoaderOptions & ops ) ;
+    virtual MeshHolder loadFile ( const std::string & path , const ResourceLoaderOptions & ops ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Loads a blank mesh with given name.
+    //////////////////////////////////////////////////////////////////////
+    virtual MeshHolder loadBlank ( const std::string & name ) ;
 
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns the first mesh encountered with given name.
@@ -336,13 +462,14 @@ public:
 protected:
 
     //////////////////////////////////////////////////////////////////////
-    /// @brief Creates a MeshBinder to use with every newly created mesh.
+    /// @brief Implementation to create a new mesh. This mesh should
+    /// implement 'Mesh::bind()' and 'Mesh::unbind()' methods.
     //////////////////////////////////////////////////////////////////////
-    virtual MeshBinder * loadBinder () const = 0 ;
+    virtual Mesh* create ( const std::string & name ) const = 0 ;
 };
 
-/// @brief SpecializedCountedObjectHolder for MeshManager.
-typedef SpecializedCountedObjectHolder < MeshManager > MeshManagerHolder ;
+/// @brief Holder for MeshManager.
+typedef Holder < MeshManager > MeshManagerHolder ;
 
 GreEndNamespace
 

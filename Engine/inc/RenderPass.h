@@ -38,7 +38,7 @@
 
 #include "RenderTarget.h"
 #include "Viewport.h"
-#include "Scene.h"
+#include "RenderScene.h"
 
 GreBeginNamespace
 
@@ -165,11 +165,11 @@ public:
 
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    virtual void setCamera ( const CameraHolder & camera ) ;
+    virtual void setCamera ( const RenderNodeHolder & camera ) ;
 
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    virtual const CameraHolder & getCamera () const ;
+    virtual const RenderNodeHolder & getCamera () const ;
 
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
@@ -202,7 +202,7 @@ protected:
     virtual void renderTechniqueWithNodeAndLights (const Renderer* renderer ,
                                                    const TechniqueHolder & technique ,
                                                    const RenderNodeHolder & node ,
-                                                   const std::list < LightRenderNodeHolder > & lights) const ;
+                                                   const RenderNodeHolderList & lights) const ;
 
     //////////////////////////////////////////////////////////////////////
     /// @brief Binds lights and render the technique. Notes the technique
@@ -211,7 +211,7 @@ protected:
     virtual void renderTechniqueWithLights (const Renderer* renderer ,
                                             const TechniqueHolder & technique ,
                                             const RenderNodeHolder & node ,
-                                            const std::list < LightRenderNodeHolder > & lights ) const ;
+                                            const RenderNodeHolderList & lights ) const ;
 
     //////////////////////////////////////////////////////////////////////
     /// @brief Renders a technique only for given node. The previous technique
@@ -221,7 +221,7 @@ protected:
     virtual void renderTechniqueWithNode (const Renderer* renderer ,
                                           const TechniqueHolder & technique ,
                                           const RenderNodeHolder & node ,
-                                          const std::list < LightRenderNodeHolder > & lights) const ;
+                                          const RenderNodeHolderList & lights) const ;
 
     //////////////////////////////////////////////////////////////////////
     /// @brief Binds this renderable , and use the renderer to draw the
@@ -265,8 +265,10 @@ protected:
     /// @brief Technique to use when drawing this pass.
     TechniqueHolder iTechnique ;
 
-    /// @brief Camera's used to draw everything.
-    CameraHolder iCamera ;
+    /// @brief Camera's used to draw everything. Remembers a node is used as a camera
+    /// using its view matrix. The projection matrix is held by the Viewport. Projection ,
+    /// view , Projectionview , ProjectionViewModel are bound to the technique from those.
+    RenderNodeHolder iCamera ;
 
     /// @brief Sets this option to 'true' if you want that the Viewport acts as a Scissor
     /// test for clearing buffers. This lets the user clears only regions of a framebuffer
@@ -281,10 +283,7 @@ protected:
 };
 
 /// @brief
-typedef SpecializedCountedObjectUser<RenderPass> RenderPassUser ;
-
-/// @brief
-typedef SpecializedCountedObjectHolder<RenderPass> RenderPassHolder ;
+typedef Holder<RenderPass> RenderPassHolder ;
 
 /// @brief
 typedef SpecializedResourceHolderList<RenderPass> RenderPassHolderList ;

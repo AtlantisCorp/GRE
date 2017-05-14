@@ -114,11 +114,6 @@ bool HardwareProgram::isLinked() const
     GreAutolock ; return iLinked ;
 }
 
-bool HardwareProgram::isBound() const
-{
-    GreAutolock ; return iBinded ;
-}
-
 void HardwareProgram::reset()
 {
     GreAutolock ;

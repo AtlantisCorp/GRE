@@ -76,13 +76,13 @@ void translatePixelFormat ( NSOpenGLPixelFormatAttribute* pf , size_t max , cons
     return ;
 
     int counter = 0 ;
-    
+
     int major = 3 ;
     int minor = 2 ;
 
     //////////////////////////////////////////////////////////////////////
     // Checks every attributes, except WCAMajorVersion and WCAMinorVersion.
-    
+
     for ( WindowContextAttributes::const_iterator it = attr.begin() ; it != attr.end() ; it++ )
     {
         switch ( (*it) )
@@ -90,68 +90,68 @@ void translatePixelFormat ( NSOpenGLPixelFormatAttribute* pf , size_t max , cons
             case Gre::WCADoubleBuffer:
                 pf[counter++] = NSOpenGLPFADoubleBuffer ;
                 break ;
-            
+
             case Gre::WCAStereo:
                 pf[counter++] = NSOpenGLPFAStereo ;
                 break ;
-                
+
             case Gre::WCAAccelerated:
                 pf[counter++] = NSOpenGLPFAAccelerated ;
                 break ;
-                
+
             case Gre::WCAMultiSample:
                 pf[counter++] = NSOpenGLPFAMultisample ;
                 break ;
-                
+
             case Gre::WCASuperSample:
                 pf[counter++] = NSOpenGLPFASupersample ;
                 break ;
-                
+
             case Gre::WCASampleBuffers:
                 pf[counter++] = NSOpenGLPFASampleBuffers ;
                 it++ ; pf[counter++] = (*it) ;
                 break ;
-                
+
             case Gre::WCASamples:
                 pf[counter++] = NSOpenGLPFASamples ;
                 it++ ; pf[counter++] = (*it) ;
                 break ;
-                
+
             case Gre::WCADepthSize:
                 pf[counter++] = NSOpenGLPFADepthSize ;
                 it++ ; pf[counter++] = (*it) ;
                 break ;
-                
+
             case Gre::WCAColorSize:
                 pf[counter++] = NSOpenGLPFAColorSize ;
                 it++ ; pf[counter++] = (*it) ;
                 break ;
-                
+
             case Gre::WCAStencilSize:
                 pf[counter++] = NSOpenGLPFAStencilSize ;
                 it++ ; pf[counter++] = (*it) ;
                 break ;
-                
+
             case Gre::WCATripleBuffer:
                 pf[counter++] = NSOpenGLPFATripleBuffer ;
                 break ;
-                
+
             case Gre::WCAMajorVersion:
                 it ++ ; major = (int) (*it) ;
                 break ;
-                
+
             case Gre::WCAMinorVersion:
                 it ++ ; minor = (int) (*it) ;
                 break ;
-                
+
             case Gre::WCAFullscreen:
                 GreDebug ( "[INFO] Gre::WCAFullscreen attribute not used on this platform." ) << Gre::gendl ;
                 break ;
-                
+
             default:
                 break ;
         }
-        
+
         if ( counter == max -1 )
         break ;
     }
@@ -178,10 +178,10 @@ void translatePixelFormat ( NSOpenGLPixelFormatAttribute* pf , size_t max , cons
         else
         GreDebug ( "[WARN] Requested OpenGl Version not supported (") << major << "." << minor << ")." << gendl ;
     }
-    
+
     //////////////////////////////////////////////////////////////////////
     // Check if we can set the NSOpenGLOFAClosestPolicy.
-    
+
     if ( counter < max )
     pf[counter++] = NSOpenGLPFAClosestPolicy ;
 
@@ -595,14 +595,14 @@ bool macWindow::isAvailableForDrawing() const
     return true ;
 }
 
-RenderContextUser macWindow::getRenderContext()
+RenderContextHolder macWindow::getRenderContext()
 {
-    return RenderContextUser ( context ) ;
+    return context ;
 }
 
-const RenderContextUser macWindow::getRenderContext() const
+const RenderContextHolder macWindow::getRenderContext() const
 {
-    return RenderContextUser ( context ) ;
+    return context ;
 }
 
 void macWindow::toggleCursor ( bool hide )
@@ -849,7 +849,8 @@ WindowHolder macOSWindowLoader::load(const std::string &name, const ResourceLoad
     GreDebug("[INFO] Creating Mac OS X Window class.") << Gre::gendl ;
 
     macWindow* window = new macWindow ( name , info ) ;
-
+    WindowHolder test ( window ) ;
+    
     if ( !window )
     {
         GreDebug("[WARN] Can't create Window '") << name << "'." << Gre::gendl ;
@@ -924,7 +925,7 @@ WindowHolder macOSWindowLoader::load(const std::string &name, const ResourceLoad
 
     NSOpenGLPixelFormatAttribute pf [40] ;
     memset(pf, 0, sizeof(NSOpenGLPixelFormatAttribute)*40);
-    
+
     auto windowit = info.find ( "Window.ContextAttributes" ) ;
 
     if ( windowit != info.end () ) {

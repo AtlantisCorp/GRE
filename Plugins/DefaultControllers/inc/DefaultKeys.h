@@ -1,11 +1,11 @@
 //////////////////////////////////////////////////////////////////////
 //
-//  ShadowMapping.h
+//  DefaultKeys.h
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
 //  Copyright (c) 2015 - 2017 Luk2010
-//  Created on 09/03/2017.
+//  Created on 13/05/2017.
 //
 //////////////////////////////////////////////////////////////////////
 /*
@@ -16,10 +16,10 @@
  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  copies of the Software, and to permit persons to whom the Software is
  furnished to do so, subject to the following conditions:
- 
+
  The above copyright notice and this permission notice shall be included in
  all copies or substantial portions of the Software.
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -30,49 +30,79 @@
  -----------------------------------------------------------------------------
  */
 
-#ifndef ShadowMapping_h
-#define ShadowMapping_h
+#ifndef GRE_PLUGIN_DEFAULTKEYS_H
+#define GRE_PLUGIN_DEFAULTKEYS_H
 
-#include "Technique.h"
-
-GreBeginNamespace
+#include <Controller.h>
+using namespace Gre ;
 
 //////////////////////////////////////////////////////////////////////
-/// @brief Consists of a Technique rendering the Scene depths from one light
-/// point of view to the light 'ShadowTexture' texture.
-///
-/// This Texture should then be used by the HardwareProgram to compute
-/// shadow colors. This Technique can (and should) be used to render each
-/// light in prerendering in order to set 'ShadowTexture' for every Light
-/// activated.
-///
+/// @brief Moves the nodes with given keys.
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC ShadowMapping : public Technique
+class DefaultKeysController : public Controller
 {
 public:
-    
-    POOLED ( Pools::Render )
-    
+
+    POOLED ( Pools::Controller )
+
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    ShadowMapping ( const std::string & name = "ShadowMapping" ) ;
-    
+    DefaultKeysController ( const std::string & name ) ;
+
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    virtual ~ShadowMapping () noexcept ( false ) ;
-    
+    virtual ~DefaultKeysController () noexcept ( false ) ;
+
     //////////////////////////////////////////////////////////////////////
-    /// @brief Initializes the RenderFramebuffer we will use to render the
-    /// lights' depths values. Also loads the correct program.
     //////////////////////////////////////////////////////////////////////
-    virtual bool _initialize () ;
-    
+    virtual Holder < Controller > clone ( const std::string & name ) const ;
+
+protected:
+
     //////////////////////////////////////////////////////////////////////
-    /// @brief Changes the texture the RenderFramebuffer may render to.
     //////////////////////////////////////////////////////////////////////
-    virtual bool onPerLightRendering ( const LightHolder & light ) ;
+    virtual void onUpdateEvent ( const UpdateEvent & e ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    virtual void onKeyDownEvent ( const KeyDownEvent & e ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    virtual void onKeyUpEvent ( const KeyUpEvent & e ) ;
+
+protected:
+
+    /// @brief Forward key status.
+    std::pair < Key , KeyState > iKeyForward ;
+
+    /// @brief Backward key status.
+    std::pair < Key , KeyState > iKeyBackward ;
+
+    /// @brief Rightward key status.
+    std::pair < Key , KeyState > iKeyRightward ;
+
+    /// @brief Leftward key status.
+    std::pair < Key , KeyState > iKeyLeftward ;
+
+    /// @brief Upward key status.
+    std::pair < Key , KeyState > iKeyUpward ;
+
+    /// @brief Downward key status.
+    std::pair < Key , KeyState > iKeyDownward ;
+
+    /// @brief Step rate in times per second. Default is 60.0f.
+    float iStepRate ;
+
+    /// @brief Step distance in direction times per second. Default is 5.0f. As the
+    /// node's directions are normally normalized, iStep times the direction should
+    /// make its advance of a lenght of iStep.
+    float iStep ;
+
+    /// @brief Elapsed time since last update.
+    Duration iElapsedTime ;
 };
 
-GreEndNamespace
+GRE_MAKE_HOLDER( DefaultKeysController ) ;
 
-#endif /* ShadowMapping_h */
+#endif
