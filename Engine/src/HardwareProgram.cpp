@@ -135,8 +135,15 @@ bool HardwareProgram::setUniform ( const std::string & name , const HdwProgVarTy
 
 	if ( isLinked() )
 	{
+        //////////////////////////////////////////////////////////////////////
+        // We must check if the given variable has an existing name, and a
+        // correct type.
+
 		auto it = iUniforms.find ( name ) ;
-		if ( it != iUniforms.end() ) {
+
+		if ( it != iUniforms.end() )
+        {
+            if ( it->second.type == type )
 			return _setUniform ( it->second.location , type , value ) ;
 		}
 	}

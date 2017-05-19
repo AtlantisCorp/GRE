@@ -55,6 +55,47 @@ GLenum translateGlAttribType ( const Gre::VertexAttribType & type )
         return GL_INVALID_ENUM ;
 }
 
+Gre::HdwProgVarType translateGlUniformType ( const GLenum & type )
+{
+    if ( type == GL_FLOAT ) return Gre::HdwProgVarType::Float1 ;
+    else if ( type == GL_FLOAT_VEC2 ) return Gre::HdwProgVarType::Float2 ;
+    else if ( type == GL_FLOAT_VEC3 ) return Gre::HdwProgVarType::Float3 ;
+    else if ( type == GL_FLOAT_VEC4 ) return Gre::HdwProgVarType::Float4 ;
+
+    else if ( type == GL_INT ) return Gre::HdwProgVarType::Int1 ;
+    else if ( type == GL_INT_VEC2 ) return Gre::HdwProgVarType::Int2 ;
+    else if ( type == GL_INT_VEC3 ) return Gre::HdwProgVarType::Int3 ;
+    else if ( type == GL_INT_VEC4 ) return Gre::HdwProgVarType::Int4 ;
+
+    else if ( type == GL_UNSIGNED_INT ) return Gre::HdwProgVarType::UnsignedInt1 ;
+    else if ( type == GL_UNSIGNED_INT_VEC2 ) return Gre::HdwProgVarType::UnsignedInt2 ;
+    else if ( type == GL_UNSIGNED_INT_VEC3 ) return Gre::HdwProgVarType::UnsignedInt3 ;
+    else if ( type == GL_UNSIGNED_INT_VEC4 ) return Gre::HdwProgVarType::UnsignedInt4 ;
+
+    else if ( type == GL_BOOL ) return Gre::HdwProgVarType::Bool1 ;
+    else if ( type == GL_BOOL_VEC2 ) return Gre::HdwProgVarType::Bool2 ;
+    else if ( type == GL_BOOL_VEC3 ) return Gre::HdwProgVarType::Bool3 ;
+    else if ( type == GL_BOOL_VEC4 ) return Gre::HdwProgVarType::Bool4 ;
+
+    else if ( type == GL_FLOAT_MAT2 ) return Gre::HdwProgVarType::Matrix2 ;
+    else if ( type == GL_FLOAT_MAT3 ) return Gre::HdwProgVarType::Matrix3 ;
+    else if ( type == GL_FLOAT_MAT4 ) return Gre::HdwProgVarType::Matrix4 ;
+
+    else if ( type == GL_SAMPLER_1D || type == GL_SAMPLER_1D_SHADOW || type == GL_INT_SAMPLER_1D || type == GL_UNSIGNED_INT_SAMPLER_1D )
+    return Gre::HdwProgVarType::Sampler1D ;
+
+    else if ( type == GL_SAMPLER_2D || type == GL_SAMPLER_2D_SHADOW || type == GL_INT_SAMPLER_2D || type == GL_UNSIGNED_INT_SAMPLER_2D )
+    return Gre::HdwProgVarType::Sampler2D ;
+
+    else if ( type == GL_SAMPLER_3D || type == GL_INT_SAMPLER_3D || type == GL_UNSIGNED_INT_SAMPLER_3D )
+    return Gre::HdwProgVarType::Sampler3D ;
+
+    else if ( type == GL_SAMPLER_CUBE || type == GL_SAMPLER_CUBE_SHADOW || type == GL_INT_SAMPLER_CUBE || type == GL_UNSIGNED_INT_SAMPLER_CUBE )
+    return Gre::HdwProgVarType::SamplerCube ;
+
+    return Gre::HdwProgVarType::None ;
+}
+
 // ---------------------------------------------------------------------------
 
 OpenGlProgram::OpenGlProgram ( const std::string & name ) : Gre::HardwareProgram ( name )
@@ -192,17 +233,19 @@ bool OpenGlProgram::_finalize()
             for ( int i = 0 ; i < uniformcount ; ++i )
             {
                 char* buf = (char*) malloc ( uniformmaxlenght+1 ) ;
-                GLsizei lenght = 0 ;
+                GLsizei lenght = 0 ; GLint uniformsize ; GLenum uniformtype ;
 
-                glGetActiveUniformName(iGlProgram, i, uniformmaxlenght, &lenght, buf);
+                glGetActiveUniform(iGlProgram, i,
+                                   uniformmaxlenght, &lenght,
+                                   &uniformsize, &uniformtype,
+                                   buf);
+
                 buf [lenght] = '\0' ;
 
                 GLint location = glGetUniformLocation(iGlProgram, buf) ;
 
-#ifdef GreIsDebugMode
                 GreDebug("[INFO] glGetActiveUniformName() : Uniform name = '") << std::string(buf) << "'." << Gre::gendl ;
                 GreDebug("[INFO] glGetUniformLocation() : Uniform location = ") << location << "." << Gre::gendl ;
-#endif
 
                 //////////////////////////////////////////////////////////////////////
                 // We can save the uniform for saving time on 'glGetUniformLocation'.
@@ -211,6 +254,7 @@ bool OpenGlProgram::_finalize()
                 Gre::HardwareProgramVariable var ;
                 var.name = std::string(buf) ;
                 var.location = location ;
+                var.type = translateGlUniformType ( uniformtype ) ;
                 iUniforms [std::string(buf)] = var ;
             }
         }
@@ -381,6 +425,24 @@ bool OpenGlProgram::_setUniform(int location, const Gre::HdwProgVarType &type, c
             glUniform4iv(location, 1, & value.i4[0]);
         }
 
+        else if ( type == Gre::HdwProgVarType::UnsignedInt1 )
+        glUniform1uiv ( location , 1 , & value.u1 ) ;
+        else if ( type == Gre::HdwProgVarType::UnsignedInt2 )
+        glUniform2uiv ( location , 1 , glm::value_ptr(value.u2) ) ;
+        else if ( type == Gre::HdwProgVarType::UnsignedInt3 )
+        glUniform3uiv ( location , 1 , glm::value_ptr(value.u3) ) ;
+        else if ( type == Gre::HdwProgVarType::UnsignedInt4 )
+        glUniform4uiv ( location , 1 , glm::value_ptr(value.u4) ) ;
+
+        else if ( type == Gre::HdwProgVarType::Bool1 )
+        glUniform1i ( location , value.b1 ) ;
+        else if ( type == Gre::HdwProgVarType::Bool2 )
+        glUniform2i ( location , value.b2[0] , value.b2[1] ) ;
+        else if ( type == Gre::HdwProgVarType::Bool3 )
+        glUniform3i ( location , value.b3[0] , value.b3[1] , value.b3[2] ) ;
+        else if ( type == Gre::HdwProgVarType::Bool4 )
+        glUniform4i ( location , value.b4[0] , value.b4[1] , value.b4[2] , value.b4[3] ) ;
+
         else if ( type == Gre::HdwProgVarType::Matrix2 ) {
             glUniformMatrix2fv(location, 1, false, glm::value_ptr( value.m2 ) );
         }
@@ -392,6 +454,10 @@ bool OpenGlProgram::_setUniform(int location, const Gre::HdwProgVarType &type, c
         else if ( type == Gre::HdwProgVarType::Matrix4 ) {
             glUniformMatrix4fv(location, 1, false, glm::value_ptr( value.m4 ) );
         }
+
+        else if ( type == Gre::HdwProgVarType::Sampler1D || type == Gre::HdwProgVarType::Sampler2D ||
+                  type == Gre::HdwProgVarType::Sampler3D || type == Gre::HdwProgVarType::SamplerCube )
+        glUniform1iv ( location , 1 , & value.i1 ) ;
 
         GLenum err = glGetError() ;
         if ( err == GL_NONE ) return true ;

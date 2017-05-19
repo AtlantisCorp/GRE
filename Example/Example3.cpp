@@ -237,7 +237,7 @@ void MyApplicationExample::createScene()
 
         renderpass2 -> setTechnique ( tech1 ) ;
         renderpass -> setTechnique ( tech2 ) ;
-        renderpass -> addNamedParameter("shadows", HdwProgVarType::Int1, (int) 1) ;
+        renderpass -> addNamedParameter("shadows", HdwProgVarType::Bool1, (int) 1) ;
 
         //////////////////////////////////////////////////////////////////////
         // The default projection for the both techniques is correct. Now set

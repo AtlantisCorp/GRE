@@ -119,6 +119,16 @@ TechniqueParam TechniqueParamFromString ( const std::string & p )
     return (TechniqueParam) 0 ;
 }
 
+HdwProgVarType HdwProgVarTypeFromTextureType ( const TextureType & type )
+{
+    if ( type == TextureType::Texture1D ) return HdwProgVarType::Sampler1D ;
+    else if ( type == TextureType::Texture2D ) return HdwProgVarType::Sampler2D ;
+    else if ( type == TextureType::Texture3D ) return HdwProgVarType::Sampler3D ;
+    else if ( type == TextureType::CubeMap ) return HdwProgVarType::SamplerCube ;
+
+    return HdwProgVarType::None ;
+}
+
 // -----------------------------------------------------------------------------
 
 Technique::Technique ( const std::string & name )
@@ -328,7 +338,8 @@ void Technique::setAliasedTextureStruct (const TechniqueParam & alias1 ,
     return ;
 
     int unit = bindTexture ( tex ) ;
-    iProgram -> setUniform ( name1 + "." + name2 , HdwProgVarType::Int1 , unit ) ;
+    HdwProgVarType textype = HdwProgVarTypeFromTextureType ( tex->getType() ) ;
+    iProgram -> setUniform ( name1 + "." + name2 , textype , unit ) ;
 }
 
 void Technique::setAliasedTexture(const Gre::TechniqueParam &param, const TextureHolder &tex) const
@@ -356,7 +367,8 @@ void Technique::setAliasedTexture(const Gre::TechniqueParam &param, const Textur
         if ( alias.empty() ) return ;
 
         int unit = bindTexture ( tex ) ;
-        iProgram -> setUniform(alias, HdwProgVarType::Int1, unit);
+        HdwProgVarType textype = HdwProgVarTypeFromTextureType ( tex->getType() ) ;
+        iProgram -> setUniform(alias, textype, unit);
     }
 }
 

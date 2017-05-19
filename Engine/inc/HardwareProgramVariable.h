@@ -39,15 +39,23 @@ GreBeginNamespace
 
 //////////////////////////////////////////////////////////////////////
 /// @brief Describes HardwareProgramVariable Types used in the Engine.
-/// Those types are taken from GLSL types.
+/// Those types are taken from GLSL types. Notes that Samplers types
+/// are handled as unsigned int types to registers 'sampler' value,
+/// or texture unit.
 enum class HdwProgVarType
 {
     None, ///< @brief Reserved for invalid Variables.
 
     Float1, Float2, Float3, Float4,
     Int1, Int2, Int3, Int4,
+    UnsignedInt1, UnsignedInt2, UnsignedInt3, UnsignedInt4,
+    Bool1, Bool2, Bool3, Bool4,
+    Matrix2, Matrix3, Matrix4,
 
-    Matrix2, Matrix3, Matrix4
+    Sampler1D ,
+    Sampler2D ,
+    Sampler3D ,
+    SamplerCube
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -56,8 +64,17 @@ enum class HdwProgVarType
 union RealProgramVariable
 {
 
-    float f1 ; Vector2 f2 ; Vector3 f3 ; Vector4 f4 ;
-    int i1 ; IVector2 i2 ; IVector3 i3 ; IVector4 i4 ;
+    float f1 ; Vector2 f2 ;
+    Vector3 f3 ; Vector4 f4 ;
+
+    int i1 ; IVector2 i2 ;
+    IVector3 i3 ; IVector4 i4 ;
+
+    unsigned int u1 ; glm::uvec2 u2 ;
+    glm::uvec3 u3 ; glm::uvec4 u4 ;
+
+    bool b1 ; glm::bvec2 b2 ;
+    glm::bvec3 b3 ; glm::bvec4 b4 ;
 
     Matrix2 m2 ; Matrix3 m3 ; Matrix4 m4 ;
 
@@ -68,8 +85,8 @@ union RealProgramVariable
     	memset( this, 0, sizeof(rhs) );
     	memcpy( this, &rhs, sizeof(rhs) );
     }
-    
-    RealProgramVariable& operator = ( const RealProgramVariable& rhs ) 
+
+    RealProgramVariable& operator = ( const RealProgramVariable& rhs )
     {
     	memset( this, 0, sizeof(rhs) );
     	memcpy( this, &rhs, sizeof(rhs) );
@@ -89,6 +106,16 @@ union RealProgramVariable
     RealProgramVariable ( const Matrix2& v ) : m2(v) { }
     RealProgramVariable ( const Matrix3& v ) : m3(v) { }
     RealProgramVariable ( const Matrix4& v ) : m4(v) { }
+
+    RealProgramVariable ( const unsigned int & v ) : u1(v) { }
+    RealProgramVariable ( const glm::uvec2 & v ) : u2(v) { }
+    RealProgramVariable ( const glm::uvec3 & v ) : u3(v) { }
+    RealProgramVariable ( const glm::uvec4 & v ) : u4(v) { }
+
+    RealProgramVariable ( const bool & v ) : b1(v) { }
+    RealProgramVariable ( const glm::bvec2 & v ) : b2(v) { }
+    RealProgramVariable ( const glm::bvec3 & v ) : b3(v) { }
+    RealProgramVariable ( const glm::bvec4 & v ) : b4(v) { }
 };
 
 //////////////////////////////////////////////////////////////////////

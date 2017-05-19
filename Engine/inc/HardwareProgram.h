@@ -240,7 +240,7 @@ protected:
     /// @brief Uniforms loaded when linking the program. Uniforms are constant values through the
     /// program process. They can be modified externally using setUniform(). For optimization purpose,
     /// every uniforms are cached into this map when linking the program. Notes, their value is not
-    /// cached. Only name and location (i.e. shader index) are stored.
+    /// cached. Only name, location (i.e. shader index) and type are stored.
     std::map < std::string , HardwareProgramVariable > iUniforms ;
 };
 
