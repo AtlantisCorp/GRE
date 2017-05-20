@@ -10,38 +10,6 @@
 
 using namespace Gre ;
 
-class KeyListener : public Resource
-{
-public:
-
-    KeyListener ( const RenderNodeHolder & cam ) : Resource ( ) , camera(cam) { }
-    ~KeyListener () { }
-
-    RenderNodeHolder camera ;
-
-protected:
-
-    void onKeyDownEvent ( const KeyDownEvent & e )
-    {
-        const Vector3 & position  = camera -> getPosition () ;
-        const Vector3 & target    = camera -> getTarget () ;
-        const Vector3   direction = camera -> getDirection () ;
-        const Vector3   right     = camera -> getRightDirection () ;
-        const Vector3   up        = camera -> getUpwardDirection () ;
-
-        if ( e.iKey == Key::I ) {
-            GreDebug ( "[INFO] Camera Infos ----------" ) << gendl ;
-            GreDebug ( "[INFO] p ( " ) << position.x  << ", " << position.y  << ", " << position.z  << " )." << gendl ;
-            GreDebug ( "[INFO] t ( " ) << target.x    << ", " << target.y    << ", " << target.z    << " )." << gendl ;
-            GreDebug ( "[INFO] d ( " ) << direction.x << ", " << direction.y << ", " << direction.z << " )." << gendl ;
-            GreDebug ( "[INFO] r ( " ) << right.x     << ", " << right.y     << ", " << right.z     << " )." << gendl ;
-            GreDebug ( "[INFO] u ( " ) << up.x        << ", " << up.y        << ", " << up.z        << " )." << gendl ;
-
-            GreDebug ( "[INFO] v : " ) << std::endl << camera -> getViewMatrix () << gendl ;
-        }
-    }
-};
-
 class MyApplicationExample
 {
 
@@ -81,11 +49,9 @@ protected:
 
     ApplicationHolder iApplication ;
     ResourceManagerHolder rmanager ;
-
     WindowHolder window ;
     RenderPassHolder renderpass ;
     RenderPassHolder renderpass2 ;
-    Holder < KeyListener > keylistener ;
 };
 
 void MyApplicationExample::init ( int argc , char** argv )
@@ -98,28 +64,15 @@ void MyApplicationExample::init ( int argc , char** argv )
 	// managers present in the ResourceManager object. Notes the 'Create()' function also set the
 	// resource manager 's singleton.
 
-    rmanager = Gre::ResourceManager::Create () ;
-	rmanager -> initialize () ;
-
-	// Then , we can set some informations like the default plugin directory and the SDK
-	// directory. Those will be included when loading some resources. A ResourceBundle is an object
-	// responsible for holding some pathes to look for each resource's type. In this example , the
-    // SDK files are located directly in our directory.
-
-	Gre::ResourceBundleHolder rbundle = rmanager -> addBundle ( "DefaultSdk" ) ;
-	rbundle -> addDirectory ( Gre::ResourceType::Plugin ,  "Plugins" ) ;
-	rbundle -> addDirectory ( Gre::ResourceType::Program , "Programs" ) ;
-	rbundle -> addDirectory ( Gre::ResourceType::Texture , "Textures" ) ;
-	rbundle -> addDirectory ( Gre::ResourceType::Mesh ,    "Models" ) ;
-	rbundle -> addDirectory ( Gre::ResourceType::Effect ,  "Effects" ) ;
+    rmanager = Gre::ResourceManager::CreateDefault () ;
 
 	// Now , try to load every plugins in bundles. Those plugins should be loaded only if the
 	// plugins dependencies are respected. Each plugin should be identified using a unique UUID
 	// identifier. This identifier is used to look for a plugin.
 
 	Gre::PluginManagerHolder pm = rmanager -> getPluginManager () ;
-	if ( pm -> loadFromBundle(rbundle) == 0 ) {
-		GreDebug ( "[ERRO] No plugins found in bundle '") << rbundle -> getName () << "'." << Gre::gendl ;
+	if ( pm -> loadFromBundles ( rmanager->getBundles() ) == 0 ) {
+		GreDebug ( "[ERRO] No plugins found." ) << Gre::gendl ;
 		exit ( -1 ) ;
 	}
 
@@ -213,13 +166,8 @@ void MyApplicationExample::createScene()
         // or a multi-technique drawing (the scene may be rendered more than once) , as the technique may have some
         // pre or post render techniques.
 
+        renderpass  = renderer -> addPass ( "renderer.renderpass.1" ) ;
         renderpass2 = renderer -> addPass ( "renderer.renderpass.2" ) ;
-
-        renderpass = renderer -> addPass ( "RenderPass1" ) ;
-        renderpass -> setRenderTarget ( window ) ;
-        renderpass -> setViewport ({ 0.0f , 0.0f , 1.0f , 1.0f });
-        renderpass -> setClearColor ( Color(0.4f, 0.8f, 0.4f) ) ;
-        renderpass -> setClearViewport ( true ) ;
 
         //////////////////////////////////////////////////////////////////////
         // Tries to get the 'learnopengl.shadowmapping.technique' technique. The
@@ -290,6 +238,9 @@ void MyApplicationExample::loadScene ( void )
     auto cube = meshes -> loadBundledFile ( "cube.obj" , defops ) ;
     if ( cube.isInvalid() ) exit ( -31 ) ;
 
+    auto teapot = meshes -> loadBundledFile ( "teapot.obj" , defops ) ;
+    if ( teapot.isInvalid() ) exit ( -40 ) ;
+
     //////////////////////////////////////////////////////////////////////
     // Creates the cube default material. This material will be applied to
     // any node that change its mesh to the cube. The second material will
@@ -339,7 +290,8 @@ void MyApplicationExample::loadScene ( void )
     if ( cubenode.isInvalid() ) exit ( -35 ) ;
 
     cubenode -> translate ( 0.0f , 0.0f , -1.0f ) ;
-    cubenode -> setMesh ( cube ) ;
+    cubenode -> scale ( 0.4f , 0.4f , 0.4f ) ;
+    cubenode -> setMesh ( teapot ) ;
     cubenode -> setMaterial ( material ) ;
 
     scene -> add ( cubenode ) ;
@@ -384,9 +336,6 @@ void MyApplicationExample::loadScene ( void )
 
     scene -> add ( cameranode ) ;
     renderpass -> setCamera ( cameranode ) ;
-
-    keylistener = new KeyListener ( cameranode ) ;
-    keylistener -> listen ( window , { EventType::KeyDown } ) ;
 
     //////////////////////////////////////////////////////////////////////
     // Creates a controller to control the camera node when keys are pressed.

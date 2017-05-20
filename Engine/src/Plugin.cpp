@@ -130,6 +130,18 @@ PluginManager::~PluginManager() noexcept ( false )
 
 }
 
+uint32_t PluginManager::loadFromBundles ( const std::vector < ResourceBundleHolder > & bundles )
+{
+    GreAutolock ;
+
+    uint32_t num = 0 ;
+
+    for ( auto bundle : bundles )
+    num = num + loadFromBundle ( bundle ) ;
+
+    return num ;
+}
+
 uint32_t PluginManager::loadFromBundle(const ResourceBundleHolder &bundle)
 {
     GreAutolock ;

@@ -112,15 +112,9 @@ RenderPassHolder Renderer::copyPass(const RenderPassHolder &pass)
             return RenderPassHolder ( nullptr ) ;
         }
 
-        cpy -> setRenderTarget( pass->getRenderTarget() ) ;
-        cpy -> setViewport ( pass->getViewport() ) ;
-        cpy -> setClearColor ( pass->getClearColor() ) ;
-        cpy -> setClearDepth ( pass->getClearDepth() ) ;
-        cpy -> setClearBuffers ( pass->getClearBuffers() ) ;
         cpy -> setScene ( pass->getScene() ) ;
         cpy -> setTechnique ( pass->getTechnique() ) ;
         cpy -> setCamera ( pass->getCamera() ) ;
-        cpy -> setClearViewport ( pass->isClearViewport() ) ;
 
         GreDebug("[INFO] RenderPass '") << cpy->getName() << "' copied.'" << gendl ;
 

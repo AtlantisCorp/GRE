@@ -35,77 +35,15 @@
 
 GreBeginNamespace
 
-RenderPass::RenderPass ( const std::string & name ) : Gre::Renderable ( name )
+RenderPass::RenderPass ( const std::string & name )
+: Gre::Renderable ( name )
 {
-    iClearDepth = 1.0f ;
-    iClearBuffers.set((int)ClearBuffer::Color, true);
-    iClearBuffers.set((int)ClearBuffer::Depth, true);
-    iClearBuffers.set((int)ClearBuffer::Stencil, true);
+
 }
 
 RenderPass::~RenderPass () noexcept ( false )
 {
 
-}
-
-void RenderPass::setRenderTarget ( const RenderTargetHolder & target )
-{
-    GreAutolock ;
-
-    if ( !iTarget.isInvalid() ) {
-        iTarget -> removeListener (this) ;
-    }
-
-    iTarget = target ;
-
-    if ( !iTarget.isInvalid() ) {
-        iTarget -> addFilteredListener ( this , { EventType::WindowSized } ) ;
-    }
-}
-
-const RenderTargetHolder & RenderPass::getRenderTarget () const
-{
-    GreAutolock ; return iTarget ;
-}
-
-void RenderPass::setViewport ( const Viewport & viewport )
-{
-    GreAutolock ; iViewport = viewport ;
-}
-
-const Viewport & RenderPass::getViewport () const
-{
-    GreAutolock ; return iViewport ;
-}
-
-void RenderPass::setClearColor ( const Color & color )
-{
-    GreAutolock ; iClearColor = color ;
-}
-
-const Color & RenderPass::getClearColor () const
-{
-    GreAutolock ; return iClearColor ;
-}
-
-void RenderPass::setClearDepth ( float value )
-{
-    GreAutolock ; iClearDepth = value ;
-}
-
-float RenderPass::getClearDepth () const
-{
-    GreAutolock ; return iClearDepth ;
-}
-
-void RenderPass::setClearBuffers ( const ClearBuffers & buff )
-{
-    GreAutolock ; iClearBuffers = buff ;
-}
-
-const ClearBuffers & RenderPass::getClearBuffers () const
-{
-    GreAutolock ; return iClearBuffers ;
 }
 
 void RenderPass::setScene ( const RenderSceneHolder & scene )
@@ -136,25 +74,13 @@ void RenderPass::use ( const TechniqueHolder & technique ) const
     {
         //////////////////////////////////////////////////////////////////////
         // When the technique is Self-Rendered , we bind only the params hold
-        // by iSelfUsedParams. When not , we only bind the Viewport and the
-        // clear colors and depth.
+        // by iSelfUsedParams.
 
         if ( technique -> isSelfRendered() )
         {
             for ( const auto & param : iSelfUsedParams )
             if ( !param.isInvalid() )
             param -> use ( technique ) ;
-        }
-
-        else
-        {
-            technique -> setAliasedParameterValue ( TechniqueParam::ViewportLeft , HdwProgVarType::Int1 , iViewport.left ) ;
-            technique -> setAliasedParameterValue ( TechniqueParam::ViewportTop , HdwProgVarType::Int1 , iViewport.top ) ;
-            technique -> setAliasedParameterValue ( TechniqueParam::ViewportWidth , HdwProgVarType::Int1 , iViewport.width ) ;
-            technique -> setAliasedParameterValue ( TechniqueParam::ViewportHeight , HdwProgVarType::Int1 , iViewport.height ) ;
-
-            technique -> setAliasedParameterValue ( TechniqueParam::ClearColor , HdwProgVarType::Float4 , iClearColor.toFloat4() ) ;
-            technique -> setAliasedParameterValue ( TechniqueParam::ClearDepth , HdwProgVarType::Float1 , iClearDepth ) ;
         }
     }
 
@@ -177,25 +103,6 @@ void RenderPass::render ( const Renderer * renderer ) const
 
     if ( renderer && !iTechnique.isInvalid() )
     {
-
-        //////////////////////////////////////////////////////////////////////
-        // Checks the viewport area : If it is null , we don't need to render
-        // the pass.
-
-/*
-        if ( !iViewport.getArea() )
-        return ;
-
-        renderer -> setViewport ( iViewport ) ;
-
-        if ( iClearViewport )
-        renderer -> setClearRegion ( iViewport ) ;
-
-        renderer -> setClearColor ( iClearColor ) ;
-        renderer -> setClearDepth ( iClearDepth ) ;
-        renderer -> clearBuffers ( iClearBuffers ) ;
-*/
-
         //////////////////////////////////////////////////////////////////////
         // Uses preprocessing techniques here. Those techniques will use adequate
         // binding to be draw by the renderer.
@@ -214,16 +121,6 @@ void RenderPass::render ( const Renderer * renderer ) const
         for ( auto tech : iPostProcessTechniques )
         renderTechnique ( renderer , tech ) ;
     }
-}
-
-void RenderPass::setClearViewport(bool value)
-{
-    GreAutolock ; iClearViewport = value ;
-}
-
-bool RenderPass::isClearViewport() const
-{
-    GreAutolock ; return iClearViewport ;
 }
 
 void RenderPass::addSelfUsedRenderable ( const RenderableHolder & renderable )
@@ -544,11 +441,6 @@ void RenderPass::renderTechniqueWithNode (const Renderer* renderer ,
 
         mesh -> unbind ( technique ) ;
     }
-}
-
-void RenderPass::onWindowSizedEvent ( const WindowSizedEvent & e )
-{
-    iViewport.update ({ 0 , 0 , e.Width , e.Height }) ;
 }
 
 GreEndNamespace

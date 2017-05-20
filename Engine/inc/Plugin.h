@@ -217,6 +217,11 @@ public:
 
 public:
 
+    ////////////////////////////////////////////////////////////////////////
+    /// @brief Calls 'loadFromBundle' for every bundles.
+    ////////////////////////////////////////////////////////////////////////
+    virtual uint32_t loadFromBundles ( const std::vector < ResourceBundleHolder > & bundles ) ;
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Loads plugins found in each directory of the type 'Plugin'
     /// in the given bundle. Returns the number of plugin loaded.

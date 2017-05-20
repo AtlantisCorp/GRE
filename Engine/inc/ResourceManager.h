@@ -189,6 +189,13 @@ public:
     ////////////////////////////////////////////////////////////////////////
     static ResourceManagerHolder Get();
 
+    ////////////////////////////////////////////////////////////////////////
+    /// @brief Creates a resource manager , and sets it as the current instance
+    /// if 'setdefault' is true. Also calls 'initialize()' and 'addDefaultBundle()'
+    /// to the created instance.
+    ////////////////////////////////////////////////////////////////////////
+    static ResourceManagerHolder CreateDefault ( const std::string & name = "default" , bool setdefault = true ) ;
+
 private:
 
     /// @brief Default Resource Manager. This object should have been set by the
@@ -205,6 +212,10 @@ private:
     /// operate normally.
     ////////////////////////////////////////////////////////////////////////
     ResourceManager();
+
+    ////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////
+    ResourceManager ( const std::string & name ) ;
 
     ////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////
@@ -385,6 +396,23 @@ public:
     /// @brief Returns every bundles.
     //////////////////////////////////////////////////////////////////////
     const std::vector < ResourceBundleHolder > & getBundles () const ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Adds a default bundle to the resource manager.
+    /// This bundle is defined with key 'bundle.default'. If this key is
+    /// already taken, this might mean this function was already called.
+    /// Bundle's directories are 'Plugins' , 'Programs' , 'Textures' ,
+    /// 'Models' , 'Effects'.
+    //////////////////////////////////////////////////////////////////////
+    ResourceBundleHolder addDefaultBundle () ;
+
+protected:
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns an iterator corresponding to the bundle with given
+    /// name , or 'iBundles.end()'.
+    //////////////////////////////////////////////////////////////////////
+    std::vector < ResourceBundleHolder > :: const_iterator findBundleIterator ( const std::string & name ) const ;
 };
 
 /// @brief Holder for ResourceManager.

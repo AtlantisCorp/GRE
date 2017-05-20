@@ -63,6 +63,18 @@ ResourceManagerHolder ResourceManager::Get()
     return iManagerHolder;
 }
 
+ResourceManagerHolder ResourceManager::CreateDefault ( const std::string & name , bool setdefault )
+{
+    ResourceManagerHolder manager ( new ResourceManager(name) ) ;
+    manager -> initialize () ;
+    manager -> addDefaultBundle () ;
+
+    if ( setdefault )
+    iManagerHolder = manager ;
+
+    return manager ;
+}
+
 // ---------------------------------------------------------------------------------------------------
 
 ResourceManager::ResourceManager() : Resource ( )
@@ -73,6 +85,12 @@ ResourceManager::ResourceManager() : Resource ( )
 , iApplicationFactory ()
 {
     iInitialized = false ;
+}
+
+ResourceManager::ResourceManager ( const std::string & name )
+: Resource ( name ) , iInitialized ( false )
+{
+
 }
 
 void ResourceManager::initialize ()
@@ -483,6 +501,47 @@ std::string ResourceManager::findBundledFile(const ResourceType & type ,
 const std::vector < ResourceBundleHolder > & ResourceManager::getBundles () const
 {
     GreAutolock ; return iBundles ;
+}
+
+ResourceBundleHolder ResourceManager::addDefaultBundle ()
+{
+    GreAutolock ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Check if 'bundle.default' is already loaded.
+
+    auto checkit = findBundleIterator ( "bundle.default" ) ;
+
+    if ( checkit != iBundles.end() )
+    return *checkit ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Creates the bundle and adds directories.
+
+    ResourceBundleHolder rbundle = addBundle ( "bundle.default" ) ;
+	rbundle -> addDirectory ( Gre::ResourceType::Plugin ,  "Plugins" ) ;
+	rbundle -> addDirectory ( Gre::ResourceType::Program , "Programs" ) ;
+	rbundle -> addDirectory ( Gre::ResourceType::Texture , "Textures" ) ;
+	rbundle -> addDirectory ( Gre::ResourceType::Mesh ,    "Models" ) ;
+	rbundle -> addDirectory ( Gre::ResourceType::Effect ,  "Effects" ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Returns the bundle.
+
+    return rbundle ;
+}
+
+std::vector < ResourceBundleHolder > :: const_iterator ResourceManager::findBundleIterator ( const std::string & name ) const
+{
+    GreAutolock ;
+
+    for ( auto it = iBundles.begin() ; it != iBundles.end() ; it++ )
+    {
+        if ( (*it) -> getName() == name )
+        return it ;
+    }
+
+    return iBundles.end() ;
 }
 
 GreEndNamespace
