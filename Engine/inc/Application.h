@@ -54,6 +54,9 @@ enum class ApplicationCloseBehaviour
     Invalid
 };
 
+/// @brief Bitset fields for ApplicationCloseBehaviour.
+typedef std::bitset < (size_t) ApplicationCloseBehaviour::Invalid > ApplicationCloseBehaviours ;
+
 //////////////////////////////////////////////////////////////////////
 /// @brief An Application Object.
 //////////////////////////////////////////////////////////////////////

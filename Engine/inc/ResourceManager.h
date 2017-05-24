@@ -196,6 +196,12 @@ public:
     ////////////////////////////////////////////////////////////////////////
     static ResourceManagerHolder CreateDefault ( const std::string & name = "default" , bool setdefault = true ) ;
 
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Calls 'CreateDefault' , and loads plugins in the default
+    /// bundle.
+    //////////////////////////////////////////////////////////////////////
+    static ResourceManagerHolder CreateDefaultAndLoadPlugins ( const std::string & name = "default" , bool setdefault = true ) ;
+
 private:
 
     /// @brief Default Resource Manager. This object should have been set by the
@@ -375,6 +381,38 @@ public:
     /// @brief Creates a new bundle with given name.
     //////////////////////////////////////////////////////////////////////
     ResourceBundleHolder addBundle ( const std::string & name ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Creates an Application object from given loader , with some
+    /// informations about the application author and description.
+    /// A 'loader' with name '::first' , will be the first loader encountered
+    /// in the Application Factory. 
+    //////////////////////////////////////////////////////////////////////
+    ApplicationHolder loadApplication (const std::string & loader ,
+                                       const std::string & name ,
+                                       const std::string & author = std::string () ,
+                                       const std::string & description = std::string () ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Loads an Application object and initializes it using the
+    /// standard main function arguments.
+    //////////////////////////////////////////////////////////////////////
+    ApplicationHolder loadApplicationAndInitialize (const std::string & loader ,
+                                                    const std::string & name ,
+                                                    const std::string & author = std::string () ,
+                                                    const std::string & description = std::string () ,
+                                                    int argc = 0 , char** argv = nullptr ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Calls 'loadApplicationAndInitialize' and sets the default
+    /// close behaviour to every possible behaviours.
+    //////////////////////////////////////////////////////////////////////
+    ApplicationHolder loadApplicationAndInitializeBehaviour (const std::string & loader ,
+                                                             const std::string & name ,
+                                                             const std::string & author = std::string () ,
+                                                             const std::string & description = std::string () ,
+                                                             int argc = 0 , char** argv = nullptr ,
+                                                             const ApplicationCloseBehaviours & cb = ApplicationCloseBehaviours () ) ;
 
     //////////////////////////////////////////////////////////////////////
     /// @brief Creates an Application object using the first loader registered

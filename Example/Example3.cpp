@@ -64,32 +64,15 @@ void MyApplicationExample::init ( int argc , char** argv )
 	// managers present in the ResourceManager object. Notes the 'Create()' function also set the
 	// resource manager 's singleton.
 
-    rmanager = Gre::ResourceManager::CreateDefault () ;
-
-	// Now , try to load every plugins in bundles. Those plugins should be loaded only if the
-	// plugins dependencies are respected. Each plugin should be identified using a unique UUID
-	// identifier. This identifier is used to look for a plugin.
-
-	Gre::PluginManagerHolder pm = rmanager -> getPluginManager () ;
-	if ( pm -> loadFromBundles ( rmanager->getBundles() ) == 0 ) {
-		GreDebug ( "[ERRO] No plugins found." ) << Gre::gendl ;
-		exit ( -1 ) ;
-	}
+    rmanager = Gre::ResourceManager::CreateDefaultAndLoadPlugins () ;
 
 	// Now , create our application object. This application should be initialized after allocation.
 
-	Gre::ApplicationHolder app = rmanager -> createApplication ( "Example Application" ) ;
-	if ( app.isInvalid() ) {
-		GreDebug ( "[ERRO] Can't create Application 'Example Application'.") << Gre::gendl ;
-		exit ( -2 ) ;
-    }
-
-    app -> addCloseBehaviour(ApplicationCloseBehaviour::AllWindowClosed) ;
-    app -> addCloseBehaviour(ApplicationCloseBehaviour::EscapeKey) ;
-    app -> addCloseBehaviour(ApplicationCloseBehaviour::TerminateCalled) ;
-
-    app -> initialize ( argc , argv ) ;
-    iApplication = app ;
+	iApplication = rmanager -> loadApplicationAndInitializeBehaviour (
+            "::first" , "GRE Example Application" ,
+            "Luk2010" , "Example Program to show GRE main features." ,
+            argc , argv
+    ) ;
 }
 
 void MyApplicationExample::createScene()

@@ -75,6 +75,17 @@ ResourceManagerHolder ResourceManager::CreateDefault ( const std::string & name 
     return manager ;
 }
 
+ResourceManagerHolder ResourceManager::CreateDefaultAndLoadPlugins ( const std::string & name , bool setdefault )
+{
+    ResourceManagerHolder manager = CreateDefault ( name , setdefault ) ;
+    auto plugins = manager -> getPluginManager () ;
+
+    if ( !plugins.isInvalid() )
+    plugins -> loadFromBundles ( manager->getBundles() ) ;
+
+    return manager ;
+}
+
 // ---------------------------------------------------------------------------------------------------
 
 ResourceManager::ResourceManager() : Resource ( )
@@ -445,6 +456,81 @@ ResourceBundleHolder ResourceManager::addBundle ( const std::string & name )
     ResourceBundleHolder ret ( new ResourceBundle(name) ) ;
     iBundles.push_back ( ret ) ;
     return ret ;
+}
+
+ApplicationHolder ResourceManager::loadApplication ( const std::string & loader , const std::string & name ,
+                                                     const std::string & author , const std::string & description )
+{
+    GreAutolock ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Check Factory for loader.
+
+    ApplicationLoader* loaderptr = nullptr ;
+
+    if ( loader == "::first" ) loaderptr = iApplicationFactory.getFirst () ;
+    else loaderptr = iApplicationFactory.get ( loader ) ;
+
+    if ( !loaderptr )
+    return ApplicationHolder ( nullptr ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Constructs application.
+
+    auto app = loaderptr -> load ( name , author , description ) ;
+
+    if ( app.isInvalid() )
+    GreDebug ( "[WARN] Can't load Application from loader '" ) << loader << "'." << gendl ;
+
+    delete loaderptr ;
+    return app ;
+}
+
+ApplicationHolder ResourceManager::loadApplicationAndInitialize ( const std::string & loader , const std::string & name ,
+                                                                  const std::string & author , const std::string & description ,
+                                                                  int argc , char ** argv )
+{
+    GreAutolock ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Calls 'loadApplication'.
+
+    auto app = loadApplication ( loader , name , author , description ) ;
+
+    if ( app.isInvalid() )
+    return app ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Initializes application.
+
+    app -> initialize ( argc , argv ) ;
+
+    return app ;
+}
+
+ApplicationHolder ResourceManager::loadApplicationAndInitializeBehaviour ( const std::string & loader , const std::string & name ,
+                                                                           const std::string & author , const std::string & description ,
+                                                                           int argc , char ** argv ,
+                                                                           const ApplicationCloseBehaviours & cb )
+{
+    GreAutolock ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Calls 'loadApplicationAndInitialize'.
+
+    auto app = loadApplicationAndInitialize ( loader , name , author , description , argc , argv ) ;
+
+    if ( app.isInvalid() )
+    return app ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Sets the close behaviours to everything.
+
+    app -> addCloseBehaviour(ApplicationCloseBehaviour::AllWindowClosed) ;
+    app -> addCloseBehaviour(ApplicationCloseBehaviour::EscapeKey) ;
+    app -> addCloseBehaviour(ApplicationCloseBehaviour::TerminateCalled) ;
+
+    return app ;
 }
 
 ApplicationHolder ResourceManager::createApplication(const std::string &name,
