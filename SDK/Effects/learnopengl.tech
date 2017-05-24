@@ -87,6 +87,8 @@
 # ===================================================================
 # Shadowmapping technique.
 
+[MAT4 learnopengl.light.matrix]
+
 [Program learnopengl.shadowmapping.phase1.program]
 {
     [Vertex] { [GLSL learnopengl.shadowmapping.phase1.vert] }
@@ -123,6 +125,8 @@
     [LightingMode PerLight]
     [Program learnopengl.shadowmapping.phase1.program]
     [Framebuffer learnopengl.shadowmapping.depthbuffer]
+
+    [GlobSet learnopengl.light.matrix ProjectionViewMatrix]
 }
 
 [Technique learnopengl.shadowmapping.phase2.technique]
@@ -134,12 +138,13 @@
     [Alias ModelMatrix model]
     [Alias ViewMatrix view]
     [Alias ProjectionMatrix projection]
-    [Alias LightShadowMatrix lightSpaceMatrix]
 
     [Alias MaterialTexDiffuse diffuseTexture]
     [Alias LightTexture0 shadowMap]
     [Alias LightPosition lightPos]
     [Alias CameraPosition viewPos]
+
+    [GlobAlias learnopengl.light.matrix lightSpaceMatrix]
 
     [LightingMode AllLights]
     [Program learnopengl.shadowmapping.phase2.program]

@@ -296,6 +296,26 @@ public:
     //////////////////////////////////////////////////////////////////////
     virtual const Matrix4 getProjectionMatrix () const ;
 
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Adds a 'GlobSet' action to this  technique.
+    /// When a parameter is bound to a program's parameter , its value will
+    /// be saved by the program object. The 'GlobSet' action take this value
+    /// using the Technique's Parameter alias and put it to the given Global
+    /// variable , holded by the technique manager.
+    //////////////////////////////////////////////////////////////////////
+    virtual void addGlobSet ( const std::string & globname , const TechniqueParam & techparam ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Finds every 'GlobSet' action that use the given Technique's
+    /// parameter.
+    //////////////////////////////////////////////////////////////////////
+    virtual const std::vector < std::string > findGlobSets ( const TechniqueParam & param ) const ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Adds a 'GlobAlias' action to this Technique.
+    //////////////////////////////////////////////////////////////////////
+    virtual void addGlobAlias ( const std::string & globname , const std::string & progparam ) ;
+
 protected:
 
     //////////////////////////////////////////////////////////////////////
@@ -357,6 +377,14 @@ protected:
     /// When resetting the technique, every textures is unbinded with the correct texture unit. Notes the
     /// textures are managed as a stack (First In Last Out).
     mutable std::stack < TextureHolder > iTextureUnits ;
+
+    /// @brief Holds a list of 'GlobSet' actions. Note the 'GlobSet' will be done only when types between
+    /// Global and Technique's Parameter matches , and if the Technique's parameter is set.
+    std::map < std::string , TechniqueParam > iGlobSets ;
+
+    /// @brief Holds a list of 'GlobAlias' actions. When the technique is bound , after binding the program ,
+    /// it will automatically bind the given Global Variables to the given named program parameter.
+    std::map < std::string , std::string > iGlobALiases ;
 };
 
 /// @brief
@@ -445,6 +473,30 @@ public:
     /// @brief Returns the first technique encountered with given name.
     //////////////////////////////////////////////////////////////////////
     virtual const TechniqueHolder get ( const std::string & name ) const ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Adds a Global.
+    /// Notes the type of this Global cannot be changed , after being set.
+    //////////////////////////////////////////////////////////////////////
+    virtual void addGlobal ( const std::string & name , const HdwProgVarType & type , const RealProgramVariable & value ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Sets a Global current value.
+    //////////////////////////////////////////////////////////////////////
+    virtual void setGlobalValue ( const std::string & name , const RealProgramVariable & value ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the global HardwareProgramVariable.
+    //////////////////////////////////////////////////////////////////////
+    virtual const HardwareProgramVariable & getGlobal ( const std::string & name ) const ;
+
+protected:
+
+    /// @brief Holds Globals used by other Technique's. Those globals are used
+    /// to transmit some specific values from one technique to another , bypassing
+    /// a possible manual transmitting behavior. Those globals can be defined
+    /// directly in the 'tech' file , and used with 'GlobSet' and 'GlobAlias'.
+    std::map < std::string , HardwareProgramVariable > iGlobalsByName ;
 };
 
 /// @brief

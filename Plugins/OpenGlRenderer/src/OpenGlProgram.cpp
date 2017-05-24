@@ -215,18 +215,12 @@ bool OpenGlProgram::_finalize()
     GLint uniformmaxlenght = 0 ;
 
     glGetProgramiv(iGlProgram, GL_ACTIVE_UNIFORMS, &uniformcount) ;
-
-#ifdef GreIsDebugMode
     GreDebug("[INFO] glGetProgramiv() : Found ") << uniformcount << " uniforms." << Gre::gendl ;
-#endif
 
     if ( uniformcount )
     {
         glGetProgramiv(iGlProgram, GL_ACTIVE_UNIFORM_MAX_LENGTH, &uniformmaxlenght) ;
-
-#ifdef GreIsDebugMode
-        GreDebug("[INFO] glGetProgramiv() : Uniform Max Lenght = ") << uniformmaxlenght << Gre::gendl ;
-#endif
+        // GreDebug("[INFO] glGetProgramiv() : Uniform Max Lenght = ") << uniformmaxlenght << Gre::gendl ;
 
         if ( uniformmaxlenght )
         {
@@ -244,8 +238,8 @@ bool OpenGlProgram::_finalize()
 
                 GLint location = glGetUniformLocation(iGlProgram, buf) ;
 
-                GreDebug("[INFO] glGetActiveUniformName() : Uniform name = '") << std::string(buf) << "'." << Gre::gendl ;
-                GreDebug("[INFO] glGetUniformLocation() : Uniform location = ") << location << "." << Gre::gendl ;
+                // GreDebug("[INFO] glGetActiveUniformName() : Uniform name = '") << std::string(buf) << "'." << Gre::gendl ;
+                // GreDebug("[INFO] glGetUniformLocation() : Uniform location = ") << location << "." << Gre::gendl ;
 
                 //////////////////////////////////////////////////////////////////////
                 // We can save the uniform for saving time on 'glGetUniformLocation'.
@@ -267,18 +261,12 @@ bool OpenGlProgram::_finalize()
     GLint attrmaxlenght = 0 ;
 
     glGetProgramiv(iGlProgram, GL_ACTIVE_ATTRIBUTES, &attrcount) ;
-
-#ifdef GreIsDebugMode
     GreDebug("[INFO] glGetProgramiv() : Found ") << attrcount << " attributes." << Gre::gendl ;
-#endif
 
     if ( attrcount )
     {
         glGetProgramiv(iGlProgram, GL_ACTIVE_ATTRIBUTE_MAX_LENGTH, &attrmaxlenght) ;
-
-#ifdef GreIsDebugMode
-        GreDebug("[INFO] glGetProgramiv() : AttrMaxLenght = ") << attrmaxlenght << Gre::gendl ;
-#endif
+        // GreDebug("[INFO] glGetProgramiv() : AttrMaxLenght = ") << attrmaxlenght << Gre::gendl ;
 
         if ( attrmaxlenght )
         {
@@ -292,10 +280,8 @@ bool OpenGlProgram::_finalize()
 
                 GLint location = glGetAttribLocation(iGlProgram, buf) ;
 
-#ifdef GreIsDebugMode
-                GreDebug("ActivAttrib = '") << std::string(buf) << "'." << Gre::gendl ;
-                GreDebug("Location = ") << location << Gre::gendl ;
-#endif
+                // GreDebug("ActivAttrib = '") << std::string(buf) << "'." << Gre::gendl ;
+                // GreDebug("Location = ") << location << Gre::gendl ;
 
                 iAttribsLocation [std::string(buf)] = location ;
             }

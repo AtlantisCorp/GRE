@@ -233,7 +233,18 @@ void Technique::setAliasedParameterValue (const TechniqueParam & name ,
     GreAutolock ;
 
     if ( iProgram.isInvalid() )
-        return ;
+    return ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Checks for an eventual 'GlobSet' action.
+
+    auto globset = findGlobSets ( name ) ;
+
+    for ( auto globsetit : globset )
+    ResourceManager::Get() -> getTechniqueManager () -> setGlobalValue ( globsetit , value ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Now see if the program has the given parameter registered.
 
     if ( iProgram->binded() )
     {
@@ -265,8 +276,27 @@ void Technique::bind () const
     if ( !iFramebuffer.isInvalid() )
     iFramebuffer -> bind () ;
 
+    //////////////////////////////////////////////////////////////////////
+    // If possible , binds the HardwareProgram associated.
+
     if ( !iProgram.isInvalid() )
-    iProgram -> use () ;
+    {
+        iProgram -> use () ;
+
+        //////////////////////////////////////////////////////////////////////
+        // If bound , we must check the globals associated with this technique.
+
+        if ( iProgram -> binded() )
+        {
+            auto techmanager = ResourceManager::Get() -> getTechniqueManager() ;
+
+            for ( auto globalias : iGlobALiases )
+            {
+                auto global = techmanager -> getGlobal ( globalias.first ) ;
+                iProgram -> setUniform ( globalias.second , global.type , global.value ) ;
+            }
+        }
+    }
 }
 
 void Technique::unbind () const
@@ -442,6 +472,27 @@ const Matrix4 Technique::getProjectionMatrix () const
     return iFramebuffer -> getProjection().get () ;
 }
 
+void Technique::addGlobSet ( const std::string & globname , const TechniqueParam & techparam )
+{
+    GreAutolock ; iGlobSets[globname] = techparam ;
+}
+
+const std::vector < std::string > Technique::findGlobSets ( const TechniqueParam & param ) const
+{
+    GreAutolock ; std::vector < std::string > ret ;
+
+    for ( auto globset : iGlobSets )
+    if ( globset.second == param )
+    ret.push_back ( globset.first ) ;
+
+    return ret ;
+}
+
+void Technique::addGlobAlias ( const std::string & globname , const std::string & progparam )
+{
+    GreAutolock ; iGlobALiases[globname] = progparam ;
+}
+
 int Technique::bindTexture ( const TextureHolder & texture ) const
 {
     GreAutolock ;
@@ -471,7 +522,9 @@ void Technique::onUpdateEvent(const Gre::UpdateEvent &e)
 TechniqueManager::TechniqueManager ( const std::string & name )
 : ResourceManagerBase<Gre::Technique>(name)
 {
-
+    //////////////////////////////////////////////////////////////////////
+    // Always load a Global named 'null'.
+    addGlobal ( "null" , HdwProgVarType::None , (float) 0.0f ) ;
 }
 
 TechniqueManager::~TechniqueManager() noexcept ( false )
@@ -606,6 +659,65 @@ TechniqueHolder TechniqueManager::get ( const std::string & name )
 const TechniqueHolder TechniqueManager::get ( const std::string & name ) const
 {
     return findFirstHolder ( name ) ;
+}
+
+void TechniqueManager::addGlobal ( const std::string & name , const HdwProgVarType & type , const RealProgramVariable & value )
+{
+    GreAutolock ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Check if not already existing.
+
+    auto checkit = iGlobalsByName.find ( name ) ;
+    if ( checkit != iGlobalsByName.end() )
+    return ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Register the variable.
+
+    HardwareProgramVariable var ;
+    var.name = name ;
+    var.type = type ;
+    var.value = value ;
+    iGlobalsByName [name] = var ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Informs !
+
+    GreDebug ( "[INFO] Added Global : '" ) << name << "'." << gendl ;
+}
+
+void TechniqueManager::setGlobalValue ( const std::string & name , const RealProgramVariable & value )
+{
+    GreAutolock ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Check existing.
+
+    auto var = iGlobalsByName.find ( name ) ;
+    if ( var == iGlobalsByName.end() )
+    return ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Sets new value.
+
+    var->second.value = value ;
+}
+
+const HardwareProgramVariable & TechniqueManager::getGlobal ( const std::string & name ) const
+{
+    GreAutolock ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Check existency.
+
+    auto globit = iGlobalsByName.find(name) ;
+
+    if ( globit == iGlobalsByName.end() )
+    return iGlobalsByName.at("null") ;
+
+    else
+    return globit->second ;
 }
 
 GreEndNamespace

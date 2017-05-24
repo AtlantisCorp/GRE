@@ -47,12 +47,27 @@ namespace internal
     enum class TechniqueFileElementType : int
     {
         Shader , Program , Technique , Context , Framebuffer , Texture ,
-        Mesh
+        Mesh , MathVar
     };
 
     struct TechniqueFileElement
     {
         TechniqueFileElementType type ;
+    };
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Math variable definition.
+    struct TechniqueFileMathVar : TechniqueFileElement
+    {
+        /// @brief Holds the name the global variable should have when loaded
+        /// to the technique manager.
+        std::string name ;
+
+        /// @brief Holds a RealProgramVariable structure.
+        RealProgramVariable var ;
+
+        /// @brief Holds the variable type.
+        HdwProgVarType vartype ;
     };
 
     //////////////////////////////////////////////////////////////////////
@@ -104,6 +119,9 @@ namespace internal
         std::map < VertexAttribAlias , std::string > attributes ;
         std::map < TechniqueParam , std::string > aliases ;
 
+        std::map < std::string , TechniqueParam > globsets ;
+        std::map < std::string , std::string > globaliases ;
+
         std::string name ;
         std::string program ;
         TechniqueLightingMode lightingmode ;
@@ -136,6 +154,7 @@ namespace internal
         std::map < std::string , TechniqueFileTechnique > techniques ;
         std::map < std::string , TechniqueFileTexture > textures ;
         std::map < std::string , TechniqueFileMesh > meshes ;
+        std::map < std::string , TechniqueFileMathVar > mathvars ;
     };
 
     //////////////////////////////////////////////////////////////////////
@@ -309,6 +328,11 @@ protected:
     /// @brief Interprets the given node as a Mesh.
     //////////////////////////////////////////////////////////////////////
     virtual void convertMesh ( internal::TechniqueFileContext* context , const internal::TechniqueFileNode* node ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Interprets the given node as a Matrix 4x4.
+    //////////////////////////////////////////////////////////////////////
+    virtual void convertMat4 ( internal::TechniqueFileContext* context , const internal::TechniqueFileNode* node ) ;
 
     //////////////////////////////////////////////////////////////////////
     /// @brief Creates techniques using the context object.

@@ -426,6 +426,10 @@ internal::TechniqueFileContext* TechniqueFileParser::convertTree ( const interna
                     convertMesh ( context , node ) ;
                 }
 
+                else if ( deftype == "MAT4" ) {
+                    convertMat4 ( context , node ) ;
+                }
+
 #ifdef GreIsDebugMode
                 else
                 {
@@ -572,6 +576,36 @@ void TechniqueFileParser::convertTechnique ( internal::TechniqueFileContext* con
 
         else if (subnode -> definition.words.at(0) == "Self-Rendered")
         technique.selfrendered = true ;
+
+        //////////////////////////////////////////////////////////////////////
+        // 'GlobSet' : Sets global variable to given parameter value.
+        //      . name  = name of the global variable to set.
+        //      . param = name of the parameters to use.
+        // Notes the global variable must be of the same type of the paramater
+        // you want to set the global variable.
+
+        else if (subnode -> definition.words.at(0) == "GlobSet" &&
+                 subnode -> definition.words.size() >= 3)
+        {
+            std::string globname  = subnode -> definition.words.at(1) ;
+            std::string paramname = subnode -> definition.words.at(2) ;
+            technique.globsets [globname] = TechniqueParamFromString ( paramname ) ;
+        }
+
+        //////////////////////////////////////////////////////////////////////
+        // 'GlobAlias' : Sets a parameter value to global variable value.
+        //      . param = name of the parameter.
+        //      . name  = name of the global.
+        // Notes the global and the parameter must be of same type. Here the
+        // parameter is a Program's parameter , not a technique parameter.
+
+        else if (subnode -> definition.words.at(0) == "GlobAlias" &&
+                 subnode -> definition.words.size() >= 3)
+        {
+            std::string globname = subnode -> definition.words.at(1) ;
+            std::string param    = subnode -> definition.words.at(2) ;
+            technique.globaliases [globname] = param ;
+        }
 
         //////////////////////////////////////////////////////////////////////
         // Unknown sequence.
@@ -808,6 +842,24 @@ void TechniqueFileParser::convertMesh ( internal::TechniqueFileContext* context 
     context -> meshes [name] = mesh ;
 }
 
+void TechniqueFileParser::convertMat4 ( internal::TechniqueFileContext* context , const internal::TechniqueFileNode* node )
+{
+    //////////////////////////////////////////////////////////////////////
+    // MAT4 definition is [MAT4 $name]
+
+    std::string name = node -> definition.words.size() >= 2 ? node -> definition.words.at(1) : std::string () ;
+
+    if ( name.empty() )
+    return ;
+
+    internal::TechniqueFileMathVar mathvar ;
+    mathvar.name    = name ;
+    mathvar.type    = internal::TechniqueFileElementType::MathVar ;
+    mathvar.var     = RealProgramVariable ( glm::mat4(1.0f) ) ;
+    mathvar.vartype = HdwProgVarType::Matrix4 ;
+    context -> mathvars [name] = mathvar ;
+}
+
 TechniqueHolderList TechniqueFileParser::createTechniques ( const internal::TechniqueFileContext* context )
 {
     //////////////////////////////////////////////////////////////////////
@@ -816,8 +868,22 @@ TechniqueHolderList TechniqueFileParser::createTechniques ( const internal::Tech
     if ( !context )
     return TechniqueHolderList () ;
 
+    auto techmanager = ResourceManager::Get() -> getTechniqueManager () ;
+    if ( techmanager.isInvalid() ) return TechniqueHolderList () ;
+
     TechniqueHolderList techniques ;
     GreDebug ( "[INFO] Scanning Context Tree..." ) << gendl ;
+
+    //////////////////////////////////////////////////////////////////////
+    // Loads global math variables.
+
+    for ( auto it : context -> mathvars )
+    {
+        //////////////////////////////////////////////////////////////////////
+        // Simply get the technique manager , to add a global variable , with
+        // given name and RealProgramVariable as value.
+        techmanager -> addGlobal ( it.second.name , it.second.vartype , it.second.var ) ;
+    }
 
     //////////////////////////////////////////////////////////////////////
     // Tries to load meshes.
@@ -1027,6 +1093,18 @@ TechniqueHolderList TechniqueFileParser::createTechniques ( const internal::Tech
 
         if ( framebufit != context -> framebuffers.end() )
         technique -> setFramebufferAttachements ( framebufit->second.attachements ) ;
+
+        //////////////////////////////////////////////////////////////////////
+        // 'GlobSet' components.
+
+        for ( auto globset : it.second.globsets )
+        technique -> addGlobSet ( globset.first , globset.second ) ;
+
+        //////////////////////////////////////////////////////////////////////
+        // 'GlobAlias' components.
+
+        for ( auto globalias : it.second.globaliases )
+        technique -> addGlobAlias ( globalias.first , globalias.second ) ;
 
         //////////////////////////////////////////////////////////////////////
         // Registers the technique.

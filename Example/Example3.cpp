@@ -166,8 +166,8 @@ void MyApplicationExample::createScene()
         // or a multi-technique drawing (the scene may be rendered more than once) , as the technique may have some
         // pre or post render techniques.
 
-        renderpass  = renderer -> addPass ( "renderer.renderpass.1" ) ;
         renderpass2 = renderer -> addPass ( "renderer.renderpass.2" ) ;
+        renderpass  = renderer -> addPass ( "renderer.renderpass.1" ) ;
 
         //////////////////////////////////////////////////////////////////////
         // Tries to get the 'learnopengl.shadowmapping.technique' technique. The
@@ -177,14 +177,17 @@ void MyApplicationExample::createScene()
         if ( tech1.isInvalid() ) exit( -6 ) ;
 
         auto framebuffer = tech1 -> getFramebuffer () ;
+
         Viewport & viewport = framebuffer -> getViewport() ;
-        viewport.setProjection ( Projection::Ortho(-10.0f , 10.0f, -10.0f, 10.0f) ) ;
+        // viewport.setProjection ( Projection::Ortho(-10.0f , 10.0f, -10.0f, 10.0f, 0.1f, 100.0f) ) ;
+        viewport.setProjection( Projection::Perspective(45.0f, 1.0f) ) ;
 
         auto tech2 = tmanager -> get ( "learnopengl.shadowmapping.phase2.technique" ) ;
         if ( tech2.isInvalid() ) exit ( -6 ) ;
 
         renderpass2 -> setTechnique ( tech1 ) ;
-        renderpass -> setTechnique ( tech2 ) ;
+        renderpass  -> setTechnique ( tech2 ) ;
+
         renderpass -> addNamedParameter("shadows", HdwProgVarType::Bool1, (int) 1) ;
 
         //////////////////////////////////////////////////////////////////////
@@ -280,7 +283,7 @@ void MyApplicationExample::loadScene ( void )
     auto scene = scenes -> load ( "scene" , sceneops ) ;
     if ( scene.isInvalid() ) exit ( -34 ) ;
 
-    renderpass -> setScene ( scene ) ;
+    renderpass  -> setScene ( scene ) ;
     renderpass2 -> setScene ( scene ) ;
 
     //////////////////////////////////////////////////////////////////////
@@ -313,8 +316,8 @@ void MyApplicationExample::loadScene ( void )
     auto lightnode = scene -> create ( "scene.light" ) ;
     if ( lightnode.isInvalid() ) exit ( -36 ) ;
 
-    lightnode -> look ( 0.0f , 0.0f , -1.0f ) ;
-    lightnode -> translate ( 0.0f , 0.0f , 5.0f ) ;
+    lightnode -> translate ( 0.0f , 3.0f , -1.0f ) ;
+    lightnode -> look ( 0.0f , -1.0f , -1.0f ) ;
     lightnode -> setEmissiveMaterial ( emissive ) ;
     lightnode -> activeViewMatrix ( true ) ;
 
