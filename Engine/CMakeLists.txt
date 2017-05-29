@@ -29,6 +29,9 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 	include_directories(${UUID_INCLUDE_DIRS})
 	target_link_libraries(gre ${UUID_LIBRARIES})
 
+	find_package( Threads REQUIRED )
+	target_link_libraries(gre ${CMAKE_THREAD_LIBS_INIT})
+
 # =========================================================================
 endif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 # =========================================================================
