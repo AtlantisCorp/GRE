@@ -44,19 +44,9 @@
 
 GreBeginNamespace
 
-#ifdef GrePlatformUnix
-
-template<typename T> using TVector2 = glm::detail::tvec2<T, glm::highp>;
-template<typename T> using TVector3 = glm::detail::tvec3<T, glm::highp>;
-template<typename T> using TVector4 = glm::detail::tvec4<T, glm::highp>;
-
-#else
-
 template<typename T> using TVector2 = glm::tvec2<T, glm::highp>;
 template<typename T> using TVector3 = glm::tvec3<T, glm::highp>;
 template<typename T> using TVector4 = glm::tvec4<T, glm::highp>;
-
-#endif
 
 typedef TVector2<float> Vector2;
 typedef TVector3<float> Vector3;

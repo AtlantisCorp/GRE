@@ -117,6 +117,24 @@ public:
     /// arguments.
     //////////////////////////////////////////////////////////////////////
     virtual void initialize ( int argc , char ** argv ) ;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Start the worker thread.
+    //////////////////////////////////////////////////////////////////////
+    virtual void startWorkerThread () ;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns true if the elapsed time corresponds to the minimum 
+    /// time for a frame. (This is use to limit Framerate for example)
+    //////////////////////////////////////////////////////////////////////
+    virtual bool isElapsedTime () const ;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns an update event that can be given to any manager ,
+    /// for each frame , with the delta time since the last frame.
+    /// 'iMainStart' is updated to the current time.
+    //////////////////////////////////////////////////////////////////////
+    virtual EventHolder getNextUpdateEvent () ;
 
 protected:
 
@@ -128,7 +146,7 @@ protected:
     //////////////////////////////////////////////////////////////////////
     /// @brief Main function for the Main Thread.
     //////////////////////////////////////////////////////////////////////
-    void iMainThreadLoop () ;
+    virtual void iMainThreadLoop () ;
 
     //////////////////////////////////////////////////////////////////////
     /// @brief Function called by 'terminate()' , AllWindowClosedListener
@@ -224,6 +242,9 @@ protected:
 
     /// @brief Once launched, this variable holds the current RendererManager.
     RendererManagerHolder iRendererManager ;
+    
+    /// @brief Maximum framerate desired by the user. Default is '1 / 120.0f' (120 fps).
+    float iMaxFramerate ;
 };
 
 /// @brief Holder for Application.

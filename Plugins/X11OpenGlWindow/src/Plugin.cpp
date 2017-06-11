@@ -1,11 +1,11 @@
 //////////////////////////////////////////////////////////////////////
 //
-//  OpenGlTextureManager.cpp
+//  Plugin.cpp
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
 //  Copyright (c) 2015 - 2017 Luk2010
-//  Created on 12/02/2017.
+//  Created on 17/04/2017.
 //
 //////////////////////////////////////////////////////////////////////
 /*
@@ -16,10 +16,10 @@
  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  copies of the Software, and to permit persons to whom the Software is
  furnished to do so, subject to the following conditions:
- 
+
  The above copyright notice and this permission notice shall be included in
  all copies or substantial portions of the Software.
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -30,42 +30,52 @@
  -----------------------------------------------------------------------------
  */
 
-#include "OpenGlRenderer.h"
+#include <X11OpenGlWindow.h>
+#include <X11Application.h>
 
-OpenGlTextureCreator::OpenGlTextureCreator ( const Gre::Renderer* renderer )
-: iRenderer(renderer)
+Gre::PluginInfo info ;
+
+extern "C" Gre::PluginInfo* GetPluginInfo( void )
 {
-    if ( !iRenderer ) {
-        GreDebug("[WARN] Initializing OpenGlTextureManager without renderer has undefined behaviour.") << Gre::gendl ;
-    }
+	info.name    = "X11OpenGlWindow" ;
+ 	info.author  = "Luk2010" ;
+ 	info.version = GRE_PLUGIN_VERSION ;
+ 	uuid_parse("45b70521-9657-4349-82a4-83b4998f559b" , info.uuid);
+
+ 	return &info ;
 }
 
-OpenGlTextureCreator::~OpenGlTextureCreator()
+extern "C" void StartPlugin( void )
 {
-    
-}
+    if ( X11Application::X11Initialize() )
+    GreDebug ( "[INFO] X11 Initialized." ) << Gre::gendl ;
 
-Gre::Texture* OpenGlTextureCreator::load(const std::string & name ,
-                                           const Gre::SoftwarePixelBufferHolderList & buffers ,
-                                           const Gre::TextureType & type ,
-                                           const Gre::ResourceLoaderOptions & ops ) const
-{
-    CHECK_GLEW
+	auto windows = Gre::ResourceManager::Get()->getWindowManager() ;
 
-    if ( iRenderer )
+    if ( windows.isInvalid() )
     {
-        // Check if the RenderContext is actually binded.
-        iRenderer->getRenderContext()->bind() ;
-        
-        OpenGlTexture* tex = new OpenGlTexture ( name , type , buffers ) ;
-        if ( !tex -> isGlTextureValid() ) {
-            GreDebug("[WARN] Can't create OpenGlTexture '") << name << "'." << Gre::gendl ;
-            delete tex ; return nullptr ;
-        }
-        
-        return tex ;
+        GreDebug ( "[WARN] No WindowManager installed." ) << Gre::gendl ;
+        return ;
     }
-    
-    return nullptr ;
+
+    windows->getFactory().registers( "windows.loaders.x11opengl" , new X11OpenGlWindowLoader() ) ;
+
+    auto & appfactory = Gre::ResourceManager::Get()->getApplicationFactory() ;
+    appfactory.registers( "apps.loaders.x11" , new X11ApplicationLoader() ) ;
 }
 
+extern "C" void StopPlugin( void )
+{
+	auto windows = Gre::ResourceManager::Get()->getWindowManager() ;
+
+    if ( windows.isInvalid() )
+    {
+        GreDebug ( "[WARN] No WindowManager installed." ) << Gre::gendl ;
+        return ;
+    }
+
+    windows->getFactory().unregister( "windows.loaders.x11opengl" ) ;
+
+    auto appfactory = Gre::ResourceManager::Get()->getApplicationFactory() ;
+    appfactory.unregister( "apps.loaders.x11" ) ;
+}

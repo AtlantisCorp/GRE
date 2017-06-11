@@ -34,7 +34,7 @@ public:
 
     void init ( int argc , char ** argv ) ;
 
-    void createScene () ;
+    bool createScene () ;
 
     void run () ;
 
@@ -73,9 +73,15 @@ void MyApplicationExample::init ( int argc , char** argv )
             "Luk2010" , "Example Program to show GRE main features." ,
             argc , argv
     ) ;
+
+    if ( iApplication.isInvalid() )
+	{
+		GreDebug( "[WARN] Application object couldn't be loaded." ) << Gre::gendl ;
+		exit ( -244 ) ;
+	}
 }
 
-void MyApplicationExample::createScene()
+bool MyApplicationExample::createScene()
 {
     // Render something in GRE depends on three factors :
     //  - Creating one or more Windows.
@@ -109,7 +115,7 @@ void MyApplicationExample::createScene()
         WCAAccelerated ,
         WCADoubleBuffer ,
 
-        WCADepthSize , (WindowContextAttribute) 32 ,
+        WCADepthSize , (WindowContextAttribute) 24 ,
 
         WCAMultiSample ,
         WCASampleBuffers , (WindowContextAttribute) 1 ,
@@ -120,10 +126,10 @@ void MyApplicationExample::createScene()
 
     }) ;
 
-    WinOptions ["Window.ContextAttributes"] = attr ;
+    // WinOptions ["Window.ContextAttributes"] = attr ;
 
     window = wmanager -> load ( "Default Window" , WinOptions ) ;
-    if ( window.isInvalid() ) exit( -3 ) ;
+    if ( window.isInvalid() ) return false ;
 
     //////////////////////////////////////////////////////////////////////
     // Creates a Renderer. As the first loader will be used , this one should
@@ -180,6 +186,8 @@ void MyApplicationExample::createScene()
         framebuffer = tech2 -> getFramebuffer () ;
         framebuffer -> listen ( EventProceederHolder(window.getObject()) , { EventType::WindowSized } ) ;
     }
+
+    return true ;
 }
 
 void MyApplicationExample::run()
@@ -359,7 +367,9 @@ int main ( int argc , char ** argv )
         app.init( argc , argv ) ;
 
         // Creates the RenderPass , RenderScene , ...
-        app.createScene() ;
+        if ( !app.createScene() )
+        return -2 ;
+
         app.loadScene () ;
 
         // Runs the application.

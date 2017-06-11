@@ -116,6 +116,7 @@ Application::Application ( const std::string& name , const std::string& author ,
 , iWindowManager(nullptr), iRendererManager(nullptr)
 {
     iRunAlreadyCalled = false ;
+    iMaxFramerate = 1 / 120.0f ;
 }
 
 Application::~Application() noexcept ( false )
@@ -230,6 +231,32 @@ bool Application::shouldTerminate () const
 void Application::initialize ( int argc , char ** argv )
 {
 
+}
+
+void Application::startWorkerThread()
+{
+    GreAutolock ;
+    
+    if ( !iWorkerThread.joinable() )
+    iWorkerThread = std::thread ( Application::WorkerThreadMain , this ) ;
+}
+
+bool Application::isElapsedTime() const
+{
+    GreAutolock ;
+    
+    Duration delta = Time::now() - iMainStart ;
+    return delta.count() >= iMaxFramerate ;
+}
+
+EventHolder Application::getNextUpdateEvent()
+{
+    GreAutolock ;
+    
+    Duration delta = Time::now() - iMainStart ;
+    iMainStart = Time::now() ; 
+    
+    return EventHolder ( new UpdateEvent ( this , delta ) ) ;
 }
 
 void Application::iMainThreadLoop()

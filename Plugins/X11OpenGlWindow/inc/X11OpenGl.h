@@ -1,11 +1,11 @@
 //////////////////////////////////////////////////////////////////////
 //
-//  OpenGlTextureManager.cpp
+//  X11OpenGl.h
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
 //  Copyright (c) 2015 - 2017 Luk2010
-//  Created on 12/02/2017.
+//  Created on 17/04/2017.
 //
 //////////////////////////////////////////////////////////////////////
 /*
@@ -16,10 +16,10 @@
  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  copies of the Software, and to permit persons to whom the Software is
  furnished to do so, subject to the following conditions:
- 
+
  The above copyright notice and this permission notice shall be included in
  all copies or substantial portions of the Software.
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -28,44 +28,28 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  THE SOFTWARE.
  -----------------------------------------------------------------------------
- */
+*/
 
-#include "OpenGlRenderer.h"
+#ifndef GRE_X11OPENGL_H
+#define GRE_X11OPENGL_H
 
-OpenGlTextureCreator::OpenGlTextureCreator ( const Gre::Renderer* renderer )
-: iRenderer(renderer)
-{
-    if ( !iRenderer ) {
-        GreDebug("[WARN] Initializing OpenGlTextureManager without renderer has undefined behaviour.") << Gre::gendl ;
-    }
-}
+//////////////////////////////////////////////////////////////////////
+// Includes Gre::ResourceManager , OpenGl , and GLEW extensions manager.
+// Notes the resource manager may includes every other GRE files needed.
+// X11 is also included.
 
-OpenGlTextureCreator::~OpenGlTextureCreator()
-{
-    
-}
+#include <ResourceManager.h>
 
-Gre::Texture* OpenGlTextureCreator::load(const std::string & name ,
-                                           const Gre::SoftwarePixelBufferHolderList & buffers ,
-                                           const Gre::TextureType & type ,
-                                           const Gre::ResourceLoaderOptions & ops ) const
-{
-    CHECK_GLEW
+#include <GL/glew.h>
+#include <GL/glx.h>
+#include <X11/keysymdef.h>
+#include <X11/XKBlib.h>
 
-    if ( iRenderer )
-    {
-        // Check if the RenderContext is actually binded.
-        iRenderer->getRenderContext()->bind() ;
-        
-        OpenGlTexture* tex = new OpenGlTexture ( name , type , buffers ) ;
-        if ( !tex -> isGlTextureValid() ) {
-            GreDebug("[WARN] Can't create OpenGlTexture '") << name << "'." << Gre::gendl ;
-            delete tex ; return nullptr ;
-        }
-        
-        return tex ;
-    }
-    
-    return nullptr ;
-}
+//////////////////////////////////////////////////////////////////////
+// Disable compilation on other platforms than linux.
 
+#ifndef GrePlatformUnix
+# 	error "This Plugin must be compiled only on unix-like platform."
+#endif // GrePlatformLinux
+
+#endif // GRE_X11OPENGL_H

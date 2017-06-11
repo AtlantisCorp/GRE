@@ -101,6 +101,7 @@ void checkOpenGlError ( void )
 OpenGlRenderer::OpenGlRenderer ( const std::string& name , const Gre::RendererOptions& options )
 : Gre::Renderer(name, options)
 {
+    CHECK_GLEW
     iDefaultQuadVAO = 0 ;
     iDefaultQuadVBO = 0 ;
 }

@@ -225,6 +225,11 @@ void WindowManager::pollEvents ( const Duration& elapsed ) const
     _pollEvents () ;
 }
 
+void WindowManager::_pollEvents() const
+{
+
+}
+
 void WindowManager::onUpdateEvent(const Gre::UpdateEvent &e)
 {
     // [02.19.2017] NOTES : No need to check for closed Window. In fact,

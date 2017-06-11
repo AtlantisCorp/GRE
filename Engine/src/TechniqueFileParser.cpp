@@ -872,7 +872,6 @@ TechniqueHolderList TechniqueFileParser::createTechniques ( const internal::Tech
     if ( techmanager.isInvalid() ) return TechniqueHolderList () ;
 
     TechniqueHolderList techniques ;
-    GreDebug ( "[INFO] Scanning Context Tree..." ) << gendl ;
 
     //////////////////////////////////////////////////////////////////////
     // Loads global math variables.

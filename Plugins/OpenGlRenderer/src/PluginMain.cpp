@@ -33,6 +33,29 @@
 #include <ResourceManager.h>
 #include "OpenGlRenderer.h"
 
+#ifdef GrePlatformUnix
+
+bool glewinited = false ;
+
+GLenum initGlew ( void )
+{
+    //////////////////////////////////////////////////////////////////////
+    // Initializes GLEW in experimental mode when on linux-like platforms.
+
+    GreDebug( "[INFO] Initializing GLEW." ) << Gre::gendl ;
+    glewExperimental = GL_TRUE ;
+
+    GLenum err = glewInit();
+
+    if ( GLEW_OK != err )
+    GreDebug ( "[ERRO] Can't initialize GLEW : " ) << glewGetErrorString(err) << Gre::gendl ;
+
+    else
+    glewinited = true ;
+}
+
+#endif
+
 Gre::PluginInfo info ;
 
 extern "C" Gre::PluginInfo * GetPluginInfo ( void )

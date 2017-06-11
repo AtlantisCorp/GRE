@@ -98,11 +98,14 @@ GLenum translateGlShader ( const Gre::ShaderType& type )
 OpenGlShader::OpenGlShader ( const std::string & name , const Gre::ShaderType& type , const std::string& source )
 : Gre::HardwareShader(name, type, source)
 {
-    GreAutolock ;
+    GreAutolock ; CHECK_GLEW
     
     std::string realsource = OpenGlShaderMakeSource(source) ;
     
-    iGlShader = glCreateShader(translateGlShader(type));
+    GLenum shadtype = translateGlShader(type) ;
+    GLuint tmpshad = glCreateShader(shadtype) ;
+
+    iGlShader = glCreateShader(shadtype);
     if ( iGlShader )
     {
         const char* src = realsource.c_str() ;

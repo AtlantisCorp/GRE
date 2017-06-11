@@ -73,12 +73,16 @@ enum class Key : int
     Up,
     
     KP0, KP1, KP2, KP3, KP4, KP5, KP6, KP7, KP8, KP9,
-    KPAdd, KPDecimal, KPDivide, KPEnter, KPEqual, KPMultiply, KPSubstract
+    KPAdd, KPDecimal, KPDivide, KPEnter, KPEqual, KPMultiply, KPSubstract,
+    
+    Last
 };
 
 /// @brief Defines some modifiers that can be handled in the same time of a key.
 enum class KeyModifier : int
 {
+    None    = 0x0000,
+    
     Shift   = 0x0001,
     Control = 0x0002,
     Alt     = 0x0004,

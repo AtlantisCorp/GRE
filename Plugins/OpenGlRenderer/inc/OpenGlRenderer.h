@@ -50,6 +50,14 @@
 
 #ifdef GrePlatformUnix
 #   include <GL/glew.h>
+
+GLenum initGlew ( void ) ;
+extern bool glewinited ;
+
+#   define CHECK_GLEW if ( !glewinited ) initGlew() ;
+
+#else
+#   define CHECK_GLEW
 #endif
 
 GLenum translateGlTexture ( const Gre::TextureType & type ) ;

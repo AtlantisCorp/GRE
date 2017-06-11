@@ -100,6 +100,8 @@ Gre::HdwProgVarType translateGlUniformType ( const GLenum & type )
 
 OpenGlProgram::OpenGlProgram ( const std::string & name ) : Gre::HardwareProgram ( name )
 {
+    CHECK_GLEW
+
     //////////////////////////////////////////////////////////////////////
     // Tries to create a GL ID for the program object.
     iGlProgram = glCreateProgram () ;

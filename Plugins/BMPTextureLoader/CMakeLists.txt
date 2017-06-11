@@ -11,7 +11,7 @@ file(GLOB sources "${GRE_ROOT_DIRECTORY}/Plugins/BMPTextureLoader/src/*.cpp")
 # Adds includes
 include_directories( PUBLIC
 	"${GRE_ROOT_DIRECTORY}/Engine/inc"
-	"${GRE_ROOT_DIRECTORY}/plugins/BMPTextureLoader/inc"
+	"${GRE_ROOT_DIRECTORY}/Plugins/BMPTextureLoader/inc"
 	"$<INSTALL_INTERFACE:include>"
 	PRIVATE src 
 )

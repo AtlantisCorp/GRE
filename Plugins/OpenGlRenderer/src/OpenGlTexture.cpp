@@ -264,6 +264,8 @@ OpenGlTexture::OpenGlTexture (const std::string & name , const Gre::TextureType 
                               const Gre::SoftwarePixelBufferHolderList& buffers)
 : Gre::Texture(name, type, buffers) , iGlTexture(0)
 {
+    CHECK_GLEW
+
     if ( !iPixelBuffers.empty() ) {
         _setBuffer () ;
     }
@@ -288,7 +290,7 @@ void OpenGlTexture::_setParameters ( GLenum target ) const
     
 #ifdef GL_DEPTH_STENCIL_TEXTURE_MODE
     glTexParameteri(target, GL_DEPTH_STENCIL_TEXTURE_MODE,
-                    translateGlDepthStencilMode((Gre::TextureDepthStencilMode) getParameterValue(TextureParameter::DepthStencilMode).toInteger()));
+                    translateGlDepthStencilMode((Gre::TextureDepthStencilMode) getParameterValue(TextureParameter::DepthStencilMode).to<int>()));
 #endif
     
 #ifdef GL_TEXTURE_BASE_LEVEL

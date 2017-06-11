@@ -1,0 +1,9 @@
+X11OpenGlWindow Plugin 
+======================
+
+This plugin should maintain an X11 Application , a X11 Window using OpenGl and GLEW to manage
+extensions , and manages also X11 GLX Contexts. 
+
+Dependencies : gl , glew , x11
+Author(s) : Luk2010
+

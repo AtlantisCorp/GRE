@@ -232,6 +232,17 @@ void ResourceManager::initialize ()
     }
 
     GreDebug ( "[INFO] Created 'ControllerManager'." ) << gendl ;
+    
+    iWindowManager = new WindowManager () ;
+    
+    if ( iWindowManager.isInvalid() )
+    {
+        GreDebug ( "[ERRO] Can't create 'WindowManager'." ) << gendl ;
+        iInitialized = false ;
+        return ;
+    }
+
+    GreDebug ( "[INFO] Created 'WindowManager'." ) << gendl ;
 
 	iInitialized = true ;
 

@@ -10,6 +10,10 @@
 ### Ignores CMakeFiles files.
 CMakeFiles/*
 
+### Ignores kDevelop files.
+*.kdev4
+.kdev4
+
 ### Ignores binaries
 SDK/Plugins/*
 SDK/example

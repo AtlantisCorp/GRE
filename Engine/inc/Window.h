@@ -115,7 +115,19 @@ enum WindowContextAttribute
     WCASuperSample ,
 
     /// @brief Indicates Triple buffering should be enabled. (boolean)
-    WCATripleBuffer
+    WCATripleBuffer ,
+    
+    /// @brief Indicates Red Color size. (int) Default value is 8.
+    WCAColorRedSize ,
+    
+    /// @brief Indicates Green Color size. (int) Default value is 8.
+    WCAColorGreenSize ,
+    
+    /// @brief Indicates Blue Color size. (int) Default value is 8.
+    WCAColorBlueSize ,
+    
+    /// @brief Indicates Alpha Color sie. (int) Default value is 8.
+    WCAColorAlphaSize
 };
 
 /// @brief Defines a set of Context's Attributes.
@@ -359,7 +371,7 @@ protected:
     //////////////////////////////////////////////////////////////////////
     /// @brief Implementation specific poll events.
     //////////////////////////////////////////////////////////////////////
-    virtual void _pollEvents () const = 0 ;
+    virtual void _pollEvents () const ;
 
     //////////////////////////////////////////////////////////////////////
     /// @brief Called when receiving Update Event.
