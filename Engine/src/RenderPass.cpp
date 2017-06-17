@@ -152,6 +152,16 @@ void RenderPass::renderTechnique(const Gre::Renderer *renderer, const TechniqueH
     return ;
 
     technique -> bind () ;
+
+    Surface ctxtsurf = renderer -> getRenderContextSurface () ;
+    Surface viewsurf = framebuffer -> getViewport().makeSurface( ctxtsurf ) ;
+
+    if ( viewsurf.isZero() )
+    {
+        technique -> unbind () ;
+        return ;
+    }
+
     renderer -> setViewport ( framebuffer->getViewport() ) ;
 
     //////////////////////////////////////////////////////////////////////

@@ -269,11 +269,6 @@ const Projection & RenderFramebuffer::getProjection () const
     GreAutolock ; return iViewport.getProjection () ;
 }
 
-void RenderFramebuffer::onWindowSizedEvent(const Gre::WindowSizedEvent &e)
-{
-    GreAutolock ; iViewport.update({ e.Width , e.Height , e.Width , e.Height }) ;
-}
-
 // ---------------------------------------------------------------------------------------------------
 
 RenderFramebufferInternalCreator::RenderFramebufferInternalCreator ()

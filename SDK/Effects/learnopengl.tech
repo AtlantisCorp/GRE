@@ -112,7 +112,7 @@
 [Framebuffer learnopengl.shadowmapping.depthbuffer]
 {
     [Viewport "0" "0" "1024" "1024"]
-    [DrawBuffer None]
+    [Drawbuffer None]
     [Texture Depth learnopengl.shadowmapping.depthtexture]
 }
 
@@ -149,3 +149,16 @@
     [LightingMode AllLights]
     [Program learnopengl.shadowmapping.phase2.program]
 }
+
+# A pipeline is a list of ordered RenderPass. A RenderPass
+# may contain one or more techniques. A pipeline can also define directly
+# its rendering passes from techniques. This way , one pass will render only
+# one technique. User can also set a single Scene for all the pipeline. However,
+# this Scene will be set to every pass currently in the pipeline, and anyone can
+# change the used Scene for one pass only using 'RenderPass::setScene()'.
+
+#[Pipeline learnopengl.shadowmapping.pipeline]
+#{
+#    [Technique learnopengl.shadowmapping.phase1.technique]
+#    [Technique learnopengl.shadowmapping.phase2.technique]
+#}

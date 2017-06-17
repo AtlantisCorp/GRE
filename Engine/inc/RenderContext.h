@@ -99,6 +99,13 @@ public:
     //////////////////////////////////////////////////////////////////////
     virtual void flush() const = 0;
 
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the surface where the context can draw. This surface
+    /// may be an off-screen , on-screen or full-screen drawable object
+    /// associated with this context.
+    //////////////////////////////////////////////////////////////////////
+    virtual Surface getSurface () const = 0 ;
+
 protected:
 
     /// @brief True if this Context is currently binded.

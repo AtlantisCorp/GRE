@@ -238,6 +238,9 @@ struct Surface
 
     /// @brief A Zero'd surface.
     static Surface Null;
+
+    /// @brief Returns true if width or height is 0.0f .
+    inline bool isZero() const { return width == 0 || height == 0 ; }
 };
 
 //////////////////////////////////////////////////////////////////////

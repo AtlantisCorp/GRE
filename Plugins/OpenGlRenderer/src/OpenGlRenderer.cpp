@@ -125,8 +125,10 @@ void OpenGlRenderer::setViewport(const Gre::Viewport &viewport) const
     // Notes the framebuffer should update the viewport values. Here we disable
     // the scissor test to be sure no external scissor will destroy our render.
 
+    Gre::Surface viewsurf = viewport.getSurface () ;
+
     glDisable ( GL_SCISSOR_TEST ) ;
-    glViewport(viewport.left, viewport.top, viewport.width, viewport.height);
+    glViewport(viewsurf.left, viewsurf.top, viewsurf.width, viewsurf.height);
 
     // Now we should enable scissor test if the viewport has a special region.
 

@@ -290,6 +290,16 @@ const RenderContextHolder& Renderer::getRenderContext() const
     GreAutolock ; return iContext ;
 }
 
+Surface Renderer::getRenderContextSurface() const
+{
+    GreAutolock ;
+
+    if ( iContext.isInvalid() )
+    return { 0 , 0 , 0 , 0 } ;
+
+    return iContext -> getSurface () ;
+}
+
 // ---------------------------------------------------------------------------------------------------
 
 RendererLoader::RendererLoader()

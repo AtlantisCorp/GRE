@@ -178,13 +178,6 @@ bool MyApplicationExample::createScene()
         renderpass  -> setTechnique ( tech2 ) ;
 
         renderpass -> addNamedParameter("shadows", HdwProgVarType::Bool1, (int) 1) ;
-
-        //////////////////////////////////////////////////////////////////////
-        // The default projection for the both techniques is correct. Now set
-        // the framebuffer to listen the window.
-
-        framebuffer = tech2 -> getFramebuffer () ;
-        framebuffer -> listen ( EventProceederHolder(window.getObject()) , { EventType::WindowSized } ) ;
     }
 
     return true ;

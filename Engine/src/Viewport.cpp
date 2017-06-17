@@ -34,12 +34,12 @@
 
 GreBeginNamespace
 
-Viewport::Viewport( float l , float t , float w , float h )
+Viewport::Viewport( float l , float t , float w , float h , bool relative )
 {
     rl = l ; rt = t ;
     rw = w ; rh = h ;
+    iRelative = relative ;
 
-    width = height = left = top = 0 ;
     iRegion = { 0 , 0 , 0 , 0 } ;
     iClearDepth = 1.0f ;
     iClearColor = Color ( 0.5f , 0.5f, 0.5f ) ;
@@ -52,9 +52,7 @@ Viewport::Viewport ( const Viewport & rhs )
 {
     rl = rhs.rl ; rt = rhs.rt ;
     rw = rhs.rw ; rh = rhs.rh ;
-
-    width = rhs.width ; height = rhs.height ;
-    left = rhs.left ;   top = rhs.top ;
+    iRelative = rhs.iRelative ;
 
     iRegion = rhs.iRegion ;
     iClearDepth = rhs.iClearDepth ;
@@ -64,11 +62,9 @@ Viewport::Viewport ( const Viewport & rhs )
 
 Viewport::Viewport ( const Surface & rhs )
 {
-    rl = 0.0f ; rt = 0.0f ;
-    rw = 1.0f ; rh = 1.0f ;
-
-    width = rhs.width ; height = rhs.height ;
-    left = rhs.left ;   top = rhs.top ;
+    rl = rhs.left ; rt = rhs.top ;
+    rw = rhs.width ; rh = rhs.height ;
+    iRelative = false ;
 
     iRegion = { 0 , 0 , 0 , 0 } ;
     iClearDepth = 1.0f ;
@@ -76,31 +72,6 @@ Viewport::Viewport ( const Surface & rhs )
     iClearBuffers.set((int)ClearBuffer::Color, true);
     iClearBuffers.set((int)ClearBuffer::Depth, true);
     iClearBuffers.set((int)ClearBuffer::Stencil, true);
-}
-
-void Viewport::adaptRealValues ( const Surface & rhs )
-{
-    left   = rhs.left   * rl ;
-    top    = rhs.top    * rt ;
-    width  = rhs.width  * rw ;
-    height = rhs.height * rh ;
-}
-
-void Viewport::adaptRealArea ( int _width , int _height )
-{
-    width  = _width  * rw ;
-    height = _height * rh ;
-}
-
-void Viewport::adaptRealCorner(int _left, int _top)
-{
-    left = _left * rl ;
-    top  = _top  * rt ;
-}
-
-size_t Viewport::getArea() const
-{
-    return width * height ;
 }
 
 void Viewport::setProjection ( const Projection & projection )
@@ -115,13 +86,13 @@ const Projection & Viewport::getProjection () const
 
 bool Viewport::regioned () const
 {
-    return iRegion.left + iRegion.top + iRegion.width + iRegion.height != 0 ;
+    return iRegion.width + iRegion.height != 0 ;
 }
 
 const Surface Viewport::region () const
 {
-    return { iRegion.left * left , iRegion.top * top ,
-             iRegion.width * width , iRegion.height * height } ;
+    return { iRegion.left * iCachedSurface.left , iRegion.top * iCachedSurface.top ,
+             iRegion.width * iCachedSurface.width , iRegion.height * iCachedSurface.height } ;
 }
 
 void Viewport::setRegion ( const Surface & r )
@@ -159,13 +130,37 @@ void Viewport::setClearBuffers ( const ClearBuffers & buffers )
     iClearBuffers = buffers ;
 }
 
-void Viewport::update ( const Surface & surface )
+Surface Viewport::makeSurface ( const Surface & surface ) const
 {
-    left   = rl * surface.width ;
-    top    = rt * surface.height ;
-    width  = rw * surface.width ;
-    height = rh * surface.height ;
-    iProjection.update ( *this ) ;
+    if ( !iRelative )
+    return { (int) rl , (int) rt , (int) rw , (int) rh } ;
+
+    iCachedSurface = { (int) rl * surface.left , (int) rt * surface.top ,
+                       (int) rw * surface.width , (int) rh * surface.height } ;
+
+    const_cast<Projection*>(&iProjection)->update ( iCachedSurface ) ;
+
+    return iCachedSurface ;
+}
+
+Surface Viewport::getSurface () const
+{
+    return iCachedSurface ;
+}
+
+bool Viewport::isRelative () const
+{
+    return iRelative ;
+}
+
+void Viewport::setRelative ( bool value )
+{
+    iRelative = value ;
+}
+
+bool Viewport::isZero () const
+{
+    return rw == 0.0f || rh == 0.0f ;
 }
 
 GreEndNamespace

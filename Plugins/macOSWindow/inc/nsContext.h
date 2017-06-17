@@ -16,10 +16,10 @@
  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  copies of the Software, and to permit persons to whom the Software is
  furnished to do so, subject to the following conditions:
- 
+
  The above copyright notice and this permission notice shall be included in
  all copies or substantial portions of the Software.
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -44,34 +44,38 @@ using namespace Gre ;
 class nsContext : public RenderContext
 {
 public:
-    
+
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     nsContext ( const std::string& name , const RenderContextInfo& info , id obj , id pix ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     virtual ~nsContext () noexcept ( false ) ;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Bind the RenderContext.
     //////////////////////////////////////////////////////////////////////
     virtual void bind() const;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Unbind this Object (make it unusable).
     //////////////////////////////////////////////////////////////////////
     virtual void unbind() const;
-    
+
     //////////////////////////////////////////////////////////////////////
     /// @brief Send every operations remaining to Hardware, and generally
     /// swap buffers.
     //////////////////////////////////////////////////////////////////////
     virtual void flush() const;
-    
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    virtual Surface getSurface () const ;
+
     /// @brief
     id nsglContext ;
-    
+
     /// @brief
     id nsglPixelFormat ;
 };

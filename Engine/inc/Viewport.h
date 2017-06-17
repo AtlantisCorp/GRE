@@ -40,48 +40,38 @@
 GreBeginNamespace ;
 
 //////////////////////////////////////////////////////////////////////
-/// @brief A relative Viewport object. Its real size is updated using
-/// 'adaptRealValues' and are accessed using the normal surface
-/// properties.
+/// @brief Represents a relative or static Surface where the renderer
+/// will draw objects.
+///
+/// Depending on the 'iRelative' property, 'Viewport::getSurface()' will
+/// return either the relative surface depending on the given one, either
+/// a surface constructed with the given values.
+///
+/// The viewport also hold a Projection object , which values depends on
+/// the viewport surface values. The projection is updated when the viewport
+/// 'makeSurface()' function is called, because this function is called in
+/// the 'RenderPass::renderTechnique()'. This let update the projection relative
+/// values for each frame.
+///
+/// A region's surface can be set to act as a stencil buffer test.
 ///
 //////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC Viewport : public Surface
+class DLL_PUBLIC Viewport
 {
 public:
 
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
-    Viewport ( float l = 0.0f , float t = 0.0f , float w = 1.0f , float h = 1.0f ) ;
+    Viewport ( float l = 0.0f , float t = 0.0f , float w = 1.0f , float h = 1.0f , bool relative = true ) ;
 
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     Viewport ( const Viewport & v ) ;
 
     //////////////////////////////////////////////////////////////////////
+    /// @brief Constructs a static viewport given a Surface.
     //////////////////////////////////////////////////////////////////////
     Viewport ( const Surface & s ) ;
-
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Updates the Surface's real values from the given values and
-    /// the relative values.
-    //////////////////////////////////////////////////////////////////////
-    void adaptRealValues ( const Surface & values ) ;
-
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Updates the Surface's values width and height with given
-    /// values.
-    //////////////////////////////////////////////////////////////////////
-    void adaptRealArea ( int width , int height ) ;
-
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Updates the Surface's values left and top with given values.
-    //////////////////////////////////////////////////////////////////////
-    void adaptRealCorner ( int left , int top ) ;
-
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Calculates the Area taken by this viewport.
-    //////////////////////////////////////////////////////////////////////
-    size_t getArea () const ;
 
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
@@ -129,11 +119,30 @@ public:
     void setClearBuffers ( const ClearBuffers & buffers ) ;
 
     //////////////////////////////////////////////////////////////////////
-    /// @brief Updates values with a new surface. This function is generally
-    /// called by framebuffer , when for example the listened window changes
-    /// its size. Notes it should also update the projection object.
+    /// @brief Returns the surface constructing it depending on the 'iRelative'
+    /// flag and the surface's data.
     //////////////////////////////////////////////////////////////////////
-    void update ( const Surface & surface ) ;
+    Surface makeSurface ( const Surface & surface = { 0 , 0 , 1 , 1 } ) const ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns the last surface made by the viewport after calling
+    /// 'makeSurface'.
+    //////////////////////////////////////////////////////////////////////
+    Surface getSurface () const ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns 'iRelative'.
+    //////////////////////////////////////////////////////////////////////
+    bool isRelative () const ;
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    void setRelative ( bool value ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns true if width or height is zero. 
+    //////////////////////////////////////////////////////////////////////
+    bool isZero () const ;
 
 protected:
 
@@ -148,6 +157,12 @@ protected:
 
     /// @brief Relative height value.
     float rh ;
+
+    /// @brief True if data should be interpreted as relatives.
+    bool iRelative ;
+
+    /// @brief Surface cached since last call.
+    mutable Surface iCachedSurface ;
 
     /// @brief Holds a projection object. This is done as each framebuffer has
     /// a viewport , it may always be done with a projection object. This object

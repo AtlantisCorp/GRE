@@ -257,11 +257,6 @@ protected:
     //////////////////////////////////////////////////////////////////////
     virtual void unbindAttachment ( const FramebufferAttachment & attachment ) const = 0 ;
 
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Called when a Window Object has sized its surface .
-    //////////////////////////////////////////////////////////////////////
-    virtual void onWindowSizedEvent ( const WindowSizedEvent& e ) ;
-
 protected:
 
     /// @brief Holds attachments to this framebuffer. The attachment can be a texture, or
