@@ -167,9 +167,9 @@ bool MyApplicationExample::createScene()
 
         auto framebuffer = tech1 -> getFramebuffer () ;
 
-        Viewport & viewport = framebuffer -> getViewport() ;
+        // Viewport & viewport = framebuffer -> getViewport() ;
         // viewport.setProjection ( Projection::Ortho(-10.0f , 10.0f, -10.0f, 10.0f, 0.1f, 100.0f) ) ;
-        viewport.setProjection( Projection::Perspective(45.0f, 1.0f) ) ;
+        // viewport.setProjection( Projection::Perspective(45.0f, 1.0f) ) ;
 
         auto tech2 = tmanager -> get ( "learnopengl.shadowmapping.phase2.technique" ) ;
         if ( tech2.isInvalid() ) exit ( -6 ) ;

@@ -43,6 +43,8 @@ const glm::vec3 VectorUpward = glm::vec3 ( 0.0f , 1.0f , 0.0f ) ;
 /// @brief Rightward basic direction. (1, 0, 0)
 const glm::vec3 VectorRightward = glm::vec3 ( 1.0f , 0.0f , 0.0f ) ;
 
+const float FloatPrecision = 0.001f ;
+
 glm::quat RotationBetweenVectors ( glm::vec3 start , glm::vec3 dest )
 {
     start = normalize(start);

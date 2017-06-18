@@ -316,6 +316,28 @@ std::vector < std::string > TechniqueFileParser::computeDefinitionWords ( const 
             pos = endpos + 1 ;
         }
 
+        else if ( std::isdigit(c) )
+        {
+            //////////////////////////////////////////////////////////////////////
+            // Number beginning. A number may be of form '0' , '0.0' , '0.0f' , or
+            // whatever may be recognized with strtol.
+
+            std::string num ;
+
+            while ( pos < length )
+            {
+                c = source.at(pos) ;
+
+                if ( std::isspace(c) || c == ']' || c == '[' || c == '{' || c == '}' || std::iscntrl(c) )
+                break ;
+
+                num.push_back ( c ) ;
+                pos ++ ;
+            }
+
+            words.push_back(num);
+        }
+
         else
         {
             //////////////////////////////////////////////////////////////////////
@@ -428,6 +450,10 @@ internal::TechniqueFileContext* TechniqueFileParser::convertTree ( const interna
 
                 else if ( deftype == "MAT4" ) {
                     convertMat4 ( context , node ) ;
+                }
+
+                else if ( deftype == "Projection" ) {
+                    convertProjection ( context , node ) ;
                 }
 
 #ifdef GreIsDebugMode
@@ -692,12 +718,34 @@ void TechniqueFileParser::convertFramebuffer ( internal::TechniqueFileContext* c
         else if (subnode -> definition.words.at(0) == "Viewport" &&
                  subnode -> definition.words.size() >= 5)
         {
+            //////////////////////////////////////////////////////////////////////
+            // Scan viewport left, top, width, height.
+
             framebuffer.viewport = Viewport ( (Surface) {
                 static_cast<int>(strtol(subnode -> definition.words.at(1).c_str(), nullptr, 10)),
                 static_cast<int>(strtol(subnode -> definition.words.at(2).c_str(), nullptr, 10)),
                 static_cast<int>(strtol(subnode -> definition.words.at(3).c_str(), nullptr, 10)),
                 static_cast<int>(strtol(subnode -> definition.words.at(4).c_str(), nullptr, 10))
             });
+
+            //////////////////////////////////////////////////////////////////////
+            // Scan viewport's projection.
+
+            if ( subnode -> definition.words.size() >= 6 )
+            {
+                std::string projname = subnode -> definition.words.at(5) ;
+
+                if ( !projname.empty() )
+                {
+                    auto projit = context->projections.find( projname ) ;
+
+                    if ( projit == context->projections.end() )
+                    GreDebug ( "[WARN] Projection '" ) << projname << "' not found." << gendl ;
+
+                    else
+                    framebuffer.viewport.setProjection( projit->second ) ;
+                }
+            }
         }
 
 #ifdef GreIsDebugMode
@@ -858,6 +906,73 @@ void TechniqueFileParser::convertMat4 ( internal::TechniqueFileContext* context 
     mathvar.var     = RealProgramVariable ( glm::mat4(1.0f) ) ;
     mathvar.vartype = HdwProgVarType::Matrix4 ;
     context -> mathvars [name] = mathvar ;
+}
+
+void TechniqueFileParser::convertProjection ( internal::TechniqueFileContext* context , const internal::TechniqueFileNode* node )
+{
+    //////////////////////////////////////////////////////////////////////
+    // Projection definition is [Projection type ...]
+
+    std::string name = node -> definition.words.size() >= 2 ? node -> definition.words.at(1) : std::string () ;
+
+    if ( name.empty() )
+    {
+        GreDebug( "[WARN] Projection definition has no name." ) << gendl ;
+        return ;
+    }
+
+    std::string type = node -> definition.words.size() >= 3 ? node -> definition.words.at(2) : std::string () ;
+
+    if ( type.empty() )
+    {
+        GreDebug( "[WARN] Projection '" ) << name << "' has no type." << gendl ;
+        return ;
+    }
+
+    if ( type == "Perspective" )
+    {
+        std::string sfov = node -> definition.words.size() >= 4 ? node -> definition.words.at(3) : std::string () ;
+        std::string srat = node -> definition.words.size() >= 5 ? node -> definition.words.at(4) : std::string () ;
+        std::string snea = node -> definition.words.size() >= 6 ? node -> definition.words.at(5) : std::string () ;
+        std::string sfar = node -> definition.words.size() >= 7 ? node -> definition.words.at(6) : std::string () ;
+
+        float fov = (float) strtod( sfov.c_str() , nullptr ) ;
+        float rat = (float) strtod( srat.c_str() , nullptr ) ;
+        float nea = (float) strtod( snea.c_str() , nullptr ) ;
+        float far = (float) strtod( sfar.c_str() , nullptr ) ;
+
+        if ( fov < FloatPrecision ) fov = 70.0f ;
+        if ( rat < FloatPrecision ) rat = 16.0f / 9.0f ;
+        if ( nea < FloatPrecision ) nea = 0.1f ;
+        if ( far < FloatPrecision ) far = 100.0f ;
+
+        context -> projections[name] = Projection::Perspective( fov , rat , nea , far ) ;
+    }
+
+    else if ( type == "Ortho" )
+    {
+        std::string slef = node -> definition.words.size() >= 4 ? node -> definition.words.at(3) : std::string () ;
+        std::string srig = node -> definition.words.size() >= 5 ? node -> definition.words.at(4) : std::string () ;
+        std::string stop = node -> definition.words.size() >= 6 ? node -> definition.words.at(5) : std::string () ;
+        std::string sbot = node -> definition.words.size() >= 7 ? node -> definition.words.at(6) : std::string () ;
+        std::string snea = node -> definition.words.size() >= 8 ? node -> definition.words.at(7) : std::string () ;
+        std::string sfar = node -> definition.words.size() >= 9 ? node -> definition.words.at(8) : std::string () ;
+
+        float lef = (float) strtod( slef.c_str() , nullptr ) ;
+        float rig = (float) strtod( srig.c_str() , nullptr ) ;
+        float top = (float) strtod( stop.c_str() , nullptr ) ;
+        float bot = (float) strtod( sbot.c_str() , nullptr ) ;
+        float nea = (float) strtod( snea.c_str() , nullptr ) ;
+        float far = (float) strtod( sfar.c_str() , nullptr ) ;
+
+        if ( nea < FloatPrecision ) nea = 0.1f ;
+        if ( far < FloatPrecision ) far = 100.0f ;
+
+        context -> projections[name] = Projection::Ortho( lef , rig , top , bot , nea , far ) ;
+    }
+
+    else
+    GreDebug( "[WARN] Projection '" ) << name << "' has invalid type : " << type << gendl ;
 }
 
 TechniqueHolderList TechniqueFileParser::createTechniques ( const internal::TechniqueFileContext* context )

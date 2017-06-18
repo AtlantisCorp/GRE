@@ -155,6 +155,7 @@ namespace internal
         std::map < std::string , TechniqueFileTexture > textures ;
         std::map < std::string , TechniqueFileMesh > meshes ;
         std::map < std::string , TechniqueFileMathVar > mathvars ;
+        std::map < std::string , Projection > projections ;
     };
 
     //////////////////////////////////////////////////////////////////////
@@ -333,6 +334,11 @@ protected:
     /// @brief Interprets the given node as a Matrix 4x4.
     //////////////////////////////////////////////////////////////////////
     virtual void convertMat4 ( internal::TechniqueFileContext* context , const internal::TechniqueFileNode* node ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Interprets the given node as a Projection.
+    //////////////////////////////////////////////////////////////////////
+    virtual void convertProjection ( internal::TechniqueFileContext* context , const internal::TechniqueFileNode* node ) ;
 
     //////////////////////////////////////////////////////////////////////
     /// @brief Creates techniques using the context object.

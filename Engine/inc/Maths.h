@@ -100,6 +100,9 @@ extern const glm::vec3 VectorUpward ;
 /// @brief Rightward basic direction. (1, 0, 0)
 extern const glm::vec3 VectorRightward ;
 
+/// @brief Defines a precision that will help float compareason. ( 0.001f )
+extern const float FloatPrecision ;
+
 //////////////////////////////////////////////////////////////////////
 /// @brief Finds the rotation quaternion between two vectors.
 //////////////////////////////////////////////////////////////////////

@@ -89,6 +89,11 @@
 
 [MAT4 learnopengl.light.matrix]
 
+[Projection learnopengl.shadow.proj
+    Perspective
+    45.0 1.0
+]
+
 [Program learnopengl.shadowmapping.phase1.program]
 {
     [Vertex] { [GLSL learnopengl.shadowmapping.phase1.vert] }
@@ -103,7 +108,7 @@
 
 [Texture Texture2D learnopengl.shadowmapping.depthtexture]
 {
-    [Size "1024" "1024"]
+    [Size 1024 1024]
     [PixelFormat DepthComponent]
     [InternalPixelFormat DepthComponent]
     [PixelType Float]
@@ -111,9 +116,11 @@
 
 [Framebuffer learnopengl.shadowmapping.depthbuffer]
 {
-    [Viewport "0" "0" "1024" "1024"]
-    [Drawbuffer None]
+    [Viewport 0 0 1024 1024
+        learnopengl.shadow.proj]
+
     [Texture Depth learnopengl.shadowmapping.depthtexture]
+    [Drawbuffer None]
 }
 
 [Technique learnopengl.shadowmapping.phase1.technique]
