@@ -387,32 +387,7 @@ protected:
     std::map < std::string , std::string > iGlobALiases ;
 };
 
-/// @brief
-typedef Holder < Technique > TechniqueHolder ;
-
-/// @brief
-typedef SpecializedResourceHolderList < Technique > TechniqueHolderList ;
-
-//////////////////////////////////////////////////////////////////////
-/// @brief Loads a specific Technique.
-//////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC TechniqueLoader : public ResourceLoader
-{
-public:
-
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    TechniqueLoader ( ) ;
-
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    virtual ~TechniqueLoader () noexcept ( false ) ;
-
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Should load a named technique with given args.
-    //////////////////////////////////////////////////////////////////////
-    virtual TechniqueHolder load ( const std::string & name , const ResourceLoaderOptions & options ) const ;
-};
+GRE_MAKE_HOLDER( Technique );
 
 //////////////////////////////////////////////////////////////////////
 /// @brief A Manager to holds every Technique used in the engine.
@@ -430,28 +405,6 @@ public:
     //////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
     virtual ~TechniqueManager () noexcept ( false ) ;
-
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Loads every Technique's found in the given bundles , and
-    /// returns the number of technique's loaded.
-    //////////////////////////////////////////////////////////////////////
-    virtual int loadFromBundles ( const std::vector < ResourceBundleHolder > & bundles ) ;
-
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Loads every Technique's found in the given bundle , and returns
-    /// the number of technique's loaded.
-    //////////////////////////////////////////////////////////////////////
-    virtual int loadFromBundle ( const ResourceBundleHolder & bundle ) ;
-
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Loads Technique from given file. Uses the parser bundled with
-    /// this Engine to parse the Technique file , but notes that the parser
-    /// may holds differents parser subversion to parse old files. Also ,
-    /// notes that a valid renderer may be loaded before loading any
-    /// Technique , due to the programs creations process. Notes also that
-    /// one Technique's file may holds more than one technique.
-    //////////////////////////////////////////////////////////////////////
-    virtual TechniqueHolderList loadFromFile ( const std::string & path ) ;
 
     //////////////////////////////////////////////////////////////////////
     /// @brief Registers the given technique from its holder. A check will
@@ -499,8 +452,7 @@ protected:
     std::map < std::string , HardwareProgramVariable > iGlobalsByName ;
 };
 
-/// @brief
-typedef Holder < TechniqueManager > TechniqueManagerHolder ;
+GRE_MAKE_HOLDER( TechniqueManager );
 
 GreEndNamespace
 

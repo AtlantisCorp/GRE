@@ -35,7 +35,6 @@
 #include "ResourceManager.h"
 
 #include "TechniqueFilePreprocessor.h"
-#include "TechniqueFileParser.h"
 
 GreBeginNamespace
 
@@ -530,99 +529,6 @@ TechniqueManager::TechniqueManager ( const std::string & name )
 TechniqueManager::~TechniqueManager() noexcept ( false )
 {
 
-}
-
-int TechniqueManager::loadFromBundles ( const std::vector < ResourceBundleHolder > & bundles )
-{
-    GreAutolock ;
-    int ret = 0 ;
-
-    for ( auto bundle : bundles ) {
-        ret += loadFromBundle ( bundle ) ;
-    }
-
-    return ret ;
-}
-
-int TechniqueManager::loadFromBundle ( const ResourceBundleHolder & bundle )
-{
-    GreAutolock ;
-
-    //////////////////////////////////////////////////////////////////////
-    // First , tries to get a list of files in this bundle.
-
-    std::vector < std::string > files = bundle->getFilesList ( ResourceType::Effect ) ;
-
-    if ( files.empty() )
-        return 0 ;
-
-    //////////////////////////////////////////////////////////////////////
-    // Now , we have to try to load every files. Notes that the file list
-    // is computed to be non-recursive , because some technique's files may
-    // want to include private files that should not be loaded separately.
-
-    int ret = 0 ;
-
-    for ( auto file : files )
-    {
-        TechniqueHolderList tech = loadFromFile ( file ) ;
-        ret += tech.size() ;
-    }
-
-    return ret ;
-}
-
-TechniqueHolderList TechniqueManager::loadFromFile ( const std::string & path )
-{
-    GreAutolock ;
-
-    //////////////////////////////////////////////////////////////////////
-    // Gets the file's source.
-
-    std::string src = Platform::GetFileSource ( path ) ;
-
-    if ( src.empty() )
-    {
-#ifdef GreIsDebugMode
-        GreDebug ( "[WARN] Can't get file's source '" ) << path << "'." << gendl ;
-#endif
-        return TechniqueHolderList () ;
-    }
-
-    //////////////////////////////////////////////////////////////////////
-    // Preprocess the file using the TechniqueFilePreprocessor object. The
-    // preprocessor is used to compute macros , and to define the file's
-    // version . If no version is set , the default is this engine version.
-
-    TechniqueFilePreprocessor preprocessor ;
-    int version = preprocessor.process ( Platform::GetFileDirectory(path) , src ) ;
-
-    //////////////////////////////////////////////////////////////////////
-    // Next , depending on the Technique's file version , we use the correct
-    // TechniqueFileParser.
-
-    if ( version == 1 )
-    {
-        TechniqueFileParser parser ;
-        TechniqueHolderList techniques = parser.process ( path , preprocessor.getResult() ) ;
-
-        if ( !techniques.empty() )
-        {
-            for ( auto tech : techniques )
-            {
-                //////////////////////////////////////////////////////////////////////
-                // Register every techniques loaded.
-
-                if ( !tech.isInvalid() ) {
-                    loadFromHolder ( tech ) ;
-                }
-            }
-        }
-
-        return techniques ;
-    }
-
-    return TechniqueHolderList () ;
 }
 
 TechniqueHolder TechniqueManager::loadFromHolder ( const TechniqueHolder & technique )

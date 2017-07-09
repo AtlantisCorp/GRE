@@ -31,13 +31,13 @@
  */
 
 #include "TechniqueFilePreprocessor.h"
-#include "TechniqueFileParser.h"
+#include "DefinitionParser.h"
 
 GreBeginNamespace
 
 TechniqueFilePreprocessor::TechniqueFilePreprocessor ()
 {
-    iSourceVersion = GRE_TECHNIQUE_PARSER_VERSION ;
+    iSourceVersion = GRE_DEFINITION_PARSER_VERSION ;
 }
 
 TechniqueFilePreprocessor::~TechniqueFilePreprocessor ()

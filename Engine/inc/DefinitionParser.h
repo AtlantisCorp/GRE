@@ -39,6 +39,8 @@ THE SOFTWARE.
 #include "DefinitionContext.h"
 #include "DefinitionWorker.h"
 
+#define GRE_DEFINITION_PARSER_VERSION 1
+
 GreBeginNamespace
 
 //////////////////////////////////////////////////////////////////////
