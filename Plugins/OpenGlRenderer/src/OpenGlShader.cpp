@@ -103,9 +103,8 @@ OpenGlShader::OpenGlShader ( const std::string & name , const Gre::ShaderType& t
     std::string realsource = OpenGlShaderMakeSource(source) ;
     
     GLenum shadtype = translateGlShader(type) ;
-    GLuint tmpshad = glCreateShader(shadtype) ;
-
     iGlShader = glCreateShader(shadtype);
+    
     if ( iGlShader )
     {
         const char* src = realsource.c_str() ;

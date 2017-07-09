@@ -45,7 +45,7 @@
 #include "Viewport.h"
 #include "RenderContext.h"
 #include "Variant.h"
-#include "RenderPass.h"
+#include "RenderPipeline.h"
 
 GreBeginNamespace
 
@@ -95,28 +95,9 @@ public:
 public:
 
     //////////////////////////////////////////////////////////////////////
-    /// @brief Renders the passes in this renderer.
+    /// @brief Renders the pipeline binding the render context.
     //////////////////////////////////////////////////////////////////////
     virtual void render () const ;
-
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    virtual RenderPassHolder addPass ( const std::string & name ) ;
-
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    virtual RenderPassHolder copyPass ( const RenderPassHolder & pass ) ;
-
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    virtual void clearPasses () ;
-
-protected:
-
-    /// @brief Holds the render's passes created.
-    RenderPassHolderList iPasses ;
-
-public:
 
     //////////////////////////////////////////////////////////////////////
     /// @brief Sets only the given region for clearing the buffers. Also
@@ -236,6 +217,21 @@ public:
     //////////////////////////////////////////////////////////////////////
     virtual void setEnabled ( bool b ) ;
 
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Sets the pipeline used by the renderer.
+    //////////////////////////////////////////////////////////////////////
+    virtual void setPipeline ( const RenderPipelineHolder & pipeline ) ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns 'iPipeline'.
+    //////////////////////////////////////////////////////////////////////
+    virtual const RenderPipelineHolder & getPipeline () const ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Returns 'iPipeline'.
+    //////////////////////////////////////////////////////////////////////
+    virtual RenderPipelineHolder & getPipeline () ;
+
 protected:
 
     /// @brief True if this renderer has installed every managers to the resource manager.
@@ -252,6 +248,9 @@ protected:
     /// switch from a renderer to another already ready and loaded. By default , this property is
     /// set to true but you can set it directly at construction to 'false' using the option 'Enabled'.
     bool iEnabled ;
+
+    /// @brief Hold the pipeline currently used by the renderer.
+    RenderPipelineHolder iPipeline ;
 };
 
 /// @brief Holder for RendererPrivate.

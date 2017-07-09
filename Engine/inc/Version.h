@@ -105,6 +105,7 @@
 #   include <streambuf>
 #   include <bitset>
 #   include <stack>
+#   include <future>
 
 #if defined _WIN32
 //  Windows 32 bits
@@ -180,7 +181,7 @@ GreBeginNamespace
 
 #define GreVersionMajor 0             ///< @brief GRE Major version.
 #define GreVersionMinor 0             ///< @brief GRE Minor version.
-#define GreVersionBuild 27            ///< @brief GRE Build number.
+#define GreVersionBuild 28            ///< @brief GRE Build number.
 
 /// @brief Defines the Version structure.
 typedef struct Version

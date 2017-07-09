@@ -42,6 +42,7 @@ ResourceBundle::ResourceBundle ( const std::string & name ) : Gre::Resource ( na
     iDirectories[ResourceType::Effect] = { } ;
     iDirectories[ResourceType::Mesh] = { } ;
     iDirectories[ResourceType::Texture] = { } ;
+    iDirectories[ResourceType::DefinitionFile] = { } ;
 }
 
 ResourceBundle::~ResourceBundle() noexcept ( false )
@@ -71,7 +72,7 @@ std::vector < std::string > ResourceBundle::getFilesList ( const ResourceType & 
     std::vector < std::string > files ;
 
     for ( auto dir : dirs ) {
-        
+
         auto tmp = Platform::GetFilesListWithDirectory (dir) ;
         files.insert ( files.end() , tmp.begin() , tmp.end() ) ;
     }

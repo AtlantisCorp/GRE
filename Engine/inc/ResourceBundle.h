@@ -46,7 +46,11 @@ enum class ResourceType
     Program ,
     Texture ,
     Mesh ,
-    Effect
+    Effect ,
+
+    /// @brief A Definition File is any file within the DefinitionFile directories
+    /// in the given bundle. Generally it should have the extension '.gdef' or '.gre'.
+    DefinitionFile
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -93,8 +97,7 @@ protected:
     std::map < ResourceType , std::vector <std::string> > iDirectories ;
 };
 
-/// @brief Holder for ResourceBundle.
-typedef Holder<ResourceBundle> ResourceBundleHolder ;
+GRE_MAKE_HOLDER( ResourceBundle ) ;
 
 GreEndNamespace
 

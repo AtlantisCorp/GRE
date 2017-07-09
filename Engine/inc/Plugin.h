@@ -220,7 +220,7 @@ public:
     ////////////////////////////////////////////////////////////////////////
     /// @brief Calls 'loadFromBundle' for every bundles.
     ////////////////////////////////////////////////////////////////////////
-    virtual uint32_t loadFromBundles ( const std::vector < ResourceBundleHolder > & bundles ) ;
+    virtual uint32_t loadFromBundles ( const ResourceBundleHolderList & bundles ) ;
 
     //////////////////////////////////////////////////////////////////////
     /// @brief Loads plugins found in each directory of the type 'Plugin'

@@ -87,7 +87,7 @@
 # ===================================================================
 # Shadowmapping technique.
 
-[MAT4 learnopengl.light.matrix]
+[Global MAT4 learnopengl.light.matrix]
 
 [Projection learnopengl.shadow.proj
     Perspective
@@ -164,8 +164,8 @@
 # this Scene will be set to every pass currently in the pipeline, and anyone can
 # change the used Scene for one pass only using 'RenderPass::setScene()'.
 
-#[Pipeline learnopengl.shadowmapping.pipeline]
-#{
-#    [Technique learnopengl.shadowmapping.phase1.technique]
-#    [Technique learnopengl.shadowmapping.phase2.technique]
-#}
+# [Pipeline learnopengl.shadowmapping.pipeline]
+# {
+#     [Technique learnopengl.shadowmapping.phase1.technique]
+#     [Technique learnopengl.shadowmapping.phase2.technique]
+# }

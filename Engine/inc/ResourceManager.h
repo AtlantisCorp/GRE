@@ -47,6 +47,8 @@
 #include "EventDispatcher.h"
 #include "Technique.h"
 #include "Controller.h"
+#include "DefinitionWorker.h"
+#include "DefinitionParser.h"
 
 GreBeginNamespace
 
@@ -163,7 +165,13 @@ protected:
 
     /// @brief Holds every bundled loaded in this Resource Manager. The bundles can
     /// be accessed using appropriates getter/setter.
-    std::vector < ResourceBundleHolder > iBundles ;
+    ResourceBundleHolderList iBundles ;
+
+    /// @brief DefinitionWorker's manager.
+    DefinitionWorkerManagerHolder iWorkersManager ;
+
+    /// @brief Holds the default DefinitionParser used to launch Parsing and Working Stages.
+    DefinitionParserHolder iDefinitionParser ;
 
 public:
 
@@ -386,7 +394,7 @@ public:
     /// @brief Creates an Application object from given loader , with some
     /// informations about the application author and description.
     /// A 'loader' with name '::first' , will be the first loader encountered
-    /// in the Application Factory. 
+    /// in the Application Factory.
     //////////////////////////////////////////////////////////////////////
     ApplicationHolder loadApplication (const std::string & loader ,
                                        const std::string & name ,
@@ -433,7 +441,7 @@ public:
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns every bundles.
     //////////////////////////////////////////////////////////////////////
-    const std::vector < ResourceBundleHolder > & getBundles () const ;
+    const ResourceBundleHolderList & getBundles () const ;
 
     //////////////////////////////////////////////////////////////////////
     /// @brief Adds a default bundle to the resource manager.
@@ -444,13 +452,82 @@ public:
     //////////////////////////////////////////////////////////////////////
     ResourceBundleHolder addDefaultBundle () ;
 
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    void setDefinitionWorkerManager ( const DefinitionWorkerManagerHolder & manager );
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    DefinitionWorkerManagerHolder & getDefinitionWorkerManager () ;
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    const DefinitionWorkerManagerHolder & getDefinitionWorkerManager () const ;
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    void setDefinitionParser ( const DefinitionParserHolder & parser );
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    DefinitionParserHolder & getDefinitionParser() ;
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    const DefinitionParserHolder & getDefinitionParser() const ;
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Launches the default definition parser on given bundles.
+    //////////////////////////////////////////////////////////////////////
+    void loadDefinitions ( const ResourceBundleHolderList & bundles );
+
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Launches 'loadDefinitions' but wait for the parser's finished
+    /// state for a given timeout. Notes that this make this function blocking.
+    //////////////////////////////////////////////////////////////////////
+    template< class Rep , class Period >
+    const DefinitionContextErrors loadDefinitions ( const ResourceBundleHolderList & bundles ,
+                                                    const std::chrono::duration< Rep , Period >& timeout )
+    {
+        DefinitionParserHolder parser ;
+        
+        {
+            GreAutolock ;
+            
+            if ( iDefinitionParser.isInvalid() )
+            {
+                DefinitionContextErrors result ;
+                result.push_back({ 0 , "Definition Parser is not present." , std::string() , 0 , true });
+                
+                return result ;
+            }
+            
+            parser = iDefinitionParser ;
+        }
+
+        loadDefinitions( bundles );
+
+        std::future_status status = parser -> wait( DefinitionParserState::Finished , timeout );
+
+        if ( status == std::future_status::timeout )
+        {
+            DefinitionContextErrors result ;
+            result.push_back({ 0 , "Timed out." , std::string() , 0 , true });
+
+            return result ;
+        }
+
+        else
+        return parser -> getLastResult() ;
+    }
+
 protected:
 
     //////////////////////////////////////////////////////////////////////
     /// @brief Returns an iterator corresponding to the bundle with given
     /// name , or 'iBundles.end()'.
     //////////////////////////////////////////////////////////////////////
-    std::vector < ResourceBundleHolder > :: const_iterator findBundleIterator ( const std::string & name ) const ;
+    ResourceBundleHolderList :: const_iterator findBundleIterator ( const std::string & name ) const ;
 };
 
 /// @brief Holder for ResourceManager.

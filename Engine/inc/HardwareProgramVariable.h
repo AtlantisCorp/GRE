@@ -58,6 +58,9 @@ enum class HdwProgVarType
     SamplerCube
 };
 
+/// @brief Returns the HdwProgVarType from string.
+HdwProgVarType HdwProgVarTypeFromString ( const std::string & type );
+
 //////////////////////////////////////////////////////////////////////
 /// @brief Defines real types in a union to hold every variable types
 /// possibles.

@@ -227,28 +227,43 @@ void ResourceManager::initialize ()
     if ( iControllers.isInvalid() )
     {
         GreDebug ( "[ERRO] Can't create 'ControllerManager'." ) << gendl ;
-        iInitialized = false ;
-        return ;
+        iInitialized = false ; return ;
     }
 
     GreDebug ( "[INFO] Created 'ControllerManager'." ) << gendl ;
-    
+
     iWindowManager = new WindowManager () ;
-    
+
     if ( iWindowManager.isInvalid() )
     {
         GreDebug ( "[ERRO] Can't create 'WindowManager'." ) << gendl ;
-        iInitialized = false ;
-        return ;
+        iInitialized = false ; return ;
     }
 
     GreDebug ( "[INFO] Created 'WindowManager'." ) << gendl ;
 
-	iInitialized = true ;
+    iWorkersManager = new DefinitionWorkerManager( "workers.manager.default" );
 
-#ifdef GreIsDebugMode
+    if ( iWorkersManager.isInvalid() )
+    {
+        GreDebug( "[ERRO] Can't create default 'DefinitionWorkerManager'." ) << gendl ;
+        iInitialized = false ; return ;
+    }
+
+    GreDebug( "[INFO] Created default 'DefinitionWorkerManager'." ) << gendl ;
+
+    iDefinitionParser = new DefinitionParser( "parsers.default" );
+
+    if ( iDefinitionParser.isInvalid() )
+    {
+        GreDebug( "[ERRO] Can't create default 'DefinitionParser'." ) << gendl ;
+        iInitialized = false ; return ;
+    }
+
+    GreDebug( "[INFO] Created default 'DefinitionParser'." ) << gendl ;
+
+    iInitialized = true ;
     GreDebug("[INFO] Initialized.") << gendl ;
-#endif
 }
 
 ResourceManager::~ResourceManager() noexcept(false)
@@ -269,6 +284,12 @@ void ResourceManager::unload ()
     if ( !iPluginManager.isInvalid() ) {
         iPluginManager -> callStops() ;
     }
+    
+    if ( !iWorkersManager.isInvalid() )
+    iWorkersManager.clear() ;
+    
+    if ( !iDefinitionParser.isInvalid() )
+    iDefinitionParser.clear() ;
 
     if ( !iControllers.isInvalid() )
     iControllers.clear () ;
@@ -407,7 +428,7 @@ void ResourceManager::setHardwareProgramManager(const HardwareProgramManagerHold
 
 HardwareProgramManagerHolder ResourceManager::getHardwareProgramManager()
 {
-    GreAutolock ; return iProgramManager ;
+    /*GreAutolock ; */ return iProgramManager ;
 }
 
 void ResourceManager::setMaterialManager(const MaterialManagerHolder &manager)
@@ -595,7 +616,7 @@ std::string ResourceManager::findBundledFile(const ResourceType & type ,
     return std::string () ;
 }
 
-const std::vector < ResourceBundleHolder > & ResourceManager::getBundles () const
+const ResourceBundleHolderList & ResourceManager::getBundles () const
 {
     GreAutolock ; return iBundles ;
 }
@@ -616,11 +637,12 @@ ResourceBundleHolder ResourceManager::addDefaultBundle ()
     // Creates the bundle and adds directories.
 
     ResourceBundleHolder rbundle = addBundle ( "bundle.default" ) ;
-	rbundle -> addDirectory ( Gre::ResourceType::Plugin ,  "Plugins" ) ;
-	rbundle -> addDirectory ( Gre::ResourceType::Program , "Programs" ) ;
-	rbundle -> addDirectory ( Gre::ResourceType::Texture , "Textures" ) ;
-	rbundle -> addDirectory ( Gre::ResourceType::Mesh ,    "Models" ) ;
-	rbundle -> addDirectory ( Gre::ResourceType::Effect ,  "Effects" ) ;
+	rbundle -> addDirectory ( Gre::ResourceType::Plugin ,          "Plugins" ) ;
+	rbundle -> addDirectory ( Gre::ResourceType::Program ,         "Programs" ) ;
+	rbundle -> addDirectory ( Gre::ResourceType::Texture ,         "Textures" ) ;
+	rbundle -> addDirectory ( Gre::ResourceType::Mesh ,            "Models" ) ;
+	rbundle -> addDirectory ( Gre::ResourceType::Effect ,          "Effects" ) ;
+    rbundle -> addDirectory ( Gre::ResourceType::DefinitionFile ,  "Effects" ) ;
 
     //////////////////////////////////////////////////////////////////////
     // Returns the bundle.
@@ -628,7 +650,47 @@ ResourceBundleHolder ResourceManager::addDefaultBundle ()
     return rbundle ;
 }
 
-std::vector < ResourceBundleHolder > :: const_iterator ResourceManager::findBundleIterator ( const std::string & name ) const
+void ResourceManager::setDefinitionWorkerManager ( const DefinitionWorkerManagerHolder & manager )
+{
+    GreAutolock ; iWorkersManager = manager ;
+}
+
+DefinitionWorkerManagerHolder & ResourceManager::getDefinitionWorkerManager ()
+{
+    GreAutolock ; return iWorkersManager ;
+}
+
+const DefinitionWorkerManagerHolder & ResourceManager::getDefinitionWorkerManager () const
+{
+    GreAutolock ; return iWorkersManager ;
+}
+
+void ResourceManager::setDefinitionParser ( const DefinitionParserHolder & parser )
+{
+    GreAutolock ; iDefinitionParser = parser ;
+}
+
+DefinitionParserHolder & ResourceManager::getDefinitionParser ()
+{
+    GreAutolock ; return iDefinitionParser ;
+}
+
+const DefinitionParserHolder & ResourceManager::getDefinitionParser () const
+{
+    GreAutolock ; return iDefinitionParser ;
+}
+
+void ResourceManager::loadDefinitions ( const ResourceBundleHolderList & bundles )
+{
+    GreAutolock ;
+
+    if ( iDefinitionParser.isInvalid() )
+    return ;
+
+    iDefinitionParser -> parseBundlesList( bundles );
+}
+
+ResourceBundleHolderList :: const_iterator ResourceManager::findBundleIterator ( const std::string & name ) const
 {
     GreAutolock ;
 

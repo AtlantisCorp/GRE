@@ -1,11 +1,11 @@
 //////////////////////////////////////////////////////////////////////
 //
-//  Platform.h
+//  FramebufferWorker.h
 //  This source file is part of Gre
 //		(Gang's Resource Engine)
 //
 //  Copyright (c) 2015 - 2017 Luk2010
-//  Created on 21/03/2017.
+//  Created on 01/07/2017.
 //
 //////////////////////////////////////////////////////////////////////
 /*
@@ -28,79 +28,57 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  THE SOFTWARE.
  -----------------------------------------------------------------------------
- */
+*/
 
-#ifndef Platform_h
-#define Platform_h
+#ifndef GRE_FRAMEBUFFERWORKER_H
+#define GRE_FRAMEBUFFERWORKER_H
 
-#include "Version.h"
-
-#include <uuid/uuid.h>
-
-GreBeginNamespace
+#include <DefinitionParser.h>
+using namespace Gre ;
 
 //////////////////////////////////////////////////////////////////////
+/// @brief Workers used to process 'Framebuffer' definitions.
 //////////////////////////////////////////////////////////////////////
-struct Uuid {
-    uuid_t uuid;
-
-    Uuid() { }
-    Uuid(const Uuid &other) { uuid_copy(uuid, other.uuid); }
-    Uuid(const uuid_t other_uuid) { uuid_copy(uuid, other_uuid); }
-    void generateInplace() { uuid_generate(uuid); }
-    static Uuid fromStr ( const std::string & str ) { Uuid ret ; uuid_parse(str.c_str() , ret.uuid); return ret ; }
-    static Uuid generate() { Uuid wrapped; uuid_generate(wrapped.uuid); return wrapped; }
-    bool operator<(const Uuid &other) { return uuid_compare(uuid, other.uuid) < 0; }
-    bool operator==(const Uuid &other) { return uuid_compare(uuid, other.uuid) == 0; }
-};
-
-//////////////////////////////////////////////////////////////////////
-/// @brief Represents a set of static function that aims to be
-/// platform-specific.
-//////////////////////////////////////////////////////////////////////
-class DLL_PUBLIC Platform
+class FramebufferWorker : public DefinitionWorker
 {
 public:
 
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns a list of files with the given extension in the given
-    /// directory.
     //////////////////////////////////////////////////////////////////////
-    static std::vector<std::string> FindFilesWithExtension ( const std::string & dir , const std::string & ext ) ;
+    FramebufferWorker ( const std::string & name );
 
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the standard path separator between directories.
     //////////////////////////////////////////////////////////////////////
-    static char GetSeparator () ;
+    virtual ~FramebufferWorker () noexcept( false );
 
     //////////////////////////////////////////////////////////////////////
-    /// @brief Finds a file's name in the given directory.
+    /// @brief Returns true if the given definition is 'Framebuffer'.
     //////////////////////////////////////////////////////////////////////
-    static bool FindFileInDirectory ( const std::string & dir , const std::string & file ) ;
+    virtual bool handles ( const std::string & definition ) const ;
 
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the whole file data as plain text.
+    /// @brief Returns false. Notes that every 'basics' workers cannot
+    /// overwrite other workers.
     //////////////////////////////////////////////////////////////////////
-    static std::string GetFileSource ( const std::string & filepath ) ;
+    virtual bool isOverwritten ( const Uuid & uuid ) const ;
 
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns a non-recursive file's list for the given directory.
+    /// @brief Processes the given definition node.
     //////////////////////////////////////////////////////////////////////
-    static std::vector < std::string > GetFilesList ( const std::string & dirpath ) ;
+    virtual bool process ( const DefinitionFileNode * node ,
+                          DefinitionContext * ctxt ,
+                          const DefinitionWorkerHandlingMap & defs ,
+                          const DefinitionParser* parser ) const ;
 
     //////////////////////////////////////////////////////////////////////
-    /// @brief Calls 'GetFilesList' and appends the directory to the path.
-    /// Notes the directory path is cleaned as the last character is the path
-    /// separator.
+    /// @brief Returns a list of Definitions this Worker depends on.
     //////////////////////////////////////////////////////////////////////
-    static std::vector < std::string > GetFilesListWithDirectory ( const std::string & dirpath ) ;
+    virtual const std::vector< std::string > getDependentDefinitions() const ;
 
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns the directory of given file path.
+    /// @brief Returns a list of Definitions this Worker assume to process.
     //////////////////////////////////////////////////////////////////////
-    static std::string GetFileDirectory ( const std::string & path ) ;
+    virtual const std::vector< std::string > definitions () const ;
 };
 
-GreEndNamespace
-
-#endif /* Platform_h */
+#endif // GRE_FRAMEBUFFERWORKER_H

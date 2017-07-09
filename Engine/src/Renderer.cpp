@@ -42,11 +42,12 @@ Renderer::Renderer (const std::string& name, const RendererOptions& options)
 : Gre::Resource( name ) , iInstalled(false)
 {
     iEnabled = true ;
+    iPipeline = new RenderPipeline( name + ".pipeline" ) ;
 }
 
 Renderer::~Renderer() noexcept ( false )
 {
-    iPasses.clear();
+
 }
 
 void Renderer::render() const
@@ -67,67 +68,12 @@ void Renderer::render() const
 
         iContext -> bind() ;
 
-        for ( const RenderPassHolder & pass : iPasses )
-        if ( !pass.isInvalid() ) pass -> render ( this ) ;
+        if ( !iPipeline.isInvalid() )
+        iPipeline -> render( this ) ;
 
         iContext -> flush() ;
         iContext -> unbind() ;
     }
-}
-
-RenderPassHolder Renderer::addPass(const std::string &name)
-{
-    GreAutolock ;
-
-    if ( iInstalled )
-    {
-        RenderPassHolder pass ( new RenderPass(name) ) ;
-
-        if ( pass.isInvalid() )
-        {
-            GreDebug("[WARN] RenderPass '") << name << "' couldn't be allocated.'" << gendl ;
-            return RenderPassHolder ( nullptr ) ;
-        }
-
-        GreDebug("[INFO] RenderPass '") << name << "' allocated.'" << gendl ;
-
-        iPasses.add(pass) ;
-        return pass ;
-    }
-
-    return RenderPassHolder ( nullptr ) ;
-}
-
-RenderPassHolder Renderer::copyPass(const RenderPassHolder &pass)
-{
-    GreAutolock ;
-
-    if ( iInstalled && !pass.isInvalid() )
-    {
-        RenderPassHolder cpy ( new RenderPass(pass->getName()) ) ;
-
-        if ( cpy.isInvalid() )
-        {
-            GreDebug("[WARN] RenderPass '") << pass->getName() << "' couldn't be copied.'" << gendl ;
-            return RenderPassHolder ( nullptr ) ;
-        }
-
-        cpy -> setScene ( pass->getScene() ) ;
-        cpy -> setTechnique ( pass->getTechnique() ) ;
-        cpy -> setCamera ( pass->getCamera() ) ;
-
-        GreDebug("[INFO] RenderPass '") << cpy->getName() << "' copied.'" << gendl ;
-
-        iPasses.add(cpy) ;
-        return cpy ;
-    }
-
-    return RenderPassHolder ( nullptr ) ;
-}
-
-void Renderer::clearPasses ()
-{
-    GreAutolock ; iPasses.clear() ;
 }
 
 bool Renderer::installManagers ()
@@ -298,6 +244,21 @@ Surface Renderer::getRenderContextSurface() const
     return { 0 , 0 , 0 , 0 } ;
 
     return iContext -> getSurface () ;
+}
+
+void Renderer::setPipeline ( const RenderPipelineHolder & pipeline )
+{
+    GreAutolock ; iPipeline = pipeline ;
+}
+
+const RenderPipelineHolder & Renderer::getPipeline () const
+{
+    GreAutolock ; return iPipeline ;
+}
+
+RenderPipelineHolder & Renderer::getPipeline ()
+{
+    GreAutolock ; return iPipeline ;
 }
 
 // ---------------------------------------------------------------------------------------------------

@@ -158,7 +158,7 @@ bool ReferenceCountedObjectHolder::operator == ( const ReferenceCountedObjectHol
     GreAutolock ; return iObject == rhs.iObject ;
 }
 
-ReferenceCountedObjectHolder::~ReferenceCountedObjectHolder() noexcept ( false )
+ReferenceCountedObjectHolder::~ReferenceCountedObjectHolder() // noexcept ( false )
 {
     clear();
 }

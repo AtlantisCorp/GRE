@@ -94,6 +94,7 @@ bool MyApplicationExample::createScene()
     // a basic Scene that holds some objects , and one light to populate the program.
     //
 
+    auto manager  = ResourceManager::Get() ;
     auto rmanager = ResourceManager::Get()->getRendererManager() ;
     auto smanager = ResourceManager::Get()->getRenderSceneManager() ;
     auto wmanager = ResourceManager::Get()->getWindowManager() ;
@@ -126,7 +127,7 @@ bool MyApplicationExample::createScene()
 
     }) ;
 
-    // WinOptions ["Window.ContextAttributes"] = attr ;
+    WinOptions ["Window.ContextAttributes"] = attr ;
 
     window = wmanager -> load ( "Default Window" , WinOptions ) ;
     if ( window.isInvalid() ) return false ;
@@ -144,38 +145,31 @@ bool MyApplicationExample::createScene()
     renderer -> installManagers() ;
 
     //////////////////////////////////////////////////////////////////////
-    // Tries to load techniques using the bundles added.
+    // Tries to load definitions using the bundles added.
+    // As the definition working stage is an asynchronous processing , here
+    // as it is just an example we wait for the definition parser to finish
+    // its job.
 
-    int tec = tmanager -> loadFromBundles ( ResourceManager::Get() -> getBundles() ) ;
-    GreDebug ( "[INFO] " ) << tec << " techniques loaded." << Gre::gendl ;
+    GreDebug( "[INFO] Trying to load definitions." ) << gendl ;
+
+    auto bundles = manager -> getBundles() ;
+    auto result  = manager -> loadDefinitions( bundles , std::chrono::hours(1) );
+    if ( !result.empty() )
+    {
+        GreDebug( "[ERRO] Printing Definitions Errors : " ) << result << gendl ;
+        exit( -4 );
+    }
+
+    manager -> getDefinitionParser() -> reset() ;
+    GreDebug( "[INFO] Loading Definitions from bundle finished." ) << gendl ;
 
     {
-        // Rendering in GRE in the viewport at the left. We need to create a 'RenderPass' which is an object
-        // that hols everything for the renderer to render the 'pass'. Notes that a pass can be a multi-framebuffer
-        // or a multi-technique drawing (the scene may be rendered more than once) , as the technique may have some
-        // pre or post render techniques.
+        auto pipeline = renderer -> getPipeline () ;
+        pipeline -> setPass( 1 , "example.pass:1" , "learnopengl.shadowmapping.phase1.technique" ) ;
+        pipeline -> setPass( 2 , "example.pass:2" , "learnopengl.shadowmapping.phase2.technique" ) ;
 
-        renderpass2 = renderer -> addPass ( "renderer.renderpass.2" ) ;
-        renderpass  = renderer -> addPass ( "renderer.renderpass.1" ) ;
-
-        //////////////////////////////////////////////////////////////////////
-        // Tries to get the 'learnopengl.shadowmapping.technique' technique. The
-        // tech1 framebuffer is used by the light to bind the shadows.
-
-        auto tech1 = tmanager -> get ( "learnopengl.shadowmapping.phase1.technique" ) ;
-        if ( tech1.isInvalid() ) exit( -6 ) ;
-
-        auto framebuffer = tech1 -> getFramebuffer () ;
-
-        // Viewport & viewport = framebuffer -> getViewport() ;
-        // viewport.setProjection ( Projection::Ortho(-10.0f , 10.0f, -10.0f, 10.0f, 0.1f, 100.0f) ) ;
-        // viewport.setProjection( Projection::Perspective(45.0f, 1.0f) ) ;
-
-        auto tech2 = tmanager -> get ( "learnopengl.shadowmapping.phase2.technique" ) ;
-        if ( tech2.isInvalid() ) exit ( -6 ) ;
-
-        renderpass2 -> setTechnique ( tech1 ) ;
-        renderpass  -> setTechnique ( tech2 ) ;
+        renderpass2 = pipeline -> getPass ( 1 ) ;
+        renderpass  = pipeline -> getPass ( 2 ) ;
 
         renderpass -> addNamedParameter("shadows", HdwProgVarType::Bool1, (int) 1) ;
     }

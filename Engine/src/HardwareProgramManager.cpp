@@ -247,7 +247,7 @@ HardwareShaderHolder HardwareProgramManager::loadShaderFromFile ( const ShaderTy
 
 HardwareShaderHolder HardwareProgramManager::loadShaderFromBundled ( const ShaderType & type , const std::string & path )
 {
-    GreAutolock ;
+    // GreAutolock ;
 
     if ( !iInternalCreator )
     return HardwareShaderHolder ( nullptr ) ;
