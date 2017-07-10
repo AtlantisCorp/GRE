@@ -46,7 +46,6 @@ enum class ResourceType
     Program ,
     Texture ,
     Mesh ,
-    Effect ,
 
     /// @brief A Definition File is any file within the DefinitionFile directories
     /// in the given bundle. Generally it should have the extension '.gdef' or '.gre'.

@@ -67,11 +67,6 @@ bool TechniqueWorker::process ( const DefinitionFileNode * node ,
     return false ;
 
     //////////////////////////////////////////////////////////////////////
-    // Technique's worker needs to wait for other workers to process.
-
-    // waitDependentDefinitions( parser , defs );
-
-    //////////////////////////////////////////////////////////////////////
     // Works on given technique node.
 
     std::string nodename = node -> getName() ;
@@ -140,6 +135,8 @@ bool TechniqueWorker::process ( const DefinitionFileNode * node ,
         else if ( subnode -> getDefinitionWord( 0 ) == "Framebuffer" &&
             subnode -> countWords() >= 2 )
         {
+            waitDefinitions({ "Framebuffer" , "GRE:Framebuffer" } , defs , parser );
+            
             std::string fbname = subnode -> getDefinitionWord( 1 );
             auto fb = fm -> get( fbname );
 
@@ -158,6 +155,8 @@ bool TechniqueWorker::process ( const DefinitionFileNode * node ,
         else if ( subnode -> getName() == "GlobSet" &&
             subnode -> countWords() >= 3 )
         {
+            waitDefinitions({ "Global" , "GRE:Global" } , defs , parser );
+            
             std::string globname = subnode -> getDefinitionWord( 1 );
             std::string paramname = subnode -> getDefinitionWord( 2 );
             technique -> addGlobSet( globname , TechniqueParamFromString(paramname) );
@@ -166,6 +165,8 @@ bool TechniqueWorker::process ( const DefinitionFileNode * node ,
         else if ( subnode -> getName() == "GlobAlias" &&
             subnode -> countWords() >= 3 )
         {
+            waitDefinitions({ "Global" , "GRE:Global" } , defs , parser );
+            
             std::string globname = subnode -> getDefinitionWord( 1 );
             std::string paramname = subnode -> getDefinitionWord( 2 );
             technique -> addGlobAlias( globname , paramname );
@@ -181,9 +182,7 @@ const std::vector< std::string > TechniqueWorker::getDependentDefinitions() cons
 {
     return
     {
-        "Framebuffer" , "GRE:Framebuffer" ,
-        "Program" , "GRE:Program" ,
-        "Global" , "GRE:Global"
+        "Program" , "GRE:Program"
     };
 }
 

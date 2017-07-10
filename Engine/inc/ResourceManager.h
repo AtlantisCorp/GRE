@@ -173,6 +173,9 @@ protected:
     /// @brief Holds the default DefinitionParser used to launch Parsing and Working Stages.
     DefinitionParserHolder iDefinitionParser ;
 
+    /// @brief Holds RenderPipelines.
+    RenderPipelineManagerHolder iPipelines ;
+
 public:
 
     /// @brief Holder for ResourceManager.
@@ -490,18 +493,18 @@ public:
                                                     const std::chrono::duration< Rep , Period >& timeout )
     {
         DefinitionParserHolder parser ;
-        
+
         {
             GreAutolock ;
-            
+
             if ( iDefinitionParser.isInvalid() )
             {
                 DefinitionContextErrors result ;
                 result.push_back({ 0 , "Definition Parser is not present." , std::string() , 0 , true });
-                
+
                 return result ;
             }
-            
+
             parser = iDefinitionParser ;
         }
 
@@ -520,6 +523,14 @@ public:
         else
         return parser -> getLastResult() ;
     }
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    void setPipelineManager( const RenderPipelineManagerHolder & manager );
+
+    //////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
+    RenderPipelineManagerHolder & getPipelineManager() ;
 
 protected:
 

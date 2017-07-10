@@ -66,11 +66,6 @@ bool ProjectionWorker::process( const DefinitionFileNode * node ,
     return false ;
 
     //////////////////////////////////////////////////////////////////////
-    // Wait for dependents workers here.
-
-    // waitDependentDefinitions( parser , defs );
-
-    //////////////////////////////////////////////////////////////////////
     // Computes name and type.
 
     std::string name = node -> getDefinitionWord( 1 );

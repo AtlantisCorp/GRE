@@ -70,7 +70,7 @@ void DefinitionWorker::wait( const DefinitionParser * parser , const DefinitionW
 
     GreDebug( "[INFO] " ) << getName() << " : Waiting for worker : " << worker->getName() << "." << gendl ;
 
-    while( parser -> checkCurrentWorkerStatus(worker) != DefinitionParserState::Finished );
+    while( parser -> checkCurrentWorkerStatus(worker) != DefinitionWorkerState::Finished );
 
     // GreDebug( "[INFO] " ) << getName() << " : Waiting finished for worker : " << worker->getName() << "." << gendl ;
 }
@@ -101,6 +101,20 @@ void DefinitionWorker::waitDependentDefinitions( const DefinitionParser* parser 
     }
 
     // GreDebug( "[INFO]" ) << getName() << " : Dependencies waited." << gendl ;
+}
+
+void DefinitionWorker::waitDefinitions(const std::vector<std::string> &definitions, const DefinitionWorkerHandlingMap &defs, const Gre::DefinitionParser *parser) const
+{
+    if ( !parser )
+    return ;
+    
+    for ( auto definition : definitions )
+    {
+        auto workerit = defs.find( definition );
+        
+        if ( workerit != defs.end() )
+        wait( parser , workerit->second );
+    }
 }
 
 // -----------------------------------------------------------------------------

@@ -39,7 +39,6 @@ ResourceBundle::ResourceBundle ( const std::string & name ) : Gre::Resource ( na
 {
     iDirectories[ResourceType::Plugin] = { } ;
     iDirectories[ResourceType::Program] = { } ;
-    iDirectories[ResourceType::Effect] = { } ;
     iDirectories[ResourceType::Mesh] = { } ;
     iDirectories[ResourceType::Texture] = { } ;
     iDirectories[ResourceType::DefinitionFile] = { } ;

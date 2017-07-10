@@ -175,4 +175,38 @@ void RenderPipeline::renderReversed ( const Renderer* renderer ) const
     }
 }
 
+// -----------------------------------------------------------------------------
+// RenderPipelineManager implementation.
+
+RenderPipelineManager::RenderPipelineManager( const std::string & name )
+: Gre::ResourceManagerBase < RenderPipeline > ( name )
+{
+
+}
+
+RenderPipelineManager::~RenderPipelineManager() noexcept( false )
+{
+
+}
+
+RenderPipelineHolder RenderPipelineManager::loadBlank( const std::string & pipelinename )
+{
+    GreAutolock ;
+
+    for ( auto pipeline : iHolders )
+    if ( pipeline->getName() == pipelinename )
+    return nullptr ;
+
+    RenderPipelineHolder pipeline = new RenderPipeline( pipelinename );
+
+    if ( pipeline.isInvalid() )
+    {
+        GreDebug( "Can't create RenderPipeline '" ) << pipelinename << "'." << gendl ;
+        return nullptr ;
+    }
+
+    iHolders.push_back( pipeline );
+    return pipeline ;
+}
+
 GreEndNamespace

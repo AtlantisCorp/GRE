@@ -42,7 +42,9 @@ Renderer::Renderer (const std::string& name, const RendererOptions& options)
 : Gre::Resource( name ) , iInstalled(false)
 {
     iEnabled = true ;
-    iPipeline = new RenderPipeline( name + ".pipeline" ) ;
+
+    auto pipelines = ResourceManager::Get() -> getPipelineManager() ;
+    iPipeline = pipelines -> loadBlank( name + ".pipeline" );
 }
 
 Renderer::~Renderer() noexcept ( false )

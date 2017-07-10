@@ -64,11 +64,6 @@ bool ProgramWorker::process(const Gre::DefinitionFileNode *node, Gre::Definition
     return false ;
     
     //////////////////////////////////////////////////////////////////////
-    // Wait for dependents workers here.
-    
-    // waitDependentDefinitions( parser , defs );
-    
-    //////////////////////////////////////////////////////////////////////
     // Finds name.
     
     const std::string progname = node -> getDefinitionWord( 1 );

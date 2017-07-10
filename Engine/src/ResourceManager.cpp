@@ -262,6 +262,16 @@ void ResourceManager::initialize ()
 
     GreDebug( "[INFO] Created default 'DefinitionParser'." ) << gendl ;
 
+    iPipelines = new RenderPipelineManager();
+
+    if ( iPipelines.isInvalid() )
+    {
+        GreDebug( "[ERRO] Can't create default 'RenderPipelineManager'." ) << gendl ;
+        iInitialized = false ; return ;
+    }
+
+    GreDebug( "[INFO] Created default 'RenderPipelineManager'." ) << gendl ;
+
     iInitialized = true ;
     GreDebug("[INFO] Initialized.") << gendl ;
 }
@@ -284,10 +294,13 @@ void ResourceManager::unload ()
     if ( !iPluginManager.isInvalid() ) {
         iPluginManager -> callStops() ;
     }
-    
+
+    if ( !iPipelines.isInvalid() )
+    iPipelines.clear() ;
+
     if ( !iWorkersManager.isInvalid() )
     iWorkersManager.clear() ;
-    
+
     if ( !iDefinitionParser.isInvalid() )
     iDefinitionParser.clear() ;
 
@@ -641,8 +654,7 @@ ResourceBundleHolder ResourceManager::addDefaultBundle ()
 	rbundle -> addDirectory ( Gre::ResourceType::Program ,         "Programs" ) ;
 	rbundle -> addDirectory ( Gre::ResourceType::Texture ,         "Textures" ) ;
 	rbundle -> addDirectory ( Gre::ResourceType::Mesh ,            "Models" ) ;
-	rbundle -> addDirectory ( Gre::ResourceType::Effect ,          "Effects" ) ;
-    rbundle -> addDirectory ( Gre::ResourceType::DefinitionFile ,  "Effects" ) ;
+    rbundle -> addDirectory ( Gre::ResourceType::DefinitionFile ,  "Definitions" ) ;
 
     //////////////////////////////////////////////////////////////////////
     // Returns the bundle.
@@ -701,6 +713,16 @@ ResourceBundleHolderList :: const_iterator ResourceManager::findBundleIterator (
     }
 
     return iBundles.end() ;
+}
+
+void ResourceManager::setPipelineManager( const RenderPipelineManagerHolder & manager )
+{
+    iPipelines = manager ;
+}
+
+RenderPipelineManagerHolder & ResourceManager::getPipelineManager()
+{
+    return iPipelines ;
 }
 
 GreEndNamespace

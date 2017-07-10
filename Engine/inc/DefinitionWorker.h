@@ -49,6 +49,23 @@ GRE_MAKE_HOLDER( DefinitionWorker );
 typedef std::map < std::string , DefinitionWorkerHolder > DefinitionWorkerHandlingMap ;
 
 //////////////////////////////////////////////////////////////////////
+/// @brief Worker's states.
+enum class DefinitionWorkerState : int
+{
+    /// @brief Definition Worker is not yet launched but will be soon.
+    Launching ,
+    
+    /// @brief Definition Worker is launched and is working.
+    Working ,
+    
+    /// @brief Definition Worker has finished every jobs.
+    Finished ,
+    
+    /// @brief Definition Worker is not being launched , and will not.
+    NotLaunched
+};
+
+//////////////////////////////////////////////////////////////////////
 /// @brief Represents an abstract object that works on the DefinitionContext
 /// node tree.
 ///
@@ -140,7 +157,14 @@ public:
     virtual void wait ( const DefinitionParser* parser , const DefinitionWorkerHolder & worker ) const ;
 
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns a list of Definitions this Worker depends on.
+    /// @brief Returns a list of Definitions this Worker depends on. Those
+    /// definitions are needed to make the worker works. If one of those
+    /// definitions is not present , the worker will not be launched.
+    ///
+    /// To wait for optionals definitions , use 'waitDefinitions()' with
+    /// the needed optionals definitions. Notes that if the optional workers
+    /// are not present , the worker will be launched as well.
+    ///
     //////////////////////////////////////////////////////////////////////
     virtual const std::vector< std::string > getDependentDefinitions() const ;
     
@@ -155,6 +179,14 @@ public:
     //////////////////////////////////////////////////////////////////////
     virtual void waitDependentDefinitions( const DefinitionParser* parser ,
                                            const DefinitionWorkerHandlingMap & defs ) const ;
+    
+    //////////////////////////////////////////////////////////////////////
+    /// @brief Waits for definitions's workers. If the worker is not present
+    /// in the handling map , it will be considered as finished.
+    //////////////////////////////////////////////////////////////////////
+    virtual void waitDefinitions( const std::vector< std::string >& definitions ,
+                                  const DefinitionWorkerHandlingMap & defs ,
+                                  const DefinitionParser* parser ) const ;
 
 protected:
 

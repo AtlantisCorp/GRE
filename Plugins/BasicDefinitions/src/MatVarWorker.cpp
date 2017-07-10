@@ -71,11 +71,6 @@ bool MatVarWorker::process ( const DefinitionFileNode * node ,
     return false ;
 
     //////////////////////////////////////////////////////////////////////
-    // Wait for dependents workers here.
-
-    // waitDependentDefinitions( parser , defs );
-
-    //////////////////////////////////////////////////////////////////////
     // Gets Variable type and name.
 
     std::string type = node -> getDefinitionWord( 1 );

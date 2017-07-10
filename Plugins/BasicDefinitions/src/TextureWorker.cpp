@@ -67,11 +67,6 @@ bool TextureWorker::process( const DefinitionFileNode * node ,
     if ( !node || !ctxt )
     return false ;
 
-    //////////////////////////////////////////////////////////////////////
-    // Wait for dependents workers here.
-
-    // waitDependentDefinitions( parser , defs );
-
     auto tm = ResourceManager::Get() -> getTextureManager() ;
 
     if ( tm.isInvalid() )

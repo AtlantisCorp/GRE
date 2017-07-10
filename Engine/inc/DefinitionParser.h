@@ -203,11 +203,12 @@ public:
     void setLastResult ( const DefinitionContextErrors & errors ) ;
 
     //////////////////////////////////////////////////////////////////////
-    /// @brief Returns 'DefinitionParserState::Working' if some threads
-    /// executed by workers are joinable , or 'DefinitionParserState::Finished'
-    /// if none is encountered.
+    /// @brief Returns 'DefinitionWorkerState::Launching' if present in
+    /// 'launchedWorkers' but not in 'workingWorkers' ,
+    /// 'DefinitionWorkerState::Working' if present in both , and
+    /// 'DefinitionWorkerState::Finished' if present in 'finishedWorkers'.
     //////////////////////////////////////////////////////////////////////
-    DefinitionParserState checkCurrentWorkerStatus ( const DefinitionWorkerHolder & worker ) const ;
+    DefinitionWorkerState checkCurrentWorkerStatus ( const DefinitionWorkerHolder & worker ) const ;
 
 protected:
 
@@ -273,15 +274,6 @@ protected:
     ///
     //////////////////////////////////////////////////////////////////////
     virtual void working ( DefinitionContext* ctxt , const DefinitionWorkerHandlingMap & map );
-
-    //////////////////////////////////////////////////////////////////////
-    /// @brief Handles iteration for a node in the 'Working' Stage.
-    //////////////////////////////////////////////////////////////////////
-    virtual void working_iterate ( DefinitionFileNode* node ,
-                                   DefinitionContext* ctxt ,
-                                   std::map < DefinitionWorkerHolder , std::vector<std::string> > defsbyworkers ,
-                                   std::vector < WorkingThread > & threads ,
-                                   const DefinitionWorkerHandlingMap & map );
     
     //////////////////////////////////////////////////////////////////////
     /// @brief Changes the parser's current state.
@@ -326,6 +318,11 @@ protected:
     {
         /// @brief Workers that already finished their threads are stored here.
         std::vector < std::string > finishedWorkers ;
+        
+        /// @brief Workers that have been planned to be launched are stored here.
+        /// Notes that when their working thread is finished, they still can be found
+        /// in this data but also in the finished workers vector.
+        std::vector < std::string > launchedWorkers ;
         
     } iSessionData ;
 };

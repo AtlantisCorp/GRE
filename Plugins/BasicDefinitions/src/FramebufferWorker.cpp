@@ -63,13 +63,9 @@ bool FramebufferWorker::process( const DefinitionFileNode * node ,
     if ( !node || !ctxt )
     return false ;
 
-    //////////////////////////////////////////////////////////////////////
-    // Wait for dependents workers here.
-
-    // waitDependentDefinitions( parser , defs );
-
     auto tm  = ResourceManager::Get() -> getTextureManager() ;
     auto fbm = ResourceManager::Get() -> getFramebufferManager() ;
+    
     if ( fbm.isInvalid() )
     {
         ctxt -> pushError({
@@ -125,6 +121,8 @@ bool FramebufferWorker::process( const DefinitionFileNode * node ,
         if ( child -> getName() == "Texture" &&
              child -> countWords() >= 3 )
         {
+            waitDefinitions({ "Texture" , "GRE:Texture" } , defs , parser );
+            
             std::string attachement = child -> getDefinitionWord( 1 );
             std::string texture = child -> getDefinitionWord( 2 );
 
@@ -205,7 +203,6 @@ const std::vector < std::string > FramebufferWorker::getDependentDefinitions() c
     return
     {
         "Projection" , "GRE:Projection" ,
-        "Texture" , "GRE:Texture"
     };
 }
 

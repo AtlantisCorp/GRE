@@ -39,6 +39,7 @@ using namespace Gre ;
 #include "FramebufferWorker.h"
 #include "ProjectionWorker.h"
 #include "TextureWorker.h"
+#include "PipelineWorker.h"
 
 PluginInfo info =
 {
@@ -66,8 +67,8 @@ extern "C"
             manager -> add ( new MatVarWorker( "basics.matvar" ) );
             manager -> add ( new FramebufferWorker( "basics.framebuffer" ) );
             manager -> add ( new TextureWorker( "basics.texture" ) );
-            // manager -> add ( new MeshWorker( "basics.mesh" ) );
             manager -> add ( new ProjectionWorker( "basics.projection" ) );
+            manager -> add ( new PipelineWorker( "basics.pipeline" ) );
         }
     }
 

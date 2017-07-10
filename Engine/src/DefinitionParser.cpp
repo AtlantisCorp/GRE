@@ -206,22 +206,7 @@ void DefinitionParser::wait ( const DefinitionParserState & state ) const
 
 DefinitionParserState DefinitionParser::status() const
 {
-    GreAutolock ;
-    
-/*
-    if ( iCurrentState == DefinitionParserState::Working && iWorkingLaunchFinished )
-    {
-        for ( auto & st : iCurrentWorkingThreads )
-        {
-            std::future_status state = st.thread.wait_for( std::chrono::milliseconds(0) );
-            if ( state != std::future_status::ready ) return iCurrentState ;
-        }
-
-        return DefinitionParserState::Finished ;
-    }
-*/
-    
-    return iCurrentState ;
+    GreAutolock ; return iCurrentState ;
 }
 
 bool DefinitionParser::parsing() const
@@ -254,6 +239,8 @@ void DefinitionParser::reset()
     iWorkersShouldStop = true ;
     iCurrentWorkingThreads.clear() ;
     iParsingThread.detach() ;
+    iSessionData.launchedWorkers.clear() ;
+    iSessionData.finishedWorkers.clear() ;
 }
 
 DefinitionContextErrors DefinitionParser::getLastResult() const
@@ -261,10 +248,10 @@ DefinitionContextErrors DefinitionParser::getLastResult() const
     GreAutolock ; return iFutureResult ;
 }
 
-DefinitionParserState DefinitionParser::checkCurrentWorkerStatus( const DefinitionWorkerHolder & worker ) const
+DefinitionWorkerState DefinitionParser::checkCurrentWorkerStatus( const DefinitionWorkerHolder & worker ) const
 {
-    if ( worker.isInvalid() ) return DefinitionParserState::Finished ;
-    if ( worker->getName().empty() ) return DefinitionParserState::Finished ;
+    if ( worker.isInvalid() ) return DefinitionWorkerState::NotLaunched ;
+    if ( worker->getName().empty() ) return DefinitionWorkerState::NotLaunched ;
 
     const std::string workername = worker->getName() ;
 
@@ -278,7 +265,17 @@ DefinitionParserState DefinitionParser::checkCurrentWorkerStatus( const Definiti
                                workername );
     
     if ( workerit != iSessionData.finishedWorkers.end() )
-    return DefinitionParserState::Finished ;
+    return DefinitionWorkerState::Finished ;
+    
+    //////////////////////////////////////////////////////////////////////
+    // Looks in launched workers.
+    
+    workerit = std::find( iSessionData.launchedWorkers.begin() ,
+                          iSessionData.launchedWorkers.end() ,
+                          workername );
+    
+    if ( workerit == iSessionData.launchedWorkers.end() )
+    return DefinitionWorkerState::NotLaunched ;
     
     //////////////////////////////////////////////////////////////////////
     // Second look in working thread.
@@ -286,17 +283,13 @@ DefinitionParserState DefinitionParser::checkCurrentWorkerStatus( const Definiti
     for ( auto & wt : iCurrentWorkingThreads )
     {
         if ( wt.worker == workername )
-        {
-            if ( wt.thread.wait_for( std::chrono::milliseconds(0) ) != std::future_status::ready )
-            return DefinitionParserState::Working ;
-        }
+        return DefinitionWorkerState::Working ;
     }
     
     //////////////////////////////////////////////////////////////////////
-    // If worker is not found in finished or worker threads , this means
-    // it has not been started yet , and is considered as idling.
+    // If worker is launched but not working , return launching.
 
-    return DefinitionParserState::Idling ;
+    return DefinitionWorkerState::Launching ;
 }
 
 void DefinitionParser::parsing ( DefinitionContext* ctxt , const std::string & filepath )
@@ -769,6 +762,7 @@ void DefinitionParser::working( DefinitionContext* ctxt , const DefinitionWorker
     {
         auto worker = map.find( child->getName() )->second ;
         nodesbyworkers[worker].push_back(child);
+        iSessionData.launchedWorkers.push_back( worker->getName() );
     }
 
     //////////////////////////////////////////////////////////////////////
@@ -793,7 +787,7 @@ void DefinitionParser::working( DefinitionContext* ctxt , const DefinitionWorker
 
         for ( auto it = iCurrentWorkingThreads.begin() ; it != iCurrentWorkingThreads.end() ; it++ )
         {
-            if ( (*it).thread.wait_for(std::chrono::milliseconds::min()) == std::future_status::ready )
+            if ( (*it).thread.wait_for(std::chrono::milliseconds(0) ) == std::future_status::ready )
             {
                 GreDebug( "[INFO] Worker '" ) << (*it).worker << "' finished processing its definitions." << gendl ;
 
@@ -809,61 +803,6 @@ void DefinitionParser::working( DefinitionContext* ctxt , const DefinitionWorker
             iCurrentState = DefinitionParserState::Finished ;
             break ;
         }
-    }
-}
-
-void DefinitionParser::working_iterate( DefinitionFileNode* node , DefinitionContext* ctxt , std::map < DefinitionWorkerHolder , std::vector<std::string> > defsbyworkers , std::vector<WorkingThread> & threads , const DefinitionWorkerHandlingMap & map )
-{
-    if ( !node || !ctxt || defsbyworkers.empty() )
-    return ;
-
-    for ( auto child : node->getChildren() )
-    {
-        if ( !child )
-        continue ;
-
-        std::string defname = child -> getName() ;
-
-        if ( defname.empty() )
-        continue ;
-
-        DefinitionWorkerHolder worker ;
-
-        for ( auto it : defsbyworkers )
-        {
-            if ( std::find(it.second.begin() , it.second.end() , defname) != it.second.end() )
-            {
-                worker = it.first ;
-                break ;
-            }
-        }
-
-        if ( worker.isInvalid() )
-        {
-            ctxt -> pushError({ -4 , std::string("No Worker found for Definition '") + defname + "'." ,
-                                std::string() , 0 , false
-            });
-
-            continue ;
-        }
-
-        threads.push_back({
-            worker->getName() ,
-            std::async( std::launch::async ,
-
-                [] (
-                DefinitionFileNode* child ,
-                DefinitionContext* ctxt ,
-                DefinitionWorkerHolder worker ,
-                const DefinitionWorkerHandlingMap& map ,
-                const DefinitionParser* parser
-                ) -> bool
-                {
-                    return worker -> process( child , ctxt , map , parser );
-                } ,
-
-                child , ctxt , worker , map , this )
-        });
     }
 }
 
